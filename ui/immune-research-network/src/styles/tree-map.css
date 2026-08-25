@@ -1,0 +1,129 @@
+.sector-wedge {
+  fill: rgba(255, 255, 255, 0.015);
+  stroke: rgba(93, 228, 255, 0.08);
+  stroke-width: 2;
+}
+
+.layout-ring {
+  stroke: rgba(93, 228, 255, 0.07);
+  stroke-width: 2;
+}
+
+.research-edge {
+  fill: none;
+  stroke-width: 2.25;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.edge-required {
+  stroke: rgba(93, 228, 255, 0.75);
+}
+
+.edge-dual {
+  stroke: rgba(244, 195, 91, 0.8);
+  stroke-dasharray: 10 8;
+}
+
+.edge-optional {
+  stroke: rgba(145, 174, 193, 0.45);
+  stroke-dasharray: 4 10;
+}
+
+.edge-affinity {
+  stroke: rgba(167, 120, 255, 0.35);
+  stroke-width: 2;
+}
+
+.node-hit {
+  fill: transparent;
+  stroke: transparent;
+}
+
+.node-body {
+  stroke: rgba(255, 255, 255, 0.35);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+  transition: stroke-width var(--motion-fast) ease, opacity var(--motion-fast) ease;
+}
+
+.node-state-badge {
+  fill: #fff;
+  font-size: 18px;
+  pointer-events: none;
+}
+
+.node-label {
+  fill: var(--immune-text);
+  font-size: 22px;
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+g[role="button"].is-selected .node-body {
+  stroke: var(--immune-cyan);
+  stroke-width: 4;
+}
+
+g[role="button"].is-tracked .node-body {
+  stroke: var(--immune-gold);
+}
+
+g[role="button"].is-anchor .node-body {
+  stroke-width: 3;
+}
+
+g[role="button"].newly-revealed .node-body {
+  stroke: var(--immune-success);
+  animation: node-mature var(--motion-slow) ease;
+}
+
+.unlock-pulse {
+  fill: none;
+  stroke: var(--immune-cyan);
+  stroke-width: 4;
+  pointer-events: none;
+}
+
+.select-pulse {
+  fill: none;
+  stroke: var(--immune-gold);
+  stroke-width: 3;
+  pointer-events: none;
+}
+
+g[role="button"].is-hot .node-body {
+  stroke: var(--immune-cyan);
+  stroke-width: 5;
+}
+
+@keyframes node-mature {
+  0% {
+    stroke-width: 2;
+    opacity: 0.4;
+  }
+  100% {
+    stroke-width: 5;
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .node-body {
+    transition: opacity var(--motion-fast) ease;
+  }
+
+  g[role="button"].newly-revealed .node-body {
+    animation: none;
+    outline: 2px solid var(--immune-success);
+  }
+
+  @keyframes node-mature {
+    from {
+      opacity: 0.5;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}

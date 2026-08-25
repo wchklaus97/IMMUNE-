@@ -1,0 +1,132 @@
+{
+  "ok": true,
+  "tris_in": 5044,
+  "refine": [
+    {
+      "radius": 0.118,
+      "edges": 406,
+      "tris_after": 5764
+    },
+    {
+      "radius": 0.058,
+      "edges": 388,
+      "tris_after": 6510
+    },
+    {
+      "radius": 0.062,
+      "edges": 143,
+      "tris_after": 6766
+    },
+    {
+      "radius": 0.056,
+      "edges": 396,
+      "tris_after": 7522
+    }
+  ],
+  "in": "godot\\immune\\characters\\base_t\\CHAR-BASE-T-tripo-5k.glb",
+  "out": "godot\\immune\\characters\\base_t\\CHAR-BASE-T-fix.glb",
+  "verts": 4610,
+  "tris": 7522,
+  "uv_layers": [
+    "UVMap"
+  ],
+  "materials": [
+    "tripo_mat_7e84a5bd-833c-46c4-91e6-8e3cbe10f39b"
+  ],
+  "images": [
+    "orange+alien+blob+3d+model-+remesh_basecolor.jpg"
+  ],
+  "log": {
+    "groups": 3784,
+    "shells": [
+      104,
+      107,
+      1096,
+      2477
+    ],
+    "edges_one_sided": 32,
+    "edges_over_shared": 0,
+    "lens_shell": 1096,
+    "body_shell": 2477,
+    "mouth_pinched": 50,
+    "pore_axis": [
+      0.0,
+      -0.8936,
+      0.4489
+    ],
+    "pore_centre_scaled": [
+      -0.0042,
+      -0.3417,
+      0.6314
+    ],
+    "pore_lens_verts": 1096,
+    "pore_fit_pts": 61,
+    "pore_lens_moved": 1096,
+    "pore_skull_moved": 217,
+    "pore_boss_before": 0.0413,
+    "pore_boss_after": -0.0111,
+    "pore_floor_after": -0.0485,
+    "pore_skull_after": -0.0162,
+    "radial_range": [
+      0.9109,
+      1.0676
+    ],
+    "limb_verts": 1984,
+    "limb_max_push": 0.0936,
+    "limb_hook_verts": 110,
+    "skirt_lobe_verts": 725,
+    "limb_dz_min": -0.0211,
+    "limb_dz_max": 0.0527,
+    "strain_p50": 0.0646,
+    "strain_p99": 0.3671,
+    "strain_max": 1.0909,
+    "strain_over_25pct": 454,
+    "strain_worst_at": [
+      [
+        -0.347,
+        -0.381,
+        0.029
+      ],
+      [
+        0.001,
+        -0.003,
+        0.015
+      ],
+      [
+        -0.012,
+        0.035,
+        0.016
+      ],
+      [
+        -0.21,
+        -0.379,
+        0.031
+      ],
+      [
+        0.433,
+        -0.067,
+        0.098
+      ],
+      [
+        0.019,
+        0.031,
+        0.016
+      ]
+    ],
+    "size": [
+      1.1714,
+      0.8839,
+      0.8757
+    ],
+    "wh_ratio": 1.3377,
+    "shading": "split-cleared+polys-smooth+sharp-face-removed+custom-normals-set",
+    "export_kwargs": {
+      "filepath": "godot\\immune\\characters\\base_t\\CHAR-BASE-T-fix.glb",
+      "export_format": "GLB",
+      "export_image_format": "AUTO",
+      "export_materials": "EXPORT",
+      "export_yup": "True",
+      "export_apply": "False"
+    }
+  }
+}

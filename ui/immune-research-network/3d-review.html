@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IMMUNE｜3D 概念評審</title>
+  <style>
+    :root {
+      --bg: #06111d;
+      --bg-deep: #040a12;
+      --panel: #0c1c2c;
+      --border: #27506a;
+      --text: #e9f6ff;
+      --muted: #91aec1;
+      --cyan: #5de4ff;
+      --gold: #f4c35b;
+      --danger: #ff7384;
+      --success: #4be1bd;
+      --warn: #f4c35b;
+      --t: #45bdf2;
+      --b: #a878ff;
+      --m: #d28cff;
+      --n: #a6c94a;
+      --a: #f2b84b;
+      --d: #ff9b58;
+      --font: "Segoe UI", "Microsoft JhengHei", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg-deep); color: var(--text); font-family: var(--font); }
+    .top {
+      position: sticky; top: 0; z-index: 20;
+      background: rgba(4, 10, 18, 0.96);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px 12px;
+    }
+    .brand { display: flex; justify-content: space-between; gap: 16px; align-items: flex-end; flex-wrap: wrap; }
+    .brand h1 { margin: 0; font-size: 22px; letter-spacing: 0.04em; }
+    .brand small { display: block; color: var(--muted); font-size: 12px; margin-top: 4px; font-weight: 400; }
+    .links { display: flex; gap: 10px; flex-wrap: wrap; }
+    .links a {
+      color: var(--cyan); text-decoration: none; border: 1px solid var(--border);
+      border-radius: 999px; padding: 6px 12px; font-size: 13px;
+    }
+    .links a.here { background: var(--cyan); color: #041018; font-weight: 700; border-color: var(--cyan); }
+    .stats { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+    .stat { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; min-width: 92px; }
+    .stat b { display: block; color: var(--cyan); font-size: 18px; }
+    .stat span { color: var(--muted); font-size: 11px; }
+    main { padding: 20px 24px 64px; display: grid; gap: 18px; }
+    .note {
+      background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+      padding: 14px 16px; color: var(--muted); font-size: 14px; line-height: 1.55;
+    }
+    .note strong { color: var(--gold); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(520px, 1fr)); gap: 16px; }
+    .card {
+      background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
+      padding: 14px; display: grid; gap: 12px;
+    }
+    .card-head { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
+    .card-head h2 { margin: 0; font-size: 18px; }
+    .meta { color: var(--muted); font-size: 12px; margin-top: 4px; }
+    .badge { font-size: 11px; border-radius: 999px; padding: 3px 8px; border: 1px solid var(--border); }
+    .fam-T { color: var(--t); border-color: var(--t); }
+    .fam-B { color: var(--b); border-color: var(--b); }
+    .fam-M { color: var(--m); border-color: var(--m); }
+    .fam-N { color: var(--n); border-color: var(--n); }
+    .fam-A { color: var(--a); border-color: var(--a); }
+    .fam-D { color: var(--d); border-color: var(--d); }
+    .keep { color: var(--success); border-color: var(--success); }
+    .watch { color: var(--warn); border-color: var(--warn); }
+    .fix { color: var(--danger); border-color: var(--danger); }
+    .forms { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .form { background: #05080c; border: 1px solid #1d3b52; border-radius: 10px; overflow: hidden; cursor: zoom-in; }
+    .form img { display: block; width: 100%; aspect-ratio: 1; object-fit: contain; background: #000; }
+    .form.alt img { background: #00ff00; }
+    .form.missing {
+      min-height: 220px; display: grid; place-items: center; color: var(--muted);
+      cursor: default; font-size: 14px;
+    }
+    h2.sec { margin: 8px 0 0; font-size: 18px; color: var(--gold); }
+    .form figcaption {
+      display: flex; justify-content: space-between; gap: 8px; padding: 8px 10px; font-size: 12px;
+      color: var(--muted); border-top: 1px solid #1d3b52;
+    }
+    .form strong { color: var(--text); }
+    .facts { display: grid; gap: 6px; font-size: 13px; }
+    .facts div { display: grid; grid-template-columns: 88px 1fr; gap: 8px; }
+    .facts dt { color: var(--muted); }
+    .facts dd { margin: 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; background: var(--panel); }
+    th, td { border: 1px solid #1d3b52; padding: 8px 10px; vertical-align: top; text-align: left; }
+    th { background: #123047; color: #d7f6ff; }
+    .table-wrap { overflow: auto; border: 1px solid var(--border); border-radius: 12px; }
+    .lightbox {
+      position: fixed; inset: 0; background: rgba(0,0,0,.86); display: none;
+      align-items: center; justify-content: center; z-index: 50; padding: 24px;
+    }
+    .lightbox.open { display: flex; }
+    .lightbox-inner { max-width: 1200px; width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .lightbox img { width: 100%; border-radius: 12px; background: #000; }
+    .lightbox p { color: var(--muted); margin: 8px 0 0; text-align: center; }
+    @media (max-width: 720px) {
+      .grid, .forms, .lightbox-inner { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <div>
+        <h1>IMMUNE｜3D 概念評審<small>以資料表最新 alt 套為準 · 舊 3D 橙球／C 刺不算這套</small></h1>
+      </div>
+      <nav class="links">
+        <a href="index.html">研究樹</a>
+        <a href="datasheet.html">角色資料表</a>
+        <a href="enemy-review.html">敵人圖鑑</a>
+        <a class="here" href="3d-review.html">3D 評審</a>
+      </nav>
+    </div>
+    <div class="stats">
+      <div class="stat"><b>31</b><span>最新角色套</span></div>
+      <div class="stat"><b>11</b><span>已有 3D 草稿</span></div>
+      <div class="stat"><b>20</b><span>融合待畫</span></div>
+      <div class="stat"><b>12</b><span>舊 3D 存檔</span></div>
+    </div>
+  </header>
+  <main>
+    <p class="note">
+      <strong>現在這套：</strong>跟 <a href="datasheet.html" style="color:var(--cyan)">datasheet.html</a> 同一批 <code>assets/characters/alt/</code>。目錄／固定／移動共用一張臉。左綠幕 2D，右黑底 3/4。
+      <br><strong>已畫：</strong>六基礎、精準抗體、標記處決、免疫網絡、組織防衛聖域、全域免疫核心。其餘還是空位。舊 12 張 3D 留在最下面，不當最新臉。
+    </p>
+    <h2 class="sec">最新角色套</h2>
+    <div class="grid" id="latest-gallery"></div>
+    <h2 class="sec">舊 3D 存檔（不算這套）</h2>
+    <div class="grid" id="gallery"></div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>資產</th><th>資料表臉</th><th>3D 概念</th><th>身分</th></tr>
+        </thead>
+        <tbody id="score-body"></tbody>
+      </table>
+    </div>
+  </main>
+  <div class="lightbox" id="lightbox"><div class="lightbox-inner" id="lightbox-inner"></div></div>
+  <script>
+    const V = "20260817-latest-alt-3d";
+    const LATEST = [
+      { id: "CHAR-BASE-T", name: "T細胞", fam: "T", alt: "CHAR-BASE-T-alt.png", concept: "CHAR-BASE-T-3d-alt.png", mark: "橘，額頭圓孔" },
+      { id: "CHAR-BASE-B", name: "B細胞", fam: "B", alt: "CHAR-BASE-B-alt-head.png", concept: "CHAR-BASE-B-3d-alt.png", mark: "深紫蛋，頭頂三包" },
+      { id: "CHAR-BASE-M", name: "巨噬細胞", fam: "M", alt: "CHAR-BASE-M-alt.png", concept: "CHAR-BASE-M-3d-alt.png", mark: "淺紫，額頭空窩" },
+      { id: "CHAR-BASE-N", name: "NK細胞", fam: "N", alt: "CHAR-BASE-N-alt-head.png", concept: "CHAR-BASE-N-3d-alt.png", mark: "橄欖，眉＋兩側鰭" },
+      { id: "CHAR-BASE-A", name: "抗體構造體", fam: "A", alt: "CHAR-BASE-A-alt.png", concept: "CHAR-BASE-A-3d-alt.png", mark: "金，額頭准星，腳落地" },
+      { id: "CHAR-BASE-D", name: "樹突細胞", fam: "D", alt: "CHAR-BASE-D-alt.png", concept: "CHAR-BASE-D-3d-alt.png", mark: "橘，分枝果凍角" },
+      { id: "CHAR-PAIR-TB", name: "記憶獵手", fam: "T", alt: "CHAR-PAIR-TB-alt.png", concept: "", mark: "待畫 3D" },
+      { id: "CHAR-PAIR-TM", name: "吞噬突擊", fam: "T", alt: "CHAR-PAIR-TM-alt.png", concept: "", mark: "待畫 3D" },
+      { id: "CHAR-PAIR-TN", name: "細胞毒刃", fam: "T", alt: "CHAR-PAIR-TN-alt.png", concept: "", mark: "待畫 3D" },
+      { id: "CHAR-PAIR-TA", name: "精準抗體", fam: "T", alt: "CHAR-PAIR-TA-alt.png", concept: "CHAR-PAIR-TA-3d-alt.png", mark: "懸浮瞄準筒" },
+      { id: "CHAR-PAIR-TD", name: "免疫指揮", fam: "T", alt: "CHAR-PAIR-TD-alt.png", concept: "", mark: "待畫 3D" },
+      { id: "CHAR-PAIR-BM", name: "抗原處理", fam: "B", alt: "CHAR-PAIR-BM-alt.png", concept: "", mark: "待畫 3D" },
+      { id: "CHAR-PAIR-BN", name: "標記處決", fam: "B", alt: "CHAR-PAIR-BN-alt.png", concept: "CHAR-PAIR-BN-3d-alt.png", mark: "紫罩，綠內臉" },
+      { id: "CHAR-PAIR-BA", name: "抗體風暴", fam: "B", alt: "CHAR-PAIR-BA-alt.png", concept: "", mark: "待畫 3D" },
+      { id: "CHAR-PAIR-BD", name: "抗原呈現", fam: "B", alt: "CHAR-PAIR-BD-alt.png", concept: "", mark: "待畫 3D" },
+      { id: "CHAR-PAIR-MN", name: "感染清除", fam: "M", alt: "CHAR-PAIR-MN-alt.png", concept: "", mark: "待畫 3D" },
+      { id: "CHAR-PAIR-MA", name: "免疫壁壘", fam: "M", alt: "CHAR-PAIR-MA-alt.png", concept: "", mark: "待畫 3D" },
+      { id: "CHAR-PAIR-MD", name: "抗原中樞", fam: "M", alt: "CHAR-PAIR-MD-alt.png", concept: "", mark: "待畫 3D" },
+      { id: "CHAR-PAIR-NA", name: "抗體追獵", fam: "N", alt: "CHAR-PAIR-NA-alt.png", concept: "", mark: "待畫 3D" },
+      { id: "CHAR-PAIR-ND", name: "獵殺信標", fam: "N", alt: "CHAR-PAIR-ND-alt.png", concept: "", mark: "待畫 3D" },
+      { id: "CHAR-PAIR-AD", name: "免疫網絡", fam: "A", alt: "CHAR-PAIR-AD-alt.png", concept: "CHAR-PAIR-AD-3d-alt.png", mark: "金網結，一張臉" },
+      { id: "CHAR-TRIPLE-TBA", name: "適應免疫核心", fam: "T", alt: "CHAR-TRIPLE-TBA-alt.png", concept: "", mark: "待畫 3D" },
+      { id: "CHAR-TRIPLE-TND", name: "全域截擊中樞", fam: "T", alt: "CHAR-TRIPLE-TND-alt.png", concept: "", mark: "待畫 3D" },
+      { id: "CHAR-TRIPLE-MAD", name: "組織防衛聖域", fam: "M", alt: "CHAR-TRIPLE-MAD-alt.png", concept: "CHAR-TRIPLE-MAD-3d-alt.png", mark: "能走，金領圈" },
+      { id: "CHAR-TRIPLE-BMD", name: "組織再生巢", fam: "B", alt: "CHAR-TRIPLE-BMD-alt.png", concept: "", mark: "待畫 3D" },
+      { id: "CHAR-TRIPLE-BNA", name: "抗體獵殺蜂群", fam: "B", alt: "CHAR-TRIPLE-BNA-alt.png", concept: "", mark: "待畫 3D" },
+      { id: "CHAR-TRIPLE-TMN", name: "凋亡反應爐", fam: "T", alt: "CHAR-TRIPLE-TMN-alt.png", concept: "", mark: "待畫 3D" },
+      { id: "CHAR-PRIME", name: "全域免疫核心", fam: "A", alt: "CHAR-PRIME-alt.png", concept: "CHAR-PRIME-3d-concept.png", mark: "六核圍金心" },
+      { id: "CHAR-APEX-MEMORY", name: "長期免疫記憶庫", fam: "T", alt: "CHAR-APEX-MEMORY-alt.png", concept: "", mark: "待畫 3D" },
+      { id: "CHAR-APEX-STERILE", name: "無菌聖域", fam: "M", alt: "CHAR-APEX-STERILE-alt.png", concept: "", mark: "待畫 3D" },
+      { id: "CHAR-APEX-SILENT", name: "靜默獵殺網", fam: "N", alt: "CHAR-APEX-SILENT-alt.png", concept: "", mark: "待畫 3D" }
+    ];
+    const FUSIONS = [];
+    const CHARACTERS = [
+      {
+        id: "CHAR-BASE-T", name: "T 細胞", fam: "T",
+        fixed: "CHAR-BASE-T-3d-fixed.png", mobile: "CHAR-BASE-T-3d-mobile.png",
+        mobileLabel: "移動",
+        verdict: "keep", verdictLabel: "風格鎖",
+        identity: "橘球、C 刺、中央炮，對。",
+        jelly: "橘球與紅刺都是半透明果凍。",
+        duty: "固定收裙、移動四輪鎖在殼上。",
+        platform: "無圓盤、無拖泥漿。"
+      },
+      {
+        id: "CHAR-BASE-B", name: "B 細胞", fam: "B",
+        fixed: "CHAR-BASE-B-3d-fixed.png", mobile: "CHAR-BASE-B-3d-mobile.png",
+        mobileLabel: "移動",
+        verdict: "keep", verdictLabel: "風格鎖",
+        identity: "冷深紫藍 + 金 Y，對。",
+        jelly: "濕果凍；色比巨噬更深、更冷。",
+        duty: "固定裙／滾輪，移動鰭＋小輪。",
+        platform: "金束帶不要讀成獨立座椅。"
+      },
+      {
+        id: "CHAR-BASE-M", name: "巨噬細胞", fam: "M",
+        fixed: "CHAR-BASE-M-3d-fixed.png", mobile: "CHAR-BASE-M-3d-mobile.png",
+        mobileLabel: "移動",
+        verdict: "keep", verdictLabel: "風格鎖",
+        identity: "淺薰衣草 + 爪 + 紅球，對。",
+        jelly: "濕果凍；色比 B 更淺、更暖。",
+        duty: "固定偽足裙，移動輪形偽足鎖在殼上。",
+        platform: "紅球只在手上，不散落。"
+      },
+      {
+        id: "CHAR-BASE-N", name: "NK 細胞", fam: "N",
+        fixed: "CHAR-BASE-N-3d-fixed.png", mobile: "CHAR-BASE-N-3d-mobile.png",
+        mobileLabel: "移動",
+        verdict: "keep", verdictLabel: "風格鎖",
+        identity: "橄欖球、側掛加特林，對。",
+        jelly: "半透明綠果凍，只有槍是金屬。",
+        duty: "固定駐守凸起；移動四輪直接接球。",
+        platform: "圓盤底座已拿掉。"
+      },
+      {
+        id: "CHAR-BASE-A", name: "抗體構造體", fam: "A",
+        fixed: "CHAR-BASE-A-3d-fixed.png", mobile: "CHAR-BASE-A-3d-relay.png",
+        mobileLabel: "中繼",
+        verdict: "keep", verdictLabel: "風格鎖",
+        identity: "金 Y、無腿，對。",
+        jelly: "半透明金膜與氣泡，接近 B／N。",
+        duty: "固定應是駐守裙；此張下端收成短莖，碟略像中繼。",
+        platform: "大圓柱座拿掉了，懸在黑底上。"
+      },
+      {
+        id: "CHAR-BASE-D", name: "樹突細胞", fam: "D",
+        fixed: "CHAR-BASE-D-3d-fixed.png", mobile: "CHAR-BASE-D-3d-mobile.png",
+        mobileLabel: "移動",
+        verdict: "keep", verdictLabel: "風格鎖",
+        identity: "橘球、樹枝，核心一張臉。",
+        jelly: "樹枝透光，本體有濕高光。",
+        duty: "固定短足；移動槳／鰭鎖在殼上。",
+        platform: "樹枝末端多眼睛已拿掉。"
+      }
+    ];
+
+    const src = (file) => "assets/characters/3d-concepts/" + file + "?v=" + V;
+    const altSrc = (file) => "assets/characters/alt/" + file + "?v=" + V;
+
+    function el(tag, attrs, children) {
+      const node = document.createElement(tag);
+      if (attrs) {
+        for (const [k, v] of Object.entries(attrs)) {
+          if (k === "class") node.className = v;
+          else if (k === "text") node.textContent = v;
+          else if (k.startsWith("on") && typeof v === "function") node.addEventListener(k.slice(2), v);
+          else if (v != null) node.setAttribute(k, v);
+        }
+      }
+      for (const child of children || []) node.appendChild(child);
+      return node;
+    }
+
+    function formFigure(character, key, file, label) {
+      const img = el("img", { src: src(file), alt: character.name + " " + label, loading: "lazy" });
+      const fig = el("figure", { class: "form" }, [
+        img,
+        el("figcaption", null, [el("strong", { text: label }), el("span", { text: file })])
+      ]);
+      fig.addEventListener("click", () => openLightbox(character));
+      return fig;
+    }
+
+    function openLightbox(character) {
+      const inner = document.getElementById("lightbox-inner");
+      inner.replaceChildren();
+      for (const [file, label] of [[character.fixed, character.fixedLabel || "固定"], [character.mobile, character.mobileLabel]]) {
+        inner.appendChild(el("div", null, [
+          el("img", { src: src(file), alt: character.name + " " + label }),
+          el("p", { text: character.name + " · " + label })
+        ]));
+      }
+      document.getElementById("lightbox").classList.add("open");
+    }
+
+    document.getElementById("lightbox").addEventListener("click", () => {
+      document.getElementById("lightbox").classList.remove("open");
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") document.getElementById("lightbox").classList.remove("open");
+    });
+
+    function renderCard(c, extraLabel) {
+      return el("article", { class: "card", id: c.id }, [
+        el("div", { class: "card-head" }, [
+          el("div", null, [
+            el("h2", { text: c.name }),
+            el("div", { class: "meta", text: c.id + " · " + extraLabel })
+          ]),
+          el("div", { style: "display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end" }, [
+            el("span", { class: "badge fam-" + c.fam, text: c.fam }),
+            el("span", { class: "badge " + c.verdict, text: c.verdictLabel })
+          ])
+        ]),
+        el("div", { class: "forms" }, [
+          formFigure(c, "fixed", c.fixed, c.fixedLabel || "固定"),
+          formFigure(c, "mobile", c.mobile, c.mobileLabel)
+        ]),
+        el("dl", { class: "facts" }, [
+          el("div", null, [el("dt", { text: "身分" }), el("dd", { text: c.identity })]),
+          el("div", null, [el("dt", { text: "濕果凍" }), el("dd", { text: c.jelly })]),
+          el("div", null, [el("dt", { text: "職責" }), el("dd", { text: c.duty })]),
+          el("div", null, [el("dt", { text: "底座" }), el("dd", { text: c.platform })])
+        ])
+      ]);
+    }
+
+    function latestCard(c) {
+      const done = !!c.concept;
+      const right = done
+        ? el("figure", { class: "form" }, [
+            el("img", { src: src(c.concept), alt: c.name + " 3D", loading: "lazy" }),
+            el("figcaption", null, [el("strong", { text: "3D 3/4" }), el("span", { text: c.concept })])
+          ])
+        : el("figure", { class: "form missing" }, [el("span", { text: "3D 待畫" })]);
+      const left = el("figure", { class: "form alt" }, [
+        el("img", { src: altSrc(c.alt), alt: c.name + " 資料表", loading: "lazy" }),
+        el("figcaption", null, [el("strong", { text: "資料表 alt" }), el("span", { text: c.alt })])
+      ]);
+      return el("article", { class: "card", id: c.id }, [
+        el("div", { class: "card-head" }, [
+          el("div", null, [
+            el("h2", { text: c.name }),
+            el("div", { class: "meta", text: c.id + " · " + c.mark })
+          ]),
+          el("div", { style: "display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end" }, [
+            el("span", { class: "badge fam-" + c.fam, text: c.fam }),
+            el("span", { class: "badge " + (done ? "watch" : "fix"), text: done ? "3D 草稿" : "待畫" })
+          ])
+        ]),
+        el("div", { class: "forms" }, [left, right])
+      ]);
+    }
+
+    const latestGallery = document.getElementById("latest-gallery");
+    for (const c of LATEST) latestGallery.appendChild(latestCard(c));
+    const gallery = document.getElementById("gallery");
+    for (const c of CHARACTERS) gallery.appendChild(renderCard(c, "舊 3D 存檔"));
+
+    const body = document.getElementById("score-body");
+    for (const c of LATEST) {
+      const tr = el("tr");
+      for (const cell of [c.name, c.alt, c.concept || "待畫", c.mark]) {
+        tr.appendChild(el("td", { text: cell }));
+      }
+      body.appendChild(tr);
+    }
+  </script>
+</body>
+</html>

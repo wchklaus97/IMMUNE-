@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IMMUNE 永久研究網絡 — Manager Overview</title>
+  <style>
+    :root {
+      --bg: #06111d; --deep: #040a12; --cyan: #5de4ff; --gold: #f4c35b;
+      --text: #e9f6ff; --muted: #91aec1; --line: rgba(93, 228, 255, 0.22);
+      --t: #45bdf2; --b: #a878ff; --m: #d28cff; --n: #a6c94a; --a: #f2b84b; --d: #ff9b58;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--deep); color: var(--text); font-family: "Segoe UI", "Microsoft JhengHei", sans-serif; }
+    body { width: 1600px; margin: 0 auto; }
+    .shot-block { padding: 36px 48px; border-bottom: 1px solid var(--line); }
+    h1, h2 { margin: 0 0 12px; }
+    h1 { font-size: 42px; letter-spacing: 0.04em; }
+    h2 { font-size: 22px; color: var(--cyan); letter-spacing: 0.08em; text-transform: uppercase; }
+    p { color: var(--muted); line-height: 1.5; }
+    .hero { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 28px; align-items: center; background: radial-gradient(circle at 20% 0%, rgba(93,228,255,.16), transparent 40%), var(--bg); }
+    .hero img { width: 100%; border-radius: 16px; border: 1px solid var(--line); }
+    .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 18px; }
+    .kpi { background: rgba(12,28,44,.9); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+    .kpi b { display: block; font-size: 28px; color: var(--cyan); }
+    .kpi span { color: var(--muted); font-size: 13px; }
+    .phones { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .phones img, .wide img, .covers img, .gallery img { width: 100%; border-radius: 10px; border: 1px solid var(--line); background: #040a12; object-fit: contain; }
+    figcaption { color: var(--muted); font-size: 13px; margin-top: 6px; }
+    .loop { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .loop b { background: rgba(93,228,255,.12); border: 1px solid var(--line); padding: 8px 12px; border-radius: 10px; }
+    .loop i { color: var(--gold); font-style: normal; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th { text-align: left; color: var(--gold); padding: 8px 8px 8px 0; border-bottom: 1px solid var(--line); }
+    td { padding: 8px 8px 8px 0; border-bottom: 1px solid rgba(39,80,106,.35); vertical-align: top; }
+    .gallery { display: grid; grid-template-columns: repeat(8, 1fr); gap: 10px; }
+    .card { background: rgba(8,20,32,.86); border: 1px solid var(--line); border-radius: 10px; padding: 8px; text-align: center; }
+    .card img { height: 72px; object-fit: contain; }
+    .card span { display: block; font-size: 11px; color: var(--muted); margin-top: 4px; }
+    .covers { display: grid; grid-template-columns: 0.42fr 0.58fr; gap: 16px; }
+    .wide { margin-top: 12px; }
+    code { color: var(--gold); }
+  </style>
+</head>
+<body>
+  <section class="shot-block hero" data-shot="hero">
+    <div>
+      <p style="color:var(--gold);margin:0 0 8px;letter-spacing:.16em;text-transform:uppercase;">Stakeholder pack</p>
+      <h1>IMMUNE 永久研究網絡</h1>
+      <p>Permanent research star map for the IMMUNE 3D immune-cell strategy game. Players spend 抗原樣本, 一度原質, 融合核心 and 生物質 to unlock 200 real nodes: identities, mobility, fusion, status chemistry, and Apex.</p>
+      <div class="kpis">
+        <div class="kpi"><b>200</b><span>Research nodes</span></div>
+        <div class="kpi"><b>31</b><span>Character identities</span></div>
+        <div class="kpi"><b>6→10</b><span>Protocol bandwidth</span></div>
+        <div class="kpi"><b>5/200</b><span>Demo completed</span></div>
+      </div>
+    </div>
+    <img src="../assets/cover.png" alt="IMMUNE 永久研究網絡 hero cover">
+  </section>
+
+  <section class="shot-block" data-shot="summary">
+    <h2>Product summary</h2>
+    <p>The live entry is <code>ui/immune-research-network/index.html</code>. Space = family sector. Shape/icon = research class. Ring + symbol = unlock state. Demo reveals 22 nodes and completes CORE-IMMUNE, T/B identity, BASE-T-01 and BASE-T-02. Selected start node: BASE-T-03 T 細胞固定炮台專精.</p>
+    <table>
+      <tr><th>Layer</th><th>Contents</th></tr>
+      <tr><td>Core</td><td>免疫核心 — single origin, no cost</td></tr>
+      <tr><td>Inner rings</td><td>6 universal techs × 7 + 7 status chemistry</td></tr>
+      <tr><td>Family ring</td><td>6 bases × 8 exclusive researches + identity anchors</td></tr>
+      <tr><td>Pair ring</td><td>15 dual-family fusions × (S1/S2/anchor/S4 protocol)</td></tr>
+      <tr><td>Outer rings</td><td>6 triples + 3 hidden Apex + IMMUNE PRIME</td></tr>
+    </table>
+  </section>
+
+  <section class="shot-block" data-shot="loop">
+    <h2>Core loop</h2>
+    <div class="loop">
+      <b>Open star map</b><i>→</i>
+      <b>Pan / zoom 0.35×–2.4×</b><i>→</i>
+      <b>Select node</b><i>→</i>
+      <b>追蹤 or 研究</b><i>→</i>
+      <b>Permanent unlock</b><i>→</i>
+      <b>Equip 研究協議</b>
+    </div>
+    <p>Win: toast「研究完成，永久進度已更新。」and newly revealed nodes glow. Fail: 研究 stays disabled; toast uses engine codes (<code>missing_prerequisite</code>, <code>missing_resource</code>, <code>track_limit</code>, <code>bandwidth_exceeded</code>).</p>
+  </section>
+
+  <section class="shot-block" data-shot="ux">
+    <h2>UX story — vertical slice</h2>
+    <div class="phones">
+      <figure><img src="../tools/screenshots/ux-01-fit-all.png" alt="Fit all"><figcaption>1 顯示全圖 — 31 anchors readable</figcaption></figure>
+      <figure><img src="../tools/screenshots/ux-03-play-hud.png" alt="Play HUD"><figcaption>3 Play HUD — 5/200, bandwidth 0/6</figcaption></figure>
+      <figure><img src="../tools/screenshots/ux-04-t-focus.png" alt="T focus"><figcaption>4 Double-click T 細胞 anchor</figcaption></figure>
+      <figure><img src="../tools/screenshots/ux-05-detail-ready.png" alt="Ready"><figcaption>5 可研究 — 研究 enabled</figcaption></figure>
+      <figure><img src="../tools/screenshots/ux-08-locked.png" alt="Locked"><figcaption>8 記憶獵手 — 缺少前置</figcaption></figure>
+      <figure><img src="../tools/screenshots/ux-09-researched.png" alt="Researched"><figcaption>9 研究完成 toast</figcaption></figure>
+    </div>
+    <div class="wide"><img src="../tools/screenshots/ux-10-desktop.png" alt="1920×1080 HUD"><figcaption>Desktop 1920×1080 — detail 380px, minimap 180px, protocol row</figcaption></div>
+    <div class="wide"><img src="../tools/screenshots/ux-12-landscape.png" alt="1280×720 HUD"><figcaption>1280×720 landscape — protocol dock peeks to 44px until hover</figcaption></div>
+  </section>
+
+  <section class="shot-block" data-shot="mechanics">
+    <h2>Mechanics from ENTRY</h2>
+    <table>
+      <tr><th>Control</th><th>Live behaviour</th></tr>
+      <tr><td>Drag empty map</td><td>Pan. Wheel/pinch zooms 0.35×–2.4× around cursor.</td></tr>
+      <tr><td>Click node</td><td>SELECT_NODE + route emphasis. Double-click character_anchor focuses 1.05×.</td></tr>
+      <tr><td>顯示全圖 / 返回核心 / 聚焦路線</td><td>fitAll · home 1500,1500 @0.55× · focus selected</td></tr>
+      <tr><td>追蹤 / F</td><td>Max 3. Gold stroke + 追蹤中 chip. Hidden nodes cannot be tracked.</td></tr>
+      <tr><td>研究 / R</td><td>Only eligibility=ready. Deducts costs, completes, reveals next.</td></tr>
+      <tr><td>地圖 / 列表</td><td>List groups by ring; hidden names stay 未知. Minimap hidden in list.</td></tr>
+      <tr><td>搜尋 / family chips</td><td>Search never leaks hidden names. Filters dim nodes, never rearrange.</td></tr>
+      <tr><td>研究協議</td><td>Cost 1 / core 2 / Apex 3. One Apex. Bandwidth starts at 6, later 10. 裝備 / 卸下 free out of battle.</td></tr>
+      <tr><td>LOD</td><td>0.35–0.55 anchors only · 0.56–1.0 nodes · 1.01–1.6 names · 1.61+ costs</td></tr>
+    </table>
+  </section>
+
+  <section class="shot-block" data-shot="catalog">
+    <h2>Catalog — 31 identities in play order</h2>
+    <div class="gallery">
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-BASE-T.svg" alt="T 細胞"><span>T 細胞</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-BASE-B.svg" alt="B 細胞"><span>B 細胞</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-BASE-M.svg" alt="巨噬細胞"><span>巨噬細胞</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-BASE-N.svg" alt="NK 細胞"><span>NK 細胞</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-BASE-A.svg" alt="抗體構造體"><span>抗體構造體</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-BASE-D.svg" alt="樹突細胞"><span>樹突細胞</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-PAIR-TB.svg" alt="記憶獵手"><span>記憶獵手</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-PAIR-TM.svg" alt="吞噬突擊"><span>吞噬突擊</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-PAIR-TN.svg" alt="細胞毒刃"><span>細胞毒刃</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-PAIR-TA.svg" alt="精準抗體"><span>精準抗體</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-PAIR-TD.svg" alt="免疫指揮"><span>免疫指揮</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-PAIR-BM.svg" alt="抗原處理"><span>抗原處理</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-PAIR-BN.svg" alt="標記處決"><span>標記處決</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-PAIR-BA.svg" alt="抗體風暴"><span>抗體風暴</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-PAIR-BD.svg" alt="抗原呈現"><span>抗原呈現</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-PAIR-MN.svg" alt="感染清除"><span>感染清除</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-PAIR-MA.svg" alt="免疫壁壘"><span>免疫壁壘</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-PAIR-MD.svg" alt="抗原中樞"><span>抗原中樞</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-PAIR-NA.svg" alt="抗體追獵"><span>抗體追獵</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-PAIR-ND.svg" alt="獵殺信標"><span>獵殺信標</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-PAIR-AD.svg" alt="免疫網絡"><span>免疫網絡</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-TRIPLE-TBA.svg" alt="適應免疫核心"><span>適應免疫核心</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-TRIPLE-TND.svg" alt="全域截擊中樞"><span>全域截擊中樞</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-TRIPLE-MAD.svg" alt="組織防衛聖域"><span>組織防衛聖域</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-TRIPLE-BMD.svg" alt="組織再生工廠"><span>組織再生工廠</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-TRIPLE-BNA.svg" alt="抗體獵殺蜂群"><span>抗體獵殺蜂群</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-TRIPLE-TMN.svg" alt="凋亡反應爐"><span>凋亡反應爐</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-APEX-MEMORY.svg" alt="長期免疫記憶庫"><span>長期免疫記憶庫</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-APEX-STERILE.svg" alt="無菌聖域"><span>無菌聖域</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-APEX-SILENT.svg" alt="靜默獵殺網"><span>靜默獵殺網</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-PRIME.svg" alt="IMMUNE PRIME"><span>IMMUNE PRIME</span></div>
+    </div>
+    <p>Status chemistry (7): 標記 · 抗體 · 腐蝕 · 緩速 · 感染 · 鏈鎖 · 暴擊. Universals (6×7): 防守工程 · 遠征探索 · 全面戰爭 · 細胞機動 · 融合工程 · 生存修復.</p>
+  </section>
+
+  <section class="shot-block" data-shot="progression">
+    <h2>Progression / difficulty</h2>
+    <table>
+      <tr><th>Band</th><th>Target</th><th>Notes from spec + demo</th></tr>
+      <tr><td>Vertical slice</td><td>18–24 revealed, 2–4 unlocks / 15–20 min</td><td>Live demo: 22 revealed, 5 completed, antigen 120 / protomass 15 / fusion 2 / biomass 40</td></tr>
+      <tr><td>Main 4–6h</td><td>~45–60 completed</td><td>Family exclusives + first pair S2</td></tr>
+      <tr><td>Full 15–25h</td><td>~130–160 discovered</td><td>Triples + Apex gates. 200/200 is mastery, not required</td></tr>
+      <tr><td>Track limit</td><td>3</td><td>System shows prereqs + total cost; never auto-buys</td></tr>
+      <tr><td>Protocols</td><td>6 → 10 bandwidth</td><td>Normal 1 · core 2 · Apex 3 · one Apex per mission</td></tr>
+    </table>
+  </section>
+
+  <section class="shot-block" data-shot="covers">
+    <h2>Store covers</h2>
+    <div class="covers">
+      <figure>
+        <img src="../assets/cover-3x4.webp" alt="cover-3x4.webp">
+        <figcaption>3:4 store tile · cover-3x4.webp · 1024×1536</figcaption>
+      </figure>
+      <figure>
+        <img src="../assets/cover-16x9.webp" alt="cover-16x9.webp">
+        <figcaption>16:9 catalog banner · cover-16x9.webp · 1536×1024</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="shot-block" data-shot="footer">
+    <h2>Refresh</h2>
+    <p>Demo: <code>http://127.0.0.1:5180/ui/immune-research-network/</code></p>
+    <p>21:9 board: <code>docs/ux-wireframe.html</code> · Manager: <code>docs/manager-overview.html</code></p>
+    <p>Recapture HUD: <code>PORT=5180 npm run serve</code> then <code>PORT=5180 npm run docs</code></p>
+    <p>Posters only: <code>PORT=5180 npm run docs:posters</code></p>
+    <p>Validate: <code>bash .agents/skills/overview-pack/scripts/validate-overview-pack.sh</code></p>
+  </section>
+</body>
+</html>

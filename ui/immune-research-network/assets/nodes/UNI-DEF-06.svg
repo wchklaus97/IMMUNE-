@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-48 -48 96 96" width="96" height="96">
+  <defs>
+    <radialGradient id="g" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#45bdf2" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#0a1420" stop-opacity="0.95"/>
+    </radialGradient>
+  </defs>
+  <g fill="url(#g)" stroke="#0b1520" stroke-width="2.5">
+    <polygon points="1.7145055188062944e-15,-28 26.6295824562643,-8.652475842498527 16.457987064189247,22.65247584249853 -16.457987064189243,22.65247584249853 -26.629582456264302,-8.652475842498523" />
+  </g>
+  <text x="0" y="6" text-anchor="middle" font-family="Segoe UI, Microsoft JhengHei, sans-serif" font-size="14" font-weight="700" fill="#f5fbff">防守</text>
+</svg>

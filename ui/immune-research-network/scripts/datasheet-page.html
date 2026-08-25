@@ -1,0 +1,524 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IMMUNE｜角色、技能與組合資料集</title>
+  <style>
+    :root {
+      --bg: #06111d;
+      --bg-deep: #040a12;
+      --panel: #0c1c2c;
+      --border: #27506a;
+      --text: #e9f6ff;
+      --muted: #91aec1;
+      --cyan: #5de4ff;
+      --gold: #f4c35b;
+      --danger: #ff7384;
+      --success: #4be1bd;
+      --t: #45bdf2;
+      --b: #a878ff;
+      --m: #d28cff;
+      --n: #a6c94a;
+      --a: #f2b84b;
+      --d: #ff9b58;
+      --font: "Segoe UI", "Microsoft JhengHei", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg-deep); color: var(--text); font-family: var(--font); }
+    body { min-height: 100vh; }
+    .top {
+      position: sticky; top: 0; z-index: 20;
+      background: rgba(4, 10, 18, 0.96);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px 0;
+    }
+    .brand { display: flex; justify-content: space-between; gap: 16px; align-items: flex-end; flex-wrap: wrap; }
+    .links { display: flex; gap: 10px; flex-wrap: wrap; }
+    .links a {
+      color: var(--cyan); text-decoration: none; border: 1px solid var(--border);
+      border-radius: 999px; padding: 6px 12px; font-size: 13px;
+    }
+    .links a.here { background: var(--cyan); color: #041018; font-weight: 700; border-color: var(--cyan); }
+    .brand h1 { margin: 0; font-size: 22px; letter-spacing: 0.04em; }
+    .brand small { display: block; color: var(--muted); font-size: 12px; margin-top: 4px; font-weight: 400; }
+    .stats { display: flex; gap: 10px; flex-wrap: wrap; }
+    .stat { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; min-width: 92px; }
+    .stat b { display: block; color: var(--cyan); font-size: 18px; }
+    .stat span { color: var(--muted); font-size: 11px; }
+    .tabs { display: flex; gap: 6px; overflow-x: auto; padding: 14px 0 12px; }
+    .tab {
+      appearance: none; border: 1px solid var(--border); background: transparent;
+      color: var(--muted); border-radius: 999px; padding: 8px 14px; cursor: pointer;
+      white-space: nowrap; font: inherit;
+    }
+    .tab[aria-selected="true"] { color: #041018; background: var(--cyan); border-color: var(--cyan); font-weight: 700; }
+    .toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; padding: 0 24px 16px; }
+    .toolbar input, .toolbar select {
+      background: var(--panel); border: 1px solid var(--border); color: var(--text);
+      border-radius: 8px; padding: 8px 12px; font: inherit; min-height: 40px;
+    }
+    .toolbar input { min-width: 240px; flex: 1; }
+    main { padding: 20px 24px 64px; }
+    .screen { display: none; }
+    .screen.active { display: block; }
+    .note { color: var(--muted); font-size: 13px; margin: 0 0 16px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(520px, 1fr)); gap: 16px; }
+    .card {
+      background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
+      padding: 14px; display: grid; gap: 12px;
+    }
+    .card-head { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
+    .card-head h2 { margin: 0; font-size: 18px; }
+    .meta { color: var(--muted); font-size: 12px; margin-top: 4px; }
+    .badges { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+    .badge { font-size: 11px; border-radius: 999px; padding: 3px 8px; border: 1px solid var(--border); color: var(--text); }
+    .fam { font-weight: 700; }
+    .fam-T { color: var(--t); border-color: var(--t); }
+    .fam-B { color: var(--b); border-color: var(--b); }
+    .fam-M { color: var(--m); border-color: var(--m); }
+    .fam-N { color: var(--n); border-color: var(--n); }
+    .fam-A { color: var(--a); border-color: var(--a); }
+    .fam-D { color: var(--d); border-color: var(--d); }
+    .forms { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+    .form {
+      background: #071422; border: 1px solid #1d3b52; border-radius: 10px; overflow: hidden; cursor: zoom-in;
+    }
+    .form img {
+      display: block; width: 100%; aspect-ratio: 1; object-fit: cover; background: #39ff14;
+    }
+    .form figcaption {
+      display: flex; justify-content: space-between; gap: 8px; padding: 8px 10px; font-size: 12px;
+      color: var(--muted); border-top: 1px solid #1d3b52;
+    }
+    .form strong { color: var(--text); }
+    .tag {
+      display: inline-block; margin-left: 6px; font-size: 10px; font-weight: 700;
+      color: #041018; background: var(--gold); border-radius: 999px; padding: 1px 6px;
+      vertical-align: middle;
+    }
+    .tag-old { background: #5a7184; color: #e9f6ff; }
+    .poster-wrap { margin: 0 0 16px; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .poster-wrap img { display: block; width: 100%; background: #071422; }
+    .facts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; font-size: 13px; }
+    .facts dt { color: var(--muted); font-size: 11px; }
+    .facts dd { margin: 2px 0 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; background: var(--panel); }
+    th, td { border: 1px solid #1d3b52; padding: 8px 10px; vertical-align: top; text-align: left; }
+    th { background: #123047; color: #d7f6ff; position: sticky; top: 118px; z-index: 5; }
+    .table-wrap { overflow: auto; border: 1px solid var(--border); border-radius: 12px; }
+    .overview { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+    .panel h2 { margin: 0 0 10px; font-size: 16px; color: var(--gold); }
+    .panel ul { margin: 0; padding-left: 18px; color: var(--muted); }
+    .empty { color: var(--muted); padding: 32px; text-align: center; }
+    .enemy-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); margin-bottom: 18px; }
+    .missing {
+      display: flex; align-items: center; justify-content: center;
+      aspect-ratio: 1; background: #071422; color: var(--muted); font-size: 13px;
+    }
+    .lightbox {
+      position: fixed; inset: 0; background: rgba(0,0,0,.86); display: none;
+      align-items: center; justify-content: center; z-index: 50; padding: 24px;
+    }
+    .lightbox.open { display: flex; }
+    .lightbox-inner { max-width: 1400px; width: 100%; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+    .lightbox img { width: 100%; border-radius: 12px; background: #39ff14; }
+    .lightbox p { color: var(--muted); margin: 8px 0 0; text-align: center; }
+    @media (max-width: 720px) {
+      .grid, .forms, .facts, .lightbox-inner { grid-template-columns: 1fr; }
+      .toolbar input { min-width: 0; }
+      th { top: 160px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <div>
+        <h1>IMMUNE｜角色、技能與組合資料集<small>v0.5 · 31 隻命名身份都換成濕果凍線 · 目錄／固定／移動共用同一張臉</small></h1>
+      </div>
+      <nav class="links">
+        <a href="index.html">研究樹</a>
+        <a class="here" href="datasheet.html">角色資料表</a>
+        <a href="enemy-review.html">敵人圖鑑</a>
+        <a href="3d-review.html">3D 評審</a>
+      </nav>
+      <div class="stats" id="stats"></div>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="資料表分頁">
+      <button class="tab" role="tab" aria-selected="true" data-tab="gallery">角色圖鑑</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="characters">角色主表</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="skills">技能資料</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="relations">組合關係</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="balance">平衡參數</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="enemies">敵人圖鑑</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="levels">關卡／波次</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="overview">總覽</button>
+    </nav>
+  </header>
+
+  <div class="toolbar" id="gallery-toolbar">
+    <input id="search" type="search" placeholder="搜尋名稱、ID、家族、技能…">
+    <select id="type-filter">
+      <option value="">全部身份</option>
+      <option value="基礎">基礎</option>
+      <option value="雙融合">雙融合</option>
+      <option value="三融合">三融合</option>
+      <option value="全六融合">全六融合</option>
+      <option value="隱藏Apex">隱藏 Apex</option>
+    </select>
+  </div>
+
+  <main>
+    <section id="gallery" class="screen active"></section>
+    <section id="characters" class="screen"></section>
+    <section id="skills" class="screen"></section>
+    <section id="relations" class="screen"></section>
+    <section id="balance" class="screen"></section>
+    <section id="enemies" class="screen"></section>
+    <section id="levels" class="screen"></section>
+    <section id="overview" class="screen"></section>
+  </main>
+
+  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="雙形態對照">
+    <div class="lightbox-inner" id="lightbox-inner"></div>
+  </div>
+
+  <script type="application/json" id="sheet-data">%%DATA%%</script>
+  <script>
+    const DATA = JSON.parse(document.getElementById("sheet-data").textContent);
+    const PREFIX = %%ASSET_PREFIX%%;
+    const CACHE = "20260817-prime-ring";
+    const familyClass = (code) => "badge fam fam-" + code;
+    const asset = (rel) => PREFIX + rel + "?v=" + CACHE;
+    const enemyArt = (id) => asset("enemies/" + id + "-v2.png");
+    const ALT_CATALOG = {
+      "CHAR-BASE-T": "characters/alt/CHAR-BASE-T-alt.png",
+      "CHAR-BASE-B": "characters/alt/CHAR-BASE-B-alt-head.png",
+      "CHAR-BASE-M": "characters/alt/CHAR-BASE-M-alt.png",
+      "CHAR-BASE-N": "characters/alt/CHAR-BASE-N-alt-head.png",
+      "CHAR-BASE-A": "characters/alt/CHAR-BASE-A-alt.png",
+      "CHAR-BASE-D": "characters/alt/CHAR-BASE-D-alt.png",
+      "CHAR-PAIR-TB": "characters/alt/CHAR-PAIR-TB-alt.png",
+      "CHAR-PAIR-TM": "characters/alt/CHAR-PAIR-TM-alt.png",
+      "CHAR-PAIR-TN": "characters/alt/CHAR-PAIR-TN-alt.png",
+      "CHAR-PAIR-TA": "characters/alt/CHAR-PAIR-TA-alt.png",
+      "CHAR-PAIR-TD": "characters/alt/CHAR-PAIR-TD-alt.png",
+      "CHAR-PAIR-BM": "characters/alt/CHAR-PAIR-BM-alt.png",
+      "CHAR-PAIR-BN": "characters/alt/CHAR-PAIR-BN-alt.png",
+      "CHAR-PAIR-BA": "characters/alt/CHAR-PAIR-BA-alt.png",
+      "CHAR-PAIR-BD": "characters/alt/CHAR-PAIR-BD-alt.png",
+      "CHAR-PAIR-MN": "characters/alt/CHAR-PAIR-MN-alt.png",
+      "CHAR-PAIR-MA": "characters/alt/CHAR-PAIR-MA-alt.png",
+      "CHAR-PAIR-MD": "characters/alt/CHAR-PAIR-MD-alt.png",
+      "CHAR-PAIR-NA": "characters/alt/CHAR-PAIR-NA-alt.png",
+      "CHAR-PAIR-ND": "characters/alt/CHAR-PAIR-ND-alt.png",
+      "CHAR-PAIR-AD": "characters/alt/CHAR-PAIR-AD-alt.png",
+      "CHAR-TRIPLE-TBA": "characters/alt/CHAR-TRIPLE-TBA-alt.png",
+      "CHAR-TRIPLE-TND": "characters/alt/CHAR-TRIPLE-TND-alt.png",
+      "CHAR-TRIPLE-MAD": "characters/alt/CHAR-TRIPLE-MAD-alt.png",
+      "CHAR-TRIPLE-BMD": "characters/alt/CHAR-TRIPLE-BMD-alt.png",
+      "CHAR-TRIPLE-BNA": "characters/alt/CHAR-TRIPLE-BNA-alt.png",
+      "CHAR-TRIPLE-TMN": "characters/alt/CHAR-TRIPLE-TMN-alt.png",
+      "CHAR-PRIME": "characters/alt/CHAR-PRIME-alt.png",
+      "CHAR-APEX-MEMORY": "characters/alt/CHAR-APEX-MEMORY-alt.png",
+      "CHAR-APEX-STERILE": "characters/alt/CHAR-APEX-STERILE-alt.png",
+      "CHAR-APEX-SILENT": "characters/alt/CHAR-APEX-SILENT-alt.png"
+    };
+    const formRel = (character, key, form) => {
+      if (ALT_CATALOG[character.id]) return ALT_CATALOG[character.id];
+      return form.src || form.preview;
+    };
+
+    function el(tag, attrs, children) {
+      const node = document.createElement(tag);
+      if (attrs) {
+        for (const [k, v] of Object.entries(attrs)) {
+          if (k === "class") node.className = v;
+          else if (k === "text") node.textContent = v;
+          else if (k.startsWith("on") && typeof v === "function") node.addEventListener(k.slice(2), v);
+          else if (v != null) node.setAttribute(k, v);
+        }
+      }
+      for (const child of children || []) node.appendChild(child);
+      return node;
+    }
+
+    function table(headers, rows) {
+      const wrap = el("div", { class: "table-wrap" });
+      const tbl = el("table");
+      const thead = el("thead");
+      const hr = el("tr");
+      for (const h of headers) hr.appendChild(el("th", { text: h }));
+      thead.appendChild(hr);
+      const tbody = el("tbody");
+      for (const row of rows) {
+        const tr = el("tr");
+        for (const cell of row) tr.appendChild(el("td", { text: String(cell ?? "") }));
+        tbody.appendChild(tr);
+      }
+      tbl.appendChild(thead);
+      tbl.appendChild(tbody);
+      wrap.appendChild(tbl);
+      return wrap;
+    }
+
+    function setPortrait(img, previewRel, fullRel) {
+      img.addEventListener("error", () => {
+        img.alt = "缺少立繪：" + (fullRel || previewRel);
+      });
+      img.src = asset(fullRel || previewRel);
+    }
+
+    function formFigure(character, key) {
+      const form = character.forms[key];
+      const rel = formRel(character, key, form);
+      const img = el("img", {
+        alt: character.name + " " + form.label,
+        loading: "lazy",
+        decoding: "async"
+      });
+      setPortrait(img, form.preview, rel);
+      const isAlt = !!ALT_CATALOG[character.id];
+      const kindLabel = form.kind === "catalog" ? "目錄" : form.kind === "relay" ? "中繼" : key === "fixed" ? "固定" : "移動";
+      const fig = el("figure", { class: "form", "data-id": character.id, "data-form": key }, [
+        img,
+        el("figcaption", null, [
+          el("strong", { text: form.label }),
+          el("span", null, [
+            document.createTextNode(kindLabel),
+            isAlt ? el("span", { class: "tag", text: "alt" }) : null
+          ].filter(Boolean))
+        ])
+      ]);
+      fig.addEventListener("click", () => openLightbox(character));
+      return fig;
+    }
+
+    function renderGallery(list) {
+      const root = document.getElementById("gallery");
+      root.replaceChildren();
+      if (!list.length) {
+        root.appendChild(el("p", { class: "empty", text: "沒有符合的角色。" }));
+        return;
+      }
+      root.appendChild(el("div", { class: "poster-wrap" }, [
+        el("img", {
+          src: asset("characters/alt/IMMUNE-alt-head-poster.png"),
+          alt: "IMMUNE base cell line"
+        })
+      ]));
+      root.appendChild(el("p", { class: "note", text: "1 級是基礎臉。2／3 級融合換新剪影，基礎頭標會蓋住或改寫，不是基礎臉加小零件。目錄／固定／移動共用同一張臉。" }));
+      const grid = el("div", { class: "grid" });
+      for (const c of list) {
+        const badges = el("div", { class: "badges" }, [
+          el("span", { class: "badge", text: c.type }),
+          ...c.families.map((f) => el("span", { class: familyClass(f), text: f }))
+        ]);
+        const facts = el("dl", { class: "facts" }, [
+          el("div", null, [el("dt", { text: "核心定位" }), el("dd", { text: c.role })]),
+          el("div", null, [el("dt", { text: "主動／移動" }), el("dd", { text: c.mobileSkill })]),
+          el("div", null, [el("dt", { text: "固定形態" }), el("dd", { text: c.fixedSkill })]),
+          el("div", null, [el("dt", { text: "Apex／終極" }), el("dd", { text: c.apex })])
+        ]);
+        grid.appendChild(el("article", { class: "card", id: c.id }, [
+          el("div", { class: "card-head" }, [
+            el("div", null, [
+              el("h2", { text: c.name }),
+              el("div", { class: "meta", text: c.immId + " · " + c.id + " · " + c.recipe })
+            ]),
+            badges
+          ]),
+          el("div", { class: "forms" }, [formFigure(c, "catalog"), formFigure(c, "fixed"), formFigure(c, "mobile")]),
+          facts
+        ]));
+      }
+      root.appendChild(grid);
+    }
+
+    function filteredCharacters() {
+      const q = document.getElementById("search").value.trim().toLowerCase();
+      const type = document.getElementById("type-filter").value;
+      return DATA.characters.filter((c) => {
+        if (type && c.type !== type) return false;
+        if (!q) return true;
+        const blob = [c.immId, c.id, c.name, c.recipe, c.role, c.mobileSkill, c.fixedSkill, c.apex, c.attrs].join(" ").toLowerCase();
+        return blob.includes(q);
+      });
+    }
+
+    function openLightbox(character) {
+      const box = document.getElementById("lightbox");
+      const inner = document.getElementById("lightbox-inner");
+      inner.replaceChildren();
+      for (const key of ["catalog", "fixed", "mobile"]) {
+        const form = character.forms[key];
+        if (!form) continue;
+        inner.appendChild(el("div", null, [
+          el("img", { src: asset(formRel(character, key, form)), alt: character.name + " " + form.label }),
+          el("p", { text: character.name + " · " + form.label })
+        ]));
+      }
+      box.classList.add("open");
+    }
+
+    document.getElementById("lightbox").addEventListener("click", () => {
+      document.getElementById("lightbox").classList.remove("open");
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") document.getElementById("lightbox").classList.remove("open");
+    });
+
+    function renderTables() {
+      document.getElementById("characters").replaceChildren(
+        el("p", { class: "note", text: "對應 Excel「角色主表」。點圖鑑卡片可放大對照固定／移動立繪。" }),
+        table(
+          ["ID", "身份類型", "名稱", "家族／配方", "3D主體", "核心定位", "移動形態", "固定形態", "核心屬性", "Apex／終極", "製作狀態"],
+          DATA.characters.map((c) => [c.immId, c.type, c.name, c.recipe, c.body, c.role, c.mobileSkill, c.fixedSkill, c.attrs, c.apex, c.status])
+        )
+      );
+      document.getElementById("skills").replaceChildren(
+        el("p", { class: "note", text: "技能不是單線串列。每個身份都走 2-1 → 3-1 → 3-1：兩條分支匯合，再三條分支匯合，最後接到關卡 L01–L06。" }),
+        table(
+          ["層級", "研究樹", "關卡", "路線", "解鎖節點"],
+          [
+            ["I", "2-1", "L01–L02", "主動∥被動 → 固定炮台", "BASE-*-01 / 02 → 03"],
+            ["II", "3-1", "L03–L04", "移動∥追獵∥陣容 → 覺醒", "BASE-*-04 / 05 / 06 → 07"],
+            ["III", "3-1", "L05–L06", "家族終極 → 融合／Apex", "BASE-*-08"]
+          ]
+        ),
+        table(
+          ["ID", "名稱", "身份類型", "家族／配方", "玩法定位", "研究樹", "層級", "關卡", "主動技能", "移動形態行為", "固定技能", "固定形態行為", "Apex／終極"],
+          DATA.characters.map((c) => {
+            const isBase = c.type === "基礎";
+            return [
+              c.immId,
+              c.name,
+              c.type,
+              c.recipe,
+              c.role,
+              isBase ? "2-1 → 3-1 → 3-1" : c.type === "雙融合" ? "2-1" : "3-1",
+              isBase ? "I–III" : c.type === "雙融合" ? "I–II" : "II–III",
+              isBase ? "L01–L06" : c.type === "雙融合" ? "L01–L04" : "L04–L06",
+              c.active,
+              c.mobileSkill,
+              c.fixedSkill,
+              c.fixedBehavior,
+              c.apex
+            ];
+          })
+        )
+      );
+      document.getElementById("relations").replaceChildren(
+        el("p", { class: "note", text: "對應 Excel「組合關係」。命名身份才有獨立立繪與雙形態。" }),
+        table(["關係ID", "家族數", "配方代碼", "完整家族名稱", "命名身份", "是否命名", "實體融合", "解鎖／狀態"], DATA.relations)
+      );
+      document.getElementById("balance").replaceChildren(
+        el("p", { class: "note", text: "對應 Excel「平衡參數」。吞噬與一度原質的初版數值。" }),
+        table(["分類", "參數", "數值", "單位／格式", "用途"], DATA.balance)
+      );
+      const enemyGrid = el("div", { class: "grid enemy-grid" });
+      for (const row of DATA.enemies) {
+        const [id, family, name, tier] = row;
+        const img = el("img", { alt: name, loading: "lazy" });
+        img.src = enemyArt(id);
+        const fig = el("figure", { class: "form" }, [
+          img,
+          el("figcaption", null, [
+            el("strong", { text: name }),
+            el("span", { text: id + " · " + family + " · " + tier })
+          ])
+        ]);
+        img.addEventListener("error", () => {
+          if (img.src.indexOf("-v2.png") !== -1) {
+            img.src = asset("enemies/" + id + ".png");
+            return;
+          }
+          img.replaceWith(el("div", { class: "missing", text: "尚未出圖" }));
+        });
+        enemyGrid.appendChild(el("article", { class: "card" }, [fig]));
+      }
+      document.getElementById("enemies").replaceChildren(
+        el("p", { class: "note", text: "對應 Excel「敵人圖鑑」。51 隻具名敵人。小兵、族內 Boss、關卡 Boss 都顯示濕果凍 v2。" }),
+        enemyGrid,
+        table(["敵人ID", "族群", "名稱", "威脅層級", "首次波數", "出現關卡", "移動方式", "基本攻擊", "特殊技能", "建議對策", "基礎生命", "速度", "生物質", "吞噬規則"], DATA.enemies)
+      );
+      const levelBlock = el("div");
+      levelBlock.appendChild(el("p", { class: "note", text: "6 關 × 8 波。第 8 波是關卡 Boss。L03／L05／L06 第 7 波是族長（真菌王／毒素君主／突襲統帥），不進雜兵池。" }));
+      levelBlock.appendChild(el("h2", { text: "關卡資料" }));
+      levelBlock.appendChild(table(["關卡ID", "章節", "區域名稱", "人體環境", "起始波數", "結束波數", "主要敵人族群", "關卡機制", "Boss ID", "解鎖條件"], DATA.levels));
+      levelBlock.appendChild(el("h2", { text: "波次生成" }));
+      levelBlock.appendChild(table(["波次ID", "關卡ID", "全局波數", "波次階段", "敵人池", "數量／壓力", "Boss ID", "特殊規則", "獎勵方向"], DATA.waves));
+      document.getElementById("levels").replaceChildren(levelBlock);
+
+      const ov = document.getElementById("overview");
+      ov.replaceChildren();
+      const overview = el("div", { class: "overview" });
+      overview.appendChild(el("section", { class: "panel" }, [
+        el("h2", { text: "這份資料集" }),
+        el("ul", null, [
+          el("li", { text: "版本 v0.3，對應 IMMUNE_character_dataset_v0.3.xlsx" }),
+          el("li", { text: "31 個命名身份，每個都有固定與移動（抗體為固定中繼）立繪" }),
+          el("li", { text: "專案定位：可愛免疫細胞＋危險人體世界" }),
+          el("li", { text: "永久材料：一度原質（UI 簡稱：一度）" })
+        ])
+      ]));
+      overview.appendChild(el("section", { class: "panel" }, [
+        el("h2", { text: "工作表" }),
+        el("ul", null, [
+          el("li", { text: "角色圖鑑：31 隻命名身份的目錄／固定／移動共用 assets/characters/alt/ 同一張臉" }),
+          el("li", { text: "角色主表／技能資料：6 基礎、15 雙融合、6 三融合、1 全六、3 隱藏 Apex" }),
+          el("li", { text: "組合關係：57 種多家族關係＋3 條 Apex 分支" }),
+          el("li", { text: "敵人圖鑑 → 關卡資料 → 波次生成" })
+        ])
+      ]));
+      overview.appendChild(el("section", { class: "panel" }, [
+        el("h2", { text: "Steam 產品目標" }),
+        el("ul", null, [
+          el("li", { text: "主線完成時間：4–6 小時" }),
+          el("li", { text: "完整內容完成時間：15–25 小時" }),
+          el("li", { text: "定位：短主線＋高重玩價值" })
+        ])
+      ]));
+      ov.appendChild(overview);
+    }
+
+    function renderStats() {
+      const counts = {
+        角色: DATA.characters.length,
+        雙形態立繪: DATA.characters.length * 2,
+        敵人: DATA.enemies.length,
+        關卡: DATA.levels.length,
+        波次: DATA.waves.length
+      };
+      const root = document.getElementById("stats");
+      root.replaceChildren();
+      for (const [label, value] of Object.entries(counts)) {
+        root.appendChild(el("div", { class: "stat" }, [
+          el("b", { text: String(value) }),
+          el("span", { text: label })
+        ]));
+      }
+    }
+
+    function showTab(id) {
+      for (const screen of document.querySelectorAll(".screen")) screen.classList.toggle("active", screen.id === id);
+      for (const tab of document.querySelectorAll(".tab")) tab.setAttribute("aria-selected", String(tab.dataset.tab === id));
+      document.getElementById("gallery-toolbar").style.display = id === "gallery" ? "flex" : "none";
+    }
+
+    for (const tab of document.querySelectorAll(".tab")) {
+      tab.addEventListener("click", () => showTab(tab.dataset.tab));
+    }
+    document.getElementById("search").addEventListener("input", () => renderGallery(filteredCharacters()));
+    document.getElementById("type-filter").addEventListener("change", () => renderGallery(filteredCharacters()));
+
+    renderStats();
+    renderGallery(DATA.characters);
+    renderTables();
+    const hashTab = (location.hash || "").replace("#", "");
+    showTab(hashTab && document.getElementById(hashTab) ? hashTab : "gallery");
+  </script>
+</body>
+</html>

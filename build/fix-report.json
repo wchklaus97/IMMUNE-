@@ -1,0 +1,131 @@
+{
+  "ok": true,
+  "tris_in": 5044,
+  "refine": [
+    {
+      "radius": 0.118,
+      "edges": 406,
+      "tris_after": 5764
+    },
+    {
+      "radius": 0.058,
+      "edges": 388,
+      "tris_after": 6510
+    },
+    {
+      "radius": 0.062,
+      "edges": 143,
+      "tris_after": 6766
+    },
+    {
+      "radius": 0.056,
+      "edges": 396,
+      "tris_after": 7522
+    }
+  ],
+  "in": "C:\\Users\\wchkl\\Documents\\Codex\\2026-08-12\\https-chatgpt-com-share-6a7b9aee-e840-2\\godot\\immune\\characters\\base_t\\CHAR-BASE-T-tripo-5k.glb",
+  "out": "C:\\Users\\wchkl\\Documents\\Codex\\2026-08-12\\https-chatgpt-com-share-6a7b9aee-e840-2\\godot\\immune\\characters\\base_t\\CHAR-BASE-T-fix.glb",
+  "verts": 4610,
+  "tris": 7522,
+  "uv_layers": [
+    "UVMap"
+  ],
+  "materials": [
+    "tripo_mat_7e84a5bd-833c-46c4-91e6-8e3cbe10f39b"
+  ],
+  "images": [
+    "orange+alien+blob+3d+model-+remesh_basecolor.jpg"
+  ],
+  "log": {
+    "groups": 3784,
+    "shells": [
+      104,
+      107,
+      1096,
+      2477
+    ],
+    "edges_one_sided": 32,
+    "edges_over_shared": 0,
+    "lens_shell": 1096,
+    "body_shell": 2477,
+    "mouth_pinched": 50,
+    "pore_axis": [
+      0.0,
+      -0.8936,
+      0.4489
+    ],
+    "pore_centre_scaled": [
+      -0.0042,
+      -0.3417,
+      0.6314
+    ],
+    "pore_lens_verts": 1096,
+    "pore_fit_pts": 61,
+    "pore_lens_moved": 1096,
+    "pore_skull_moved": 217,
+    "pore_boss_before": 0.0413,
+    "pore_boss_after": -0.0111,
+    "pore_floor_after": -0.0485,
+    "pore_skull_after": -0.0162,
+    "radial_range": [
+      0.9109,
+      1.0676
+    ],
+    "limb_verts": 1969,
+    "limb_max_push": 0.0614,
+    "limb_hook_verts": 89,
+    "limb_dz_min": -0.0941,
+    "limb_dz_max": 0.0,
+    "strain_p50": 0.0653,
+    "strain_p99": 0.3556,
+    "strain_max": 1.4136,
+    "strain_over_25pct": 353,
+    "strain_worst_at": [
+      [
+        0.374,
+        -0.057,
+        0.218
+      ],
+      [
+        -0.369,
+        -0.039,
+        0.195
+      ],
+      [
+        -0.372,
+        -0.062,
+        0.222
+      ],
+      [
+        -0.394,
+        -0.061,
+        0.366
+      ],
+      [
+        0.368,
+        -0.072,
+        0.245
+      ],
+      [
+        -0.398,
+        0.064,
+        0.166
+      ]
+    ],
+    "size": [
+      1.0552,
+      0.8685,
+      0.8791
+    ],
+    "wh_ratio": 1.2003,
+    "shading": "split-cleared+polys-smooth+sharp-face-removed+custom-normals-set",
+    "export_kwargs": {
+      "filepath": "C:\\Users\\wchkl\\Documents\\Codex\\2026-08-12\\https-chatgpt-com-share-6a7b9aee-e840-2\\godot\\immune\\characters\\base_t\\CHAR-BASE-T-fix.glb",
+      "export_format": "GLB",
+      "export_image_format": "AUTO",
+      "export_materials": "EXPORT",
+      "export_yup": "True",
+      "export_apply": "False"
+    }
+  }
+}

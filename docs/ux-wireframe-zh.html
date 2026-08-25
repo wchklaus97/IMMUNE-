@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IMMUNE 永久研究網絡 — 21:9 UI/UX 線框</title>
+  <style>
+    :root {
+      --bg: #06111d; --deep: #040a12; --cyan: #5de4ff; --gold: #f4c35b;
+      --text: #e9f6ff; --muted: #91aec1; --panel: rgba(12, 28, 44, 0.92);
+      --line: rgba(93, 228, 255, 0.22);
+      --t: #45bdf2; --b: #a878ff; --m: #d28cff; --n: #a6c94a; --a: #f2b84b; --d: #ff9b58;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: #02060b; color: var(--text); font-family: "Segoe UI", "Microsoft JhengHei", sans-serif; }
+    #board {
+      width: 3360px; height: 1440px; aspect-ratio: 21 / 9;
+      display: grid; grid-template-rows: 68px 640px 430px 302px;
+      padding: 22px 28px 20px; gap: 12px;
+      background:
+        radial-gradient(circle at 18% 0%, rgba(93, 228, 255, 0.16), transparent 36%),
+        radial-gradient(circle at 82% 100%, rgba(244, 195, 91, 0.08), transparent 32%),
+        linear-gradient(180deg, #0a1a28, var(--deep));
+      overflow: hidden;
+    }
+    header.lockup { display: flex; justify-content: space-between; align-items: flex-end; }
+    .titles h1 { margin: 0; font-size: 34px; letter-spacing: 0.04em; }
+    .titles p { margin: 4px 0 0; color: var(--muted); font-size: 16px; }
+    .chips { display: flex; gap: 8px; }
+    .chip { border: 1px solid var(--line); background: var(--panel); color: var(--cyan); padding: 8px 14px; border-radius: 999px; font-size: 13px; font-weight: 700; }
+    .journey { display: grid; grid-template-columns: repeat(9, 1fr); gap: 12px; }
+    .frame { position: relative; display: flex; flex-direction: column; gap: 8px; }
+    .num { position: absolute; top: 8px; left: 8px; z-index: 2; width: 28px; height: 28px; border-radius: 50%; background: var(--cyan); color: #041018; font-weight: 800; display: grid; place-items: center; font-size: 14px; }
+    .phone { flex: 1; aspect-ratio: 16 / 10; border-radius: 14px; overflow: hidden; border: 1px solid rgba(233, 246, 255, 0.18); background: #040a12; box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35); }
+    .phone img { width: 100%; height: 100%; object-fit: contain; background: #040a12; display: block; }
+    .cap { min-height: 52px; }
+    .cap strong { display: block; font-size: 15px; }
+    .cap span { color: var(--muted); font-size: 13px; }
+    .explain { display: grid; grid-template-columns: 1.05fr 1.15fr 1.15fr; gap: 14px; }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 18px 20px; }
+    .card h2 { margin: 0 0 10px; font-size: 20px; color: var(--cyan); letter-spacing: 0.12em; }
+    .loop { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .loop b { background: rgba(93, 228, 255, 0.12); border: 1px solid var(--line); padding: 8px 10px; border-radius: 10px; font-size: 14px; }
+    .loop i { color: var(--gold); font-style: normal; }
+    .ia { display: grid; gap: 7px; font-size: 15px; }
+    .ia div { display: flex; gap: 8px; align-items: center; }
+    .ia em { color: var(--gold); font-style: normal; font-weight: 700; min-width: 64px; }
+    table.ix { width: 100%; border-collapse: collapse; font-size: 13px; }
+    table.ix th { text-align: left; color: var(--gold); font-size: 12px; padding-bottom: 6px; }
+    table.ix td { padding: 4px 8px 4px 0; vertical-align: top; }
+    table.ix td:first-child { color: var(--cyan); white-space: nowrap; font-weight: 700; }
+    .system { display: grid; grid-template-columns: 1.4fr 0.9fr 0.7fr 0.9fr 1.1fr; gap: 12px; }
+    .sys { background: rgba(8, 20, 32, 0.78); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; }
+    .sys h3 { margin: 0 0 8px; font-size: 14px; color: var(--gold); letter-spacing: 0.12em; }
+    .hud li { margin: 0 0 4px; font-size: 13px; color: var(--muted); }
+    .hud b { color: var(--text); }
+    .tokens { display: flex; flex-wrap: wrap; gap: 6px; }
+    .swatch { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+    .dot { width: 14px; height: 14px; border-radius: 50%; }
+    .btns { display: flex; flex-wrap: wrap; gap: 6px; }
+    .cta { border-radius: 10px; padding: 8px 12px; font-size: 13px; font-weight: 700; }
+    .cta.primary { background: linear-gradient(180deg, #5de4ff, #2aa7c4); color: #041018; }
+    .cta.secondary { border: 1px solid var(--line); color: var(--text); }
+    .assets { display: grid; grid-template-columns: 90px 1fr; gap: 8px; align-items: center; }
+    .assets img { width: 90px; height: 120px; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); }
+    .assets .wide { width: 100%; height: 54px; object-fit: cover; }
+    .note { color: var(--muted); font-size: 12px; margin-top: 6px; }
+  </style>
+</head>
+<body>
+  <div id="board">
+    <header class="lockup">
+      <div class="titles">
+        <h1>IMMUNE 永久研究網絡</h1>
+        <p>放射式研究星盤 · 200 個真實節點 · 平移／縮放／研究／協議配置</p>
+      </div>
+      <div class="chips">
+        <span class="chip">Web · 21:9</span>
+        <span class="chip">200 節點</span>
+        <span class="chip">31 身份</span>
+        <span class="chip">帶寬 6→10</span>
+      </div>
+    </header>
+
+    <section class="journey" aria-label="畫面旅程">
+      <article class="frame">
+        <span class="num">1</span>
+        <div class="phone"><img src="../tools/screenshots/ux-01-fit-all.png" alt="顯示全圖"></div>
+        <div class="cap"><strong>1 顯示全圖</strong><span>0.35×–0.55× 只讀 31 個角色錨點</span></div>
+      </article>
+      <article class="frame">
+        <span class="num">2</span>
+        <div class="phone"><img src="../tools/screenshots/ux-02-core.png" alt="返回核心"></div>
+        <div class="cap"><strong>2 返回核心</strong><span>Home 回到 1500,1500 @ 0.55×</span></div>
+      </article>
+      <article class="frame">
+        <span class="num">3</span>
+        <div class="phone"><img src="../tools/screenshots/ux-03-play-hud.png" alt="遊玩 HUD"></div>
+        <div class="cap"><strong>3 遊玩 HUD · 5/200</strong><span>資源列 + 協議帶寬 0/6 + 已選節點</span></div>
+      </article>
+      <article class="frame">
+        <span class="num">4</span>
+        <div class="phone"><img src="../tools/screenshots/ux-04-t-focus.png" alt="聚焦 T 細胞"></div>
+        <div class="cap"><strong>4 聚焦 T 細胞</strong><span>雙擊角色錨點 CHAR-BASE-T → 1.05×</span></div>
+      </article>
+      <article class="frame">
+        <span class="num">5</span>
+        <div class="phone"><img src="../tools/screenshots/ux-05-detail-ready.png" alt="可研究詳情"></div>
+        <div class="cap"><strong>5 可研究</strong><span>T 細胞固定炮台專精 · 「研究」可點</span></div>
+      </article>
+      <article class="frame">
+        <span class="num">6</span>
+        <div class="phone"><img src="../tools/screenshots/ux-06-tracked.png" alt="追蹤研究"></div>
+        <div class="cap"><strong>6 追蹤</strong><span>金色描邊 · 最多同時 3 個目標</span></div>
+      </article>
+      <article class="frame">
+        <span class="num">7</span>
+        <div class="phone"><img src="../tools/screenshots/ux-07-list.png" alt="研究列表"></div>
+        <div class="cap"><strong>7 列表</strong><span>依環層分組 · 未發現仍顯示「未知」</span></div>
+      </article>
+      <article class="frame">
+        <span class="num">8</span>
+        <div class="phone"><img src="../tools/screenshots/ux-08-locked.png" alt="鎖定融合"></div>
+        <div class="cap"><strong>8 缺少前置</strong><span>記憶獵手需 PAIR-TB-S2 · 研究停用</span></div>
+      </article>
+      <article class="frame">
+        <span class="num">9</span>
+        <div class="phone"><img src="../tools/screenshots/ux-09-researched.png" alt="研究完成"></div>
+        <div class="cap"><strong>9 研究完成</strong><span>Toast：研究完成，永久進度已更新。</span></div>
+      </article>
+    </section>
+
+    <section class="explain">
+      <article class="card">
+        <h2>核心循環</h2>
+        <div class="loop">
+          <b>打開星盤</b><i>→</i>
+          <b>平移／縮放</b><i>→</i>
+          <b>選擇節點</b><i>→</i>
+          <b>追蹤或研究</b><i>→</i>
+          <b>永久解鎖</b><i>→</i>
+          <b>裝備研究協議</b>
+        </div>
+        <p class="note">Demo 開局：揭示 22 點、完成 5 點。免疫能量不進此畫面，只用抗原樣本、一度原質、融合核心、生物質。</p>
+      </article>
+      <article class="card">
+        <h2>資訊架構</h2>
+        <div class="ia">
+          <div><em>啟動</em> Demo 玩家 · 預選 BASE-T-03</div>
+          <div><em>地圖</em> 六個 60° 家族扇區 · 內環通用／狀態 · 外環融合／Apex</div>
+          <div><em>鏡頭</em> 顯示全圖 · 返回核心 · 聚焦路線 · 迷你地圖平移</div>
+          <div><em>決策</em> 詳情：前置研究 · 成本 · 追蹤 · 研究</div>
+          <div><em>失敗</em> 缺少前置／資源不足 · toast 錯誤碼 · 研究按鈕停用</div>
+          <div><em>成功</em> 研究完成 toast · 新揭示發光 · n/200 增加</div>
+        </div>
+      </article>
+      <article class="card">
+        <h2>操作對照</h2>
+        <table class="ix">
+          <tr><th>輸入</th><th>位置</th><th>結果</th></tr>
+          <tr><td>拖曳空白</td><td>研究星盤</td><td>平移鏡頭</td></tr>
+          <tr><td>滾輪／雙指</td><td>游標／觸控</td><td>縮放 0.35×–2.4×</td></tr>
+          <tr><td>點擊節點</td><td>[data-node-id]</td><td>選擇並聚焦路線</td></tr>
+          <tr><td>雙擊錨點</td><td>角色身份</td><td>聚焦 1.05×</td></tr>
+          <tr><td>F／追蹤</td><td>詳情或鍵盤</td><td>追蹤，最多 3 個</td></tr>
+          <tr><td>R／研究</td><td>僅可研究節點</td><td>扣資源並揭示後續</td></tr>
+          <tr><td>Home／Esc／B</td><td>鍵盤</td><td>回核心／還原書籤／記錄書籤</td></tr>
+          <tr><td>裝備／卸下</td><td>協議托盤</td><td>帶寬 1／2／3 · Apex 限一</td></tr>
+        </table>
+      </article>
+    </section>
+
+    <section class="system">
+      <article class="sys hud">
+        <h3>HUD 解剖</h3>
+        <ol>
+          <li><b>資源列</b> IMMUNE · n/200 · 抗原樣本 · 一度原質 · 融合核心 · 生物質 · 協議帶寬</li>
+          <li><b>工具列</b> 搜尋研究… · T/B/M/N/A/D · 顯示全圖 · 返回核心 · 聚焦路線 · 地圖／列表</li>
+          <li><b>星盤</b> SVG 環層 · LOD 標籤 · 選中路線加亮</li>
+          <li><b>詳情 320–380px</b> 雙形態 · 永久效果 · 前置 · 成本 · 追蹤／研究</li>
+          <li><b>迷你地圖 140px</b> 點擊平移 · 列表模式隱藏</li>
+          <li><b>協議托盤</b> 研究協議 · 0/6 · 未解鎖協議</li>
+        </ol>
+      </article>
+      <article class="sys">
+        <h3>色票</h3>
+        <div class="tokens">
+          <span class="swatch"><i class="dot" style="background:#06111d"></i>虛空</span>
+          <span class="swatch"><i class="dot" style="background:#5de4ff"></i>青</span>
+          <span class="swatch"><i class="dot" style="background:#f4c35b"></i>金</span>
+          <span class="swatch"><i class="dot" style="background:var(--t)"></i>T</span>
+          <span class="swatch"><i class="dot" style="background:var(--b)"></i>B</span>
+          <span class="swatch"><i class="dot" style="background:var(--m)"></i>M</span>
+          <span class="swatch"><i class="dot" style="background:var(--n)"></i>N</span>
+          <span class="swatch"><i class="dot" style="background:var(--a)"></i>A</span>
+          <span class="swatch"><i class="dot" style="background:var(--d)"></i>D</span>
+        </div>
+        <p class="note">狀態不只靠顏色：✓ 已完成 · ● 可研究 · ◎ 追蹤 · ! 缺資源 · ◌ 缺前置。</p>
+      </article>
+      <article class="sys">
+        <h3>字級與按鈕</h3>
+        <p style="margin:0 0 8px;font-size:22px;font-weight:800;">IMMUNE</p>
+        <p style="margin:0 0 10px;color:var(--muted);font-size:13px;">Segoe UI／微軟正黑體 · 內文 14px · 品牌 22px</p>
+        <div class="btns">
+          <span class="cta primary">研究</span>
+          <span class="cta secondary">追蹤</span>
+          <span class="cta secondary">顯示全圖</span>
+        </div>
+      </article>
+      <article class="sys">
+        <h3>資產</h3>
+        <div class="assets">
+          <img src="../assets/cover-3x4.webp" alt="商店封面 3:4">
+          <div>
+            <img class="wide" src="../assets/cover-16x9.webp" alt="目錄封面 16:9">
+            <p class="note">商店 3:4 + 目錄 16:9。200 節點圖示 · 31 角色像 · 124 技能。</p>
+          </div>
+        </div>
+      </article>
+      <article class="sys">
+        <h3>內容條</h3>
+        <p style="margin:0;font-size:13px;line-height:1.45;color:var(--muted);">
+          T 細胞 · B 細胞 · 巨噬細胞 · NK 細胞 · 抗體構造體 · 樹突細胞<br>
+          記憶獵手 · 吞噬突擊 · 細胞毒刃 · 精準抗體 · 免疫指揮<br>
+          適應免疫核心 → IMMUNE PRIME<br>
+          標記／抗體／腐蝕／緩速／感染／鏈鎖／暴擊
+        </p>
+      </article>
+    </section>
+  </div>
+</body>
+</html>

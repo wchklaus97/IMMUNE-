@@ -1,0 +1,201 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-08-15T11:33:55.159Z",
+  "phase": "catalog-face-pilot",
+  "pilotIds": [
+    "CHAR-PAIR-TA",
+    "CHAR-PAIR-TD",
+    "CHAR-PAIR-BN",
+    "CHAR-PAIR-BA",
+    "CHAR-PAIR-BD",
+    "CHAR-PAIR-MN",
+    "CHAR-PAIR-MA",
+    "CHAR-PAIR-MD",
+    "CHAR-PAIR-NA",
+    "CHAR-PAIR-ND",
+    "CHAR-PAIR-AD",
+    "CHAR-TRIPLE-TBA",
+    "CHAR-TRIPLE-TND",
+    "CHAR-TRIPLE-MAD",
+    "CHAR-TRIPLE-BMD",
+    "CHAR-TRIPLE-BNA",
+    "CHAR-TRIPLE-TMN",
+    "CHAR-APEX-MEMORY",
+    "CHAR-APEX-STERILE",
+    "CHAR-APEX-SILENT",
+    "CHAR-PRIME"
+  ],
+  "remainingRedrawCount": 21,
+  "remainingRedrawIds": [
+    "CHAR-PAIR-TA",
+    "CHAR-PAIR-TD",
+    "CHAR-PAIR-BN",
+    "CHAR-PAIR-BA",
+    "CHAR-PAIR-BD",
+    "CHAR-PAIR-MN",
+    "CHAR-PAIR-MA",
+    "CHAR-PAIR-MD",
+    "CHAR-PAIR-NA",
+    "CHAR-PAIR-ND",
+    "CHAR-PAIR-AD",
+    "CHAR-TRIPLE-TBA",
+    "CHAR-TRIPLE-TND",
+    "CHAR-TRIPLE-MAD",
+    "CHAR-TRIPLE-BMD",
+    "CHAR-TRIPLE-BNA",
+    "CHAR-TRIPLE-TMN",
+    "CHAR-APEX-MEMORY",
+    "CHAR-APEX-STERILE",
+    "CHAR-APEX-SILENT",
+    "CHAR-PRIME"
+  ],
+  "prompts": [
+    {
+      "fileName": "CHAR-PAIR-TA.png",
+      "characterId": "CHAR-PAIR-TA",
+      "name": "精準抗體",
+      "catalogStatus": "needs_redraw",
+      "prompt": "IMMUNE 2D CHAR-PAIR-TA 精準抗體 (catalog)\n職責：鎖定後精準中和\n獨特：開蓋瞄準井，像活的準星。懸浮。不是 Y 林。\n剪影：sphere with an open targeting well on the crown\n皮膜：orange-gold, calmer surface, inner well light not a chest letter\n懸浮，無輪無走地腳。\n禁止：chest Y glow or gold Y medallion; skin forest of C/Y pincer nubs copied from TB; identical golf-ball bump shader on every body; two bodies, split paint, unscrewable kits; letters, text, watermark; generic five blob turret feet copied across the set\n一張臉，一顆分不開的濕果凍身體，綠幕 #00FF00，正面，約 70%。\ncute stylized 3D immune-cell game portrait, honest wet gelatinous body, glossy jelly membrane, wet specular highlights, soft subsurface glow from inside, vinyl-toy volume, restrained organic detail. front-facing catalog portrait camera, centered composition, character fills about 70 percent of frame, square icon crop. flat solid chroma key green #00FF00 background, no floor, no pedestal, no terrain. NO chest Y glow, NO gold Y medallion, NO gatling gun face, NO golf-ball bump shader, NO tissue platform, NO text, NO watermark, NO letters, NO second body, NO split paint kits."
+    },
+    {
+      "fileName": "CHAR-PAIR-TD.png",
+      "characterId": "CHAR-PAIR-TD",
+      "name": "免疫指揮",
+      "catalogStatus": "needs_redraw",
+      "prompt": "IMMUNE 2D CHAR-PAIR-TD 免疫指揮 (catalog)\n職責：在場上發令\n獨特：指揮冠是信號枝，像活的指揮塔，不是複製樹突貼紙。\n剪影：upright commander with a unique antler-crown\n皮膜：command orange, crown translucent, body less busy than TB\n非 A：炮台無輪；移動才有與這隻身體對應的移動器。\n禁止：chest Y glow or gold Y medallion; skin forest of C/Y pincer nubs copied from TB; identical golf-ball bump shader on every body; two bodies, split paint, unscrewable kits; letters, text, watermark; generic five blob turret feet copied across the set\n一張臉，一顆分不開的濕果凍身體，綠幕 #00FF00，正面，約 70%。\ncute stylized 3D immune-cell game portrait, honest wet gelatinous body, glossy jelly membrane, wet specular highlights, soft subsurface glow from inside, vinyl-toy volume, restrained organic detail. front-facing catalog portrait camera, centered composition, character fills about 70 percent of frame, square icon crop. flat solid chroma key green #00FF00 background, no floor, no pedestal, no terrain. NO chest Y glow, NO gold Y medallion, NO gatling gun face, NO golf-ball bump shader, NO tissue platform, NO text, NO watermark, NO letters, NO second body, NO split paint kits."
+    },
+    {
+      "fileName": "CHAR-PAIR-BN.png",
+      "characterId": "CHAR-PAIR-BN",
+      "name": "標記處決",
+      "catalogStatus": "needs_redraw",
+      "prompt": "IMMUNE 2D CHAR-PAIR-BN 標記處決 (catalog)\n職責：先標記再處決\n獨特：一顆 sensate 印記長在臉上／額上（有機烙印，不是字母 Y），身體像劊子手。\n剪影：lean executioner sphere with one brand-mark\n皮膜：violet-olive, one mark only, rest of skin quiet\n非 A：炮台無輪；移動才有與這隻身體對應的移動器。\n禁止：chest Y glow or gold Y medallion; skin forest of C/Y pincer nubs copied from TB; identical golf-ball bump shader on every body; two bodies, split paint, unscrewable kits; letters, text, watermark; generic five blob turret feet copied across the set\n一張臉，一顆分不開的濕果凍身體，綠幕 #00FF00，正面，約 70%。\ncute stylized 3D immune-cell game portrait, honest wet gelatinous body, glossy jelly membrane, wet specular highlights, soft subsurface glow from inside, vinyl-toy volume, restrained organic detail. front-facing catalog portrait camera, centered composition, character fills about 70 percent of frame, square icon crop. flat solid chroma key green #00FF00 background, no floor, no pedestal, no terrain. NO chest Y glow, NO gold Y medallion, NO gatling gun face, NO golf-ball bump shader, NO tissue platform, NO text, NO watermark, NO letters, NO second body, NO split paint kits."
+    },
+    {
+      "fileName": "CHAR-PAIR-BA.png",
+      "characterId": "CHAR-PAIR-BA",
+      "name": "抗體風暴",
+      "catalogStatus": "needs_redraw",
+      "prompt": "IMMUNE 2D CHAR-PAIR-BA 抗體風暴 (catalog)\n職責：抗體像天氣一樣罩過去\n獨特：一隻身體，膜外有風暴緞帶在轉，不是插滿 Y。\n剪影：hover sphere wrapped in living storm ribbons\n皮膜：violet-gold, ribbons are membrane not metal\n懸浮，無輪無走地腳。\n禁止：chest Y glow or gold Y medallion; skin forest of C/Y pincer nubs copied from TB; identical golf-ball bump shader on every body; two bodies, split paint, unscrewable kits; letters, text, watermark; generic five blob turret feet copied across the set\n一張臉，一顆分不開的濕果凍身體，綠幕 #00FF00，正面，約 70%。\ncute stylized 3D immune-cell game portrait, honest wet gelatinous body, glossy jelly membrane, wet specular highlights, soft subsurface glow from inside, vinyl-toy volume, restrained organic detail. front-facing catalog portrait camera, centered composition, character fills about 70 percent of frame, square icon crop. flat solid chroma key green #00FF00 background, no floor, no pedestal, no terrain. NO chest Y glow, NO gold Y medallion, NO gatling gun face, NO golf-ball bump shader, NO tissue platform, NO text, NO watermark, NO letters, NO second body, NO split paint kits."
+    },
+    {
+      "fileName": "CHAR-PAIR-BD.png",
+      "characterId": "CHAR-PAIR-BD",
+      "name": "抗原呈現",
+      "catalogStatus": "needs_redraw",
+      "prompt": "IMMUNE 2D CHAR-PAIR-BD 抗原呈現 (catalog)\n職責：把抗原舉給別人看\n獨特：腹前長出展示托盤／講台膜，像活的呈現台。\n剪影：lectern-belly sphere presenting a held sample-lobe\n皮膜：violet-orange, one presentation lobe, no Y forest\n非 A：炮台無輪；移動才有與這隻身體對應的移動器。\n禁止：chest Y glow or gold Y medallion; skin forest of C/Y pincer nubs copied from TB; identical golf-ball bump shader on every body; two bodies, split paint, unscrewable kits; letters, text, watermark; generic five blob turret feet copied across the set\n一張臉，一顆分不開的濕果凍身體，綠幕 #00FF00，正面，約 70%。\ncute stylized 3D immune-cell game portrait, honest wet gelatinous body, glossy jelly membrane, wet specular highlights, soft subsurface glow from inside, vinyl-toy volume, restrained organic detail. front-facing catalog portrait camera, centered composition, character fills about 70 percent of frame, square icon crop. flat solid chroma key green #00FF00 background, no floor, no pedestal, no terrain. NO chest Y glow, NO gold Y medallion, NO gatling gun face, NO golf-ball bump shader, NO tissue platform, NO text, NO watermark, NO letters, NO second body, NO split paint kits."
+    },
+    {
+      "fileName": "CHAR-PAIR-MN.png",
+      "characterId": "CHAR-PAIR-MN",
+      "name": "感染清除",
+      "catalogStatus": "needs_redraw",
+      "prompt": "IMMUNE 2D CHAR-PAIR-MN 感染清除 (catalog)\n職責：把感染刮乾淨\n獨特：下緣是清除裙／刮板，像正在抹戰場。\n剪影：sweeper-skirt sphere\n皮膜：lavender-olive, cleaner fewer bumps\n非 A：炮台無輪；移動才有與這隻身體對應的移動器。\n禁止：chest Y glow or gold Y medallion; skin forest of C/Y pincer nubs copied from TB; identical golf-ball bump shader on every body; two bodies, split paint, unscrewable kits; letters, text, watermark; generic five blob turret feet copied across the set\n一張臉，一顆分不開的濕果凍身體，綠幕 #00FF00，正面，約 70%。\ncute stylized 3D immune-cell game portrait, honest wet gelatinous body, glossy jelly membrane, wet specular highlights, soft subsurface glow from inside, vinyl-toy volume, restrained organic detail. front-facing catalog portrait camera, centered composition, character fills about 70 percent of frame, square icon crop. flat solid chroma key green #00FF00 background, no floor, no pedestal, no terrain. NO chest Y glow, NO gold Y medallion, NO gatling gun face, NO golf-ball bump shader, NO tissue platform, NO text, NO watermark, NO letters, NO second body, NO split paint kits."
+    },
+    {
+      "fileName": "CHAR-PAIR-MA.png",
+      "characterId": "CHAR-PAIR-MA",
+      "name": "免疫壁壘",
+      "catalogStatus": "needs_redraw",
+      "prompt": "IMMUNE 2D CHAR-PAIR-MA 免疫壁壘 (catalog)\n職責：變成牆擋住\n獨特：扁盾穹頂，寬過高，像一扇活的壁壘。\n剪影：wide shield-dome, face on the shield\n皮膜：lavender-gold, flatter, sparse surface\n懸浮，無輪無走地腳。\n禁止：chest Y glow or gold Y medallion; skin forest of C/Y pincer nubs copied from TB; identical golf-ball bump shader on every body; two bodies, split paint, unscrewable kits; letters, text, watermark; generic five blob turret feet copied across the set\n一張臉，一顆分不開的濕果凍身體，綠幕 #00FF00，正面，約 70%。\ncute stylized 3D immune-cell game portrait, honest wet gelatinous body, glossy jelly membrane, wet specular highlights, soft subsurface glow from inside, vinyl-toy volume, restrained organic detail. front-facing catalog portrait camera, centered composition, character fills about 70 percent of frame, square icon crop. flat solid chroma key green #00FF00 background, no floor, no pedestal, no terrain. NO chest Y glow, NO gold Y medallion, NO gatling gun face, NO golf-ball bump shader, NO tissue platform, NO text, NO watermark, NO letters, NO second body, NO split paint kits."
+    },
+    {
+      "fileName": "CHAR-PAIR-MD.png",
+      "characterId": "CHAR-PAIR-MD",
+      "name": "抗原中樞",
+      "catalogStatus": "needs_redraw",
+      "prompt": "IMMUNE 2D CHAR-PAIR-MD 抗原中樞 (catalog)\n職責：抗原在這裡交會\n獨特：輻射接口像交換機，孔口長在赤道。\n剪影：hub sphere with radial ports\n皮膜：lavender-orange, port rims, quiet skin between\n非 A：炮台無輪；移動才有與這隻身體對應的移動器。\n禁止：chest Y glow or gold Y medallion; skin forest of C/Y pincer nubs copied from TB; identical golf-ball bump shader on every body; two bodies, split paint, unscrewable kits; letters, text, watermark; generic five blob turret feet copied across the set\n一張臉，一顆分不開的濕果凍身體，綠幕 #00FF00，正面，約 70%。\ncute stylized 3D immune-cell game portrait, honest wet gelatinous body, glossy jelly membrane, wet specular highlights, soft subsurface glow from inside, vinyl-toy volume, restrained organic detail. front-facing catalog portrait camera, centered composition, character fills about 70 percent of frame, square icon crop. flat solid chroma key green #00FF00 background, no floor, no pedestal, no terrain. NO chest Y glow, NO gold Y medallion, NO gatling gun face, NO golf-ball bump shader, NO tissue platform, NO text, NO watermark, NO letters, NO second body, NO split paint kits."
+    },
+    {
+      "fileName": "CHAR-PAIR-NA.png",
+      "characterId": "CHAR-PAIR-NA",
+      "name": "抗體追獵",
+      "catalogStatus": "needs_redraw",
+      "prompt": "IMMUNE 2D CHAR-PAIR-NA 抗體追獵 (catalog)\n職責：帶著抗體去追\n獨特：前傾獵犬體，鼻／額是追蹤凹槽，懸浮。\n剪影：lean hound-hover, nose-notch forward\n皮膜：olive-gold, sleek, almost no nubs\n懸浮，無輪無走地腳。\n禁止：chest Y glow or gold Y medallion; skin forest of C/Y pincer nubs copied from TB; identical golf-ball bump shader on every body; two bodies, split paint, unscrewable kits; letters, text, watermark; generic five blob turret feet copied across the set\n一張臉，一顆分不開的濕果凍身體，綠幕 #00FF00，正面，約 70%。\ncute stylized 3D immune-cell game portrait, honest wet gelatinous body, glossy jelly membrane, wet specular highlights, soft subsurface glow from inside, vinyl-toy volume, restrained organic detail. front-facing catalog portrait camera, centered composition, character fills about 70 percent of frame, square icon crop. flat solid chroma key green #00FF00 background, no floor, no pedestal, no terrain. NO chest Y glow, NO gold Y medallion, NO gatling gun face, NO golf-ball bump shader, NO tissue platform, NO text, NO watermark, NO letters, NO second body, NO split paint kits."
+    },
+    {
+      "fileName": "CHAR-PAIR-ND.png",
+      "characterId": "CHAR-PAIR-ND",
+      "name": "獵殺信標",
+      "catalogStatus": "needs_redraw",
+      "prompt": "IMMUNE 2D CHAR-PAIR-ND 獵殺信標 (catalog)\n職責：當燈塔給獵殺照明\n獨特：直立燈塔冠，光從冠頂來，不是胸口 Y。\n剪影：beacon-tower on a round body\n皮膜：olive-orange, crown glow, dark quiet hull\n非 A：炮台無輪；移動才有與這隻身體對應的移動器。\n禁止：chest Y glow or gold Y medallion; skin forest of C/Y pincer nubs copied from TB; identical golf-ball bump shader on every body; two bodies, split paint, unscrewable kits; letters, text, watermark; generic five blob turret feet copied across the set\n一張臉，一顆分不開的濕果凍身體，綠幕 #00FF00，正面，約 70%。\ncute stylized 3D immune-cell game portrait, honest wet gelatinous body, glossy jelly membrane, wet specular highlights, soft subsurface glow from inside, vinyl-toy volume, restrained organic detail. front-facing catalog portrait camera, centered composition, character fills about 70 percent of frame, square icon crop. flat solid chroma key green #00FF00 background, no floor, no pedestal, no terrain. NO chest Y glow, NO gold Y medallion, NO gatling gun face, NO golf-ball bump shader, NO tissue platform, NO text, NO watermark, NO letters, NO second body, NO split paint kits."
+    },
+    {
+      "fileName": "CHAR-PAIR-AD.png",
+      "characterId": "CHAR-PAIR-AD",
+      "name": "免疫網絡",
+      "catalogStatus": "needs_redraw",
+      "prompt": "IMMUNE 2D CHAR-PAIR-AD 免疫網絡 (catalog)\n職責：把免疫連成網\n獨特：膜內靜脈織成網，像活電路。懸浮。\n剪影：hover sphere with visible vein-web\n皮膜：gold-orange, veins inside, smooth outside\n懸浮，無輪無走地腳。\n禁止：chest Y glow or gold Y medallion; skin forest of C/Y pincer nubs copied from TB; identical golf-ball bump shader on every body; two bodies, split paint, unscrewable kits; letters, text, watermark; generic five blob turret feet copied across the set\n一張臉，一顆分不開的濕果凍身體，綠幕 #00FF00，正面，約 70%。\ncute stylized 3D immune-cell game portrait, honest wet gelatinous body, glossy jelly membrane, wet specular highlights, soft subsurface glow from inside, vinyl-toy volume, restrained organic detail. front-facing catalog portrait camera, centered composition, character fills about 70 percent of frame, square icon crop. flat solid chroma key green #00FF00 background, no floor, no pedestal, no terrain. NO chest Y glow, NO gold Y medallion, NO gatling gun face, NO golf-ball bump shader, NO tissue platform, NO text, NO watermark, NO letters, NO second body, NO split paint kits."
+    },
+    {
+      "fileName": "CHAR-TRIPLE-TBA.png",
+      "characterId": "CHAR-TRIPLE-TBA",
+      "name": "適應免疫核心",
+      "catalogStatus": "needs_redraw",
+      "prompt": "IMMUNE 2D CHAR-TRIPLE-TBA 適應免疫核心 (catalog)\n職責：三系適應核心\n獨特：身體像正在改寫自己：色塊在膜下流動，仍是一張臉。懸浮。無胸口 Y。\n剪影：rewriting core, shifting inner patches\n皮膜：orange-violet-gold mix as weather under one membrane\n懸浮，無輪無走地腳。\n禁止：chest Y glow or gold Y medallion; skin forest of C/Y pincer nubs copied from TB; identical golf-ball bump shader on every body; two bodies, split paint, unscrewable kits; letters, text, watermark; generic five blob turret feet copied across the set\n一張臉，一顆分不開的濕果凍身體，綠幕 #00FF00，正面，約 70%。\ncute stylized 3D immune-cell game portrait, honest wet gelatinous body, glossy jelly membrane, wet specular highlights, soft subsurface glow from inside, vinyl-toy volume, restrained organic detail. front-facing catalog portrait camera, centered composition, character fills about 70 percent of frame, square icon crop. flat solid chroma key green #00FF00 background, no floor, no pedestal, no terrain. NO chest Y glow, NO gold Y medallion, NO gatling gun face, NO golf-ball bump shader, NO tissue platform, NO text, NO watermark, NO letters, NO second body, NO split paint kits."
+    },
+    {
+      "fileName": "CHAR-TRIPLE-TND.png",
+      "characterId": "CHAR-TRIPLE-TND",
+      "name": "全域截擊中樞",
+      "catalogStatus": "needs_redraw",
+      "prompt": "IMMUNE 2D CHAR-TRIPLE-TND 全域截擊中樞 (catalog)\n職責：全域攔截指揮\n獨特：寬龍骨＋截擊冠，像空中管制塔長在細胞上。\n剪影：wide intercept keel + crown\n皮膜：orange-olive command, large planes not nub forest\n非 A：炮台無輪；移動才有與這隻身體對應的移動器。\n禁止：chest Y glow or gold Y medallion; skin forest of C/Y pincer nubs copied from TB; identical golf-ball bump shader on every body; two bodies, split paint, unscrewable kits; letters, text, watermark; generic five blob turret feet copied across the set\n一張臉，一顆分不開的濕果凍身體，綠幕 #00FF00，正面，約 70%。\ncute stylized 3D immune-cell game portrait, honest wet gelatinous body, glossy jelly membrane, wet specular highlights, soft subsurface glow from inside, vinyl-toy volume, restrained organic detail. front-facing catalog portrait camera, centered composition, character fills about 70 percent of frame, square icon crop. flat solid chroma key green #00FF00 background, no floor, no pedestal, no terrain. NO chest Y glow, NO gold Y medallion, NO gatling gun face, NO golf-ball bump shader, NO tissue platform, NO text, NO watermark, NO letters, NO second body, NO split paint kits."
+    },
+    {
+      "fileName": "CHAR-TRIPLE-MAD.png",
+      "characterId": "CHAR-TRIPLE-MAD",
+      "name": "組織防衛聖域",
+      "catalogStatus": "needs_redraw",
+      "prompt": "IMMUNE 2D CHAR-TRIPLE-MAD 組織防衛聖域 (catalog)\n職責：把組織護成聖域\n獨特：空心防衛穹，內部是安全腔。懸浮。\n剪影：sanctuary dome with a hollow glow\n皮膜：lavender-gold, sparse, sacred-clean\n懸浮，無輪無走地腳。\n禁止：chest Y glow or gold Y medallion; skin forest of C/Y pincer nubs copied from TB; identical golf-ball bump shader on every body; two bodies, split paint, unscrewable kits; letters, text, watermark; generic five blob turret feet copied across the set\n一張臉，一顆分不開的濕果凍身體，綠幕 #00FF00，正面，約 70%。\ncute stylized 3D immune-cell game portrait, honest wet gelatinous body, glossy jelly membrane, wet specular highlights, soft subsurface glow from inside, vinyl-toy volume, restrained organic detail. front-facing catalog portrait camera, centered composition, character fills about 70 percent of frame, square icon crop. flat solid chroma key green #00FF00 background, no floor, no pedestal, no terrain. NO chest Y glow, NO gold Y medallion, NO gatling gun face, NO golf-ball bump shader, NO tissue platform, NO text, NO watermark, NO letters, NO second body, NO split paint kits."
+    },
+    {
+      "fileName": "CHAR-TRIPLE-BMD.png",
+      "characterId": "CHAR-TRIPLE-BMD",
+      "name": "組織再生工廠",
+      "catalogStatus": "needs_redraw",
+      "prompt": "IMMUNE 2D CHAR-TRIPLE-BMD 組織再生工廠 (catalog)\n職責：在場上長回組織\n獨特：工廠肚：出芽的修復瓣，像正在生產。無 Y。\n剪影：factory-gut with budding repair lobes\n皮膜：violet-lavender-orange, budding not pincer forest\n非 A：炮台無輪；移動才有與這隻身體對應的移動器。\n禁止：chest Y glow or gold Y medallion; skin forest of C/Y pincer nubs copied from TB; identical golf-ball bump shader on every body; two bodies, split paint, unscrewable kits; letters, text, watermark; generic five blob turret feet copied across the set\n一張臉，一顆分不開的濕果凍身體，綠幕 #00FF00，正面，約 70%。\ncute stylized 3D immune-cell game portrait, honest wet gelatinous body, glossy jelly membrane, wet specular highlights, soft subsurface glow from inside, vinyl-toy volume, restrained organic detail. front-facing catalog portrait camera, centered composition, character fills about 70 percent of frame, square icon crop. flat solid chroma key green #00FF00 background, no floor, no pedestal, no terrain. NO chest Y glow, NO gold Y medallion, NO gatling gun face, NO golf-ball bump shader, NO tissue platform, NO text, NO watermark, NO letters, NO second body, NO split paint kits."
+    },
+    {
+      "fileName": "CHAR-TRIPLE-BNA.png",
+      "characterId": "CHAR-TRIPLE-BNA",
+      "name": "抗體獵殺蜂群",
+      "catalogStatus": "needs_redraw",
+      "prompt": "IMMUNE 2D CHAR-TRIPLE-BNA 抗體獵殺蜂群 (catalog)\n職責：一隻身體裡的蜂群獵殺\n獨特：一張臉，身邊癒合著小同胞芽（仍分不開）。懸浮。不是許多 Y。\n剪影：hive-one with fused sibling buds\n皮膜：violet-olive-gold, buds are the same membrane\n懸浮，無輪無走地腳。\n禁止：chest Y glow or gold Y medallion; skin forest of C/Y pincer nubs copied from TB; identical golf-ball bump shader on every body; two bodies, split paint, unscrewable kits; letters, text, watermark; generic five blob turret feet copied across the set\n一張臉，一顆分不開的濕果凍身體，綠幕 #00FF00，正面，約 70%。\ncute stylized 3D immune-cell game portrait, honest wet gelatinous body, glossy jelly membrane, wet specular highlights, soft subsurface glow from inside, vinyl-toy volume, restrained organic detail. front-facing catalog portrait camera, centered composition, character fills about 70 percent of frame, square icon crop. flat solid chroma key green #00FF00 background, no floor, no pedestal, no terrain. NO chest Y glow, NO gold Y medallion, NO gatling gun face, NO golf-ball bump shader, NO tissue platform, NO text, NO watermark, NO letters, NO second body, NO split paint kits."
+    },
+    {
+      "fileName": "CHAR-TRIPLE-TMN.png",
+      "characterId": "CHAR-TRIPLE-TMN",
+      "name": "凋亡反應爐",
+      "catalogStatus": "needs_redraw",
+      "prompt": "IMMUNE 2D CHAR-TRIPLE-TMN 凋亡反應爐 (catalog)\n職責：把凋亡當爐火\n獨特：爐腹：內熱、裂開的反應口，不是刃也不是 Y。\n剪影：chunky furnace-belly with an inner fire mouth\n皮膜：orange-lavender-olive, heat glow from inside\n非 A：炮台無輪；移動才有與這隻身體對應的移動器。\n禁止：chest Y glow or gold Y medallion; skin forest of C/Y pincer nubs copied from TB; identical golf-ball bump shader on every body; two bodies, split paint, unscrewable kits; letters, text, watermark; generic five blob turret feet copied across the set\n一張臉，一顆分不開的濕果凍身體，綠幕 #00FF00，正面，約 70%。\ncute stylized 3D immune-cell game portrait, honest wet gelatinous body, glossy jelly membrane, wet specular highlights, soft subsurface glow from inside, vinyl-toy volume, restrained organic detail. front-facing catalog portrait camera, centered composition, character fills about 70 percent of frame, square icon crop. flat solid chroma key green #00FF00 background, no floor, no pedestal, no terrain. NO chest Y glow, NO gold Y medallion, NO gatling gun face, NO golf-ball bump shader, NO tissue platform, NO text, NO watermark, NO letters, NO second body, NO split paint kits."
+    },
+    {
+      "fileName": "CHAR-APEX-MEMORY.png",
+      "characterId": "CHAR-APEX-MEMORY",
+      "name": "長期免疫記憶庫",
+      "catalogStatus": "needs_redraw",
+      "prompt": "IMMUNE 2D CHAR-APEX-MEMORY 長期免疫記憶庫 (catalog)\n職責：把記憶存成庫\n獨特：層疊琥珀檔案層，像圖書館長在細胞裡。光是層，不是胸口 Y 字母。\n剪影：stacked archive strata in one sphere\n皮膜：quiet amber layers, almost no nubs\n懸浮，無輪無走地腳。\n禁止：chest Y glow or gold Y medallion; skin forest of C/Y pincer nubs copied from TB; identical golf-ball bump shader on every body; two bodies, split paint, unscrewable kits; letters, text, watermark; generic five blob turret feet copied across the set\n一張臉，一顆分不開的濕果凍身體，綠幕 #00FF00，正面，約 70%。\ncute stylized 3D immune-cell game portrait, honest wet gelatinous body, glossy jelly membrane, wet specular highlights, soft subsurface glow from inside, vinyl-toy volume, restrained organic detail. front-facing catalog portrait camera, centered composition, character fills about 70 percent of frame, square icon crop. flat solid chroma key green #00FF00 background, no floor, no pedestal, no terrain. NO chest Y glow, NO gold Y medallion, NO gatling gun face, NO golf-ball bump shader, NO tissue platform, NO text, NO watermark, NO letters, NO second body, NO split paint kits."
+    },
+    {
+      "fileName": "CHAR-APEX-STERILE.png",
+      "characterId": "CHAR-APEX-STERILE",
+      "name": "無菌聖域",
+      "catalogStatus": "needs_redraw",
+      "prompt": "IMMUNE 2D CHAR-APEX-STERILE 無菌聖域 (catalog)\n職責：維持無菌\n獨特：極乾淨、幾乎無突的白金穹。跟全員噪點皮相反。\n剪影：sterile smooth dome\n皮膜：pale gold, glass-clean, blackout-forbidden\n懸浮，無輪無走地腳。\n禁止：chest Y glow or gold Y medallion; skin forest of C/Y pincer nubs copied from TB; identical golf-ball bump shader on every body; two bodies, split paint, unscrewable kits; letters, text, watermark; generic five blob turret feet copied across the set\n一張臉，一顆分不開的濕果凍身體，綠幕 #00FF00，正面，約 70%。\ncute stylized 3D immune-cell game portrait, honest wet gelatinous body, glossy jelly membrane, wet specular highlights, soft subsurface glow from inside, vinyl-toy volume, restrained organic detail. front-facing catalog portrait camera, centered composition, character fills about 70 percent of frame, square icon crop. flat solid chroma key green #00FF00 background, no floor, no pedestal, no terrain. NO chest Y glow, NO gold Y medallion, NO gatling gun face, NO golf-ball bump shader, NO tissue platform, NO text, NO watermark, NO letters, NO second body, NO split paint kits."
+    },
+    {
+      "fileName": "CHAR-APEX-SILENT.png",
+      "characterId": "CHAR-APEX-SILENT",
+      "name": "靜默獵殺網",
+      "catalogStatus": "needs_redraw",
+      "prompt": "IMMUNE 2D CHAR-APEX-SILENT 靜默獵殺網 (catalog)\n職責：不出聲地網殺\n獨特：暗、扁、網緣，少五官高光。安靜。\n剪影：muted net-disc with a quiet face\n皮膜：dark olive-gold, matte-wet, almost featureless hull\n懸浮，無輪無走地腳。\n禁止：chest Y glow or gold Y medallion; skin forest of C/Y pincer nubs copied from TB; identical golf-ball bump shader on every body; two bodies, split paint, unscrewable kits; letters, text, watermark; generic five blob turret feet copied across the set\n一張臉，一顆分不開的濕果凍身體，綠幕 #00FF00，正面，約 70%。\ncute stylized 3D immune-cell game portrait, honest wet gelatinous body, glossy jelly membrane, wet specular highlights, soft subsurface glow from inside, vinyl-toy volume, restrained organic detail. front-facing catalog portrait camera, centered composition, character fills about 70 percent of frame, square icon crop. flat solid chroma key green #00FF00 background, no floor, no pedestal, no terrain. NO chest Y glow, NO gold Y medallion, NO gatling gun face, NO golf-ball bump shader, NO tissue platform, NO text, NO watermark, NO letters, NO second body, NO split paint kits."
+    },
+    {
+      "fileName": "CHAR-PRIME.png",
+      "characterId": "CHAR-PRIME",
+      "name": "IMMUNE PRIME",
+      "catalogStatus": "needs_redraw",
+      "prompt": "IMMUNE 2D CHAR-PRIME IMMUNE PRIME (catalog)\n職責：六系合一的最終體\n獨特：六瓣仍是一張臉的皇帝細胞，瓣是身體分葉不是六個零件。禁止彩虹高爾夫＋C 夾林。\n剪影：six-lobe flower-body, one face in the center\n皮膜：six family hues as lobes of one membrane, not a gradient stamp\n懸浮，無輪無走地腳。\n禁止：chest Y glow or gold Y medallion; skin forest of C/Y pincer nubs copied from TB; identical golf-ball bump shader on every body; two bodies, split paint, unscrewable kits; letters, text, watermark; generic five blob turret feet copied across the set\n一張臉，一顆分不開的濕果凍身體，綠幕 #00FF00，正面，約 70%。\ncute stylized 3D immune-cell game portrait, honest wet gelatinous body, glossy jelly membrane, wet specular highlights, soft subsurface glow from inside, vinyl-toy volume, restrained organic detail. front-facing catalog portrait camera, centered composition, character fills about 70 percent of frame, square icon crop. flat solid chroma key green #00FF00 background, no floor, no pedestal, no terrain. NO chest Y glow, NO gold Y medallion, NO gatling gun face, NO golf-ball bump shader, NO tissue platform, NO text, NO watermark, NO letters, NO second body, NO split paint kits."
+    }
+  ]
+}

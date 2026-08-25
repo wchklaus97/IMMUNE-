@@ -1,0 +1,5 @@
+version=5.2.0 LTS
+binary=C:\Program Files\WindowsApps\BlenderFoundation.Blender_5.2.0.0_x64__ppwjx1n5r4v9t\Blender\blender.exe
+python=3.13.13 (main, May  8 2026, 12:37:03) [MSC v.1944 64 bit (AMD64)]
+scripts_user=C:\Users\wchkl\AppData\Roaming\Blender Foundation\Blender\5.2\scripts
+addons=bl_pkg,cycles,io_anim_bvh,io_curve_svg,io_mesh_uv_layout,io_scene_fbx,io_scene_gltf2,pose_library

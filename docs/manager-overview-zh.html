@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IMMUNE 永久研究網絡 — 經理總覽</title>
+  <style>
+    :root {
+      --bg: #06111d; --deep: #040a12; --cyan: #5de4ff; --gold: #f4c35b;
+      --text: #e9f6ff; --muted: #91aec1; --line: rgba(93, 228, 255, 0.22);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--deep); color: var(--text); font-family: "Segoe UI", "Microsoft JhengHei", sans-serif; }
+    body { width: 1600px; margin: 0 auto; }
+    .shot-block { padding: 36px 48px; border-bottom: 1px solid var(--line); }
+    h1, h2 { margin: 0 0 12px; }
+    h1 { font-size: 42px; letter-spacing: 0.04em; }
+    h2 { font-size: 22px; color: var(--cyan); letter-spacing: 0.12em; }
+    p { color: var(--muted); line-height: 1.5; }
+    .hero { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 28px; align-items: center; background: radial-gradient(circle at 20% 0%, rgba(93,228,255,.16), transparent 40%), var(--bg); }
+    .hero img { width: 100%; border-radius: 16px; border: 1px solid var(--line); }
+    .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 18px; }
+    .kpi { background: rgba(12,28,44,.9); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+    .kpi b { display: block; font-size: 28px; color: var(--cyan); }
+    .kpi span { color: var(--muted); font-size: 13px; }
+    .phones { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .phones img, .wide img, .covers img, .gallery img { width: 100%; border-radius: 10px; border: 1px solid var(--line); background: #040a12; object-fit: contain; }
+    figcaption { color: var(--muted); font-size: 13px; margin-top: 6px; }
+    .loop { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .loop b { background: rgba(93,228,255,.12); border: 1px solid var(--line); padding: 8px 12px; border-radius: 10px; }
+    .loop i { color: var(--gold); font-style: normal; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th { text-align: left; color: var(--gold); padding: 8px 8px 8px 0; border-bottom: 1px solid var(--line); }
+    td { padding: 8px 8px 8px 0; border-bottom: 1px solid rgba(39,80,106,.35); vertical-align: top; }
+    .gallery { display: grid; grid-template-columns: repeat(8, 1fr); gap: 10px; }
+    .card { background: rgba(8,20,32,.86); border: 1px solid var(--line); border-radius: 10px; padding: 8px; text-align: center; }
+    .card img { height: 72px; object-fit: contain; }
+    .card span { display: block; font-size: 11px; color: var(--muted); margin-top: 4px; }
+    .covers { display: grid; grid-template-columns: 0.42fr 0.58fr; gap: 16px; }
+    .wide { margin-top: 12px; }
+    code { color: var(--gold); }
+  </style>
+</head>
+<body>
+  <section class="shot-block hero" data-shot="hero">
+    <div>
+      <p style="color:var(--gold);margin:0 0 8px;letter-spacing:.16em;">利害關係人總覽</p>
+      <h1>IMMUNE 永久研究網絡</h1>
+      <p>IMMUNE 3D 免疫細胞策略遊戲的永久研究星盤。玩家消耗抗原樣本、一度原質、融合核心與生物質，解鎖 200 個真實節點：角色身份、移動資格、融合、狀態化學與 Apex。</p>
+      <div class="kpis">
+        <div class="kpi"><b>200</b><span>研究節點</span></div>
+        <div class="kpi"><b>31</b><span>角色身份</span></div>
+        <div class="kpi"><b>6→10</b><span>協議帶寬</span></div>
+        <div class="kpi"><b>5/200</b><span>Demo 已完成</span></div>
+      </div>
+    </div>
+    <img src="../assets/cover.png" alt="IMMUNE 永久研究網絡封面">
+  </section>
+
+  <section class="shot-block" data-shot="summary">
+    <h2>產品摘要</h2>
+    <p>可玩入口：<code>ui/immune-research-network/index.html</code>。空間＝家族扇區；形狀／圖示＝研究分類；外圈與符號＝解鎖狀態。Demo 揭示 22 點，完成免疫核心、T／B 身份、BASE-T-01 與 BASE-T-02。開局選中：BASE-T-03 T 細胞固定炮台專精。</p>
+    <table>
+      <tr><th>環層</th><th>內容</th></tr>
+      <tr><td>核心</td><td>免疫核心 — 唯一起點，無成本</td></tr>
+      <tr><td>內環</td><td>六大通用科技各 7 項 + 七種狀態化學</td></tr>
+      <tr><td>家族環</td><td>六個基礎角色各 8 項專屬研究 + 身份錨點</td></tr>
+      <tr><td>組合環</td><td>十五組雙家族（S1／S2／錨點／S4 協議）</td></tr>
+      <tr><td>外環</td><td>六個三融合 + 三個隱藏 Apex + IMMUNE PRIME</td></tr>
+    </table>
+  </section>
+
+  <section class="shot-block" data-shot="loop">
+    <h2>核心循環</h2>
+    <div class="loop">
+      <b>打開星盤</b><i>→</i>
+      <b>平移／縮放 0.35×–2.4×</b><i>→</i>
+      <b>選擇節點</b><i>→</i>
+      <b>追蹤或研究</b><i>→</i>
+      <b>永久解鎖</b><i>→</i>
+      <b>裝備研究協議</b>
+    </div>
+    <p>成功：Toast「研究完成，永久進度已更新。」新揭示節點發光。失敗：研究按鈕停用；Toast 顯示引擎錯誤碼（<code>missing_prerequisite</code>、<code>missing_resource</code>、<code>track_limit</code>、<code>bandwidth_exceeded</code>）。</p>
+  </section>
+
+  <section class="shot-block" data-shot="ux">
+    <h2>UX 旅程 — 垂直切片</h2>
+    <div class="phones">
+      <figure><img src="../tools/screenshots/ux-01-fit-all.png" alt="顯示全圖"><figcaption>1 顯示全圖 — 31 個錨點可辨</figcaption></figure>
+      <figure><img src="../tools/screenshots/ux-03-play-hud.png" alt="遊玩 HUD"><figcaption>3 遊玩 HUD — 5/200，帶寬 0/6</figcaption></figure>
+      <figure><img src="../tools/screenshots/ux-04-t-focus.png" alt="聚焦 T 細胞"><figcaption>4 雙擊 T 細胞錨點</figcaption></figure>
+      <figure><img src="../tools/screenshots/ux-05-detail-ready.png" alt="可研究"><figcaption>5 可研究 — 「研究」可點</figcaption></figure>
+      <figure><img src="../tools/screenshots/ux-08-locked.png" alt="缺少前置"><figcaption>8 記憶獵手 — 缺少前置</figcaption></figure>
+      <figure><img src="../tools/screenshots/ux-09-researched.png" alt="研究完成"><figcaption>9 研究完成 toast</figcaption></figure>
+    </div>
+    <div class="wide"><img src="../tools/screenshots/ux-10-desktop.png" alt="1920×1080"><figcaption>桌面 1920×1080 — 詳情 380px、迷你地圖 180px、協議列</figcaption></div>
+    <div class="wide"><img src="../tools/screenshots/ux-12-landscape.png" alt="1280×720"><figcaption>1280×720 橫向 — 協議托盤收至 44px，懸停展開</figcaption></div>
+  </section>
+
+  <section class="shot-block" data-shot="mechanics">
+    <h2>機制（來自可玩入口）</h2>
+    <table>
+      <tr><th>操作</th><th>實際行為</th></tr>
+      <tr><td>拖曳空白</td><td>平移。滾輪／雙指以游標為中心縮放 0.35×–2.4×。</td></tr>
+      <tr><td>點擊節點</td><td>選擇並加亮路線。雙擊角色錨點聚焦 1.05×。</td></tr>
+      <tr><td>顯示全圖／返回核心／聚焦路線</td><td>全圖 · 回 1500,1500 @0.55× · 聚焦目前選擇</td></tr>
+      <tr><td>追蹤／F</td><td>最多 3 個。金色描邊與「追蹤中」。未發現不可追蹤。</td></tr>
+      <tr><td>研究／R</td><td>僅可研究狀態。扣成本、完成、揭示後續。</td></tr>
+      <tr><td>地圖／列表</td><td>列表依環層分組；未發現名稱保持「未知」。列表模式隱藏迷你地圖。</td></tr>
+      <tr><td>搜尋／家族篩選</td><td>搜尋不劇透未發現名稱。篩選只淡化，不重排。</td></tr>
+      <tr><td>研究協議</td><td>普通 1／核心 2／Apex 3。Apex 限一。帶寬 6 起，後期 10。關卡外免費裝備／卸下。</td></tr>
+      <tr><td>LOD</td><td>0.35–0.55 只顯示錨點 · 0.56–1.0 節點 · 1.01–1.6 名稱 · 1.61+ 成本</td></tr>
+    </table>
+  </section>
+
+  <section class="shot-block" data-shot="catalog">
+    <h2>內容庫 — 31 個身份（遊玩順序）</h2>
+    <div class="gallery">
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-BASE-T.svg" alt="T 細胞"><span>T 細胞</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-BASE-B.svg" alt="B 細胞"><span>B 細胞</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-BASE-M.svg" alt="巨噬細胞"><span>巨噬細胞</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-BASE-N.svg" alt="NK 細胞"><span>NK 細胞</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-BASE-A.svg" alt="抗體構造體"><span>抗體構造體</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-BASE-D.svg" alt="樹突細胞"><span>樹突細胞</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-PAIR-TB.svg" alt="記憶獵手"><span>記憶獵手</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-PAIR-TM.svg" alt="吞噬突擊"><span>吞噬突擊</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-PAIR-TN.svg" alt="細胞毒刃"><span>細胞毒刃</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-PAIR-TA.svg" alt="精準抗體"><span>精準抗體</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-PAIR-TD.svg" alt="免疫指揮"><span>免疫指揮</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-PAIR-BM.svg" alt="抗原處理"><span>抗原處理</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-PAIR-BN.svg" alt="標記處決"><span>標記處決</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-PAIR-BA.svg" alt="抗體風暴"><span>抗體風暴</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-PAIR-BD.svg" alt="抗原呈現"><span>抗原呈現</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-PAIR-MN.svg" alt="感染清除"><span>感染清除</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-PAIR-MA.svg" alt="免疫壁壘"><span>免疫壁壘</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-PAIR-MD.svg" alt="抗原中樞"><span>抗原中樞</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-PAIR-NA.svg" alt="抗體追獵"><span>抗體追獵</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-PAIR-ND.svg" alt="獵殺信標"><span>獵殺信標</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-PAIR-AD.svg" alt="免疫網絡"><span>免疫網絡</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-TRIPLE-TBA.svg" alt="適應免疫核心"><span>適應免疫核心</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-TRIPLE-TND.svg" alt="全域截擊中樞"><span>全域截擊中樞</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-TRIPLE-MAD.svg" alt="組織防衛聖域"><span>組織防衛聖域</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-TRIPLE-BMD.svg" alt="組織再生工廠"><span>組織再生工廠</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-TRIPLE-BNA.svg" alt="抗體獵殺蜂群"><span>抗體獵殺蜂群</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-TRIPLE-TMN.svg" alt="凋亡反應爐"><span>凋亡反應爐</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-APEX-MEMORY.svg" alt="長期免疫記憶庫"><span>長期免疫記憶庫</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-APEX-STERILE.svg" alt="無菌聖域"><span>無菌聖域</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-APEX-SILENT.svg" alt="靜默獵殺網"><span>靜默獵殺網</span></div>
+      <div class="card"><img src="../ui/immune-research-network/assets/characters/CHAR-PRIME.svg" alt="IMMUNE PRIME"><span>IMMUNE PRIME</span></div>
+    </div>
+    <p>狀態化學（7）：標記 · 抗體 · 腐蝕 · 緩速 · 感染 · 鏈鎖 · 暴擊。通用科技（6×7）：防守工程 · 遠征探索 · 全面戰爭 · 細胞機動 · 融合工程 · 生存修復。</p>
+  </section>
+
+  <section class="shot-block" data-shot="progression">
+    <h2>進度／難度</h2>
+    <table>
+      <tr><th>階段</th><th>目標</th><th>規格 + Demo 現況</th></tr>
+      <tr><td>垂直切片</td><td>揭示 18–24，每 15–20 分鐘解鎖 2–4</td><td>現況：揭示 22、完成 5；抗原 120／一度原質 15／融合 2／生物質 40</td></tr>
+      <tr><td>主線 4–6 小時</td><td>完成約 45–60</td><td>家族專屬 + 第一組雙家族 S2</td></tr>
+      <tr><td>完整 15–25 小時</td><td>發現約 130–160</td><td>三融合與 Apex 門檻。200／200 為精通而非必要</td></tr>
+      <tr><td>追蹤上限</td><td>3</td><td>顯示前置與總成本，永不代買</td></tr>
+      <tr><td>協議</td><td>帶寬 6→10</td><td>普通 1 · 核心 2 · Apex 3 · 每關最多一個 Apex</td></tr>
+    </table>
+  </section>
+
+  <section class="shot-block" data-shot="covers">
+    <h2>商店封面</h2>
+    <div class="covers">
+      <figure>
+        <img src="../assets/cover-3x4.webp" alt="cover-3x4.webp">
+        <figcaption>3:4 商店格 · cover-3x4.webp · 1024×1536</figcaption>
+      </figure>
+      <figure>
+        <img src="../assets/cover-16x9.webp" alt="cover-16x9.webp">
+        <figcaption>16:9 目錄橫幅 · cover-16x9.webp · 1536×1024</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="shot-block" data-shot="footer">
+    <h2>重新整理</h2>
+    <p>Demo：<code>http://127.0.0.1:5180/ui/immune-research-network/</code></p>
+    <p>21:9 板：<code>docs/ux-wireframe.html</code> · 經理頁：<code>docs/manager-overview.html</code></p>
+    <p>重拍 HUD：<code>PORT=5180 npm run serve</code> 然後 <code>PORT=5180 npm run docs</code></p>
+    <p>只烘海報：<code>PORT=5180 npm run docs:posters</code></p>
+    <p>驗證：<code>bash .agents/skills/overview-pack/scripts/validate-overview-pack.sh</code></p>
+  </section>
+</body>
+</html>

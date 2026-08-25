@@ -1,0 +1,68 @@
+# --- Godot ---
+godot/**/.godot/
+godot/**/.import/
+*.translation
+
+# --- Node / JS ---
+node_modules/
+work/node_modules/
+npm-debug.log*
+.pnpm-store/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+.venv/
+venv/
+
+# --- OS / IDE ---
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+.idea/
+.vscode/
+.vercel/
+
+# --- Env / secrets ---
+.env
+.env.*
+!.env.example
+*.pem
+credentials.json
+
+# --- Generated exports (regenerate locally) ---
+outputs/
+
+# --- UI staging pilots ---
+ui/immune-research-network/staging/
+
+# --- 3D lock: parameter-sweep evidence (keep finals in t-gel-r*, r5/, gallery/) ---
+build/shots/sweep*/
+build/shots/d[0-9]-*/
+build/shots/da-*/
+build/shots/p4*/
+build/shots/p5*/
+build/shots/ink*/
+build/shots/t-gel-iter/
+build/shots/diag/
+build/shots/r4b-*/
+build/shots/r4fam-*/
+build/shots/regress-kit/
+build/shots/crit3-diag/
+build/shots/crit3-fam/
+build/shots/crit3-kit/
+build/dump/
+build/__pycache__/
+build/**/*.log
+build/shots/t-gel-iter/
+
+# --- Large binary mesh dumps ---
+build/dump/*.npy
+build/dump/*.npz
+
+# --- Cursor local (optional) ---
+.cursor/

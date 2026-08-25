@@ -1,0 +1,255 @@
+{
+  "schema_version": "1.0.0",
+  "run_id": "immune-research-network-v1",
+  "product": "IMMUNE",
+  "targets": [
+    "html5-steam-pc",
+    "steam-deck-1280x800"
+  ],
+  "status": "in_progress",
+  "approval_mode": "interactive",
+  "scope": {
+    "player_goal": "在永久研究星盤中找到 T 細胞移動資格、理解缺少條件、完成前置研究並配置一項研究協議",
+    "in_scope": [
+      "200 個真實研究節點的放射式星盤",
+      "31 個角色身份錨點與六家族扇區",
+      "搜尋、聚焦、追蹤、研究與研究協議配置",
+      "桌面與 Steam Deck 橫向版面"
+    ],
+    "out_of_scope": [
+      "研究室角色漫游",
+      "戰鬥關卡與 3D 角色模型",
+      "完整 200 節點數值平衡"
+    ]
+  },
+  "source_references": [
+    {
+      "id": "radial-node-reference",
+      "type": "image",
+      "path": "C:/Users/wchkl/AppData/Local/Temp/codex-clipboard-c138b9c4-b5ed-4654-8fbc-28f79925c8b8.png",
+      "role": "圓形分層節點樹的結構與密度參考，不直接複製視覺資產"
+    },
+    {
+      "id": "approved-network-spec",
+      "type": "document",
+      "path": "docs/superpowers/specs/2026-08-12-immune-permanent-research-network-design.md",
+      "role": "節點數量、角色關係、依賴、互動與驗收的權威規格"
+    }
+  ],
+  "constraints": {
+    "orientations": [
+      "landscape"
+    ],
+    "input_methods": [
+      "mouse",
+      "keyboard",
+      "gamepad",
+      "touchpad"
+    ],
+    "locales": [
+      "zh-Hant"
+    ],
+    "performance_budget": "低配 PC 與 Steam Deck 上平移縮放 200 節點時保持流暢，拖曳期間不重建節點 DOM",
+    "safe_area_policy": "Respect platform safe areas"
+  },
+  "design_system": {
+    "visual_direction": "待在 A 清晰免疫科技星盤與 B 有機器官神經網絡兩版概念中批准；共同方向是可愛免疫細胞＋危險人體世界",
+    "palette": [],
+    "typography": [],
+    "spacing_rule": "星盤為主視覺，面板只服務導航與決策，不使用重複卡片網格",
+    "shape_rule": "角色錨點、一般研究、融合、狀態與 Apex 使用不同輪廓；狀態不可只靠顏色",
+    "motion_rule": "能量沿依賴線流動；reduced-motion 改為短暫亮度與輪廓變化",
+    "accessibility_notes": [
+      "所有操作命中區至少 44px",
+      "未發現內容不可在搜尋或 aria-label 洩漏",
+      "鍵盤及手掣焦點必須可見"
+    ]
+  },
+  "journeys": [
+    {
+      "id": "primary-journey",
+      "goal": "從全圖找到並完成 T 細胞移動資格相關研究，再配置一項研究協議",
+      "entry_screen": "primary-screen",
+      "steps": [
+        {
+          "screen": "primary-screen",
+          "action": "focus-t-mobility"
+        },
+        {
+          "screen": "primary-screen",
+          "action": "research-prerequisite"
+        },
+        {
+          "screen": "primary-screen",
+          "action": "equip-protocol"
+        }
+      ],
+      "success": "完成數與資源精確更新一次、兩個後續節點亮起，協議帶寬顯示 1/6 並可在刷新後恢復"
+    }
+  ],
+  "screens": [
+    {
+      "id": "primary-screen",
+      "name": "永久研究星盤",
+      "route_or_context": "關卡外永久研究介面",
+      "stage": "reference",
+      "status": "in_progress",
+      "regions": [
+        {
+          "id": "research-map",
+          "purpose": "顯示 200 節點、31 角色錨點、六扇區與依賴線"
+        },
+        {
+          "id": "resource-toolbar",
+          "purpose": "顯示完成進度、永久研究資源、搜尋與篩選"
+        },
+        {
+          "id": "detail-panel",
+          "purpose": "顯示節點效果、前置、缺口、取得方式及操作"
+        },
+        {
+          "id": "protocol-dock",
+          "purpose": "配置有限帶寬的研究協議"
+        },
+        {
+          "id": "minimap",
+          "purpose": "標示大型世界與目前視窗範圍"
+        }
+      ],
+      "state_matrix": [
+        {
+          "state": "default",
+          "applicable": true,
+          "design": "全圖顯示六家族扇區、31 個角色錨點及 18–24 個已揭示節點；右側預設顯示 T 細胞移動資格",
+          "implemented": false,
+          "verified": false
+        },
+        {
+          "state": "loading",
+          "applicable": true,
+          "design": "首次建立 catalog 時保留星盤骨架，資源及節點以細胞膜脈衝表示載入",
+          "implemented": false,
+          "verified": false
+        },
+        {
+          "state": "empty",
+          "applicable": true,
+          "design": "搜尋或篩選沒有結果時保留星盤位置，中央顯示清除篩選操作",
+          "implemented": false,
+          "verified": false
+        },
+        {
+          "state": "error",
+          "applicable": true,
+          "design": "catalog 或存檔失效時保留主介面並提供重建示範進度，不顯示空白畫面",
+          "implemented": false,
+          "verified": false
+        },
+        {
+          "state": "disabled",
+          "applicable": true,
+          "design": "資源、前置、角色卡或材料不足時研究按鈕停用並顯示精確缺口與取得方式",
+          "implemented": false,
+          "verified": false
+        },
+        {
+          "state": "focused",
+          "applicable": true,
+          "design": "白色雙層焦點環、節點名稱及相鄰可走方向；不能只靠亮度",
+          "implemented": false,
+          "verified": false
+        },
+        {
+          "state": "pressed",
+          "applicable": true,
+          "design": "節點膜短暫收縮、按鈕位移 1px；快速重複研究只接受第一次",
+          "implemented": false,
+          "verified": false
+        }
+      ],
+      "actions": [
+        {
+          "id": "focus-t-mobility",
+          "control": "搜尋／T 細胞移動資格節點",
+          "trigger": "click、Enter 或手掣確認",
+          "precondition": "節點已揭示",
+          "effect": "聚焦 T 細胞研究群並選擇移動資格",
+          "feedback": "祖先路線亮起，無關節點淡化，詳情顯示精確缺口",
+          "failure": "未發現內容不出現在結果；查無結果時可一鍵清除篩選"
+        },
+        {
+          "id": "research-prerequisite",
+          "control": "開始研究",
+          "trigger": "click、R 或手掣確認",
+          "precondition": "前置、卡片、材料及資源全部滿足",
+          "effect": "原子扣除資源並永久完成節點，再重新計算後續狀態",
+          "feedback": "能量流入、節點成熟、完成數更新、兩個後續節點亮起",
+          "failure": "不改變任何狀態或資源，顯示拒絕原因"
+        },
+        {
+          "id": "equip-protocol",
+          "control": "研究協議托盤",
+          "trigger": "click、Enter 或手掣確認",
+          "precondition": "協議已完成、關卡外、帶寬足夠且不超過一個 Apex",
+          "effect": "把協議加入配置並保存",
+          "feedback": "帶寬由 0/6 變為 1/6，協議槽顯示已裝備",
+          "failure": "保留原配置並顯示帶寬、Apex 或戰鬥中鎖定原因"
+        }
+      ],
+      "asset_ids": [],
+      "acceptance_criteria": [
+        "玩家可在 10 秒內找到 T 細胞移動資格",
+        "全圖縮放仍可辨認 31 個角色錨點",
+        "選擇雙融合時兩條來源路線同時亮起",
+        "研究只扣款一次，失敗不改變資源",
+        "1280×720、1280×800 與 1920×1080 無主要面板遮擋",
+        "失敗與資源不足都留下可恢復的操作路徑"
+      ],
+      "implementation": {
+        "runtime": "原生 HTML5、CSS、SVG、JavaScript",
+        "entrypoint": "ui/immune-research-network/index.html",
+        "files": [
+          "ui/immune-research-network/index.html",
+          "outputs/immune_research_network_v1.html"
+        ]
+      },
+      "evidence": []
+    }
+  ],
+  "assets": [],
+  "issues": [],
+  "iterations": [
+    {
+      "id": "concept-generation-01",
+      "hypothesis": "相同 1920×1080 比較狀態可公平判斷清晰科技星盤與有機器官網絡兩種方向",
+      "changes": [
+        "完成 A/B art-direction brief",
+        "鎖定 31 錨點、六扇區、五環與四種連線",
+        "修正原計劃中桌面與 Steam Deck 稿混作 A/B 的歧義"
+      ],
+      "evidence": [
+        "build/ui-product/runs/immune-research-network-v1/concept-prompts.md",
+        "build/ui-product/runs/immune-research-network-v1/task-1-art-direction-review.md"
+      ],
+      "result": "兩次 built-in Image Gen 均在 provider 回傳時發生 network error，沒有保存新概念圖；視覺批准閘門維持 pending"
+    }
+  ],
+  "gates": {
+    "visual_direction": {
+      "status": "pending",
+      "evidence": []
+    },
+    "external_spend": {
+      "status": "pending",
+      "evidence": []
+    },
+    "implementation": {
+      "status": "pending",
+      "evidence": []
+    },
+    "publication": {
+      "status": "pending",
+      "evidence": []
+    }
+  }
+}

@@ -1,0 +1,8 @@
+[gd_scene format=3]
+
+[node name="SkillFx" type="GPUParticles3D"]
+emitting = true
+amount = 16
+lifetime = 0.6
+one_shot = true
+explosiveness = 0.85

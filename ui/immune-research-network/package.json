@@ -1,0 +1,16 @@
+{
+  "name": "immune-research-network",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "assets": "node scripts/generate-assets.mjs && node scripts/attach-portrait-pngs.mjs && node scripts/attach-icon-pngs.mjs && node scripts/embed-asset-bundle.mjs",
+    "icons": "node scripts/attach-icon-pngs.mjs",
+    "datasheet": "node scripts/build-character-datasheet.mjs",
+    "prompts:3d": "node scripts/generate-3d-character-prompts.mjs",
+    "prompts:catalog": "node scripts/generate-catalog-portrait-prompts.mjs",
+    "build": "node scripts/generate-assets.mjs && node scripts/attach-portrait-pngs.mjs && node scripts/embed-asset-bundle.mjs && node scripts/build-single-file.mjs && node scripts/build-character-datasheet.mjs",
+    "serve": "node scripts/serve.mjs"
+  }
+}

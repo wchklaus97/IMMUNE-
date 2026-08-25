@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IMMUNE｜敵人圖鑑</title>
+  <style>
+    :root {
+      --bg-deep: #040a12;
+      --panel: #0c1c2c;
+      --border: #27506a;
+      --text: #e9f6ff;
+      --muted: #91aec1;
+      --cyan: #5de4ff;
+      --gold: #f4c35b;
+      --font: "Segoe UI", "Microsoft JhengHei", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg-deep); color: var(--text); font-family: var(--font); }
+    .top {
+      position: sticky; top: 0; z-index: 20;
+      background: rgba(4, 10, 18, 0.96);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px 12px;
+    }
+    .brand { display: flex; justify-content: space-between; gap: 16px; align-items: flex-end; flex-wrap: wrap; }
+    .brand h1 { margin: 0; font-size: 22px; }
+    .brand small { display: block; color: var(--muted); font-size: 12px; margin-top: 4px; font-weight: 400; }
+    .links { display: flex; gap: 10px; flex-wrap: wrap; }
+    .links a {
+      color: var(--cyan); text-decoration: none; border: 1px solid var(--border);
+      border-radius: 999px; padding: 6px 12px; font-size: 13px;
+    }
+    .links a.here { background: var(--cyan); color: #041018; font-weight: 700; border-color: var(--cyan); }
+    .stats { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+    .stat { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; min-width: 92px; }
+    .stat b { display: block; color: var(--cyan); font-size: 18px; }
+    .stat span { color: var(--muted); font-size: 11px; }
+    main { padding: 20px 24px 64px; display: grid; gap: 18px; }
+    .note {
+      background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+      padding: 14px 16px; color: var(--muted); font-size: 14px; line-height: 1.55;
+    }
+    .note strong { color: var(--gold); }
+    h2 { margin: 0; font-size: 16px; color: var(--gold); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+    .card { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+    .card img, .missing {
+      display: block; width: 100%; aspect-ratio: 1; object-fit: contain; background: #000;
+    }
+    .missing {
+      display: flex; align-items: center; justify-content: center;
+      color: var(--muted); font-size: 13px; background: #071422;
+    }
+    .card figcaption { padding: 10px 12px; font-size: 12px; color: var(--muted); }
+    .card strong { display: block; color: var(--text); font-size: 15px; margin-bottom: 2px; }
+    .tag {
+      display: inline-block; margin-left: 6px; font-size: 10px; font-weight: 700;
+      color: #041018; background: var(--gold); border-radius: 999px; padding: 1px 6px;
+      vertical-align: middle;
+    }
+    .poster-wrap { margin: 0 0 14px; border: 1px solid var(--border); border-radius: 14px; overflow: hidden; background: #000; }
+    .poster-wrap img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
+    .family-block { display: grid; gap: 12px; }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <div>
+        <h1>IMMUNE｜敵人圖鑑<small>65 隻具名敵人 · 七族職務已補齊 · 濕果凍 v2</small></h1>
+      </div>
+      <nav class="links">
+        <a href="index.html">研究樹</a>
+        <a href="datasheet.html">角色資料表</a>
+        <a class="here" href="enemy-review.html">敵人圖鑑</a>
+        <a href="3d-review.html">3D 評審</a>
+      </nav>
+    </div>
+    <div class="stats">
+      <div class="stat"><b>65</b><span>具名敵人</span></div>
+      <div class="stat"><b>65</b><span>濕果凍 v2</span></div>
+      <div class="stat"><b>0</b><span>關卡 Boss 舊圖</span></div>
+      <div class="stat"><b>7</b><span>族海報</span></div>
+    </div>
+  </header>
+  <main>
+    <p class="note">
+      <strong>研究樹首頁沒有這些戰鬥敵人。</strong>那邊的 <code>ENEMY-VIRUS</code> 等是族群類型圖示。
+      戰鬥敵人是 <code>E-001</code>～<code>E-065</code>。真菌／毒素／突襲已補上衝刺、裝甲、飛行、群體等職務，跟病毒、細菌一樣齊。
+      有 v2 的卡片會標 <strong>v2</strong>。
+    </p>
+    <div id="sections"></div>
+  </main>
+  <script>
+    const V = "20260816-silhouette-pass";
+    const POSTERS = {
+      "病毒族": "IMMUNE-alt-virus-line-poster.png",
+      "細菌族": "IMMUNE-alt-bacteria-line-poster.png",
+      "寄生體族": "IMMUNE-alt-parasite-line-poster.png",
+      "變異細胞族": "IMMUNE-alt-mutant-line-poster.png",
+      "真菌族": "IMMUNE-alt-fungus-line-poster.png",
+      "毒素族": "IMMUNE-alt-toxin-line-poster.png",
+      "突襲隊": "IMMUNE-alt-raid-line-poster.png"
+    };
+    function enemySrc(id, preferV2) {
+      return "assets/enemies/" + id + (preferV2 ? "-v2.png" : ".png") + "?v=" + V;
+    }
+    const ENEMIES = [
+      ["E-001", "病毒族", "基本病毒", "普通", true],
+      ["E-002", "病毒族", "裂變病毒", "普通", true],
+      ["E-003", "病毒族", "感染病毒", "特殊", true],
+      ["E-004", "病毒族", "群體病毒", "特殊", true],
+      ["E-005", "病毒族", "飛行病毒", "特殊", true],
+      ["E-006", "病毒族", "突變病毒", "精英", true],
+      ["E-025", "病毒族", "潛伏病毒", "特殊", true],
+      ["E-026", "病毒族", "載體病毒", "特殊", true],
+      ["E-027", "細菌族", "基本細菌", "普通", true],
+      ["E-028", "細菌族", "衝刺細菌", "普通", true],
+      ["E-007", "細菌族", "裝甲細菌", "重型", true],
+      ["E-008", "細菌族", "再生細菌", "特殊", true],
+      ["E-029", "細菌族", "產毒細菌", "特殊", true],
+      ["E-030", "細菌族", "芽孢細菌", "特殊", true],
+      ["E-009", "細菌族", "細菌群落", "精英", true],
+      ["E-010", "細菌族", "生物膜細菌", "精英", true],
+      ["E-031", "寄生體族", "幼體寄生", "普通", true],
+      ["E-011", "寄生體族", "吸血寄生體", "特殊", true],
+      ["E-012", "寄生體族", "鑽地寄生體", "特殊", true],
+      ["E-013", "寄生體族", "快速寄生體", "特殊", true],
+      ["E-032", "寄生體族", "卵囊寄生", "特殊", true],
+      ["E-033", "寄生體族", "群聚水蛭", "特殊", true],
+      ["E-014", "寄生體族", "模仿寄生體", "精英", true],
+      ["E-034", "寄生體族", "巢穴寄生", "精英", true],
+      ["E-035", "變異細胞族", "變異幼體", "普通", true],
+      ["E-036", "變異細胞族", "奔走變異", "特殊", true],
+      ["E-037", "變異細胞族", "遠程變異", "特殊", true],
+      ["E-015", "變異細胞族", "變異細胞 I", "精英", true],
+      ["E-016", "變異細胞族", "變異細胞 II", "精英", true],
+      ["E-017", "變異細胞族", "變異細胞 III", "精英", true],
+      ["E-038", "變異細胞族", "壞死變異", "精英", true],
+      ["E-018", "變異細胞族", "自適應細胞", "精英", true],
+      ["E-039", "真菌族", "基本真菌", "普通", true],
+      ["E-052", "真菌族", "衝刺真菌", "普通", true],
+      ["E-053", "真菌族", "裝甲真菌", "重型", true],
+      ["E-054", "真菌族", "再生真菌", "特殊", true],
+      ["E-040", "真菌族", "菌絲網", "特殊", true],
+      ["E-041", "真菌族", "孢子囊", "特殊", true],
+      ["E-055", "真菌族", "飛行孢子", "特殊", true],
+      ["E-042", "真菌族", "真菌塔", "精英", true],
+      ["E-049", "真菌族", "真菌王", "Boss", true],
+      ["E-043", "毒素族", "毒素囊", "普通", true],
+      ["E-056", "毒素族", "衝刺毒囊", "普通", true],
+      ["E-057", "毒素族", "裝甲毒囊", "重型", true],
+      ["E-044", "毒素族", "超抗原雲", "特殊", true],
+      ["E-045", "毒素族", "壞死斑", "特殊", true],
+      ["E-058", "毒素族", "群體毒珠", "特殊", true],
+      ["E-059", "毒素族", "潛伏毒斑", "特殊", true],
+      ["E-046", "毒素族", "毒素核心", "精英", true],
+      ["E-050", "毒素族", "毒素君主", "Boss", true],
+      ["E-060", "突襲隊", "基本突襲兵", "普通", true],
+      ["E-047", "突襲隊", "核心突襲兵", "特殊", true],
+      ["E-061", "突襲隊", "衝刺突襲兵", "普通", true],
+      ["E-062", "突襲隊", "裝甲突襲兵", "重型", true],
+      ["E-063", "突襲隊", "飛行突襲兵", "特殊", true],
+      ["E-064", "突襲隊", "群體突襲", "特殊", true],
+      ["E-065", "突襲隊", "遠程突襲兵", "特殊", true],
+      ["E-048", "突襲隊", "突襲精英", "精英", true],
+      ["E-051", "突襲隊", "突襲統帥", "Boss", true],
+      ["E-019", "Boss", "流感核心", "Boss", true],
+      ["E-020", "Boss", "腫瘤巨塊", "Boss", true],
+      ["E-021", "Boss", "細菌母巢", "Boss", true],
+      ["E-022", "Boss", "寄生女王", "Boss", true],
+      ["E-023", "Boss", "變異融合體", "Boss", true],
+      ["E-024", "Boss", "感染本源", "Boss", true]
+    ];
+    const families = [...new Set(ENEMIES.map((e) => e[1]))];
+    const root = document.getElementById("sections");
+    for (const family of families) {
+      const block = document.createElement("section");
+      block.className = "family-block";
+      const h = document.createElement("h2");
+      h.textContent = family;
+      block.appendChild(h);
+      if (POSTERS[family]) {
+        const wrap = document.createElement("div");
+        wrap.className = "poster-wrap";
+        const poster = document.createElement("img");
+        poster.src = "assets/enemies/" + POSTERS[family] + "?v=" + V;
+        poster.alt = family + " lineup";
+        wrap.appendChild(poster);
+        block.appendChild(wrap);
+      }
+      const grid = document.createElement("div");
+      grid.className = "grid";
+      for (const [id, fam, name, tier, ready] of ENEMIES.filter((e) => e[1] === family)) {
+        const card = document.createElement("article");
+        card.className = "card";
+        const fig = document.createElement("figure");
+        fig.style.margin = "0";
+        const cap = document.createElement("figcaption");
+        cap.innerHTML = "<strong>" + name + "</strong>" + id + " · " + fam + " · " + tier;
+        if (ready) {
+          const img = document.createElement("img");
+          img.alt = name;
+          img.src = enemySrc(id, true);
+          img.addEventListener("error", function onV2Miss() {
+            img.removeEventListener("error", onV2Miss);
+            img.src = enemySrc(id, false);
+          });
+          img.addEventListener("load", function onLoad() {
+            img.removeEventListener("load", onLoad);
+            if (img.src.indexOf("-v2.png") !== -1) {
+              cap.querySelector("strong").innerHTML = name + ' <span class="tag">v2</span>';
+            }
+          });
+          fig.appendChild(img);
+        } else {
+          const miss = document.createElement("div");
+          miss.className = "missing";
+          miss.textContent = "尚未出圖";
+          fig.appendChild(miss);
+        }
+        fig.appendChild(cap);
+        card.appendChild(fig);
+        grid.appendChild(card);
+      }
+      block.appendChild(grid);
+      root.appendChild(block);
+    }
+  </script>
+</body>
+</html>

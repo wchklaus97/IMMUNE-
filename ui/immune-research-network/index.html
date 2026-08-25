@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IMMUNE 永久研究網絡</title>
+  <link rel="stylesheet" href="src/styles/tokens.css">
+  <link rel="stylesheet" href="src/styles/shell.css">
+  <link rel="stylesheet" href="src/styles/tree-map.css">
+  <link rel="stylesheet" href="src/styles/responsive.css">
+  <link rel="stylesheet" href="src/styles/cover.css">
+</head>
+<body>
+  <div id="app" class="immune-app">
+    <header id="resource-bar" class="resource-bar" aria-label="資源列"></header>
+    <section id="research-toolbar" class="research-toolbar" aria-label="研究工具列"></section>
+    <div class="immune-main">
+      <div class="canvas-wrap">
+        <div id="tree-viewport" class="tree-viewport" tabindex="0" role="application" aria-label="研究星盤">
+          <svg id="tree-svg" class="tree-svg" viewBox="0 0 3000 3000" aria-hidden="true">
+            <g id="world-transform">
+              <g id="sector-layer"></g>
+              <g id="edge-layer"></g>
+              <g id="node-layer"></g>
+              <g id="label-layer"></g>
+              <g id="feedback-layer"></g>
+            </g>
+          </svg>
+        </div>
+        <section id="research-list" class="research-list hidden" aria-label="研究列表"></section>
+        <div id="minimap" class="minimap" aria-label="迷你地圖"></div>
+      </div>
+      <aside id="detail-panel" class="detail-panel" aria-label="節點詳情"></aside>
+    </div>
+    <footer id="protocol-dock" class="protocol-dock" aria-label="研究協議托盤"></footer>
+    <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
+    <div id="cover-title" class="cover-title">
+      <h1>IMMUNE</h1>
+      <p>永久研究網絡</p>
+    </div>
+    <aside id="cover-cards-left" class="cover-cards is-left" aria-hidden="true"></aside>
+    <aside id="cover-cards-right" class="cover-cards is-right" aria-hidden="true"></aside>
+  </div>
+
+  <!-- Catalog -->
+  <script defer src="src/catalog/definitions.js"></script>
+  <script defer src="src/catalog/build-catalog.js"></script>
+  <script defer src="src/catalog/validate-catalog.js"></script>
+  <script defer src="src/catalog/character-identity.js"></script>
+
+  <!-- Domain -->
+  <script defer src="src/domain/unlock-engine.js"></script>
+  <script defer src="src/domain/research-transaction.js"></script>
+  <script defer src="src/domain/protocols.js"></script>
+  <script defer src="src/domain/search-filter.js"></script>
+
+  <!-- State -->
+  <script defer src="src/state/persistence.js"></script>
+  <script defer src="src/state/store.js"></script>
+
+  <!-- Layout -->
+  <script defer src="src/layout/pair-slots.js"></script>
+  <script defer src="src/layout/lod.js"></script>
+  <script defer src="src/layout/radial-layout.js"></script>
+  <script defer src="src/layout/edge-routing.js"></script>
+
+  <!-- Demo -->
+  <script defer src="src/demo-scenario.js"></script>
+
+  <!-- Assets -->
+  <script defer src="src/assets/game-assets.js"></script>
+  <script defer src="src/assets/asset-loader.js"></script>
+  <script defer src="src/assets/asset-bundle.js"></script>
+
+  <!-- Views -->
+  <script defer src="src/views/app-shell.js"></script>
+  <script defer src="src/views/tree-map.js"></script>
+  <script defer src="src/views/detail-panel.js"></script>
+  <script defer src="src/views/minimap.js"></script>
+  <script defer src="src/views/protocol-dock.js"></script>
+  <script defer src="src/views/feedback.js"></script>
+  <script defer src="src/views/research-list.js"></script>
+  <script defer src="src/views/cover-mode.js"></script>
+
+  <!-- Input -->
+  <script defer src="src/input/pan-zoom.js"></script>
+  <script defer src="src/input/keyboard-gamepad.js"></script>
+
+  <!-- Bootstrap -->
+  <script defer src="src/main.js"></script>
+</body>
+</html>

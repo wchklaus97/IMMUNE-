@@ -1,0 +1,37 @@
+﻿[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://characters/character_root.gd" id="1"]
+
+[sub_resource type="SphereMesh" id="SphereMesh_core"]
+radius = 0.45
+height = 0.9
+
+[node name="Character" type="CharacterBody3D"]
+script = ExtResource("1")
+family_id = &"D"
+character_id = &"CHAR-BASE-D"
+
+[node name="CoreMesh" type="MeshInstance3D" parent="."]
+mesh = SubResource("SphereMesh_core")
+
+[node name="Face" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 0.4)
+
+[node name="WeaponSocket" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0.55)
+
+[node name="DutyKits" type="Node3D" parent="."]
+
+[node name="BaseKit" type="Node3D" parent="DutyKits"]
+
+[node name="LocomotionKit" type="Node3D" parent="DutyKits"]
+visible = false
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+
+[node name="KitSwapBurst" type="GPUParticles3D" parent="."]
+emitting = false
+amount = 12
+lifetime = 0.3
+one_shot = true
+explosiveness = 1.0

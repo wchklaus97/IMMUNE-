@@ -1,0 +1,42 @@
+{
+  "objects": [
+    {
+      "name": "tripo_node_7e84a5bd-833c-46c4-91e6-8e3cbe10f39b",
+      "verts": 4610,
+      "tris": 7522,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "shape_keys": [],
+      "materials": [
+        {
+          "name": "tripo_mat_7e84a5bd-833c-46c4-91e6-8e3cbe10f39b",
+          "images": [
+            "orange+alien+blob+3d+model-+remesh_basecolor"
+          ]
+        }
+      ],
+      "modifiers": []
+    }
+  ],
+  "total_tris": 7522,
+  "total_verts": 4610,
+  "armatures": [],
+  "actions": [],
+  "raw_bounds_min": [
+    -0.5534,
+    -0.4182,
+    0.0
+  ],
+  "raw_bounds_max": [
+    0.5575,
+    0.4567,
+    0.8599
+  ],
+  "raw_size": [
+    1.1109,
+    0.8749,
+    0.8599
+  ],
+  "raw_height": 0.8599
+}

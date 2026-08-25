@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CHAR-BASE-T · build 成果总览</title>
+  <link rel="stylesheet" href="gallery.css" />
+</head>
+<body>
+  <header>
+    <h1>CHAR-BASE-T · build 文件夹成果总览</h1>
+    <p>
+      这里汇总 <code>build/</code> 里为 3D 角色锁定流程生成的截图、对比图、测量数据和脚本。
+      所有图片都可点开看大图。标准参考是概念图
+      <code>CHAR-BASE-T-3d-alt.png</code>。
+    </p>
+  </header>
+
+  <nav>
+    <ul>
+      <li><a href="#status">进度</a></li>
+      <li><a href="#reference">标准</a></li>
+      <li><a href="#baseline">基准模型</a></li>
+      <li><a href="#geometry">几何修复</a></li>
+      <li><a href="#material">材质迭代</a></li>
+      <li><a href="#animation">动画</a></li>
+      <li><a href="#analysis">分析图</a></li>
+      <li><a href="#tools">工具脚本</a></li>
+      <li><a href="#folders">文件夹地图</a></li>
+      <li><a href="workflow.html">五步工作流</a></li>
+    </ul>
+  </nav>
+
+  <main>
+    <section id="status">
+      <h2>当前进度</h2>
+      <p class="section-lead">四条工作线：头部几何、湿果冻材质、身形轮廓、动画。每项都有独立截图和评审证据。</p>
+      <div class="status-grid">
+        <div class="status-card">
+          <h3>头部标记（P1）</h3>
+          <span class="badge ok">已通过</span>
+          <p>额头孔改凹盘、去鼻凸、眼睛对称、嘴巴变裂缝。输出 <code>CHAR-BASE-T-fix.glb</code>。</p>
+        </div>
+        <div class="status-card">
+          <h3>湿果冻材质（P2）</h3>
+          <span class="badge warn">第 5 轮评审中</span>
+          <p>颜色已接近参考；第 5 轮打开表面凹点。前 4 轮均被评审判失败。</p>
+        </div>
+        <div class="status-card">
+          <h3>身形轮廓（P1b）</h3>
+          <span class="badge warn">进行中</span>
+          <p>目标：钟形 + 波浪裙边 + 细长钩臂。当前还是高蛋 + 短脚。</p>
+        </div>
+        <div class="status-card">
+          <h3>动画（P3）</h3>
+          <span class="badge ok">已通过</span>
+          <p>8 个动作，无骨骼，动时额头孔和眼睛仍可读。</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="reference">
+      <h2>标准参考</h2>
+      <p class="section-lead">所有对比的最终标准：黑底、3/4 俯视、湿果冻半透明、额头圆孔、对称眼、钟形轮廓。</p>
+      <div class="hero-compare">
+        <figure class="ref-card">
+          <a href="../../godot/immune/characters/concepts/CHAR-BASE-T-3d-alt.png" target="_blank" rel="noopener">
+            <img src="../../godot/immune/characters/concepts/CHAR-BASE-T-3d-alt.png" alt="概念参考图" />
+          </a>
+          <figcaption>概念参考 · CHAR-BASE-T-3d-alt.png</figcaption>
+        </figure>
+        <div class="panel">
+          <table>
+            <tr><th>验收项</th><th>要求</th></tr>
+            <tr><td>额头孔</td><td>浅凹圆盘 + 小黑洞，不能是凸起的第三只眼</td></tr>
+            <tr><td>眼睛</td><td>对称杏仁眼 + 小皱眉，无鼻子凸起</td></tr>
+            <tr><td>轮廓</td><td>钟形，四只下垂肢体，下摆有波浪裙边</td></tr>
+            <tr><td>材质</td><td>半透明湿果冻，边缘有光晕，表面有细密颗粒感</td></tr>
+            <tr><td>动画</td><td>全程额头孔可读</td></tr>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="baseline">
+      <h2>基准模型（Tripo 原始）</h2>
+      <p class="section-lead">
+        起点是你提供的 Tripo remesh：<strong>5044 面</strong>、3277 顶点、1 套 UV、1 张贴图。
+        问题：额头火山口、塑料材质、鼻凸、眼不对称、身形偏矮胖。
+        数据见 <a href="../shots/t-raw/t-raw-report.json">t-raw-report.json</a>。
+      </p>
+      <div class="grid wide">
+        <figure>
+          <a href="../shots/t-raw/t-raw-34.png" target="_blank"><img src="../shots/t-raw/t-raw-34.png" alt="原始 3/4" loading="lazy" /></a>
+          <figcaption>Blender · 3/4</figcaption>
+        </figure>
+        <figure>
+          <a href="../shots/t-raw/t-raw-front.png" target="_blank"><img src="../shots/t-raw/t-raw-front.png" alt="原始正面" loading="lazy" /></a>
+          <figcaption>Blender · 正面</figcaption>
+        </figure>
+        <figure>
+          <a href="../shots/t-raw/t-raw-face.png" target="_blank"><img src="../shots/t-raw/t-raw-face.png" alt="原始脸部" loading="lazy" /></a>
+          <figcaption>Blender · 脸部特写</figcaption>
+        </figure>
+        <figure>
+          <a href="../shots/t-godot/t-godot-34.png" target="_blank"><img src="../shots/t-godot/t-godot-34.png" alt="Godot 原始" loading="lazy" /></a>
+          <figcaption>Godot · 塑料材质 3/4</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section id="geometry">
+      <h2>几何修复（头部已通过）</h2>
+      <p class="section-lead">
+        Blender 脚本推顶点修复，输出 <code>CHAR-BASE-T-fix.glb</code>（7522 面）。
+        修复报告：<a href="../fix-report.json">fix-report.json</a>、
+        <a href="../shots/t-fix/t-fix-report.json">t-fix-report.json</a>。
+        可在 <a href="../inspect/">inspect/</a> 下载两个 GLB 做 Blender 对比。
+      </p>
+      <div class="grid wide">
+        <figure>
+          <a href="../shots/t-fix/t-fix-34.png" target="_blank"><img src="../shots/t-fix/t-fix-34.png" alt="修复后 3/4" loading="lazy" /></a>
+          <figcaption>修复后 · 3/4</figcaption>
+        </figure>
+        <figure>
+          <a href="../shots/t-fix/t-fix-face.png" target="_blank"><img src="../shots/t-fix/t-fix-face.png" alt="修复后脸部" loading="lazy" /></a>
+          <figcaption>修复后 · 脸部（凹孔）</figcaption>
+        </figure>
+        <figure>
+          <a href="../ref-crops/pore-cmp.png" target="_blank"><img src="../ref-crops/pore-cmp.png" alt="额头孔对比" loading="lazy" /></a>
+          <figcaption>额头孔 · 前后对比</figcaption>
+        </figure>
+        <figure>
+          <a href="../ref-crops/eye-compare.png" target="_blank"><img src="../ref-crops/eye-compare.png" alt="眼睛对比" loading="lazy" /></a>
+          <figcaption>眼睛 · 对称性对比</figcaption>
+        </figure>
+        <figure>
+          <a href="../ref-crops/mouth-cmp.png" target="_blank"><img src="../ref-crops/mouth-cmp.png" alt="嘴巴对比" loading="lazy" /></a>
+          <figcaption>嘴巴 · 前后对比</figcaption>
+        </figure>
+        <figure>
+          <a href="../ref-crops/sil-overlay.png" target="_blank"><img src="../ref-crops/sil-overlay.png" alt="轮廓叠加" loading="lazy" /></a>
+          <figcaption>轮廓叠加 · 身形仍待 P1b</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section id="material">
+      <h2>湿果冻材质迭代（Godot shader）</h2>
+      <p class="section-lead">
+        自定义 <code>wet_gel.gdshader</code> + <code>gel_look.gd</code>。
+        五轮主要问题：过曝 → 薄处不发光 → 太暗像塑胶 → 颜色对了但太光滑 → 第 5 轮打开凹点颗粒感。
+      </p>
+
+      <div class="panel">
+        <h3 style="margin-top:0">横向对比条（最重要的一张）</h3>
+        <figure>
+          <a href="../r5/strip-front.png" target="_blank">
+            <img src="../r5/strip-front.png" alt="材质四轮对比" />
+          </a>
+          <figcaption>从左到右：参考图 · 第5轮 · 第4轮 · 最早塑料版</figcaption>
+        </figure>
+      </div>
+
+      <div class="grid wide">
+        <figure>
+          <a href="../shots/t-gel-r3/t-gel-r3-front.png" target="_blank"><img src="../shots/t-gel-r3/t-gel-r3-front.png" alt="材质 r3" loading="lazy" /></a>
+          <figcaption>第 3 轮 · 正面（偏暗塑胶感）</figcaption>
+        </figure>
+        <figure>
+          <a href="../shots/t-gel-r4/t-gel-r4-front.png" target="_blank"><img src="../shots/t-gel-r4/t-gel-r4-front.png" alt="材质 r4" loading="lazy" /></a>
+          <figcaption>第 4 轮 · 正面（颜色对了，太光滑）</figcaption>
+        </figure>
+        <figure>
+          <a href="../shots/t-gel-r5/t-gel-r5-front.png" target="_blank"><img src="../shots/t-gel-r5/t-gel-r5-front.png" alt="材质 r5" loading="lazy" /></a>
+          <figcaption>第 5 轮 · 正面</figcaption>
+        </figure>
+        <figure>
+          <a href="../shots/t-gel-r5/t-gel-r5-face.png" target="_blank"><img src="../shots/t-gel-r5/t-gel-r5-face.png" alt="材质 r5 脸" loading="lazy" /></a>
+          <figcaption>第 5 轮 · 脸部特写（看凹点）</figcaption>
+        </figure>
+        <figure>
+          <a href="../shots/t-gel-r5-hi/t-gel-r5-hi-face.png" target="_blank"><img src="../shots/t-gel-r5-hi/t-gel-r5-hi-face.png" alt="高分辨率脸" loading="lazy" /></a>
+          <figcaption>第 5 轮 · 高密度渲染</figcaption>
+        </figure>
+        <figure>
+          <a href="../shots/r5fam-sheet.png" target="_blank"><img src="../shots/r5fam-sheet.png" alt="六家族" loading="lazy" /></a>
+          <figcaption>六个家族配色 · 第 5 轮</figcaption>
+        </figure>
+      </div>
+
+      <h3>局部放大 &amp; 游戏尺寸模拟</h3>
+      <p class="section-lead">凹点颗粒感在近看明显；缩到 160px 左右会消失（需要 LOD）。</p>
+      <div class="grid">
+        <figure>
+          <a href="../r5/crop-crown.png" target="_blank"><img src="../r5/crop-crown.png" alt="头顶局部" loading="lazy" /></a>
+          <figcaption>头顶颗粒</figcaption>
+        </figure>
+        <figure>
+          <a href="../r5/crop-limb.png" target="_blank"><img src="../r5/crop-limb.png" alt="肢体局部" loading="lazy" /></a>
+          <figcaption>肢体高光</figcaption>
+        </figure>
+        <figure>
+          <a href="../r5/sim-400.png" target="_blank"><img src="../r5/sim-400.png" alt="400px" loading="lazy" /></a>
+          <figcaption>模拟 400px 高</figcaption>
+        </figure>
+        <figure>
+          <a href="../r5/sim-250.png" target="_blank"><img src="../r5/sim-250.png" alt="250px" loading="lazy" /></a>
+          <figcaption>模拟 250px 高</figcaption>
+        </figure>
+        <figure>
+          <a href="../r5/sim-160.png" target="_blank"><img src="../r5/sim-160.png" alt="160px" loading="lazy" /></a>
+          <figcaption>模拟 160px 高（颗粒几乎没了）</figcaption>
+        </figure>
+        <figure>
+          <a href="../r4/strip-front.png" target="_blank"><img src="../r4/strip-front.png" alt="r4 对比条" loading="lazy" /></a>
+          <figcaption>第 4 轮对比条</figcaption>
+        </figure>
+      </div>
+
+      <div class="panel">
+        <h3 style="margin-top:0">第 5 轮关键数值（builder 自报，待 critic 确认）</h3>
+        <table>
+          <tr><th>指标</th><th>第 5 轮</th><th>参考</th><th>第 4 轮</th></tr>
+          <tr><td>微对比 microcontrast</td><td>0.0662</td><td>0.0614</td><td>0.0410</td></tr>
+          <tr><td>小高光 speckle / 1000px</td><td>1.74</td><td>2.07</td><td>0.40</td></tr>
+          <tr><td>核心 R≥250 占比</td><td>46.59%</td><td>46.72%</td><td>46.42%</td></tr>
+          <tr><td>shader 额外耗时</td><td colspan="3">约 +0.81 ms / 10 角色（vs 标准材质）</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section id="animation">
+      <h2>动画（已通过）</h2>
+      <p class="section-lead">
+        <code>gel_anim.gd</code> 运行时生成，无骨骼无形变键。
+        每个动作 12 帧 + 脸部条 + 合成条（SHEET）。
+        文件夹 <code>shots/t-anim/</code>。
+      </p>
+      <div class="sheet-row">
+        <div class="anim-label">idle 待机</div>
+        <figure>
+          <a href="../shots/t-anim/t-anim-idle-SHEET.png" target="_blank">
+            <img src="../shots/t-anim/t-anim-idle-SHEET.png" alt="idle 条" loading="lazy" />
+          </a>
+        </figure>
+      </div>
+      <div class="sheet-row">
+        <div class="anim-label">plant 扎根 / uproot 拔根</div>
+        <div class="grid wide">
+          <figure>
+            <a href="../shots/t-anim/t-anim-plant-SHEET.png" target="_blank"><img src="../shots/t-anim/t-anim-plant-SHEET.png" alt="plant" loading="lazy" /></a>
+          </figure>
+          <figure>
+            <a href="../shots/t-anim/t-anim-uproot-SHEET.png" target="_blank"><img src="../shots/t-anim/t-anim-uproot-SHEET.png" alt="uproot" loading="lazy" /></a>
+          </figure>
+        </div>
+      </div>
+      <div class="sheet-row">
+        <div class="anim-label">move / hit / attack</div>
+        <div class="grid">
+          <figure><a href="../shots/t-anim/t-anim-move-SHEET.png" target="_blank"><img src="../shots/t-anim/t-anim-move-SHEET.png" alt="move" loading="lazy" /></a></figure>
+          <figure><a href="../shots/t-anim/t-anim-hit-SHEET.png" target="_blank"><img src="../shots/t-anim/t-anim-hit-SHEET.png" alt="hit" loading="lazy" /></a></figure>
+          <figure><a href="../shots/t-anim/t-anim-attack-SHEET.png" target="_blank"><img src="../shots/t-anim/t-anim-attack-SHEET.png" alt="attack" loading="lazy" /></a></figure>
+        </div>
+      </div>
+      <p class="section-lead">脸部可读性条：每个动作都有 <code>*-FACE.png</code>，例如
+        <a href="../shots/t-anim/t-anim-idle-FACE.png">idle-FACE</a>。
+      </p>
+    </section>
+
+    <section id="analysis">
+      <h2>分析 &amp; 评审辅助图</h2>
+      <p class="section-lead"><code>ref-crops/</code> 和 <code>critic3/</code> 里是几何/材质的像素级对比和 JSON 测量。</p>
+      <div class="grid">
+        <figure>
+          <a href="../ref-crops/full-cmp.png" target="_blank"><img src="../ref-crops/full-cmp.png" alt="全身对比" loading="lazy" /></a>
+          <figcaption>全身前后对比</figcaption>
+        </figure>
+        <figure>
+          <a href="../ref-crops/face-cmp.png" target="_blank"><img src="../ref-crops/face-cmp.png" alt="脸对比" loading="lazy" /></a>
+          <figcaption>脸部对比</figcaption>
+        </figure>
+        <figure>
+          <a href="../ref-crops/outline-overlay.png" target="_blank"><img src="../ref-crops/outline-overlay.png" alt="轮廓线" loading="lazy" /></a>
+          <figcaption>轮廓线叠加</figcaption>
+        </figure>
+        <figure>
+          <a href="../shots/t-gel/EV4-clipmap.png" target="_blank"><img src="../shots/t-gel/EV4-clipmap.png" alt="clipmap" loading="lazy" /></a>
+          <figcaption>材质 clip 热力图</figcaption>
+        </figure>
+        <figure>
+          <a href="../shots/t-gel/EV1-vs-reference.png" target="_blank"><img src="../shots/t-gel/EV1-vs-reference.png" alt="vs 参考" loading="lazy" /></a>
+          <figcaption>早期材质 vs 参考</figcaption>
+        </figure>
+        <figure>
+          <a href="../shots/t-gel/EV2-families.png" target="_blank"><img src="../shots/t-gel/EV2-families.png" alt="家族" loading="lazy" /></a>
+          <figcaption>六家族早期测试</figcaption>
+        </figure>
+      </div>
+      <div class="panel">
+        <strong>JSON 数据文件</strong>
+        <ul class="files">
+          <li><a href="../shots/t-raw/t-raw-report.json">t-raw-report.json</a> — 原始 mesh 数据</li>
+          <li><a href="../shots/t-fix/t-fix-report.json">t-fix-report.json</a> — 修复后 mesh 数据</li>
+          <li><a href="../fix-report.json">fix-report.json</a> — Blender 修复流水线日志</li>
+          <li><a href="../probe-t.json">probe-t.json</a> — 模型探针</li>
+          <li><a href="../critic3/base.json">critic3/base.json</a> / <a href="../critic3/fix.json">fix.json</a> — 评审测量</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="tools">
+      <h2>工具脚本（build 根目录）</h2>
+      <p class="section-lead">这些脚本自动生成上面的截图和数值，不是游戏运行时文件。</p>
+      <div class="panel">
+        <table>
+          <tr><th>脚本</th><th>用途</th></tr>
+          <tr><td><code>bl_shots.py</code></td><td>Blender 无头导入 GLB → 六角度截图 + mesh JSON</td></tr>
+          <tr><td><code>bl_fix_t.py</code> / <code>bl_fix_t_ops.py</code></td><td>几何修复：推顶点改孔/眼/嘴</td></tr>
+          <tr><td><code>gel_compare.py</code></td><td>材质像素对比（--zones --detail --ink）</td></tr>
+          <tr><td><code>anim_sheet.py</code> / <code>render_anims.ps1</code></td><td>动画条合成</td></tr>
+          <tr><td><code>an_*.py</code>（约 20 个）</td><td>几何/材质/轮廓的专项分析</td></tr>
+          <tr><td><code>crit*.py</code> / <code>critic*.py</code></td><td>各轮独立评审的测量脚本</td></tr>
+          <tr><td><code>bl_open_compare.py</code></td><td>打开 Blender GUI 左右对比两个 GLB</td></tr>
+        </table>
+      </div>
+      <p class="section-lead">
+        Godot 侧渲染工具在 <code>godot/immune/tools/shot.gd</code>（本页所有 t-gel-* / t-anim 图都由它生成）。
+      </p>
+    </section>
+
+    <section id="folders">
+      <h2>文件夹地图</h2>
+      <div class="panel">
+        <table>
+          <tr><th>路径</th><th>内容</th></tr>
+          <tr><td><code>build/shots/t-raw/</code></td><td>Tripo 原始 · Blender 截图</td></tr>
+          <tr><td><code>build/shots/t-godot/</code></td><td>原始 · Godot 塑料材质</td></tr>
+          <tr><td><code>build/shots/t-fix/</code></td><td>几何修复后 · Blender 截图</td></tr>
+          <tr><td><code>build/shots/t-gel-r3~r5/</code></td><td>材质第 3–5 轮六角度</td></tr>
+          <tr><td><code>build/shots/t-gel-r5-hi/</code></td><td>第 5 轮高密度渲染</td></tr>
+          <tr><td><code>build/shots/t-anim/</code></td><td>全部动画帧 + SHEET + FACE</td></tr>
+          <tr><td><code>build/r5/</code> <code>build/r4/</code></td><td>材质对比条、局部放大、尺寸模拟</td></tr>
+          <tr><td><code>build/ref-crops/</code></td><td>几何前后像素对比（孔/眼/嘴/轮廓）</td></tr>
+          <tr><td><code>build/inspect/</code></td><td>两个 GLB 副本，供 Blender 手查</td></tr>
+          <tr><td><code>build/dump/</code></td><td>mesh 数值导出（npz/npy，给分析脚本用）</td></tr>
+          <tr><td><code>build/shots/sweep*</code> <code>d*-</code> <code>p4*</code></td><td>材质参数扫描的中间渲染（约 200+ 文件夹）</td></tr>
+          <tr><td><code>build/shots/critic*/</code></td><td>各轮评审独立截图</td></tr>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+  本地预览：在项目根目录运行 <code>npm run serve</code>，然后打开
+  <a href="/build/gallery/">http://127.0.0.1:5180/build/gallery/</a>。
+  工作日志见 <code>gauntlet-workbench.md</code>。
+  Codex 交接文档：<code>.agents/HANDOFF.md</code>（中文 <code>.agents/HANDOFF-ZH.md</code>）。
+  </footer>
+</body>
+</html>

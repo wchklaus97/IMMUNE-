@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-40 -40 80 80" width="80" height="80">
+  <circle cx="0" cy="0" r="34" fill="#d48aac" stroke="#ffffff" stroke-width="2"/>
+  <circle cx="0" cy="0" r="24" fill="none" stroke="#ffffff" stroke-opacity="0.35" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <text x="0" y="-4" text-anchor="middle" font-size="16" font-weight="800" fill="#fff">協</text>
+  <text x="0" y="16" text-anchor="middle" font-size="11" font-weight="600" fill="#eef6ff">抗原</text>
+</svg>

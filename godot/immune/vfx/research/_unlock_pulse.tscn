@@ -1,0 +1,32 @@
+[gd_scene format=3]
+
+[sub_resource type="ParticleProcessMaterial" id="p"]
+emission_shape = 1
+emission_sphere_radius = 0.35
+direction = Vector3(0, 1, 0)
+spread = 80.0
+initial_velocity_min = 0.4
+initial_velocity_max = 1.2
+gravity = Vector3(0, 0, 0)
+scale_min = 0.04
+scale_max = 0.08
+color = Color(0.45, 0.85, 1, 1)
+
+[sub_resource type="StandardMaterial3D" id="m"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.45, 0.85, 1, 0.85)
+billboard_mode = 3
+
+[sub_resource type="QuadMesh" id="q"]
+material = SubResource("m")
+size = Vector2(0.12, 0.12)
+
+[node name="UnlockPulse" type="GPUParticles3D"]
+emitting = true
+amount = 18
+lifetime = 0.4
+one_shot = true
+explosiveness = 0.9
+process_material = SubResource("p")
+draw_pass_1 = SubResource("q")

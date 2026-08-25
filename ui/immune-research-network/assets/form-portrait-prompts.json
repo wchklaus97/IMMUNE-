@@ -1,0 +1,374 @@
+[
+  {
+    "fileName": "CHAR-BASE-T-fixed.png",
+    "characterId": "CHAR-BASE-T",
+    "formKey": "fixed",
+    "prompt": "IMMUNE game character T 細胞 (T), planted turret posture, legs or roots tucked under the body as if anchored, defensive cannon pose, cannot walk, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-BASE-T-mobile.png",
+    "characterId": "CHAR-BASE-T",
+    "formKey": "mobile",
+    "prompt": "IMMUNE game character T 細胞 (T), free-moving mobile combat unit with solid locomotion wheels, fins, or pseudopods firmly fixed to the body, dynamic pose but no shedding, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-BASE-B-fixed.png",
+    "characterId": "CHAR-BASE-B",
+    "formKey": "fixed",
+    "prompt": "IMMUNE game character B 細胞 (B), planted turret posture, legs or roots tucked under the body as if anchored, defensive cannon pose, cannot walk, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-BASE-B-mobile.png",
+    "characterId": "CHAR-BASE-B",
+    "formKey": "mobile",
+    "prompt": "IMMUNE game character B 細胞 (B), free-moving mobile combat unit with solid locomotion wheels, fins, or pseudopods firmly fixed to the body, dynamic pose but no shedding, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-BASE-M-fixed.png",
+    "characterId": "CHAR-BASE-M",
+    "formKey": "fixed",
+    "prompt": "IMMUNE game character 巨噬細胞 (M), planted turret posture, legs or roots tucked under the body as if anchored, defensive cannon pose, cannot walk, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-BASE-M-mobile.png",
+    "characterId": "CHAR-BASE-M",
+    "formKey": "mobile",
+    "prompt": "IMMUNE game character 巨噬細胞 (M), free-moving mobile combat unit with solid locomotion wheels, fins, or pseudopods firmly fixed to the body, dynamic pose but no shedding, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-BASE-N-fixed.png",
+    "characterId": "CHAR-BASE-N",
+    "formKey": "fixed",
+    "prompt": "IMMUNE game character NK 細胞 (N), planted turret posture, legs or roots tucked under the body as if anchored, defensive cannon pose, cannot walk, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-BASE-N-mobile.png",
+    "characterId": "CHAR-BASE-N",
+    "formKey": "mobile",
+    "prompt": "IMMUNE game character NK 細胞 (N), free-moving mobile combat unit with solid locomotion wheels, fins, or pseudopods firmly fixed to the body, dynamic pose but no shedding, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-BASE-A-fixed.png",
+    "characterId": "CHAR-BASE-A",
+    "formKey": "fixed",
+    "prompt": "IMMUNE game character 抗體構造體 (A), planted turret posture, legs or roots tucked under the body as if anchored, defensive cannon pose, cannot walk, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-BASE-A-relay.png",
+    "characterId": "CHAR-BASE-A",
+    "formKey": "mobile",
+    "prompt": "IMMUNE game character 抗體構造體 (A), hovering fixed relay beacon, antenna dishes and support beams as part of the character body, not freely walking, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-BASE-D-fixed.png",
+    "characterId": "CHAR-BASE-D",
+    "formKey": "fixed",
+    "prompt": "IMMUNE game character 樹突細胞 (D), planted turret posture, legs or roots tucked under the body as if anchored, defensive cannon pose, cannot walk, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-BASE-D-mobile.png",
+    "characterId": "CHAR-BASE-D",
+    "formKey": "mobile",
+    "prompt": "IMMUNE game character 樹突細胞 (D), free-moving mobile combat unit with solid locomotion wheels, fins, or pseudopods firmly fixed to the body, dynamic pose but no shedding, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-PAIR-TB-fixed.png",
+    "characterId": "CHAR-PAIR-TB",
+    "formKey": "fixed",
+    "prompt": "IMMUNE game character 記憶獵手 (T+B), planted turret posture, legs or roots tucked under the body as if anchored, defensive cannon pose, cannot walk, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-PAIR-TB-mobile.png",
+    "characterId": "CHAR-PAIR-TB",
+    "formKey": "mobile",
+    "prompt": "IMMUNE game character 記憶獵手 (T+B), free-moving mobile combat unit with solid locomotion wheels, fins, or pseudopods firmly fixed to the body, dynamic pose but no shedding, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-PAIR-TM-fixed.png",
+    "characterId": "CHAR-PAIR-TM",
+    "formKey": "fixed",
+    "prompt": "IMMUNE game character 吞噬突擊 (T+M), planted turret posture, legs or roots tucked under the body as if anchored, defensive cannon pose, cannot walk, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-PAIR-TM-mobile.png",
+    "characterId": "CHAR-PAIR-TM",
+    "formKey": "mobile",
+    "prompt": "IMMUNE game character 吞噬突擊 (T+M), free-moving mobile combat unit with solid locomotion wheels, fins, or pseudopods firmly fixed to the body, dynamic pose but no shedding, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-PAIR-TN-fixed.png",
+    "characterId": "CHAR-PAIR-TN",
+    "formKey": "fixed",
+    "prompt": "IMMUNE game character 細胞毒刃 (T+N), planted turret posture, legs or roots tucked under the body as if anchored, defensive cannon pose, cannot walk, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-PAIR-TN-mobile.png",
+    "characterId": "CHAR-PAIR-TN",
+    "formKey": "mobile",
+    "prompt": "IMMUNE game character 細胞毒刃 (T+N), free-moving mobile combat unit with solid locomotion wheels, fins, or pseudopods firmly fixed to the body, dynamic pose but no shedding, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-PAIR-TA-fixed.png",
+    "characterId": "CHAR-PAIR-TA",
+    "formKey": "fixed",
+    "prompt": "IMMUNE game character 精準抗體 (T+A), planted turret posture, legs or roots tucked under the body as if anchored, defensive cannon pose, cannot walk, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-PAIR-TA-mobile.png",
+    "characterId": "CHAR-PAIR-TA",
+    "formKey": "mobile",
+    "prompt": "IMMUNE game character 精準抗體 (T+A), free-moving mobile combat unit with solid locomotion wheels, fins, or pseudopods firmly fixed to the body, dynamic pose but no shedding, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-PAIR-TD-fixed.png",
+    "characterId": "CHAR-PAIR-TD",
+    "formKey": "fixed",
+    "prompt": "IMMUNE game character 免疫指揮 (T+D), planted turret posture, legs or roots tucked under the body as if anchored, defensive cannon pose, cannot walk, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-PAIR-TD-mobile.png",
+    "characterId": "CHAR-PAIR-TD",
+    "formKey": "mobile",
+    "prompt": "IMMUNE game character 免疫指揮 (T+D), free-moving mobile combat unit with solid locomotion wheels, fins, or pseudopods firmly fixed to the body, dynamic pose but no shedding, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-PAIR-BM-fixed.png",
+    "characterId": "CHAR-PAIR-BM",
+    "formKey": "fixed",
+    "prompt": "IMMUNE game character 抗原處理 (B+M), planted turret posture, legs or roots tucked under the body as if anchored, defensive cannon pose, cannot walk, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-PAIR-BM-mobile.png",
+    "characterId": "CHAR-PAIR-BM",
+    "formKey": "mobile",
+    "prompt": "IMMUNE game character 抗原處理 (B+M), free-moving mobile combat unit with solid locomotion wheels, fins, or pseudopods firmly fixed to the body, dynamic pose but no shedding, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-PAIR-BN-fixed.png",
+    "characterId": "CHAR-PAIR-BN",
+    "formKey": "fixed",
+    "prompt": "IMMUNE game character 標記處決 (B+N), planted turret posture, legs or roots tucked under the body as if anchored, defensive cannon pose, cannot walk, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-PAIR-BN-mobile.png",
+    "characterId": "CHAR-PAIR-BN",
+    "formKey": "mobile",
+    "prompt": "IMMUNE game character 標記處決 (B+N), free-moving mobile combat unit with solid locomotion wheels, fins, or pseudopods firmly fixed to the body, dynamic pose but no shedding, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-PAIR-BA-fixed.png",
+    "characterId": "CHAR-PAIR-BA",
+    "formKey": "fixed",
+    "prompt": "IMMUNE game character 抗體風暴 (B+A), planted turret posture, legs or roots tucked under the body as if anchored, defensive cannon pose, cannot walk, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-PAIR-BA-mobile.png",
+    "characterId": "CHAR-PAIR-BA",
+    "formKey": "mobile",
+    "prompt": "IMMUNE game character 抗體風暴 (B+A), free-moving mobile combat unit with solid locomotion wheels, fins, or pseudopods firmly fixed to the body, dynamic pose but no shedding, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-PAIR-BD-fixed.png",
+    "characterId": "CHAR-PAIR-BD",
+    "formKey": "fixed",
+    "prompt": "IMMUNE game character 抗原呈現 (B+D), planted turret posture, legs or roots tucked under the body as if anchored, defensive cannon pose, cannot walk, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-PAIR-BD-mobile.png",
+    "characterId": "CHAR-PAIR-BD",
+    "formKey": "mobile",
+    "prompt": "IMMUNE game character 抗原呈現 (B+D), free-moving mobile combat unit with solid locomotion wheels, fins, or pseudopods firmly fixed to the body, dynamic pose but no shedding, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-PAIR-MN-fixed.png",
+    "characterId": "CHAR-PAIR-MN",
+    "formKey": "fixed",
+    "prompt": "IMMUNE game character 感染清除 (M+N), planted turret posture, legs or roots tucked under the body as if anchored, defensive cannon pose, cannot walk, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-PAIR-MN-mobile.png",
+    "characterId": "CHAR-PAIR-MN",
+    "formKey": "mobile",
+    "prompt": "IMMUNE game character 感染清除 (M+N), free-moving mobile combat unit with solid locomotion wheels, fins, or pseudopods firmly fixed to the body, dynamic pose but no shedding, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-PAIR-MA-fixed.png",
+    "characterId": "CHAR-PAIR-MA",
+    "formKey": "fixed",
+    "prompt": "IMMUNE game character 免疫壁壘 (M+A), planted turret posture, legs or roots tucked under the body as if anchored, defensive cannon pose, cannot walk, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-PAIR-MA-mobile.png",
+    "characterId": "CHAR-PAIR-MA",
+    "formKey": "mobile",
+    "prompt": "IMMUNE game character 免疫壁壘 (M+A), free-moving mobile combat unit with solid locomotion wheels, fins, or pseudopods firmly fixed to the body, dynamic pose but no shedding, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-PAIR-MD-fixed.png",
+    "characterId": "CHAR-PAIR-MD",
+    "formKey": "fixed",
+    "prompt": "IMMUNE game character 抗原中樞 (M+D), planted turret posture, legs or roots tucked under the body as if anchored, defensive cannon pose, cannot walk, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-PAIR-MD-mobile.png",
+    "characterId": "CHAR-PAIR-MD",
+    "formKey": "mobile",
+    "prompt": "IMMUNE game character 抗原中樞 (M+D), free-moving mobile combat unit with solid locomotion wheels, fins, or pseudopods firmly fixed to the body, dynamic pose but no shedding, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-PAIR-NA-fixed.png",
+    "characterId": "CHAR-PAIR-NA",
+    "formKey": "fixed",
+    "prompt": "IMMUNE game character 抗體追獵 (N+A), planted turret posture, legs or roots tucked under the body as if anchored, defensive cannon pose, cannot walk, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-PAIR-NA-mobile.png",
+    "characterId": "CHAR-PAIR-NA",
+    "formKey": "mobile",
+    "prompt": "IMMUNE game character 抗體追獵 (N+A), free-moving mobile combat unit with solid locomotion wheels, fins, or pseudopods firmly fixed to the body, dynamic pose but no shedding, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-PAIR-ND-fixed.png",
+    "characterId": "CHAR-PAIR-ND",
+    "formKey": "fixed",
+    "prompt": "IMMUNE game character 獵殺信標 (N+D), planted turret posture, legs or roots tucked under the body as if anchored, defensive cannon pose, cannot walk, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-PAIR-ND-mobile.png",
+    "characterId": "CHAR-PAIR-ND",
+    "formKey": "mobile",
+    "prompt": "IMMUNE game character 獵殺信標 (N+D), free-moving mobile combat unit with solid locomotion wheels, fins, or pseudopods firmly fixed to the body, dynamic pose but no shedding, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-PAIR-AD-fixed.png",
+    "characterId": "CHAR-PAIR-AD",
+    "formKey": "fixed",
+    "prompt": "IMMUNE game character 免疫網絡 (A+D), planted turret posture, legs or roots tucked under the body as if anchored, defensive cannon pose, cannot walk, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-PAIR-AD-mobile.png",
+    "characterId": "CHAR-PAIR-AD",
+    "formKey": "mobile",
+    "prompt": "IMMUNE game character 免疫網絡 (A+D), free-moving mobile combat unit with solid locomotion wheels, fins, or pseudopods firmly fixed to the body, dynamic pose but no shedding, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-TRIPLE-TBA-fixed.png",
+    "characterId": "CHAR-TRIPLE-TBA",
+    "formKey": "fixed",
+    "prompt": "IMMUNE game character 適應免疫核心 (T+B+A), planted turret posture, legs or roots tucked under the body as if anchored, defensive cannon pose, cannot walk, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-TRIPLE-TBA-mobile.png",
+    "characterId": "CHAR-TRIPLE-TBA",
+    "formKey": "mobile",
+    "prompt": "IMMUNE game character 適應免疫核心 (T+B+A), free-moving mobile combat unit with solid locomotion wheels, fins, or pseudopods firmly fixed to the body, dynamic pose but no shedding, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-TRIPLE-TND-fixed.png",
+    "characterId": "CHAR-TRIPLE-TND",
+    "formKey": "fixed",
+    "prompt": "IMMUNE game character 全域截擊中樞 (T+N+D), planted turret posture, legs or roots tucked under the body as if anchored, defensive cannon pose, cannot walk, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-TRIPLE-TND-mobile.png",
+    "characterId": "CHAR-TRIPLE-TND",
+    "formKey": "mobile",
+    "prompt": "IMMUNE game character 全域截擊中樞 (T+N+D), free-moving mobile combat unit with solid locomotion wheels, fins, or pseudopods firmly fixed to the body, dynamic pose but no shedding, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-TRIPLE-MAD-fixed.png",
+    "characterId": "CHAR-TRIPLE-MAD",
+    "formKey": "fixed",
+    "prompt": "IMMUNE game character 組織防衛聖域 (M+A+D), planted turret posture, legs or roots tucked under the body as if anchored, defensive cannon pose, cannot walk, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-TRIPLE-MAD-mobile.png",
+    "characterId": "CHAR-TRIPLE-MAD",
+    "formKey": "mobile",
+    "prompt": "IMMUNE game character 組織防衛聖域 (M+A+D), free-moving mobile combat unit with solid locomotion wheels, fins, or pseudopods firmly fixed to the body, dynamic pose but no shedding, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-TRIPLE-BMD-fixed.png",
+    "characterId": "CHAR-TRIPLE-BMD",
+    "formKey": "fixed",
+    "prompt": "IMMUNE game character 組織再生工廠 (B+M+D), planted turret posture, legs or roots tucked under the body as if anchored, defensive cannon pose, cannot walk, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-TRIPLE-BMD-mobile.png",
+    "characterId": "CHAR-TRIPLE-BMD",
+    "formKey": "mobile",
+    "prompt": "IMMUNE game character 組織再生工廠 (B+M+D), free-moving mobile combat unit with solid locomotion wheels, fins, or pseudopods firmly fixed to the body, dynamic pose but no shedding, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-TRIPLE-BNA-fixed.png",
+    "characterId": "CHAR-TRIPLE-BNA",
+    "formKey": "fixed",
+    "prompt": "IMMUNE game character 抗體獵殺蜂群 (B+N+A), planted turret posture, legs or roots tucked under the body as if anchored, defensive cannon pose, cannot walk, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-TRIPLE-BNA-mobile.png",
+    "characterId": "CHAR-TRIPLE-BNA",
+    "formKey": "mobile",
+    "prompt": "IMMUNE game character 抗體獵殺蜂群 (B+N+A), free-moving mobile combat unit with solid locomotion wheels, fins, or pseudopods firmly fixed to the body, dynamic pose but no shedding, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-TRIPLE-TMN-fixed.png",
+    "characterId": "CHAR-TRIPLE-TMN",
+    "formKey": "fixed",
+    "prompt": "IMMUNE game character 凋亡反應爐 (T+M+N), planted turret posture, legs or roots tucked under the body as if anchored, defensive cannon pose, cannot walk, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-TRIPLE-TMN-mobile.png",
+    "characterId": "CHAR-TRIPLE-TMN",
+    "formKey": "mobile",
+    "prompt": "IMMUNE game character 凋亡反應爐 (T+M+N), free-moving mobile combat unit with solid locomotion wheels, fins, or pseudopods firmly fixed to the body, dynamic pose but no shedding, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-APEX-MEMORY-fixed.png",
+    "characterId": "CHAR-APEX-MEMORY",
+    "formKey": "fixed",
+    "prompt": "IMMUNE game character 長期免疫記憶庫 (T+B), planted turret posture, legs or roots tucked under the body as if anchored, defensive cannon pose, cannot walk, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-APEX-MEMORY-mobile.png",
+    "characterId": "CHAR-APEX-MEMORY",
+    "formKey": "mobile",
+    "prompt": "IMMUNE game character 長期免疫記憶庫 (T+B), free-moving mobile combat unit with solid locomotion wheels, fins, or pseudopods firmly fixed to the body, dynamic pose but no shedding, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-APEX-STERILE-fixed.png",
+    "characterId": "CHAR-APEX-STERILE",
+    "formKey": "fixed",
+    "prompt": "IMMUNE game character 無菌聖域 (M+A), planted turret posture, legs or roots tucked under the body as if anchored, defensive cannon pose, cannot walk, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-APEX-STERILE-mobile.png",
+    "characterId": "CHAR-APEX-STERILE",
+    "formKey": "mobile",
+    "prompt": "IMMUNE game character 無菌聖域 (M+A), free-moving mobile combat unit with solid locomotion wheels, fins, or pseudopods firmly fixed to the body, dynamic pose but no shedding, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-APEX-SILENT-fixed.png",
+    "characterId": "CHAR-APEX-SILENT",
+    "formKey": "fixed",
+    "prompt": "IMMUNE game character 靜默獵殺網 (N+D), planted turret posture, legs or roots tucked under the body as if anchored, defensive cannon pose, cannot walk, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-APEX-SILENT-mobile.png",
+    "characterId": "CHAR-APEX-SILENT",
+    "formKey": "mobile",
+    "prompt": "IMMUNE game character 靜默獵殺網 (N+D), free-moving mobile combat unit with solid locomotion wheels, fins, or pseudopods firmly fixed to the body, dynamic pose but no shedding, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-PRIME-fixed.png",
+    "characterId": "CHAR-PRIME",
+    "formKey": "fixed",
+    "prompt": "IMMUNE game character IMMUNE PRIME (T+B+M+N+A+D), planted turret posture, legs or roots tucked under the body as if anchored, defensive cannon pose, cannot walk, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  },
+  {
+    "fileName": "CHAR-PRIME-mobile.png",
+    "characterId": "CHAR-PRIME",
+    "formKey": "mobile",
+    "prompt": "IMMUNE game character IMMUNE PRIME (T+B+M+N+A+D), free-moving mobile combat unit with solid locomotion wheels, fins, or pseudopods firmly fixed to the body, dynamic pose but no shedding, isolated character only, floating on flat #00ff00 chroma key, NO ground, NO floor, NO tissue platform, NO fleshy mound, NO circular organic disc, NO pink brain-like base, NO pedestal, NO terrain, clean closed silhouette, locomotion fully attached to the hull like bolted wheels or fins, NO sawdust, NO particle spray, NO splash droplets, NO floating crumbs, NO leaking fluid, NO motion-blur debris trails, NO tissue fragments shedding from limbs. Cute stylized 3D immune cell game portrait, square icon, flat #00ff00 chroma key background, no text, no watermark."
+  }
+]

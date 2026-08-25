@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>IMMUNE 3D 工作流</title>
+  <link rel="stylesheet" href="gallery.css" />
+</head>
+<body>
+  <header>
+    <h1>IMMUNE 3D 角色锁定 · 五步工作流</h1>
+    <p>配套 skill 在 <code>.agents/skills/immune-3d-lock/</code>。配合 <code>gauntlet-loop</code> 使用。</p>
+    <p><a href="index.html">← 返回证据画廊</a></p>
+  </header>
+  <main>
+    <section>
+      <div class="panel">
+        <pre style="margin:0;color:var(--text);font-size:0.9rem;line-height:1.6">
+Tripo/Meshy GLB
+      ↓
+① 入库 & 量基准     → build/shots/t-raw/
+      ↓
+② Blender 修几何    → CHAR-*-fix.glb
+      ↓
+③ Godot 果冻 shader → t-gel-r*/
+      ↓
+④ 果冻动画          → t-anim/
+      ↓
+⑤ 证据 & 集成       → build/gallery/
+        </pre>
+      </div>
+    </section>
+    <section>
+      <h2>五步说明</h2>
+      <table>
+        <tr><th>步</th><th>做什么</th><th>关键产出</th><th>Skill 参考</th></tr>
+        <tr><td>①</td><td>复制 GLB、量面数、出基准截图</td><td>t-raw-report.json</td><td>references/01-intake-baseline.md</td></tr>
+        <tr><td>②</td><td>推顶点修孔/眼/嘴（独立壳！）</td><td>CHAR-BASE-T-fix.glb</td><td>references/02-blender-mesh-fix.md</td></tr>
+        <tr><td>③</td><td>湿果冻 shader，像素测量过关</td><td>wet_gel.gdshader</td><td>references/03-wet-gel-material.md</td></tr>
+        <tr><td>④</td><td>无骨骼动画，脸部全程可读</td><td>gel_anim.gd</td><td>references/04-gel-animation.md</td></tr>
+        <tr><td>⑤</td><td>汇总证据、开画廊、最终集成</td><td>build/gallery/</td><td>references/05-evidence-gallery.md</td></tr>
+      </table>
+    </section>
+    <section>
+      <h2>怎么触发</h2>
+      <table>
+        <tr><th>你说</th><th>用</th></tr>
+        <tr><td>导入 Tripo / 量基准</td><td>immune-3d-lock Phase 1</td></tr>
+        <tr><td>修额头孔 / Blender 修模型</td><td>Phase 2</td></tr>
+        <tr><td>果冻材质 / 塑料感</td><td>Phase 3</td></tr>
+        <tr><td>做动画</td><td>Phase 4</td></tr>
+        <tr><td>一直改到过关</td><td>gauntlet-loop + immune-3d-lock</td></tr>
+      </table>
+    </section>
+    <section>
+      <h2>铁律（gauntlet）</h2>
+      <ul class="files" style="color:var(--text)">
+        <li>做的人不能给自己打分</li>
+        <li>评审只能看截图和数字，不能看做的人的解释</li>
+        <li>颜色统计不够 — 必须同时测微对比和小高光</li>
+        <li>几何、材质、动画分开评，不互相甩锅</li>
+      </ul>
+    </section>
+  </main>
+  <footer>
+    完整中文文档：<code>.agents/skills/immune-3d-lock/WORKFLOW-ZH.md</code>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,41 @@
+:root {
+  --immune-bg: #06111d;
+  --immune-bg-deep: #040a12;
+  --immune-panel: rgba(12, 28, 44, 0.92);
+  --immune-panel-border: #27506a;
+  --immune-text: #e9f6ff;
+  --immune-muted: #91aec1;
+  --immune-cyan: #5de4ff;
+  --immune-gold: #f4c35b;
+  --immune-danger: #ff7384;
+  --immune-success: #4be1bd;
+  --family-t: #45bdf2;
+  --family-b: #a878ff;
+  --family-m: #d28cff;
+  --family-n: #a6c94a;
+  --family-a: #f2b84b;
+  --family-d: #ff9b58;
+  --font-ui: "Segoe UI", "Microsoft JhengHei", sans-serif;
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  --detail-width: 320px;
+  --resource-bar-height: 72px;
+  --toolbar-height: 56px;
+  --minimap-size: 140px;
+  --hit-target: 44px;
+  --focus-ring: 0 0 0 2px #5de4ff, 0 0 0 4px rgba(93, 228, 255, 0.35);
+  --motion-fast: 150ms;
+  --motion-medium: 320ms;
+  --motion-slow: 900ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-fast: 0ms;
+    --motion-medium: 0ms;
+    --motion-slow: 150ms;
+  }
+}

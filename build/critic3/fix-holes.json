@@ -1,0 +1,410 @@
+{
+  "glb": "CHAR-BASE-T-fix.glb",
+  "height": 0.9023,
+  "pre_weld": {
+    "boundary_edges": 1654,
+    "loops": 49,
+    "biggest_loops": [
+      {
+        "verts": 93,
+        "centre": [
+          0.0158,
+          -0.3281,
+          0.4783
+        ],
+        "z_norm": 0.5301,
+        "radius": 0.23
+      },
+      {
+        "verts": 86,
+        "centre": [
+          -0.0349,
+          -0.3313,
+          0.4683
+        ],
+        "z_norm": 0.5191,
+        "radius": 0.2049
+      },
+      {
+        "verts": 74,
+        "centre": [
+          -0.0058,
+          -0.2807,
+          0.6386
+        ],
+        "z_norm": 0.7078,
+        "radius": 0.1114
+      },
+      {
+        "verts": 69,
+        "centre": [
+          0.157,
+          -0.1976,
+          0.6586
+        ],
+        "z_norm": 0.7299,
+        "radius": 0.3501
+      },
+      {
+        "verts": 68,
+        "centre": [
+          0.1881,
+          -0.2308,
+          0.2046
+        ],
+        "z_norm": 0.2268,
+        "radius": 0.3379
+      },
+      {
+        "verts": 60,
+        "centre": [
+          -0.3545,
+          0.0426,
+          0.1233
+        ],
+        "z_norm": 0.1367,
+        "radius": 0.2263
+      }
+    ]
+  },
+  "weld_tests": {
+    "weld_1e-06": {
+      "dist": 9e-07,
+      "verts": 3968,
+      "faces": 7890,
+      "boundary_edges": 32,
+      "boundary_loops": 1,
+      "nonmanifold_edges": 0,
+      "biggest_loops": [
+        {
+          "verts": 32,
+          "centre": [
+            0.1723,
+            -0.2542,
+            0.51
+          ],
+          "z_norm": 0.5653,
+          "radius": 0.0883
+        }
+      ]
+    },
+    "weld_1e-05": {
+      "dist": 9.02e-06,
+      "verts": 3968,
+      "faces": 7890,
+      "boundary_edges": 32,
+      "boundary_loops": 1,
+      "nonmanifold_edges": 0,
+      "biggest_loops": [
+        {
+          "verts": 32,
+          "centre": [
+            0.1723,
+            -0.2542,
+            0.51
+          ],
+          "z_norm": 0.5653,
+          "radius": 0.0883
+        }
+      ]
+    },
+    "weld_0.0001": {
+      "dist": 9.023e-05,
+      "verts": 3968,
+      "faces": 7890,
+      "boundary_edges": 32,
+      "boundary_loops": 1,
+      "nonmanifold_edges": 0,
+      "biggest_loops": [
+        {
+          "verts": 32,
+          "centre": [
+            0.1723,
+            -0.2542,
+            0.51
+          ],
+          "z_norm": 0.5653,
+          "radius": 0.0883
+        }
+      ]
+    },
+    "weld_0.001": {
+      "dist": 0.00090226,
+      "verts": 3939,
+      "faces": 7834,
+      "boundary_edges": 35,
+      "boundary_loops": 2,
+      "nonmanifold_edges": 5,
+      "biggest_loops": [
+        {
+          "verts": 32,
+          "centre": [
+            0.1723,
+            -0.2542,
+            0.51
+          ],
+          "z_norm": 0.5653,
+          "radius": 0.0883
+        },
+        {
+          "verts": 4,
+          "centre": [
+            0.0158,
+            -0.3579,
+            0.4341
+          ],
+          "z_norm": 0.4812,
+          "radius": 0.0065
+        }
+      ]
+    }
+  },
+  "ray_grid": {
+    "grid": 120,
+    "rays_that_hit": 10790,
+    "odd_parity_rays": 199,
+    "odd_fraction": 0.01844,
+    "samples": [
+      {
+        "x": 0.1039,
+        "z": 0.485,
+        "z_norm": 0.5375,
+        "crossings": 5
+      },
+      {
+        "x": 0.1039,
+        "z": 0.4925,
+        "z_norm": 0.5458,
+        "crossings": 5
+      },
+      {
+        "x": 0.1039,
+        "z": 0.5,
+        "z_norm": 0.5542,
+        "crossings": 5
+      },
+      {
+        "x": 0.1039,
+        "z": 0.5075,
+        "z_norm": 0.5625,
+        "crossings": 5
+      },
+      {
+        "x": 0.1121,
+        "z": 0.4699,
+        "z_norm": 0.5208,
+        "crossings": 5
+      },
+      {
+        "x": 0.1121,
+        "z": 0.4774,
+        "z_norm": 0.5292,
+        "crossings": 5
+      },
+      {
+        "x": 0.1121,
+        "z": 0.485,
+        "z_norm": 0.5375,
+        "crossings": 3
+      },
+      {
+        "x": 0.1121,
+        "z": 0.4925,
+        "z_norm": 0.5458,
+        "crossings": 3
+      },
+      {
+        "x": 0.1121,
+        "z": 0.5,
+        "z_norm": 0.5542,
+        "crossings": 3
+      },
+      {
+        "x": 0.1121,
+        "z": 0.5075,
+        "z_norm": 0.5625,
+        "crossings": 3
+      },
+      {
+        "x": 0.1121,
+        "z": 0.515,
+        "z_norm": 0.5708,
+        "crossings": 3
+      },
+      {
+        "x": 0.1121,
+        "z": 0.5226,
+        "z_norm": 0.5792,
+        "crossings": 5
+      },
+      {
+        "x": 0.1204,
+        "z": 0.4624,
+        "z_norm": 0.5125,
+        "crossings": 5
+      },
+      {
+        "x": 0.1204,
+        "z": 0.4699,
+        "z_norm": 0.5208,
+        "crossings": 3
+      },
+      {
+        "x": 0.1204,
+        "z": 0.4774,
+        "z_norm": 0.5292,
+        "crossings": 3
+      },
+      {
+        "x": 0.1204,
+        "z": 0.485,
+        "z_norm": 0.5375,
+        "crossings": 3
+      },
+      {
+        "x": 0.1204,
+        "z": 0.4925,
+        "z_norm": 0.5458,
+        "crossings": 3
+      },
+      {
+        "x": 0.1204,
+        "z": 0.5,
+        "z_norm": 0.5542,
+        "crossings": 3
+      },
+      {
+        "x": 0.1204,
+        "z": 0.5075,
+        "z_norm": 0.5625,
+        "crossings": 3
+      },
+      {
+        "x": 0.1204,
+        "z": 0.515,
+        "z_norm": 0.5708,
+        "crossings": 3
+      },
+      {
+        "x": 0.1204,
+        "z": 0.5226,
+        "z_norm": 0.5792,
+        "crossings": 3
+      },
+      {
+        "x": 0.1204,
+        "z": 0.5301,
+        "z_norm": 0.5875,
+        "crossings": 5
+      },
+      {
+        "x": 0.1287,
+        "z": 0.4624,
+        "z_norm": 0.5125,
+        "crossings": 3
+      },
+      {
+        "x": 0.1287,
+        "z": 0.4699,
+        "z_norm": 0.5208,
+        "crossings": 3
+      },
+      {
+        "x": 0.1287,
+        "z": 0.4774,
+        "z_norm": 0.5292,
+        "crossings": 3
+      },
+      {
+        "x": 0.1287,
+        "z": 0.485,
+        "z_norm": 0.5375,
+        "crossings": 3
+      },
+      {
+        "x": 0.1287,
+        "z": 0.4925,
+        "z_norm": 0.5458,
+        "crossings": 3
+      },
+      {
+        "x": 0.1287,
+        "z": 0.5,
+        "z_norm": 0.5542,
+        "crossings": 3
+      },
+      {
+        "x": 0.1287,
+        "z": 0.5075,
+        "z_norm": 0.5625,
+        "crossings": 3
+      },
+      {
+        "x": 0.1287,
+        "z": 0.515,
+        "z_norm": 0.5708,
+        "crossings": 3
+      },
+      {
+        "x": 0.1287,
+        "z": 0.5226,
+        "z_norm": 0.5792,
+        "crossings": 3
+      },
+      {
+        "x": 0.1287,
+        "z": 0.5301,
+        "z_norm": 0.5875,
+        "crossings": 3
+      },
+      {
+        "x": 0.1287,
+        "z": 0.5376,
+        "z_norm": 0.5958,
+        "crossings": 5
+      },
+      {
+        "x": 0.137,
+        "z": 0.4549,
+        "z_norm": 0.5042,
+        "crossings": 5
+      },
+      {
+        "x": 0.137,
+        "z": 0.4624,
+        "z_norm": 0.5125,
+        "crossings": 3
+      },
+      {
+        "x": 0.137,
+        "z": 0.4699,
+        "z_norm": 0.5208,
+        "crossings": 3
+      },
+      {
+        "x": 0.137,
+        "z": 0.4774,
+        "z_norm": 0.5292,
+        "crossings": 3
+      },
+      {
+        "x": 0.137,
+        "z": 0.485,
+        "z_norm": 0.5375,
+        "crossings": 3
+      },
+      {
+        "x": 0.137,
+        "z": 0.4925,
+        "z_norm": 0.5458,
+        "crossings": 3
+      },
+      {
+        "x": 0.137,
+        "z": 0.5,
+        "z_norm": 0.5542,
+        "crossings": 3
+      }
+    ]
+  }
+}

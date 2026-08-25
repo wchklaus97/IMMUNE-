@@ -1,0 +1,119 @@
+.cover-title,
+.cover-cards {
+  display: none;
+}
+
+html.is-cover .resource-bar,
+html.is-cover .research-toolbar,
+html.is-cover .detail-panel,
+html.is-cover .protocol-dock,
+html.is-cover .minimap,
+html.is-cover .research-list,
+html.is-cover .toast-region,
+html.is-cover .review-links {
+  display: none !important;
+}
+
+html.is-cover .immune-app {
+  grid-template-rows: 1fr;
+  grid-template-columns: 1fr;
+}
+
+html.is-cover .immune-main {
+  grid-template-columns: 1fr;
+}
+
+html.is-cover .canvas-wrap,
+html.is-cover .tree-viewport {
+  width: 100%;
+  height: 100vh;
+  min-height: 100vh;
+}
+
+html.is-cover .tree-viewport {
+  background:
+    radial-gradient(circle at 50% 42%, rgba(93, 228, 255, 0.14), transparent 28%),
+    radial-gradient(circle at 22% 30%, rgba(168, 120, 255, 0.08), transparent 26%),
+    radial-gradient(circle at 78% 68%, rgba(255, 155, 88, 0.08), transparent 24%),
+    linear-gradient(180deg, #071422, #040a12 70%);
+}
+
+html.is-cover .cover-title {
+  display: block;
+  position: fixed;
+  top: 3.2%;
+  left: 50%;
+  z-index: 30;
+  transform: translateX(-50%);
+  text-align: center;
+  pointer-events: none;
+  text-shadow: 0 0 24px rgba(6, 17, 29, 0.95);
+}
+
+html.is-cover .cover-title h1 {
+  margin: 0;
+  font-size: clamp(42px, 5vw, 72px);
+  letter-spacing: 0.16em;
+  font-weight: 700;
+  color: #e9f6ff;
+}
+
+html.is-cover .cover-title p {
+  margin: 6px 0 0;
+  font-size: clamp(18px, 2.2vw, 28px);
+  letter-spacing: 0.28em;
+  color: #5de4ff;
+}
+
+html.is-cover .cover-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: fixed;
+  z-index: 25;
+  width: min(280px, 22vw);
+  pointer-events: none;
+}
+
+html.is-cover .cover-cards.is-left {
+  left: 18px;
+  top: 18%;
+}
+
+html.is-cover .cover-cards.is-right {
+  right: 18px;
+  top: 18%;
+}
+
+html.is-cover .cover-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px 8px 8px;
+  border: 1px solid rgba(93, 228, 255, 0.28);
+  border-radius: 10px;
+  background: rgba(6, 17, 29, 0.72);
+  backdrop-filter: blur(8px);
+}
+
+html.is-cover .cover-card-symbol {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  background-size: 500% 200%;
+  background-repeat: no-repeat;
+}
+
+html.is-cover .cover-card-copy {
+  min-width: 0;
+}
+
+html.is-cover .cover-card strong {
+  display: block;
+  font-size: 14px;
+}
+
+html.is-cover .cover-card span {
+  color: #91aec1;
+  font-size: 12px;
+}

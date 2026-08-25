@@ -1,0 +1,263 @@
+{
+  "glb": "CHAR-BASE-T-fix.glb",
+  "objects": [
+    {
+      "name": "tripo_node_7e84a5bd-833c-46c4-91e6-8e3cbe10f39b",
+      "verts": 4821,
+      "tris": 7890,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": [
+        {
+          "name": "tripo_mat_7e84a5bd-833c-46c4-91e6-8e3cbe10f39b",
+          "images": [
+            {
+              "name": "orange+alien+blob+3d+model-+remesh_basecolor",
+              "size": [
+                4096,
+                4096
+              ]
+            }
+          ]
+        }
+      ],
+      "boundary_edges": 1654,
+      "boundary_loops": [
+        {
+          "verts": 93,
+          "centre": [
+            0.0158,
+            -0.3281,
+            0.4783
+          ],
+          "radius": 0.23
+        },
+        {
+          "verts": 86,
+          "centre": [
+            -0.0349,
+            -0.3313,
+            0.4683
+          ],
+          "radius": 0.2049
+        },
+        {
+          "verts": 74,
+          "centre": [
+            -0.0058,
+            -0.2807,
+            0.6386
+          ],
+          "radius": 0.1114
+        },
+        {
+          "verts": 69,
+          "centre": [
+            0.157,
+            -0.1976,
+            0.6586
+          ],
+          "radius": 0.3501
+        },
+        {
+          "verts": 68,
+          "centre": [
+            0.1881,
+            -0.2308,
+            0.2046
+          ],
+          "radius": 0.3379
+        },
+        {
+          "verts": 60,
+          "centre": [
+            -0.3545,
+            0.0426,
+            0.1233
+          ],
+          "radius": 0.2263
+        },
+        {
+          "verts": 59,
+          "centre": [
+            -0.1844,
+            -0.2106,
+            0.6304
+          ],
+          "radius": 0.2817
+        },
+        {
+          "verts": 58,
+          "centre": [
+            -0.1925,
+            0.1213,
+            0.66
+          ],
+          "radius": 0.3884
+        },
+        {
+          "verts": 55,
+          "centre": [
+            0.2696,
+            -0.11,
+            0.0738
+          ],
+          "radius": 0.3254
+        },
+        {
+          "verts": 52,
+          "centre": [
+            -0.038,
+            -0.2892,
+            0.6256
+          ],
+          "radius": 0.0832
+        },
+        {
+          "verts": 51,
+          "centre": [
+            0.1046,
+            0.2662,
+            0.2278
+          ],
+          "radius": 0.3275
+        },
+        {
+          "verts": 48,
+          "centre": [
+            0.1506,
+            0.0651,
+            0.7524
+          ],
+          "radius": 0.335
+        }
+      ],
+      "nonmanifold_edges": 0,
+      "loose_verts": 0,
+      "dark_tris": 208
+    }
+  ],
+  "total_tris": 7890,
+  "bounds_min": [
+    -0.4959,
+    -0.3812,
+    0.0
+  ],
+  "bounds_max": [
+    0.4968,
+    0.403,
+    0.9023
+  ],
+  "height": 0.9023,
+  "dark_clusters": [
+    {
+      "n": 72,
+      "centre": [
+        -0.172,
+        -0.286,
+        0.5109
+      ],
+      "z_norm": 0.5663,
+      "x_norm": -0.3813,
+      "extent_x": 0.1426,
+      "extent_z": 0.1287
+    },
+    {
+      "n": 71,
+      "centre": [
+        -0.0007,
+        -0.2805,
+        0.6279
+      ],
+      "z_norm": 0.696,
+      "x_norm": -0.0016,
+      "extent_x": 0.0291,
+      "extent_z": 0.0287
+    },
+    {
+      "n": 65,
+      "centre": [
+        0.1643,
+        -0.2866,
+        0.5152
+      ],
+      "z_norm": 0.571,
+      "x_norm": 0.3643,
+      "extent_x": 0.1322,
+      "extent_z": 0.1249
+    }
+  ],
+  "pore_cluster": {
+    "n": 71,
+    "centre": [
+      -0.0007,
+      -0.2805,
+      0.6279
+    ],
+    "z_norm": 0.696,
+    "x_norm": -0.0016,
+    "extent_x": 0.0291,
+    "extent_z": 0.0287
+  },
+  "pore_radius_est": 0.0146,
+  "fit_sphere_R": 0.0652,
+  "fit_ring_verts": 823,
+  "pore_profile": [
+    {
+      "d_over_r": 1.0,
+      "n": 86,
+      "mean_resid_pct_H": -4.142,
+      "min_pct_H": -5.218,
+      "max_pct_H": -2.356
+    },
+    {
+      "d_over_r": 2.0,
+      "n": 137,
+      "mean_resid_pct_H": -1.335,
+      "min_pct_H": -6.736,
+      "max_pct_H": -0.552
+    },
+    {
+      "d_over_r": 3.0,
+      "n": 322,
+      "mean_resid_pct_H": -0.303,
+      "min_pct_H": -1.069,
+      "max_pct_H": 0.624
+    },
+    {
+      "d_over_r": 4.0,
+      "n": 323,
+      "mean_resid_pct_H": 0.481,
+      "min_pct_H": -1.807,
+      "max_pct_H": 1.81
+    },
+    {
+      "d_over_r": 5.0,
+      "n": 78,
+      "mean_resid_pct_H": 0.168,
+      "min_pct_H": -2.31,
+      "max_pct_H": 2.402
+    }
+  ],
+  "eye_like_clusters": [
+    {
+      "cluster_n": 72,
+      "centre": [
+        -0.172,
+        -0.286,
+        0.5109
+      ],
+      "z_norm": 0.5663
+    },
+    {
+      "cluster_n": 65,
+      "centre": [
+        0.1643,
+        -0.2866,
+        0.5152
+      ],
+      "z_norm": 0.571
+    }
+  ]
+}

@@ -1,0 +1,429 @@
+{
+  "target": "asset",
+  "mode": "charge",
+  "prompt": "",
+  "role": "",
+  "input": "C:\\Users\\wchkl\\.cursor\\projects\\c-Users-wchkl-Documents-Codex-2026-08-12-https-chatgpt-com-share-6a7b9aee-e840-2\\assets\\SYM-UNI-SUR-scan-early.png",
+  "threshold": 100,
+  "edge_threshold": 150,
+  "duration": 200,
+  "rows": 2,
+  "cols": 3,
+  "cell_size": 256,
+  "fit_scale": 0.8,
+  "trim_border": 4,
+  "edge_clean_depth": 3,
+  "align": "center",
+  "shared_scale": true,
+  "scale_strategy": "fit",
+  "component_mode": "all",
+  "component_padding": 0,
+  "min_component_area": 1,
+  "edge_touch_margin": 0,
+  "frame_labels": [
+    "charge-1",
+    "charge-2",
+    "charge-3",
+    "charge-4",
+    "charge-5",
+    "charge-6"
+  ],
+  "frames": [
+    {
+      "grid": [
+        0,
+        0
+      ],
+      "source_box": [
+        0,
+        0,
+        512,
+        512
+      ],
+      "component_mode": "all",
+      "component_count": 730,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        42,
+        50,
+        490,
+        498
+      ],
+      "source_frame_size": [
+        504,
+        504
+      ],
+      "is_empty": false,
+      "subject_area": 7765,
+      "body_core_area": 4278,
+      "body_area_fraction": 0.01684145880574452,
+      "anchor_source": [
+        266.0,
+        274.0
+      ],
+      "source_edge_touch": false,
+      "output_edge_touch": false,
+      "edge_touch": false,
+      "output_size": [
+        186,
+        186
+      ],
+      "paste_position": [
+        35,
+        35
+      ],
+      "paste_clamped": false,
+      "aligned_bbox": [
+        35,
+        35,
+        221,
+        221
+      ],
+      "source_to_output_scale": 0.41626016260162607,
+      "bbox_scale_applied": true,
+      "scale_strategy": "fit",
+      "scale_changed": true
+    },
+    {
+      "grid": [
+        0,
+        1
+      ],
+      "source_box": [
+        512,
+        0,
+        1024,
+        512
+      ],
+      "component_mode": "all",
+      "component_count": 1004,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        13,
+        50,
+        504,
+        499
+      ],
+      "source_frame_size": [
+        504,
+        504
+      ],
+      "is_empty": false,
+      "subject_area": 23267,
+      "body_core_area": 13802,
+      "body_area_fraction": 0.054335159989921895,
+      "anchor_source": [
+        258.5,
+        274.5
+      ],
+      "source_edge_touch": true,
+      "output_edge_touch": false,
+      "edge_touch": true,
+      "output_size": [
+        204,
+        186
+      ],
+      "paste_position": [
+        26,
+        35
+      ],
+      "paste_clamped": false,
+      "aligned_bbox": [
+        26,
+        35,
+        230,
+        221
+      ],
+      "source_to_output_scale": 0.41626016260162607,
+      "bbox_scale_applied": true,
+      "scale_strategy": "fit",
+      "scale_changed": true
+    },
+    {
+      "grid": [
+        0,
+        2
+      ],
+      "source_box": [
+        1024,
+        0,
+        1536,
+        512
+      ],
+      "component_mode": "all",
+      "component_count": 42,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        0,
+        49,
+        442,
+        499
+      ],
+      "source_frame_size": [
+        504,
+        504
+      ],
+      "is_empty": false,
+      "subject_area": 36366,
+      "body_core_area": 21339,
+      "body_area_fraction": 0.08400651927437641,
+      "anchor_source": [
+        221.0,
+        274.0
+      ],
+      "source_edge_touch": true,
+      "output_edge_touch": false,
+      "edge_touch": true,
+      "output_size": [
+        183,
+        187
+      ],
+      "paste_position": [
+        36,
+        34
+      ],
+      "paste_clamped": false,
+      "aligned_bbox": [
+        36,
+        34,
+        219,
+        221
+      ],
+      "source_to_output_scale": 0.41626016260162607,
+      "bbox_scale_applied": true,
+      "scale_strategy": "fit",
+      "scale_changed": true
+    },
+    {
+      "grid": [
+        1,
+        0
+      ],
+      "source_box": [
+        0,
+        512,
+        512,
+        1024
+      ],
+      "component_mode": "all",
+      "component_count": 27,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        39,
+        18,
+        490,
+        476
+      ],
+      "source_frame_size": [
+        504,
+        504
+      ],
+      "is_empty": false,
+      "subject_area": 85888,
+      "body_core_area": 56308,
+      "body_area_fraction": 0.2216710758377425,
+      "anchor_source": [
+        264.5,
+        247.0
+      ],
+      "source_edge_touch": false,
+      "output_edge_touch": false,
+      "edge_touch": false,
+      "output_size": [
+        187,
+        190
+      ],
+      "paste_position": [
+        34,
+        33
+      ],
+      "paste_clamped": false,
+      "aligned_bbox": [
+        34,
+        33,
+        221,
+        223
+      ],
+      "source_to_output_scale": 0.41626016260162607,
+      "bbox_scale_applied": true,
+      "scale_strategy": "fit",
+      "scale_changed": true
+    },
+    {
+      "grid": [
+        1,
+        1
+      ],
+      "source_box": [
+        512,
+        512,
+        1024,
+        1024
+      ],
+      "component_mode": "all",
+      "component_count": 3,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        12,
+        17,
+        504,
+        477
+      ],
+      "source_frame_size": [
+        504,
+        504
+      ],
+      "is_empty": false,
+      "subject_area": 147862,
+      "body_core_area": 102403,
+      "body_area_fraction": 0.4031360229276896,
+      "anchor_source": [
+        258.0,
+        247.0
+      ],
+      "source_edge_touch": true,
+      "output_edge_touch": false,
+      "edge_touch": true,
+      "output_size": [
+        204,
+        191
+      ],
+      "paste_position": [
+        26,
+        32
+      ],
+      "paste_clamped": false,
+      "aligned_bbox": [
+        26,
+        32,
+        230,
+        223
+      ],
+      "source_to_output_scale": 0.41626016260162607,
+      "bbox_scale_applied": true,
+      "scale_strategy": "fit",
+      "scale_changed": true
+    },
+    {
+      "grid": [
+        1,
+        2
+      ],
+      "source_box": [
+        1024,
+        512,
+        1536,
+        1024
+      ],
+      "component_mode": "all",
+      "component_count": 1,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        0,
+        15,
+        445,
+        480
+      ],
+      "source_frame_size": [
+        504,
+        504
+      ],
+      "is_empty": false,
+      "subject_area": 153253,
+      "body_core_area": 104885,
+      "body_area_fraction": 0.41290706097253715,
+      "anchor_source": [
+        222.5,
+        247.5
+      ],
+      "source_edge_touch": true,
+      "output_edge_touch": false,
+      "edge_touch": true,
+      "output_size": [
+        185,
+        193
+      ],
+      "paste_position": [
+        35,
+        31
+      ],
+      "paste_clamped": false,
+      "aligned_bbox": [
+        35,
+        31,
+        220,
+        224
+      ],
+      "source_to_output_scale": 0.41626016260162607,
+      "bbox_scale_applied": true,
+      "scale_strategy": "fit",
+      "scale_changed": true
+    }
+  ],
+  "edge_touch_frames": [
+    [
+      0,
+      1
+    ],
+    [
+      0,
+      2
+    ],
+    [
+      1,
+      1
+    ],
+    [
+      1,
+      2
+    ]
+  ],
+  "source_edge_touch_frames": [
+    [
+      0,
+      1
+    ],
+    [
+      0,
+      2
+    ],
+    [
+      1,
+      1
+    ],
+    [
+      1,
+      2
+    ]
+  ],
+  "output_edge_touch_frames": [],
+  "empty_frames": [],
+  "paste_clamped_frames": [],
+  "qc_summary": {
+    "frame_count": 6,
+    "valid_frame_count": 6,
+    "empty_count": 0,
+    "edge_touch_count": 4,
+    "paste_clamped_count": 0,
+    "body_scale_mean": 0.4001734040202069,
+    "output_subject_height_mean": 188.83333333333334,
+    "body_scale_cv": 0.4914516168442022,
+    "anchor_x_std": 0.03786086840027666,
+    "anchor_y_std": 0.0267897965404489,
+    "anchor_y_mean": 0.5171957671957671
+  },
+  "qc_config": {
+    "strict_qc": true,
+    "reject_edge_touch": false,
+    "allow_source_edge_touch": true,
+    "max_body_scale_cv": null,
+    "max_anchor_y_std": null,
+    "max_profile_scale_drift": null
+  }
+}
