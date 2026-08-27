@@ -140,7 +140,8 @@ jobs:
           cd release
           unzip -q IMMUNE-macOS.zip -d macos
           chmod +x macos/IMMUNE.app/Contents/MacOS/IMMUNE
-          ./macos/IMMUNE.app/Contents/MacOS/IMMUNE --headless --audio-driver Dummy --log-file macos-release-smoke.log -- --release-smoke
-          cat macos-release-smoke.log
-          grep -F "RELEASE_SMOKE_OK platform=macOS nodes=200" macos-release-smoke.log
-          ! grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" macos-release-smoke.log
+          log_path="$PWD/macos-release-smoke.log"
+          ./macos/IMMUNE.app/Contents/MacOS/IMMUNE --headless --audio-driver Dummy --log-file "$log_path" -- --release-smoke
+          cat "$log_path"
+          grep -F "RELEASE_SMOKE_OK platform=macOS nodes=200" "$log_path"
+          ! grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" "$log_path"
