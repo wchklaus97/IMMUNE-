@@ -38,7 +38,12 @@ jobs:
           use-dotnet: false
           include-templates: true
 
-      - name: Import project and validate scripts
+      - name: Warm fresh Godot import cache
+        run: |
+          set -o pipefail
+          godot --headless --path godot/immune --import 2>&1 | tee godot-import-warmup.log
+
+      - name: Validate imported project and scripts
         run: |
           set -o pipefail
           godot --headless --path godot/immune --import 2>&1 | tee godot-import.log
