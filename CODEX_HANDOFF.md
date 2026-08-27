@@ -6,6 +6,8 @@ Updated: 2026-08-27
 
 The requested playable demo milestone is implemented and release-checked in Godot 4.7.2 stable. The permanent research network now leads into a mission selector, three authored missions, six playable immune-cell families, and a complete three-phase combat loop.
 
+`CHAR-BASE-B` is now the first Meshy T2 hero replacement after T: an 8,755-triangle, untextured smart-topology GLB generated from the locked B-cell reference for 5 credits. The shared wet-gel shader, aligned procedural ink face, runtime duty-kit swaps, regenerated smooth normals, and a local rear-normal repair produce the approved demo look without another paid generation.
+
 ## Playable loop
 
 1. Explore the 200-node permanent research network.
@@ -23,6 +25,7 @@ The requested playable demo milestone is implemented and release-checked in Godo
 - Version 2 JSON save data with version 1 migration, mission selection, completion records, settings persistence, and safe catalog validation.
 - Traditional Chinese Web-safe Noto Sans HK variable font with its OFL license.
 - Windows, Linux, macOS universal, and single-threaded Web release presets, GitHub Actions validation/export/native-smoke matrix, and Git LFS rules for authored media.
+- Reproducible B-cell asset provenance plus `tools/smooth_meshy_b_normals.cpp`, which repairs missing Meshy normals and the single-view rear shading seam without moving vertices or changing topology.
 
 ## Verification commands
 
@@ -32,6 +35,7 @@ npm test
 npm run build
 
 cd ../../
+mkdir -p godot/immune/build/releases/web
 godot --headless --path godot/immune --import
 godot --headless --path godot/immune --import
 godot --headless --path godot/immune --script res://tools/smoke.gd
@@ -52,7 +56,10 @@ godot --headless --path godot/immune --export-release "Web" build/releases/web/i
 - Exported Web console: 0 errors, 0 warnings; canvas fits a 1036×690 viewport without document scroll.
 - GitHub Actions run [33072178177](https://github.com/wchklaus97/IMMUNE-/actions/runs/33072178177) completed successfully for commit `ee70f3c`: Web validation, Godot import/smoke/overflow, four-platform export, artifact upload, and native launch markers on Ubuntu, Windows, and macOS all passed.
 - A fresh checkout intentionally runs Godot import twice: the first pass builds the ignored `.godot` cache, and the second pass is the clean error gate. This avoids treating the project theme font's first-start cache miss as a source error.
+- The 2026-08-27 B-cell replacement was locally rechecked with Godot 4.6.1: two import passes, expanded smoke, 1920×1080 overflow, all four exports, strict macOS signature validation, universal-binary inspection, and headless launch passed. The Web research-network suite remains 53/53 green and its production build succeeds.
+- Meshy task `01a043a9-4884-7a6f-bd72-1a716f663403` consumed exactly 5 credits (balance 1505 → 1500). The integrated GLB retains 4,380 vertices / 8,755 faces; front, side, back, 3/4, and face screenshots passed visual review after normal repair.
+- Run the four Godot exports sequentially. Parallel exporter processes race on the shared system file `tmpproject.binary`; a sequential rerun produced 0 errors / 0 warnings in all four logs.
 
 ## Honest production status
 
-The demo/vertical slice is complete and its cross-platform release pipeline is green. It is not yet a content-complete commercial game: B/M/N/A/D currently use polished procedural family bodies rather than final approved imported hero meshes, and the campaign still has only three missions. The next production milestone should focus on final character asset replacement, more enemy/mission content, balance/playtesting, accessibility/localization depth, Developer ID notarization, and storefront packaging. The CI action versions also emit a non-blocking Node 20 deprecation warning and should be upgraded in a dedicated maintenance change.
+The demo/vertical slice is complete and its cross-platform release pipeline is green. It is not yet a content-complete commercial game: M/N/A/D still use polished procedural family bodies rather than final approved imported hero meshes, and the campaign still has only three missions. The next safest asset task is a no-credit M-cell reference/prompt/multi-view plan and quality gate; do not submit another paid Meshy task without explicit approval. The GL Compatibility renderer cannot use Godot's Forward+ subsurface-scattering output, so the current Web-safe gel look relies on the shader's coat, wrapped diffuse, transmission, and rim paths. Longer-term production work still includes more enemy/mission content, balance/playtesting, accessibility/localization depth, Developer ID notarization, storefront packaging, and a dedicated CI action-version maintenance change.

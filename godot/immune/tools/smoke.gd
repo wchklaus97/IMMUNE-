@@ -53,6 +53,23 @@ func _run() -> void:
 			push_error("%s missing grounded feet" % unit.get("family_id"))
 			quit(1)
 			return
+		if str(unit.get("family_id")) == "B":
+			var b_real_mesh := unit.get_node_or_null("CoreMesh/RealMesh")
+			if b_real_mesh == null or unit.get("real_mesh") == null:
+				push_error("CHAR-BASE-B must realize its imported Meshy T2 body")
+				quit(1)
+				return
+			var b_face := unit.get_node_or_null("Face") as Node3D
+			var b_limbs := unit.get_node_or_null("LimbKit") as Node3D
+			if b_face == null or not b_face.visible or b_limbs == null or b_limbs.visible:
+				push_error("CHAR-BASE-B must overlay its ink face and replace procedural limbs")
+				quit(1)
+				return
+			var b_mouth := unit.get_node_or_null("Face/Mouth") as Node3D
+			if b_mouth == null or not b_mouth.visible or b_mouth.scale.x < 2.0:
+				push_error("CHAR-BASE-B must align its readable ink mouth with the sculpted cavity")
+				quit(1)
+				return
 	var look := load("res://characters/family_look.gd")
 	for family in ["T", "B", "A"]:
 		if not by_family.has(family):
@@ -81,6 +98,17 @@ func _run() -> void:
 				return
 		if unit.has_method("transform_duty"):
 			unit.call("transform_duty", &"mobile")
+			if str(unit.get("family_id")) == "B":
+				var b_base := unit.get_node_or_null("DutyKits/BaseKit") as Node3D
+				var b_loco := unit.get_node_or_null("DutyKits/LocomotionKit") as Node3D
+				var b_body := unit.get_node_or_null("CoreMesh/RealMesh") as Node3D
+				var invalid_b_duty := b_body == null or not b_body.visible
+				invalid_b_duty = invalid_b_duty or b_base == null or b_base.visible
+				invalid_b_duty = invalid_b_duty or b_loco == null or not b_loco.visible
+				if invalid_b_duty:
+					push_error("CHAR-BASE-B duty swap must preserve the imported body")
+					quit(1)
+					return
 	var research := load("res://ui/research/research_network.tscn") as PackedScene
 	if research == null:
 		push_error("research_network.tscn missing")

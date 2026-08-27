@@ -24,6 +24,7 @@ godot --headless --path godot/immune --script res://tools/smoke.gd
 ## Release 驗證與匯出
 
 ```bash
+mkdir -p godot/immune/build/releases/web
 godot --headless --path godot/immune --import
 godot --headless --path godot/immune --script res://tools/smoke.gd
 godot --headless --path godot/immune --script res://tools/check_overflow.gd

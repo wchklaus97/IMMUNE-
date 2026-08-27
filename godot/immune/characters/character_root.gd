@@ -63,20 +63,47 @@ func _ready() -> void:
 
 
 func _realize_imported_mesh() -> void:
-	if family_id != &"T":
+	if family_id != &"T" and family_id != &"B":
 		return
 	real_mesh = get_node_or_null("CoreMesh/RealMesh")
 	if real_mesh == null:
 		return
-	# The imported GLB carries the approved face and limbs. Keep the shared
-	# blockout path for duty kits/collision, but hide its T-only overlays.
+	# Imported bodies keep the shared blockout path for duty kits/collision. T's
+	# textured sculpt carries its final face; B's untextured Meshy sculpt needs the
+	# procedural ink face aligned over the raised eye and mouth geometry.
 	var face := get_node_or_null("Face") as Node3D
 	if face:
-		face.visible = false
+		face.visible = family_id == &"B"
+		if family_id == &"B":
+			var eye_l := face.get_node_or_null("EyeL") as Node3D
+			var eye_r := face.get_node_or_null("EyeR") as Node3D
+			var mouth := face.get_node_or_null("Mouth") as Node3D
+			if eye_l:
+				eye_l.position = Vector3(-0.13, 0.05, 0.02)
+				eye_l.scale = Vector3.ONE * 1.15
+			if eye_r:
+				eye_r.position = Vector3(0.13, 0.05, 0.02)
+				eye_r.scale = Vector3.ONE * 1.15
+			if mouth:
+				# Sit behind the sculpted lip as a dark cavity backing instead of
+				# floating in front of the face like a third eye.
+				mouth.position = Vector3(0.0, -0.09, -0.05)
+				mouth.scale = Vector3(2.2, 2.2, 0.45)
 	var limbs := get_node_or_null("LimbKit") as Node3D
 	if limbs:
 		limbs.visible = false
-	_Look.apply_gel(real_mesh, String(family_id))
+	var gel_opts := {}
+	if family_id == &"B":
+		# Smooth regenerated vertex normals carry both the soft silhouette and its
+		# wet highlights. The procedural cell field stays off here: on this UV-less
+		# topology it resolves as directional ripples instead of round jelly pores.
+		gel_opts = {
+			&"dimple_depth": 0.0,
+			&"thin_curvature": 0.04,
+			&"rim_energy": 0.10,
+			&"coat_strength": 1.15,
+		}
+	_Look.apply_gel(real_mesh, String(family_id), gel_opts)
 
 
 func _process(delta: float) -> void:

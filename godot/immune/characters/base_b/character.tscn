@@ -1,21 +1,19 @@
 [gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://characters/character_root.gd" id="1"]
-
-[sub_resource type="SphereMesh" id="SphereMesh_core"]
-radius = 0.45
-height = 0.9
+[ext_resource type="PackedScene" path="res://characters/base_b/CHAR-BASE-B-meshy-t2.glb" id="2"]
 
 [node name="Character" type="CharacterBody3D"]
 script = ExtResource("1")
 family_id = &"B"
 character_id = &"CHAR-BASE-B"
 
-[node name="CoreMesh" type="MeshInstance3D" parent="."]
-mesh = SubResource("SphereMesh_core")
+[node name="CoreMesh" type="Node3D" parent="."]
+
+[node name="RealMesh" parent="CoreMesh" instance=ExtResource("2")]
 
 [node name="Face" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 0.4)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 0.4)
 
 [node name="WeaponSocket" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0.55)
