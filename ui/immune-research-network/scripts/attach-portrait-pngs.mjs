@@ -6,13 +6,13 @@ import { existsSync } from "node:fs";
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const ROOT = resolve(__dirname, "..");
 const MANIFEST = join(ROOT, "assets/manifest.json");
-const STAGING = process.argv[2]
-  ? resolve(process.argv[2])
-  : "C:/Users/wchkl/.cursor/projects/c-Users-wchkl-Documents-Codex-2026-08-12-https-chatgpt-com-share-6a7b9aee-e840-2/assets";
+const stagingArg = process.argv[2] || process.env.IMMUNE_ASSET_STAGING || "";
+const STAGING = stagingArg ? resolve(stagingArg) : null;
 
 const manifest = JSON.parse(await readFile(MANIFEST, "utf8"));
 
 async function copyAsset(fileName, bucket) {
+  if (!STAGING) return null;
   const src = join(STAGING, fileName);
   if (!existsSync(src)) return null;
   const rel = `assets/${bucket}/${fileName}`;
@@ -55,4 +55,8 @@ for (const id of Object.keys(manifest.defense || {})) {
 }
 
 await writeFile(MANIFEST, JSON.stringify(manifest, null, 2), "utf8");
-console.log(`attached ${attached} png assets from ${STAGING}`);
+console.log(
+  STAGING
+    ? `attached ${attached} png assets from ${STAGING}`
+    : "no portrait staging supplied; generated SVG fallbacks remain active"
+);

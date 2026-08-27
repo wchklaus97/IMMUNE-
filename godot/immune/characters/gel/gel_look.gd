@@ -38,7 +38,7 @@ const BODY_SATURATE := 1.20
 ## through its shell, a rendered ratio of 0.582, and this is the authored hue that lands
 ## there. The albedo is a fairly yellow amber as authored; it renders as saturated
 ## orange, which is the entire purpose of pre-compensating.
-const BODY_HUE_SHIFT := 0.1048
+const BODY_HUE_SHIFT := 0.115
 
 ## How much of BODY_HUE_SHIFT a hue actually needs. The ACES rotation this corrects
 ## for is a warm-hue effect: it is strong on red through orange and negligible by
@@ -115,22 +115,22 @@ const DEFAULTS := {
 	# green and blue keep whatever the absorption left them. Its exact value only shows
 	# where the ceiling does NOT bind, i.e. in the deepest core, which is why it is
 	# calibrated against the reference's core sag rather than its overall brightness.
-	&"albedo_gain": 0.824,
+	&"albedo_gain": 0.90,
 	&"absorption": 1.0,
-	&"body_roughness": 0.18,
+	&"body_roughness": 0.24,
 	&"spec_tint": 1.0,
 	# Not razor-tight. At 0.06 the dimple normals aliased inside the coat lobe and the
 	# crown sheen broke into a field of hard sparkle rather than the reference's smooth
 	# sheen with the cellular texture reading through it.
-	&"coat_roughness": 0.07,
+	&"coat_roughness": 0.10,
 	# Wet gloss comes from the tight coat, not from driving both lobes hard. At
 	# spec_energy 1.3 the broad lobe blew a single wide highlight across the crown --
 	# measurably, it was contributing eight points of the deep core's above-0.75 pixel
 	# fraction and most of its blue, where the reference's core is almost entirely deep
 	# and saturated. Cutting the shared energy and leaving the coat tight keeps several
 	# small sharp highlights instead of one broad blown one.
-	&"coat_strength": 3.0,
-	&"spec_energy": 0.22,
+	&"coat_strength": 1.35,
+	&"spec_energy": 0.16,
 	&"spec_f0": 0.06,
 	&"env_specular": 0.0,
 	# Low on purpose. A heavily wrapped terminator plus a strong interior fill left
@@ -138,11 +138,11 @@ const DEFAULTS := {
 	# and sat against the ceiling everywhere. Letting the shaded side actually go
 	# deep is what gives the gradient its range -- "deepest where the body is thick"
 	# needs somewhere deep to exist.
-	&"light_wrap": 0.10,
-	&"sss_amount": 0.4,
+	&"light_wrap": 0.16,
+	&"sss_amount": 0.5,
 	&"sss_screen": 0.35,
 	&"transmit_power": 2.6,
-	&"transmit_strength": 2.2,
+	&"transmit_strength": 0.85,
 	&"transmit_distort": 0.30,
 	# Transmitted light is mostly the lamp's own colour, tinted only by what the gel
 	# took out of it on the way through. This is the term that makes a thin edge come
@@ -157,8 +157,8 @@ const DEFAULTS := {
 	# equally hot across its whole outer 5%, and clamping is what lets the zone be
 	# widened without its peak rising too -- every earlier attempt to widen it by
 	# softening the falloff raised the peak as well and overshot.
-	&"thin_bias": 1.5,
-	&"glow_power": 1.6,
+	&"thin_bias": 2.4,
+	&"glow_power": 2.5,
 	&"glow_gain": 1.0,
 	# Keeps the hot band off the facial detail. Signed convexity stops concave folds
 	# glowing, but the raised lip around an eye socket really is convex, so the plateau
@@ -201,12 +201,12 @@ const DEFAULTS := {
 	# uses the normal directly and stays smooth, so it carries the band and curvature
 	# only nudges genuinely convex tips.
 	&"thin_curvature": 0.10,
-	&"thin_glow": 0.9,
-	&"core_glow": 0.03,
+	&"thin_glow": 0.22,
+	&"core_glow": 0.02,
 	# Narrower than before: the rim needs to read as a ribbon on the turn of a solid
 	# body, not as a band wide enough to swallow a whole limb.
 	&"rim_power": 9.0,
-	&"rim_energy": 1.1,
+	&"rim_energy": 0.14,
 	# Absorption model, now almost purely spectral. These numbers are solved against
 	# the reference's own measured channel profile rather than tuned by eye: across the
 	# body its red holds 0.98 and only sags to 0.93 at the deepest core, while green
@@ -250,12 +250,12 @@ const DEFAULTS := {
 	# no longer bound anything. interior_budget now governs only the ambient core term --
 	# the thin-band glow it used to cap moved inside body_budget.
 	&"interior_budget": 0.10,
-	&"rim_budget": 0.12,
+	&"rim_budget": 0.05,
 	# Calibrated as a pair with albedo_gain, and the pairing is the point: the gain
 	# drives the dominant channel past clipping across the whole shell and this catches
 	# it just underneath. Set the ceiling too low and the drive is wasted; remove it and
 	# the drive pins the body at 255 across two thirds of the core.
-	&"body_budget": 1.12,
+	&"body_budget": 1.06,
 	# Surface microstructure, and the thing four rounds of colour review could not see.
 	# These were previously 160.0 / 0.009 / 0.5, which is the feature switched OFF: at
 	# that depth and cell count the bump is below visibility at any range this character
@@ -274,14 +274,14 @@ const DEFAULTS := {
 	# harness shot that is roughly three pixels per cell, and at gameplay size it is
 	# about one -- i.e. aliasing that a still-image metric cannot see and an animating
 	# character would shimmer with. 110 survives being shrunk.
-	&"dimple_scale": 70.0,
-	&"dimple_depth": 0.035,
-	&"dimple_crease": 0.16,
+	&"dimple_scale": 60.0,
+	&"dimple_depth": 0.027,
+	&"dimple_crease": 0.26,
 	# Well under 1.0 on purpose. Fully rounded cells look right but register as fewer
 	# distinct highlights, while a pure crease field scores best of all and renders as a
 	# bright cracked net at face range. This is the blend that reads as dimpling and
 	# still resolves per-cell.
-	&"dimple_round": 0.45,
+	&"dimple_round": 0.68,
 	&"ink_low": 0.13,
 	&"ink_high": 0.36,
 	&"ink_roughness": 0.05,

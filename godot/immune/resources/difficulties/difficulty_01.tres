@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="DifficultyProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/combat/difficulty_profile.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"DIFFICULTY-01"
+display_name = "接觸"
+rank = 1
+health_multiplier = 1.0
+speed_multiplier = 1.0
+spawn_interval_multiplier = 1.0
+boss_health_multiplier = 1.0

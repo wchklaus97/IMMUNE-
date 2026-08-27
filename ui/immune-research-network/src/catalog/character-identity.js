@@ -31,6 +31,7 @@
     A: { idleMouth: "精準噴嘴", attack: "懸浮，從嘴打出會拐彎的金導引線", standout: "鎖定追蹤" },
     D: { idleMouth: "廣播小口", attack: "從嘴放出掃描光錐，冠瓣一起亮", standout: "情報錐不是子彈" }
   };
+  const FORBID_GLOBAL = [
     "chest Y glow or gold Y medallion",
     "skin forest of C/Y pincer nubs copied from TB",
     "identical golf-ball bump shader on every body",

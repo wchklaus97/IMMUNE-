@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="PathogenProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/combat/pathogen_profile.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"PATHOGEN-SCOUT"
+display_name = "快速菌群"
+description = "低生命但移動迅速的前線病原。"
+max_health = 3
+move_speed = 2.5
+core_damage = 1
+visual_scale = 1.0
+body_color = Color(0.42, 0.72, 0.28, 1)
+emission_strength = 0.15
+shape_variant = 0

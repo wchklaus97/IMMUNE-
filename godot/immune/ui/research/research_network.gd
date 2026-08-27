@@ -1,4 +1,3 @@
-@tool
 extends Control
 
 ## Live HTML ?cover=1 research network, ported to Godot. Catalog IDs only.
@@ -50,7 +49,9 @@ func _ready() -> void:
 	set_anchors_preset(PRESET_FULL_RECT)
 	set_anchors_and_offsets_preset(PRESET_FULL_RECT)
 	while get_child_count() > 0:
-		get_child(0).free()
+		var stale_child := get_child(0)
+		remove_child(stale_child)
+		stale_child.queue_free()
 	_family_bars.clear()
 	_build()
 	if not Engine.is_editor_hint():
@@ -59,6 +60,26 @@ func _ready() -> void:
 		_map.node_clicked.connect(_on_node_clicked)
 	_refresh()
 	call_deferred("_home")
+	if OS.get_cmdline_user_args().has("--release-smoke"):
+		call_deferred("_run_release_smoke")
+
+
+func _run_release_smoke() -> void:
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var failures: PackedStringArray = []
+	if Catalog.node_count() != 200:
+		failures.append("catalog=%d" % Catalog.node_count())
+	if _map == null or _progress_label == null or _research_btn == null:
+		failures.append("research-ui-incomplete")
+	if not ResourceLoader.exists("res://fonts/NotoSansHK-VF.ttf"):
+		failures.append("font-missing")
+	if not failures.is_empty():
+		push_error("RELEASE_SMOKE_FAILED %s" % ",".join(failures))
+		get_tree().quit(1)
+		return
+	print("RELEASE_SMOKE_OK platform=%s nodes=%d" % [OS.get_name(), Catalog.node_count()])
+	get_tree().quit(0)
 
 
 func _home() -> void:
@@ -66,18 +87,14 @@ func _home() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and not event.echo:
-		match event.keycode:
-			KEY_HOME:
-				_map.cover_view()
-			KEY_F:
-				ResearchState.toggle_track(ResearchState.selected_node_id)
-			KEY_R:
-				_try_research()
-			KEY_ESCAPE:
-				_map.cover_view()
-			KEY_C:
-				_enter_combat()
+	if event.is_action_pressed(&"demo_home") or event.is_action_pressed(&"demo_back"):
+		_map.cover_view()
+	elif event.is_action_pressed(&"demo_track"):
+		ResearchState.toggle_track(ResearchState.selected_node_id)
+	elif event.is_action_pressed(&"demo_research"):
+		_try_research()
+	elif event.is_action_pressed(&"demo_combat"):
+		_enter_combat()
 
 
 func _on_node_clicked(id: StringName) -> void:
@@ -498,14 +515,14 @@ func _make_bottom_hud() -> Control:
 	bar.add_child(cam)
 	_add_cam_btn(cam, "顯示全圖", func() -> void: _map.cover_view())
 	_add_cam_btn(cam, "返回核心", func() -> void: _map.focus_id(&"CORE-IMMUNE", 0.48))
-	_add_cam_btn(cam, "戰鬥切片", _enter_combat)
+	_add_cam_btn(cam, "開始免疫任務", _enter_combat)
 	return bar
 
 
 func _enter_combat() -> void:
 	if Engine.is_editor_hint():
 		return
-	var err := get_tree().change_scene_to_file("res://scenes/combat_lane.tscn")
+	var err := get_tree().change_scene_to_file("res://ui/mission_select/mission_select.tscn")
 	if err != OK:
 		_flash("戰鬥切片場景無法載入。")
 

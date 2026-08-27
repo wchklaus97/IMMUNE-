@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="FamilyCombatProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/combat/family_combat_profile.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+family_id = &"T"
+role_name = "處決者"
+role_description = "均衡射程；扎根後攻速優秀。"
+projectile_damage = 2
+fixed_fire_cooldown = 0.55
+mobile_fire_cooldown = 0.72
+fire_range = 11.0
+move_speed = 6.4
+projectile_color = Color(1, 0.55, 0.22, 1)

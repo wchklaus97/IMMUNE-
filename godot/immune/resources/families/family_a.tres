@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="FamilyCombatProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/combat/family_combat_profile.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+family_id = &"A"
+role_name = "機動中繼"
+role_description = "漂浮移動；中繼模式提升遠距支援。"
+projectile_damage = 2
+fixed_fire_cooldown = 0.62
+mobile_fire_cooldown = 0.58
+fire_range = 13.5
+move_speed = 7.0
+projectile_color = Color(1, 0.78, 0.3, 1)

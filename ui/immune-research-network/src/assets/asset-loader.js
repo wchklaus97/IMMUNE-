@@ -18,8 +18,9 @@
       return manifest;
     }
     try {
-      const response = await fetch(pageUrl("assets/manifest.json"));
-      if (response.ok) {
+      const request = global.fetch;
+      const response = request ? await request(pageUrl("assets/manifest.json")) : null;
+      if (response?.ok) {
         manifest = await response.json();
         return manifest;
       }

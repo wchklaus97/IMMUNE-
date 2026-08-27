@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="PathogenProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/combat/pathogen_profile.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"PATHOGEN-SPORE"
+display_name = "孢子載體"
+description = "生命與速度均衡，表面帶有多個孢子節點。"
+max_health = 5
+move_speed = 2.15
+core_damage = 2
+visual_scale = 1.1
+body_color = Color(0.76, 0.34, 0.22, 1)
+emission_strength = 0.18
+shape_variant = 1

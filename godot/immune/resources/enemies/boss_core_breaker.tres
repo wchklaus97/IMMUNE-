@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="PathogenProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/combat/pathogen_profile.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"BOSS-CORE-BREAKER"
+display_name = "核心破壞者"
+description = "大型攻城病原。"
+max_health = 24
+move_speed = 0.9
+core_damage = 4
+visual_scale = 2.2
+is_boss = true
+body_color = Color(0.88, 0.16, 0.28, 1)
+emission_strength = 0.32
+shape_variant = 0

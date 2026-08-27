@@ -324,7 +324,7 @@ export async function writeDatasheets() {
   const payload = buildSheetPayload(manifest);
   for (const character of payload.characters) {
     for (const form of Object.values(character.forms)) {
-      const abs = join(ROOT, "assets", form.src.replaceAll("/", "\\"));
+      const abs = resolve(ROOT, "assets", form.src);
       if (!existsSync(abs)) throw new Error(`missing portrait ${form.src}`);
     }
   }

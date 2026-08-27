@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="ImmuneMissionData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://resources/combat/mission_data.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/enemies/pathogen_scout.tres" id="2"]
+[ext_resource type="Resource" path="res://resources/enemies/boss_core_breaker.tres" id="3"]
+[ext_resource type="Resource" path="res://resources/difficulties/difficulty_01.tres" id="4"]
+
+[resource]
+script = ExtResource("1")
+id = &"MISSION-01"
+title = "L01 · 核心圍城"
+briefing = "快速菌群正沿血管逼近。完成防守、推進淨化區，再擊破核心破壞者。"
+scene_path = "res://scenes/missions/mission_01_core_siege.tscn"
+recommended_family = &"T"
+defense_kills = 6
+cleanse_seconds = 3.5
+defense_spawn_interval = 1.75
+late_spawn_interval = 3.2
+regular_enemy = ExtResource("2")
+boss_enemy = ExtResource("3")
+difficulty = ExtResource("4")
+background_color = Color(0.015, 0.025, 0.045, 1)
+floor_color = Color(0.055, 0.04, 0.065, 1)
+lane_color = Color(0.34, 0.10, 0.14, 1)
+zone_color = Color(0.18, 0.9, 1, 1)
+rewards = {"antigen": 40, "biomass": 20, "protomass": 5}
+discovery_flag = "MISSION-01-COMPLETE"
+unlock_campaign_level = "L03"

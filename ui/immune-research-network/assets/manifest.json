@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-08-12T15:39:18.517Z",
+  "generatedAt": "2026-08-27T12:18:08.511Z",
   "nodes": {
     "CORE-IMMUNE": {
       "path": "assets/nodes/CORE-IMMUNE.svg",
@@ -910,7 +910,7 @@
     },
     "UNI-DEF-01": {
       "path": "assets/nodes/UNI-DEF-01.svg",
-      "name": "核心修復效率 I",
+      "name": "核心修復效率",
       "kind": "universal",
       "png": "assets/nodes/UNI-DEF-01.png"
     },
@@ -994,37 +994,37 @@
     },
     "UNI-WAR-01": {
       "path": "assets/nodes/UNI-WAR-01.svg",
-      "name": "軍團橫向容量",
+      "name": "全體攻擊節奏",
       "kind": "universal",
       "png": "assets/nodes/UNI-WAR-01.png"
     },
     "UNI-WAR-02": {
       "path": "assets/nodes/UNI-WAR-02.svg",
-      "name": "移動支援協議",
+      "name": "軍團橫向容量",
       "kind": "universal",
       "png": "assets/nodes/UNI-WAR-02.png"
     },
     "UNI-WAR-03": {
       "path": "assets/nodes/UNI-WAR-03.svg",
-      "name": "全面戰爭動員",
+      "name": "全域火力同步",
       "kind": "universal",
       "png": "assets/nodes/UNI-WAR-03.png"
     },
     "UNI-WAR-04": {
       "path": "assets/nodes/UNI-WAR-04.svg",
-      "name": "重傷概率抑制",
+      "name": "固定炮台射速",
       "kind": "universal",
       "png": "assets/nodes/UNI-WAR-04.png"
     },
     "UNI-WAR-05": {
       "path": "assets/nodes/UNI-WAR-05.svg",
-      "name": "戰術命令解鎖",
+      "name": "移動追擊節奏",
       "kind": "universal",
       "png": "assets/nodes/UNI-WAR-05.png"
     },
     "UNI-WAR-06": {
       "path": "assets/nodes/UNI-WAR-06.svg",
-      "name": "固定移動聯動",
+      "name": "技能冷卻壓縮",
       "kind": "universal",
       "png": "assets/nodes/UNI-WAR-06.png"
     },
@@ -1036,7 +1036,7 @@
     },
     "UNI-MOB-01": {
       "path": "assets/nodes/UNI-MOB-01.svg",
-      "name": "基礎移動編隊",
+      "name": "全體移動節奏",
       "kind": "universal",
       "png": "assets/nodes/UNI-MOB-01.png"
     },
@@ -1208,869 +1208,745 @@
       "path": "assets/skills/SKILL-T-PASSIVE.svg",
       "name": "細胞毒刃",
       "characterId": "CHAR-BASE-T",
-      "slot": "passive",
-      "png": "assets/skills/SKILL-T-PASSIVE.png"
+      "slot": "passive"
     },
     "SKILL-T-ACTIVE": {
       "path": "assets/skills/SKILL-T-ACTIVE.svg",
       "name": "集中處決",
       "characterId": "CHAR-BASE-T",
-      "slot": "active",
-      "png": "assets/skills/SKILL-T-ACTIVE.png"
+      "slot": "active"
     },
     "SKILL-T-FIXED": {
       "path": "assets/skills/SKILL-T-FIXED.svg",
       "name": "適應型炮台",
       "characterId": "CHAR-BASE-T",
-      "slot": "fixed",
-      "png": "assets/skills/SKILL-T-FIXED.png"
+      "slot": "fixed"
     },
     "SKILL-T-APEX": {
       "path": "assets/skills/SKILL-T-APEX.svg",
       "name": "T 細胞終極免疫",
       "characterId": "CHAR-BASE-T",
-      "slot": "apex",
-      "png": "assets/skills/SKILL-T-APEX.png"
+      "slot": "apex"
     },
     "SKILL-B-PASSIVE": {
       "path": "assets/skills/SKILL-B-PASSIVE.svg",
       "name": "抗體生成",
       "characterId": "CHAR-BASE-B",
-      "slot": "passive",
-      "png": "assets/skills/SKILL-B-PASSIVE.png"
+      "slot": "passive"
     },
     "SKILL-B-ACTIVE": {
       "path": "assets/skills/SKILL-B-ACTIVE.svg",
       "name": "記憶增幅",
       "characterId": "CHAR-BASE-B",
-      "slot": "active",
-      "png": "assets/skills/SKILL-B-ACTIVE.png"
+      "slot": "active"
     },
     "SKILL-B-FIXED": {
       "path": "assets/skills/SKILL-B-FIXED.svg",
       "name": "生產型炮台",
       "characterId": "CHAR-BASE-B",
-      "slot": "fixed",
-      "png": "assets/skills/SKILL-B-FIXED.png"
+      "slot": "fixed"
     },
     "SKILL-B-APEX": {
       "path": "assets/skills/SKILL-B-APEX.svg",
       "name": "B 細胞終極免疫",
       "characterId": "CHAR-BASE-B",
-      "slot": "apex",
-      "png": "assets/skills/SKILL-B-APEX.png"
+      "slot": "apex"
     },
     "SKILL-M-PASSIVE": {
       "path": "assets/skills/SKILL-M-PASSIVE.svg",
       "name": "吞噬回收",
       "characterId": "CHAR-BASE-M",
-      "slot": "passive",
-      "png": "assets/skills/SKILL-M-PASSIVE.png"
+      "slot": "passive"
     },
     "SKILL-M-ACTIVE": {
       "path": "assets/skills/SKILL-M-ACTIVE.svg",
       "name": "固定消化爐",
       "characterId": "CHAR-BASE-M",
-      "slot": "active",
-      "png": "assets/skills/SKILL-M-ACTIVE.png"
+      "slot": "active"
     },
     "SKILL-M-FIXED": {
       "path": "assets/skills/SKILL-M-FIXED.svg",
       "name": "經濟坦克炮台",
       "characterId": "CHAR-BASE-M",
-      "slot": "fixed",
-      "png": "assets/skills/SKILL-M-FIXED.png"
+      "slot": "fixed"
     },
     "SKILL-M-APEX": {
       "path": "assets/skills/SKILL-M-APEX.svg",
       "name": "巨噬終極免疫",
       "characterId": "CHAR-BASE-M",
-      "slot": "apex",
-      "png": "assets/skills/SKILL-M-APEX.png"
+      "slot": "apex"
     },
     "SKILL-N-PASSIVE": {
       "path": "assets/skills/SKILL-N-PASSIVE.svg",
       "name": "快速截擊",
       "characterId": "CHAR-BASE-N",
-      "slot": "passive",
-      "png": "assets/skills/SKILL-N-PASSIVE.png"
+      "slot": "passive"
     },
     "SKILL-N-ACTIVE": {
       "path": "assets/skills/SKILL-N-ACTIVE.svg",
       "name": "靜默獵殺",
       "characterId": "CHAR-BASE-N",
-      "slot": "active",
-      "png": "assets/skills/SKILL-N-ACTIVE.png"
+      "slot": "active"
     },
     "SKILL-N-FIXED": {
       "path": "assets/skills/SKILL-N-FIXED.svg",
       "name": "刺殺型炮台",
       "characterId": "CHAR-BASE-N",
-      "slot": "fixed",
-      "png": "assets/skills/SKILL-N-FIXED.png"
+      "slot": "fixed"
     },
     "SKILL-N-APEX": {
       "path": "assets/skills/SKILL-N-APEX.svg",
       "name": "NK 終極免疫",
       "characterId": "CHAR-BASE-N",
-      "slot": "apex",
-      "png": "assets/skills/SKILL-N-APEX.png"
+      "slot": "apex"
     },
     "SKILL-A-PASSIVE": {
       "path": "assets/skills/SKILL-A-PASSIVE.svg",
       "name": "弱點標記",
       "characterId": "CHAR-BASE-A",
-      "slot": "passive",
-      "png": "assets/skills/SKILL-A-PASSIVE.png"
+      "slot": "passive"
     },
     "SKILL-A-ACTIVE": {
       "path": "assets/skills/SKILL-A-ACTIVE.svg",
       "name": "導引炮台",
       "characterId": "CHAR-BASE-A",
-      "slot": "active",
-      "png": "assets/skills/SKILL-A-ACTIVE.png"
+      "slot": "active"
     },
     "SKILL-A-FIXED": {
       "path": "assets/skills/SKILL-A-FIXED.svg",
       "name": "遠程中繼炮台",
       "characterId": "CHAR-BASE-A",
-      "slot": "fixed",
-      "png": "assets/skills/SKILL-A-FIXED.png"
+      "slot": "fixed"
     },
     "SKILL-A-APEX": {
       "path": "assets/skills/SKILL-A-APEX.svg",
       "name": "抗體終極免疫",
       "characterId": "CHAR-BASE-A",
-      "slot": "apex",
-      "png": "assets/skills/SKILL-A-APEX.png"
+      "slot": "apex"
     },
     "SKILL-D-PASSIVE": {
       "path": "assets/skills/SKILL-D-PASSIVE.svg",
       "name": "抗原掃描",
       "characterId": "CHAR-BASE-D",
-      "slot": "passive",
-      "png": "assets/skills/SKILL-D-PASSIVE.png"
+      "slot": "passive"
     },
     "SKILL-D-ACTIVE": {
       "path": "assets/skills/SKILL-D-ACTIVE.svg",
       "name": "免疫信標",
       "characterId": "CHAR-BASE-D",
-      "slot": "active",
-      "png": "assets/skills/SKILL-D-ACTIVE.png"
+      "slot": "active"
     },
     "SKILL-D-FIXED": {
       "path": "assets/skills/SKILL-D-FIXED.svg",
       "name": "支援型炮台",
       "characterId": "CHAR-BASE-D",
-      "slot": "fixed",
-      "png": "assets/skills/SKILL-D-FIXED.png"
+      "slot": "fixed"
     },
     "SKILL-D-APEX": {
       "path": "assets/skills/SKILL-D-APEX.svg",
       "name": "樹突終極免疫",
       "characterId": "CHAR-BASE-D",
-      "slot": "apex",
-      "png": "assets/skills/SKILL-D-APEX.png"
+      "slot": "apex"
     },
     "SKILL-TB-P1": {
       "path": "assets/skills/SKILL-TB-P1.svg",
       "name": "記憶獵手｜基礎相性",
       "characterId": "CHAR-PAIR-TB",
-      "slot": "passive",
-      "png": "assets/skills/SKILL-TB-P1.png"
+      "slot": "passive"
     },
     "SKILL-TB-P2": {
       "path": "assets/skills/SKILL-TB-P2.svg",
       "name": "記憶獵手｜強化協同",
       "characterId": "CHAR-PAIR-TB",
-      "slot": "active",
-      "png": "assets/skills/SKILL-TB-P2.png"
+      "slot": "active"
     },
     "SKILL-TB-FIXED": {
       "path": "assets/skills/SKILL-TB-FIXED.svg",
       "name": "記憶獵手｜固定融合",
       "characterId": "CHAR-PAIR-TB",
-      "slot": "fixed",
-      "png": "assets/skills/SKILL-TB-FIXED.png"
+      "slot": "fixed"
     },
     "SKILL-TB-PROTO": {
       "path": "assets/skills/SKILL-TB-PROTO.svg",
       "name": "記憶獵手｜傳承協議",
       "characterId": "CHAR-PAIR-TB",
-      "slot": "protocol",
-      "png": "assets/skills/SKILL-TB-PROTO.png"
+      "slot": "protocol"
     },
     "SKILL-TM-P1": {
       "path": "assets/skills/SKILL-TM-P1.svg",
       "name": "吞噬突擊｜基礎相性",
       "characterId": "CHAR-PAIR-TM",
-      "slot": "passive",
-      "png": "assets/skills/SKILL-TM-P1.png"
+      "slot": "passive"
     },
     "SKILL-TM-P2": {
       "path": "assets/skills/SKILL-TM-P2.svg",
       "name": "吞噬突擊｜強化協同",
       "characterId": "CHAR-PAIR-TM",
-      "slot": "active",
-      "png": "assets/skills/SKILL-TM-P2.png"
+      "slot": "active"
     },
     "SKILL-TM-FIXED": {
       "path": "assets/skills/SKILL-TM-FIXED.svg",
       "name": "吞噬突擊｜固定融合",
       "characterId": "CHAR-PAIR-TM",
-      "slot": "fixed",
-      "png": "assets/skills/SKILL-TM-FIXED.png"
+      "slot": "fixed"
     },
     "SKILL-TM-PROTO": {
       "path": "assets/skills/SKILL-TM-PROTO.svg",
       "name": "吞噬突擊｜傳承協議",
       "characterId": "CHAR-PAIR-TM",
-      "slot": "protocol",
-      "png": "assets/skills/SKILL-TM-PROTO.png"
+      "slot": "protocol"
     },
     "SKILL-TN-P1": {
       "path": "assets/skills/SKILL-TN-P1.svg",
       "name": "細胞毒刃｜基礎相性",
       "characterId": "CHAR-PAIR-TN",
-      "slot": "passive",
-      "png": "assets/skills/SKILL-TN-P1.png"
+      "slot": "passive"
     },
     "SKILL-TN-P2": {
       "path": "assets/skills/SKILL-TN-P2.svg",
       "name": "細胞毒刃｜強化協同",
       "characterId": "CHAR-PAIR-TN",
-      "slot": "active",
-      "png": "assets/skills/SKILL-TN-P2.png"
+      "slot": "active"
     },
     "SKILL-TN-FIXED": {
       "path": "assets/skills/SKILL-TN-FIXED.svg",
       "name": "細胞毒刃｜固定融合",
       "characterId": "CHAR-PAIR-TN",
-      "slot": "fixed",
-      "png": "assets/skills/SKILL-TN-FIXED.png"
+      "slot": "fixed"
     },
     "SKILL-TN-PROTO": {
       "path": "assets/skills/SKILL-TN-PROTO.svg",
       "name": "細胞毒刃｜傳承協議",
       "characterId": "CHAR-PAIR-TN",
-      "slot": "protocol",
-      "png": "assets/skills/SKILL-TN-PROTO.png"
+      "slot": "protocol"
     },
     "SKILL-TA-P1": {
       "path": "assets/skills/SKILL-TA-P1.svg",
       "name": "精準抗體｜基礎相性",
       "characterId": "CHAR-PAIR-TA",
-      "slot": "passive",
-      "png": "assets/skills/SKILL-TA-P1.png"
+      "slot": "passive"
     },
     "SKILL-TA-P2": {
       "path": "assets/skills/SKILL-TA-P2.svg",
       "name": "精準抗體｜強化協同",
       "characterId": "CHAR-PAIR-TA",
-      "slot": "active",
-      "png": "assets/skills/SKILL-TA-P2.png"
+      "slot": "active"
     },
     "SKILL-TA-FIXED": {
       "path": "assets/skills/SKILL-TA-FIXED.svg",
       "name": "精準抗體｜固定融合",
       "characterId": "CHAR-PAIR-TA",
-      "slot": "fixed",
-      "png": "assets/skills/SKILL-TA-FIXED.png"
+      "slot": "fixed"
     },
     "SKILL-TA-PROTO": {
       "path": "assets/skills/SKILL-TA-PROTO.svg",
       "name": "精準抗體｜傳承協議",
       "characterId": "CHAR-PAIR-TA",
-      "slot": "protocol",
-      "png": "assets/skills/SKILL-TA-PROTO.png"
+      "slot": "protocol"
     },
     "SKILL-TD-P1": {
       "path": "assets/skills/SKILL-TD-P1.svg",
       "name": "免疫指揮｜基礎相性",
       "characterId": "CHAR-PAIR-TD",
-      "slot": "passive",
-      "png": "assets/skills/SKILL-TD-P1.png"
+      "slot": "passive"
     },
     "SKILL-TD-P2": {
       "path": "assets/skills/SKILL-TD-P2.svg",
       "name": "免疫指揮｜強化協同",
       "characterId": "CHAR-PAIR-TD",
-      "slot": "active",
-      "png": "assets/skills/SKILL-TD-P2.png"
+      "slot": "active"
     },
     "SKILL-TD-FIXED": {
       "path": "assets/skills/SKILL-TD-FIXED.svg",
       "name": "免疫指揮｜固定融合",
       "characterId": "CHAR-PAIR-TD",
-      "slot": "fixed",
-      "png": "assets/skills/SKILL-TD-FIXED.png"
+      "slot": "fixed"
     },
     "SKILL-TD-PROTO": {
       "path": "assets/skills/SKILL-TD-PROTO.svg",
       "name": "免疫指揮｜傳承協議",
       "characterId": "CHAR-PAIR-TD",
-      "slot": "protocol",
-      "png": "assets/skills/SKILL-TD-PROTO.png"
+      "slot": "protocol"
     },
     "SKILL-BM-P1": {
       "path": "assets/skills/SKILL-BM-P1.svg",
       "name": "抗原處理｜基礎相性",
       "characterId": "CHAR-PAIR-BM",
-      "slot": "passive",
-      "png": "assets/skills/SKILL-BM-P1.png"
+      "slot": "passive"
     },
     "SKILL-BM-P2": {
       "path": "assets/skills/SKILL-BM-P2.svg",
       "name": "抗原處理｜強化協同",
       "characterId": "CHAR-PAIR-BM",
-      "slot": "active",
-      "png": "assets/skills/SKILL-BM-P2.png"
+      "slot": "active"
     },
     "SKILL-BM-FIXED": {
       "path": "assets/skills/SKILL-BM-FIXED.svg",
       "name": "抗原處理｜固定融合",
       "characterId": "CHAR-PAIR-BM",
-      "slot": "fixed",
-      "png": "assets/skills/SKILL-BM-FIXED.png"
+      "slot": "fixed"
     },
     "SKILL-BM-PROTO": {
       "path": "assets/skills/SKILL-BM-PROTO.svg",
       "name": "抗原處理｜傳承協議",
       "characterId": "CHAR-PAIR-BM",
-      "slot": "protocol",
-      "png": "assets/skills/SKILL-BM-PROTO.png"
+      "slot": "protocol"
     },
     "SKILL-BN-P1": {
       "path": "assets/skills/SKILL-BN-P1.svg",
       "name": "標記處決｜基礎相性",
       "characterId": "CHAR-PAIR-BN",
-      "slot": "passive",
-      "png": "assets/skills/SKILL-BN-P1.png"
+      "slot": "passive"
     },
     "SKILL-BN-P2": {
       "path": "assets/skills/SKILL-BN-P2.svg",
       "name": "標記處決｜強化協同",
       "characterId": "CHAR-PAIR-BN",
-      "slot": "active",
-      "png": "assets/skills/SKILL-BN-P2.png"
+      "slot": "active"
     },
     "SKILL-BN-FIXED": {
       "path": "assets/skills/SKILL-BN-FIXED.svg",
       "name": "標記處決｜固定融合",
       "characterId": "CHAR-PAIR-BN",
-      "slot": "fixed",
-      "png": "assets/skills/SKILL-BN-FIXED.png"
+      "slot": "fixed"
     },
     "SKILL-BN-PROTO": {
       "path": "assets/skills/SKILL-BN-PROTO.svg",
       "name": "標記處決｜傳承協議",
       "characterId": "CHAR-PAIR-BN",
-      "slot": "protocol",
-      "png": "assets/skills/SKILL-BN-PROTO.png"
+      "slot": "protocol"
     },
     "SKILL-BA-P1": {
       "path": "assets/skills/SKILL-BA-P1.svg",
       "name": "抗體風暴｜基礎相性",
       "characterId": "CHAR-PAIR-BA",
-      "slot": "passive",
-      "png": "assets/skills/SKILL-BA-P1.png"
+      "slot": "passive"
     },
     "SKILL-BA-P2": {
       "path": "assets/skills/SKILL-BA-P2.svg",
       "name": "抗體風暴｜強化協同",
       "characterId": "CHAR-PAIR-BA",
-      "slot": "active",
-      "png": "assets/skills/SKILL-BA-P2.png"
+      "slot": "active"
     },
     "SKILL-BA-FIXED": {
       "path": "assets/skills/SKILL-BA-FIXED.svg",
       "name": "抗體風暴｜固定融合",
       "characterId": "CHAR-PAIR-BA",
-      "slot": "fixed",
-      "png": "assets/skills/SKILL-BA-FIXED.png"
+      "slot": "fixed"
     },
     "SKILL-BA-PROTO": {
       "path": "assets/skills/SKILL-BA-PROTO.svg",
       "name": "抗體風暴｜傳承協議",
       "characterId": "CHAR-PAIR-BA",
-      "slot": "protocol",
-      "png": "assets/skills/SKILL-BA-PROTO.png"
+      "slot": "protocol"
     },
     "SKILL-BD-P1": {
       "path": "assets/skills/SKILL-BD-P1.svg",
       "name": "抗原呈現｜基礎相性",
       "characterId": "CHAR-PAIR-BD",
-      "slot": "passive",
-      "png": "assets/skills/SKILL-BD-P1.png"
+      "slot": "passive"
     },
     "SKILL-BD-P2": {
       "path": "assets/skills/SKILL-BD-P2.svg",
       "name": "抗原呈現｜強化協同",
       "characterId": "CHAR-PAIR-BD",
-      "slot": "active",
-      "png": "assets/skills/SKILL-BD-P2.png"
+      "slot": "active"
     },
     "SKILL-BD-FIXED": {
       "path": "assets/skills/SKILL-BD-FIXED.svg",
       "name": "抗原呈現｜固定融合",
       "characterId": "CHAR-PAIR-BD",
-      "slot": "fixed",
-      "png": "assets/skills/SKILL-BD-FIXED.png"
+      "slot": "fixed"
     },
     "SKILL-BD-PROTO": {
       "path": "assets/skills/SKILL-BD-PROTO.svg",
       "name": "抗原呈現｜傳承協議",
       "characterId": "CHAR-PAIR-BD",
-      "slot": "protocol",
-      "png": "assets/skills/SKILL-BD-PROTO.png"
+      "slot": "protocol"
     },
     "SKILL-MN-P1": {
       "path": "assets/skills/SKILL-MN-P1.svg",
       "name": "感染清除｜基礎相性",
       "characterId": "CHAR-PAIR-MN",
-      "slot": "passive",
-      "png": "assets/skills/SKILL-MN-P1.png"
+      "slot": "passive"
     },
     "SKILL-MN-P2": {
       "path": "assets/skills/SKILL-MN-P2.svg",
       "name": "感染清除｜強化協同",
       "characterId": "CHAR-PAIR-MN",
-      "slot": "active",
-      "png": "assets/skills/SKILL-MN-P2.png"
+      "slot": "active"
     },
     "SKILL-MN-FIXED": {
       "path": "assets/skills/SKILL-MN-FIXED.svg",
       "name": "感染清除｜固定融合",
       "characterId": "CHAR-PAIR-MN",
-      "slot": "fixed",
-      "png": "assets/skills/SKILL-MN-FIXED.png"
+      "slot": "fixed"
     },
     "SKILL-MN-PROTO": {
       "path": "assets/skills/SKILL-MN-PROTO.svg",
       "name": "感染清除｜傳承協議",
       "characterId": "CHAR-PAIR-MN",
-      "slot": "protocol",
-      "png": "assets/skills/SKILL-MN-PROTO.png"
+      "slot": "protocol"
     },
     "SKILL-MA-P1": {
       "path": "assets/skills/SKILL-MA-P1.svg",
       "name": "免疫壁壘｜基礎相性",
       "characterId": "CHAR-PAIR-MA",
-      "slot": "passive",
-      "png": "assets/skills/SKILL-MA-P1.png"
+      "slot": "passive"
     },
     "SKILL-MA-P2": {
       "path": "assets/skills/SKILL-MA-P2.svg",
       "name": "免疫壁壘｜強化協同",
       "characterId": "CHAR-PAIR-MA",
-      "slot": "active",
-      "png": "assets/skills/SKILL-MA-P2.png"
+      "slot": "active"
     },
     "SKILL-MA-FIXED": {
       "path": "assets/skills/SKILL-MA-FIXED.svg",
       "name": "免疫壁壘｜固定融合",
       "characterId": "CHAR-PAIR-MA",
-      "slot": "fixed",
-      "png": "assets/skills/SKILL-MA-FIXED.png"
+      "slot": "fixed"
     },
     "SKILL-MA-PROTO": {
       "path": "assets/skills/SKILL-MA-PROTO.svg",
       "name": "免疫壁壘｜傳承協議",
       "characterId": "CHAR-PAIR-MA",
-      "slot": "protocol",
-      "png": "assets/skills/SKILL-MA-PROTO.png"
+      "slot": "protocol"
     },
     "SKILL-MD-P1": {
       "path": "assets/skills/SKILL-MD-P1.svg",
       "name": "抗原中樞｜基礎相性",
       "characterId": "CHAR-PAIR-MD",
-      "slot": "passive",
-      "png": "assets/skills/SKILL-MD-P1.png"
+      "slot": "passive"
     },
     "SKILL-MD-P2": {
       "path": "assets/skills/SKILL-MD-P2.svg",
       "name": "抗原中樞｜強化協同",
       "characterId": "CHAR-PAIR-MD",
-      "slot": "active",
-      "png": "assets/skills/SKILL-MD-P2.png"
+      "slot": "active"
     },
     "SKILL-MD-FIXED": {
       "path": "assets/skills/SKILL-MD-FIXED.svg",
       "name": "抗原中樞｜固定融合",
       "characterId": "CHAR-PAIR-MD",
-      "slot": "fixed",
-      "png": "assets/skills/SKILL-MD-FIXED.png"
+      "slot": "fixed"
     },
     "SKILL-MD-PROTO": {
       "path": "assets/skills/SKILL-MD-PROTO.svg",
       "name": "抗原中樞｜傳承協議",
       "characterId": "CHAR-PAIR-MD",
-      "slot": "protocol",
-      "png": "assets/skills/SKILL-MD-PROTO.png"
+      "slot": "protocol"
     },
     "SKILL-NA-P1": {
       "path": "assets/skills/SKILL-NA-P1.svg",
       "name": "抗體追獵｜基礎相性",
       "characterId": "CHAR-PAIR-NA",
-      "slot": "passive",
-      "png": "assets/skills/SKILL-NA-P1.png"
+      "slot": "passive"
     },
     "SKILL-NA-P2": {
       "path": "assets/skills/SKILL-NA-P2.svg",
       "name": "抗體追獵｜強化協同",
       "characterId": "CHAR-PAIR-NA",
-      "slot": "active",
-      "png": "assets/skills/SKILL-NA-P2.png"
+      "slot": "active"
     },
     "SKILL-NA-FIXED": {
       "path": "assets/skills/SKILL-NA-FIXED.svg",
       "name": "抗體追獵｜固定融合",
       "characterId": "CHAR-PAIR-NA",
-      "slot": "fixed",
-      "png": "assets/skills/SKILL-NA-FIXED.png"
+      "slot": "fixed"
     },
     "SKILL-NA-PROTO": {
       "path": "assets/skills/SKILL-NA-PROTO.svg",
       "name": "抗體追獵｜傳承協議",
       "characterId": "CHAR-PAIR-NA",
-      "slot": "protocol",
-      "png": "assets/skills/SKILL-NA-PROTO.png"
+      "slot": "protocol"
     },
     "SKILL-ND-P1": {
       "path": "assets/skills/SKILL-ND-P1.svg",
       "name": "獵殺信標｜基礎相性",
       "characterId": "CHAR-PAIR-ND",
-      "slot": "passive",
-      "png": "assets/skills/SKILL-ND-P1.png"
+      "slot": "passive"
     },
     "SKILL-ND-P2": {
       "path": "assets/skills/SKILL-ND-P2.svg",
       "name": "獵殺信標｜強化協同",
       "characterId": "CHAR-PAIR-ND",
-      "slot": "active",
-      "png": "assets/skills/SKILL-ND-P2.png"
+      "slot": "active"
     },
     "SKILL-ND-FIXED": {
       "path": "assets/skills/SKILL-ND-FIXED.svg",
       "name": "獵殺信標｜固定融合",
       "characterId": "CHAR-PAIR-ND",
-      "slot": "fixed",
-      "png": "assets/skills/SKILL-ND-FIXED.png"
+      "slot": "fixed"
     },
     "SKILL-ND-PROTO": {
       "path": "assets/skills/SKILL-ND-PROTO.svg",
       "name": "獵殺信標｜傳承協議",
       "characterId": "CHAR-PAIR-ND",
-      "slot": "protocol",
-      "png": "assets/skills/SKILL-ND-PROTO.png"
+      "slot": "protocol"
     },
     "SKILL-AD-P1": {
       "path": "assets/skills/SKILL-AD-P1.svg",
       "name": "免疫網絡｜基礎相性",
       "characterId": "CHAR-PAIR-AD",
-      "slot": "passive",
-      "png": "assets/skills/SKILL-AD-P1.png"
+      "slot": "passive"
     },
     "SKILL-AD-P2": {
       "path": "assets/skills/SKILL-AD-P2.svg",
       "name": "免疫網絡｜強化協同",
       "characterId": "CHAR-PAIR-AD",
-      "slot": "active",
-      "png": "assets/skills/SKILL-AD-P2.png"
+      "slot": "active"
     },
     "SKILL-AD-FIXED": {
       "path": "assets/skills/SKILL-AD-FIXED.svg",
       "name": "免疫網絡｜固定融合",
       "characterId": "CHAR-PAIR-AD",
-      "slot": "fixed",
-      "png": "assets/skills/SKILL-AD-FIXED.png"
+      "slot": "fixed"
     },
     "SKILL-AD-PROTO": {
       "path": "assets/skills/SKILL-AD-PROTO.svg",
       "name": "免疫網絡｜傳承協議",
       "characterId": "CHAR-PAIR-AD",
-      "slot": "protocol",
-      "png": "assets/skills/SKILL-AD-PROTO.png"
+      "slot": "protocol"
     },
     "SKILL-TBA-ROLE": {
       "path": "assets/skills/SKILL-TBA-ROLE.svg",
       "name": "適應免疫核心｜戰場定位",
       "characterId": "CHAR-TRIPLE-TBA",
-      "slot": "passive",
-      "png": "assets/skills/SKILL-TBA-ROLE.png"
+      "slot": "passive"
     },
     "SKILL-TBA-RULE": {
       "path": "assets/skills/SKILL-TBA-RULE.svg",
       "name": "適應免疫核心｜專屬規則",
       "characterId": "CHAR-TRIPLE-TBA",
-      "slot": "active",
-      "png": "assets/skills/SKILL-TBA-RULE.png"
+      "slot": "active"
     },
     "SKILL-TBA-FIXED": {
       "path": "assets/skills/SKILL-TBA-FIXED.svg",
       "name": "適應免疫核心｜固定形態",
       "characterId": "CHAR-TRIPLE-TBA",
-      "slot": "fixed",
-      "png": "assets/skills/SKILL-TBA-FIXED.png"
+      "slot": "fixed"
     },
     "SKILL-TBA-APEX": {
       "path": "assets/skills/SKILL-TBA-APEX.svg",
       "name": "適應免疫核心｜Apex 連結",
       "characterId": "CHAR-TRIPLE-TBA",
-      "slot": "apex",
-      "png": "assets/skills/SKILL-TBA-APEX.png"
+      "slot": "apex"
     },
     "SKILL-TND-ROLE": {
       "path": "assets/skills/SKILL-TND-ROLE.svg",
       "name": "全域截擊中樞｜戰場定位",
       "characterId": "CHAR-TRIPLE-TND",
-      "slot": "passive",
-      "png": "assets/skills/SKILL-TND-ROLE.png"
+      "slot": "passive"
     },
     "SKILL-TND-RULE": {
       "path": "assets/skills/SKILL-TND-RULE.svg",
       "name": "全域截擊中樞｜專屬規則",
       "characterId": "CHAR-TRIPLE-TND",
-      "slot": "active",
-      "png": "assets/skills/SKILL-TND-RULE.png"
+      "slot": "active"
     },
     "SKILL-TND-FIXED": {
       "path": "assets/skills/SKILL-TND-FIXED.svg",
       "name": "全域截擊中樞｜固定形態",
       "characterId": "CHAR-TRIPLE-TND",
-      "slot": "fixed",
-      "png": "assets/skills/SKILL-TND-FIXED.png"
+      "slot": "fixed"
     },
     "SKILL-TND-APEX": {
       "path": "assets/skills/SKILL-TND-APEX.svg",
       "name": "全域截擊中樞｜Apex 連結",
       "characterId": "CHAR-TRIPLE-TND",
-      "slot": "apex",
-      "png": "assets/skills/SKILL-TND-APEX.png"
+      "slot": "apex"
     },
     "SKILL-MAD-ROLE": {
       "path": "assets/skills/SKILL-MAD-ROLE.svg",
       "name": "組織防衛聖域｜戰場定位",
       "characterId": "CHAR-TRIPLE-MAD",
-      "slot": "passive",
-      "png": "assets/skills/SKILL-MAD-ROLE.png"
+      "slot": "passive"
     },
     "SKILL-MAD-RULE": {
       "path": "assets/skills/SKILL-MAD-RULE.svg",
       "name": "組織防衛聖域｜專屬規則",
       "characterId": "CHAR-TRIPLE-MAD",
-      "slot": "active",
-      "png": "assets/skills/SKILL-MAD-RULE.png"
+      "slot": "active"
     },
     "SKILL-MAD-FIXED": {
       "path": "assets/skills/SKILL-MAD-FIXED.svg",
       "name": "組織防衛聖域｜固定形態",
       "characterId": "CHAR-TRIPLE-MAD",
-      "slot": "fixed",
-      "png": "assets/skills/SKILL-MAD-FIXED.png"
+      "slot": "fixed"
     },
     "SKILL-MAD-APEX": {
       "path": "assets/skills/SKILL-MAD-APEX.svg",
       "name": "組織防衛聖域｜Apex 連結",
       "characterId": "CHAR-TRIPLE-MAD",
-      "slot": "apex",
-      "png": "assets/skills/SKILL-MAD-APEX.png"
+      "slot": "apex"
     },
     "SKILL-BMD-ROLE": {
       "path": "assets/skills/SKILL-BMD-ROLE.svg",
       "name": "組織再生工廠｜戰場定位",
       "characterId": "CHAR-TRIPLE-BMD",
-      "slot": "passive",
-      "png": "assets/skills/SKILL-BMD-ROLE.png"
+      "slot": "passive"
     },
     "SKILL-BMD-RULE": {
       "path": "assets/skills/SKILL-BMD-RULE.svg",
       "name": "組織再生工廠｜專屬規則",
       "characterId": "CHAR-TRIPLE-BMD",
-      "slot": "active",
-      "png": "assets/skills/SKILL-BMD-RULE.png"
+      "slot": "active"
     },
     "SKILL-BMD-FIXED": {
       "path": "assets/skills/SKILL-BMD-FIXED.svg",
       "name": "組織再生工廠｜固定形態",
       "characterId": "CHAR-TRIPLE-BMD",
-      "slot": "fixed",
-      "png": "assets/skills/SKILL-BMD-FIXED.png"
+      "slot": "fixed"
     },
     "SKILL-BMD-APEX": {
       "path": "assets/skills/SKILL-BMD-APEX.svg",
       "name": "組織再生工廠｜Apex 連結",
       "characterId": "CHAR-TRIPLE-BMD",
-      "slot": "apex",
-      "png": "assets/skills/SKILL-BMD-APEX.png"
+      "slot": "apex"
     },
     "SKILL-BNA-ROLE": {
       "path": "assets/skills/SKILL-BNA-ROLE.svg",
       "name": "抗體獵殺蜂群｜戰場定位",
       "characterId": "CHAR-TRIPLE-BNA",
-      "slot": "passive",
-      "png": "assets/skills/SKILL-BNA-ROLE.png"
+      "slot": "passive"
     },
     "SKILL-BNA-RULE": {
       "path": "assets/skills/SKILL-BNA-RULE.svg",
       "name": "抗體獵殺蜂群｜專屬規則",
       "characterId": "CHAR-TRIPLE-BNA",
-      "slot": "active",
-      "png": "assets/skills/SKILL-BNA-RULE.png"
+      "slot": "active"
     },
     "SKILL-BNA-FIXED": {
       "path": "assets/skills/SKILL-BNA-FIXED.svg",
       "name": "抗體獵殺蜂群｜固定形態",
       "characterId": "CHAR-TRIPLE-BNA",
-      "slot": "fixed",
-      "png": "assets/skills/SKILL-BNA-FIXED.png"
+      "slot": "fixed"
     },
     "SKILL-BNA-APEX": {
       "path": "assets/skills/SKILL-BNA-APEX.svg",
       "name": "抗體獵殺蜂群｜Apex 連結",
       "characterId": "CHAR-TRIPLE-BNA",
-      "slot": "apex",
-      "png": "assets/skills/SKILL-BNA-APEX.png"
+      "slot": "apex"
     },
     "SKILL-TMN-ROLE": {
       "path": "assets/skills/SKILL-TMN-ROLE.svg",
       "name": "凋亡反應爐｜戰場定位",
       "characterId": "CHAR-TRIPLE-TMN",
-      "slot": "passive",
-      "png": "assets/skills/SKILL-TMN-ROLE.png"
+      "slot": "passive"
     },
     "SKILL-TMN-RULE": {
       "path": "assets/skills/SKILL-TMN-RULE.svg",
       "name": "凋亡反應爐｜專屬規則",
       "characterId": "CHAR-TRIPLE-TMN",
-      "slot": "active",
-      "png": "assets/skills/SKILL-TMN-RULE.png"
+      "slot": "active"
     },
     "SKILL-TMN-FIXED": {
       "path": "assets/skills/SKILL-TMN-FIXED.svg",
       "name": "凋亡反應爐｜固定形態",
       "characterId": "CHAR-TRIPLE-TMN",
-      "slot": "fixed",
-      "png": "assets/skills/SKILL-TMN-FIXED.png"
+      "slot": "fixed"
     },
     "SKILL-TMN-APEX": {
       "path": "assets/skills/SKILL-TMN-APEX.svg",
       "name": "凋亡反應爐｜Apex 連結",
       "characterId": "CHAR-TRIPLE-TMN",
-      "slot": "apex",
-      "png": "assets/skills/SKILL-TMN-APEX.png"
+      "slot": "apex"
     },
     "SKILL-MEMORY-GATE": {
       "path": "assets/skills/SKILL-MEMORY-GATE.svg",
       "name": "長期免疫記憶庫｜門檻",
       "characterId": "CHAR-APEX-MEMORY",
-      "slot": "passive",
-      "png": "assets/skills/SKILL-MEMORY-GATE.png"
+      "slot": "passive"
     },
     "SKILL-MEMORY-PROTO": {
       "path": "assets/skills/SKILL-MEMORY-PROTO.svg",
       "name": "長期免疫記憶庫｜協議",
       "characterId": "CHAR-APEX-MEMORY",
-      "slot": "protocol",
-      "png": "assets/skills/SKILL-MEMORY-PROTO.png"
+      "slot": "protocol"
     },
     "SKILL-MEMORY-DEF": {
       "path": "assets/skills/SKILL-MEMORY-DEF.svg",
       "name": "長期免疫記憶庫｜防線",
       "characterId": "CHAR-APEX-MEMORY",
-      "slot": "fixed",
-      "png": "assets/skills/SKILL-MEMORY-DEF.png"
+      "slot": "fixed"
     },
     "SKILL-MEMORY-ULT": {
       "path": "assets/skills/SKILL-MEMORY-ULT.svg",
       "name": "長期免疫記憶庫｜終局",
       "characterId": "CHAR-APEX-MEMORY",
-      "slot": "apex",
-      "png": "assets/skills/SKILL-MEMORY-ULT.png"
+      "slot": "apex"
     },
     "SKILL-STERILE-GATE": {
       "path": "assets/skills/SKILL-STERILE-GATE.svg",
       "name": "無菌聖域｜門檻",
       "characterId": "CHAR-APEX-STERILE",
-      "slot": "passive",
-      "png": "assets/skills/SKILL-STERILE-GATE.png"
+      "slot": "passive"
     },
     "SKILL-STERILE-PROTO": {
       "path": "assets/skills/SKILL-STERILE-PROTO.svg",
       "name": "無菌聖域｜協議",
       "characterId": "CHAR-APEX-STERILE",
-      "slot": "protocol",
-      "png": "assets/skills/SKILL-STERILE-PROTO.png"
+      "slot": "protocol"
     },
     "SKILL-STERILE-DEF": {
       "path": "assets/skills/SKILL-STERILE-DEF.svg",
       "name": "無菌聖域｜防線",
       "characterId": "CHAR-APEX-STERILE",
-      "slot": "fixed",
-      "png": "assets/skills/SKILL-STERILE-DEF.png"
+      "slot": "fixed"
     },
     "SKILL-STERILE-ULT": {
       "path": "assets/skills/SKILL-STERILE-ULT.svg",
       "name": "無菌聖域｜終局",
       "characterId": "CHAR-APEX-STERILE",
-      "slot": "apex",
-      "png": "assets/skills/SKILL-STERILE-ULT.png"
+      "slot": "apex"
     },
     "SKILL-SILENT-GATE": {
       "path": "assets/skills/SKILL-SILENT-GATE.svg",
       "name": "靜默獵殺網｜門檻",
       "characterId": "CHAR-APEX-SILENT",
-      "slot": "passive",
-      "png": "assets/skills/SKILL-SILENT-GATE.png"
+      "slot": "passive"
     },
     "SKILL-SILENT-PROTO": {
       "path": "assets/skills/SKILL-SILENT-PROTO.svg",
       "name": "靜默獵殺網｜協議",
       "characterId": "CHAR-APEX-SILENT",
-      "slot": "protocol",
-      "png": "assets/skills/SKILL-SILENT-PROTO.png"
+      "slot": "protocol"
     },
     "SKILL-SILENT-DEF": {
       "path": "assets/skills/SKILL-SILENT-DEF.svg",
       "name": "靜默獵殺網｜防線",
       "characterId": "CHAR-APEX-SILENT",
-      "slot": "fixed",
-      "png": "assets/skills/SKILL-SILENT-DEF.png"
+      "slot": "fixed"
     },
     "SKILL-SILENT-ULT": {
       "path": "assets/skills/SKILL-SILENT-ULT.svg",
       "name": "靜默獵殺網｜終局",
       "characterId": "CHAR-APEX-SILENT",
-      "slot": "apex",
-      "png": "assets/skills/SKILL-SILENT-ULT.png"
+      "slot": "apex"
     },
     "SKILL-PRIME-GATE": {
       "path": "assets/skills/SKILL-PRIME-GATE.svg",
       "name": "IMMUNE PRIME｜門檻",
       "characterId": "CHAR-PRIME",
-      "slot": "passive",
-      "png": "assets/skills/SKILL-PRIME-GATE.png"
+      "slot": "passive"
     },
     "SKILL-PRIME-PROTO": {
       "path": "assets/skills/SKILL-PRIME-PROTO.svg",
       "name": "IMMUNE PRIME｜協議",
       "characterId": "CHAR-PRIME",
-      "slot": "protocol",
-      "png": "assets/skills/SKILL-PRIME-PROTO.png"
+      "slot": "protocol"
     },
     "SKILL-PRIME-DEF": {
       "path": "assets/skills/SKILL-PRIME-DEF.svg",
       "name": "IMMUNE PRIME｜防線",
       "characterId": "CHAR-PRIME",
-      "slot": "fixed",
-      "png": "assets/skills/SKILL-PRIME-DEF.png"
+      "slot": "fixed"
     },
     "SKILL-PRIME-ULT": {
       "path": "assets/skills/SKILL-PRIME-ULT.svg",
       "name": "IMMUNE PRIME｜終局",
       "characterId": "CHAR-PRIME",
-      "slot": "apex",
-      "png": "assets/skills/SKILL-PRIME-ULT.png"
+      "slot": "apex"
     }
   },
   "characters": {

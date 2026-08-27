@@ -25,7 +25,7 @@ async function embedPath(relativePath) {
     skipped += 1;
     return;
   }
-  const abs = join(ROOT, relativePath.replace(/\//g, "\\"));
+  const abs = resolve(ROOT, relativePath);
   if (!existsSync(abs)) {
     skipped += 1;
     return;

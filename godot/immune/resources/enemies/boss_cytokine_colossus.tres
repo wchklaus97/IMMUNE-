@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="PathogenProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/combat/pathogen_profile.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"BOSS-CYTOKINE-COLOSSUS"
+display_name = "細胞因子巨像"
+description = "終局裝甲病原，能快速壓垮核心。"
+max_health = 38
+move_speed = 0.76
+core_damage = 6
+visual_scale = 2.55
+is_boss = true
+body_color = Color(0.58, 0.12, 0.18, 1)
+emission_strength = 0.42
+shape_variant = 2

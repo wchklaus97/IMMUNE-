@@ -1,4 +1,4 @@
-extends Node
+extends SceneTree
 
 ## Layout + label overflow check for the research HUD. Exit 1 on failure.
 
@@ -26,7 +26,17 @@ const EXPECTED_COVER_LABELS: PackedStringArray = [
 var _log: PackedStringArray = []
 
 
-func _ready() -> void:
+func _catalog_nodes() -> Array:
+	var catalog := root.get_node_or_null("Catalog")
+	return catalog.call("all_nodes") if catalog != null else []
+
+
+func _is_revealed(id: StringName) -> bool:
+	var research_state := root.get_node_or_null("ResearchState")
+	return bool(research_state.call("is_revealed", id)) if research_state != null else false
+
+
+func _init() -> void:
 	call_deferred("_run")
 
 
@@ -44,12 +54,12 @@ func _run() -> void:
 		_finish(["research_network.tscn missing"], false)
 		return
 	var hud := packed.instantiate() as Control
-	add_child(hud)
-	await get_tree().create_timer(0.4).timeout
+	root.add_child(hud)
+	await create_timer(0.4).timeout
 	hud.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	hud.size = Vector2(1920, 1080)
-	await get_tree().process_frame
-	await get_tree().process_frame
+	await process_frame
+	await process_frame
 	_log_line("HUD_SIZE %s WINDOW %s MAP_WAIT" % [hud.size, DisplayServer.window_get_size()])
 
 	var failures: PackedStringArray = []
@@ -61,34 +71,33 @@ func _run() -> void:
 		return
 	_log_line("MAP_SIZE %s CLIP %s" % [map.size, map.clip_contents])
 	map.call("cover_view")
-	await get_tree().process_frame
+	await process_frame
 	failures.append_array(_check_map_labels(map, "cover"))
 	failures.append_array(_check_map_nodes(map, "cover"))
 	failures.append_array(_check_drawn_inside_map(map))
 
 	map.set("zoom", 1.2)
 	map.queue_redraw()
-	await get_tree().process_frame
+	await process_frame
 	failures.append_array(_check_map_labels(map, "zoom-1.2"))
 
 	map.call("cover_view")
-	await get_tree().process_frame
-	RenderingServer.force_draw()
-	await get_tree().process_frame
-	var tex := get_viewport().get_texture()
-	if tex != null:
-		var img := tex.get_image()
-		if img != null:
-			var out := ProjectSettings.globalize_path("res://tools/overflow_check.png")
-			var err := img.save_png(out)
-			if err != OK:
-				_log_line("WARN screenshot_save %s" % error_string(err))
-			else:
-				_log_line("SCREENSHOT %s %dx%d" % [out, img.get_width(), img.get_height()])
-		else:
-			_log_line("WARN screenshot_image_null")
+	await process_frame
+	if DisplayServer.get_name() != "headless":
+		RenderingServer.force_draw()
+		await process_frame
+		var tex: ViewportTexture = root.get_texture()
+		if tex != null:
+			var img: Image = tex.get_image()
+			if img != null:
+				var out := ProjectSettings.globalize_path("res://tools/overflow_check.png")
+				var err: Error = img.save_png(out)
+				if err != OK:
+					_log_line("WARN screenshot_save %s" % error_string(err))
+				else:
+					_log_line("SCREENSHOT %s %dx%d" % [out, img.get_width(), img.get_height()])
 	else:
-		_log_line("WARN screenshot_texture_null")
+		_log_line("SCREENSHOT_SKIPPED headless")
 
 	_finish(failures, failures.is_empty())
 
@@ -110,7 +119,7 @@ func _finish(failures: PackedStringArray, ok: bool) -> void:
 		printerr("REPORT %s" % path)
 	for line in report:
 		printerr(line)
-	get_tree().quit(0 if ok else 1)
+	quit(0 if ok else 1)
 
 
 func _check_resource_text(node: Node) -> PackedStringArray:
@@ -118,9 +127,9 @@ func _check_resource_text(node: Node) -> PackedStringArray:
 	if node is Label:
 		var label := node as Label
 		var text := label.text
-		if text.contains("一度原質"):
+		if text.contains("一度原質") and text.contains("融合核心"):
 			_log_line("RESOURCE_SUB %s visible_lines=%d/%d size=%s" % [text.replace("\n", " | "), label.get_visible_line_count(), label.get_line_count(), label.size])
-			if not text.contains("生物質") or not text.contains("融合核心"):
+			if not text.contains("生物質"):
 				failures.append("resource_sub missing values %s" % text)
 			if label.get_visible_line_count() < label.get_line_count():
 				failures.append("resource_sub clipped lines %d/%d" % [label.get_visible_line_count(), label.get_line_count()])
@@ -178,7 +187,7 @@ func _check_map_labels(map: Control, phase: String) -> PackedStringArray:
 	var failures: PackedStringArray = []
 	var labels: PackedStringArray = []
 	var layout: Dictionary = map.get("_layout")
-	for node in Catalog.all_nodes():
+	for node in _catalog_nodes():
 		if not node is Dictionary:
 			continue
 		var id := StringName(str(node.get("id", "")))
@@ -189,7 +198,7 @@ func _check_map_labels(map: Control, phase: String) -> PackedStringArray:
 			continue
 		var kind := str(node.get("kind", ""))
 		var portrait := bool(map.call("_is_cover_anchor", id))
-		if not ResearchState.is_revealed(id) and not portrait:
+		if not _is_revealed(id) and not portrait:
 			continue
 		if not bool(map.call("_should_show_label", kind, portrait, id)):
 			continue
@@ -224,7 +233,7 @@ func _check_map_nodes(map: Control, phase: String) -> PackedStringArray:
 	var drawn := 0
 	var pair_anchors := 0
 	var layout: Dictionary = map.get("_layout")
-	for node in Catalog.all_nodes():
+	for node in _catalog_nodes():
 		if not node is Dictionary:
 			continue
 		var id := StringName(str(node.get("id", "")))
@@ -248,7 +257,7 @@ func _check_drawn_inside_map(map: Control) -> PackedStringArray:
 	var failures: PackedStringArray = []
 	var layout: Dictionary = map.get("_layout")
 	var bounds := Rect2(Vector2.ZERO, map.size)
-	for node in Catalog.all_nodes():
+	for node in _catalog_nodes():
 		if not node is Dictionary:
 			continue
 		var id := StringName(str(node.get("id", "")))

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="FamilyCombatProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/combat/family_combat_profile.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+family_id = &"M"
+role_name = "吞噬重裝"
+role_description = "近距高傷，移動較慢。"
+projectile_damage = 4
+fixed_fire_cooldown = 0.9
+mobile_fire_cooldown = 1.05
+fire_range = 8.5
+move_speed = 5.1
+projectile_color = Color(0.92, 0.62, 1, 1)

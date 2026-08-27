@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="FamilyCombatProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/combat/family_combat_profile.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+family_id = &"D"
+role_name = "標記先鋒"
+role_description = "中遠距穩定輸出與良好機動。"
+projectile_damage = 3
+fixed_fire_cooldown = 0.67
+mobile_fire_cooldown = 0.76
+fire_range = 11.5
+move_speed = 6.6
+projectile_color = Color(1, 0.44, 0.2, 1)

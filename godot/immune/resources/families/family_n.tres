@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="FamilyCombatProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/combat/family_combat_profile.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+family_id = &"N"
+role_name = "快速獵手"
+role_description = "射速與移動速度最高，但單發傷害較低。"
+projectile_damage = 2
+fixed_fire_cooldown = 0.42
+mobile_fire_cooldown = 0.52
+fire_range = 10.0
+move_speed = 7.5
+projectile_color = Color(0.62, 1, 0.28, 1)

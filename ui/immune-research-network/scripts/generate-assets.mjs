@@ -1,10 +1,31 @@
 import { mkdir, writeFile, readFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const ROOT = resolve(__dirname, "..");
 const ASSETS = join(ROOT, "assets");
+
+let previousManifest = {};
+try {
+  previousManifest = JSON.parse(await readFile(join(ASSETS, "manifest.json"), "utf8"));
+} catch {
+  previousManifest = {};
+}
+
+function carryMedia(bucket, id, target) {
+  const previous = previousManifest?.[bucket]?.[id];
+  if (!previous) return target;
+  if (previous.png && existsSync(resolve(ROOT, previous.png))) target.png = previous.png;
+  if (previous.forms) {
+    const forms = Object.fromEntries(
+      Object.entries(previous.forms).filter(([, path]) => path && existsSync(resolve(ROOT, path)))
+    );
+    if (Object.keys(forms).length) target.forms = forms;
+  }
+  return target;
+}
 
 await import("../src/catalog/definitions.js");
 await import("../src/catalog/build-catalog.js");
@@ -190,12 +211,12 @@ const manifest = {
 
 for (const node of catalog.nodes) {
   const rel = await writeSvg("nodes", `${node.id}.svg`, nodeSvg(node));
-  manifest.nodes[node.id] = { path: rel, name: node.name, kind: node.kind };
+  manifest.nodes[node.id] = carryMedia("nodes", node.id, { path: rel, name: node.name, kind: node.kind });
 }
 
 for (const [charId, character] of Object.entries(characters)) {
   const rel = await writeSvg("characters", `${charId}.svg`, characterSvg(character));
-  manifest.characters[charId] = { path: rel, name: character.name, png: null };
+  manifest.characters[charId] = carryMedia("characters", charId, { path: rel, name: character.name, png: null });
   for (const skill of character.skills) {
     const skillRel = await writeSvg("skills", `${skill.id}.svg`, skillSvg(skill, character));
     manifest.skills[skill.id] = { path: skillRel, name: skill.name, characterId: charId, slot: skill.slot };
@@ -204,7 +225,11 @@ for (const [charId, character] of Object.entries(characters)) {
 
 for (const target of defenseTargets) {
   const rel = await writeSvg("defense", `${target.id}.svg`, defenseSvg(target));
-  manifest.defense[target.id] = { path: rel, name: target.name, category: target.category };
+  manifest.defense[target.id] = carryMedia("defense", target.id, {
+    path: rel,
+    name: target.name,
+    category: target.category
+  });
 }
 
 await writeFile(join(ASSETS, "manifest.json"), JSON.stringify(manifest, null, 2), "utf8");

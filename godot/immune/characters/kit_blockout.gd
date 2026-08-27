@@ -1,7 +1,8 @@
 class_name ImmuneKitBlockout
 extends RefCounted
 
-## Primitive stand-ins for the locked 12 concepts. Replace meshes later; do not redraw PNGs.
+## Procedural gameplay meshes for the locked concepts. Their node contract survives
+## replacement by approved GLBs, while the shared wet-gel shader ships today.
 
 const _Look := preload("res://characters/family_look.gd")
 
@@ -10,7 +11,9 @@ static func apply(host: Node) -> void:
 	if host == null:
 		return
 	var family := String(host.get("family_id"))
-	var jelly := _Look.jelly_material(family)
+	var jelly: Material = _Look.gel_material(family, {&"use_feature_tex": false})
+	if jelly == null:
+		jelly = _Look.jelly_material(family)
 	var accent := _Look.accent_material(family)
 	var base_kit := host.get("base_kit") as Node3D
 	var locomotion_kit := host.get("locomotion_kit") as Node3D
@@ -104,12 +107,18 @@ static func _build_bubbles(host: Node, jelly: Material) -> void:
 	var core := host.get_node_or_null("CoreMesh") as MeshInstance3D
 	if core == null or core.get_node_or_null("Bubble0") != null:
 		return
-	var bubble_mat := jelly.duplicate() as StandardMaterial3D
-	if bubble_mat:
-		var tint := bubble_mat.albedo_color
+	var bubble_mat := jelly.duplicate() as Material
+	if bubble_mat is StandardMaterial3D:
+		var standard := bubble_mat as StandardMaterial3D
+		var tint := standard.albedo_color
 		tint.a = 0.35
-		bubble_mat.albedo_color = tint
-		bubble_mat.emission_energy_multiplier = 0.08
+		standard.albedo_color = tint
+		standard.emission_energy_multiplier = 0.08
+	elif bubble_mat is ShaderMaterial:
+		var gel := bubble_mat as ShaderMaterial
+		gel.set_shader_parameter(&"dimple_depth", 0.012)
+		gel.set_shader_parameter(&"thin_glow", 0.12)
+		gel.set_shader_parameter(&"rim_energy", 0.08)
 	var spots := [Vector3(-0.12, 0.16, -0.08), Vector3(0.14, 0.02, -0.12), Vector3(0.02, -0.14, -0.1)]
 	var sizes := [0.09, 0.07, 0.055]
 	for i in spots.size():

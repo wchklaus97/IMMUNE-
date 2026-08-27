@@ -1,0 +1,141 @@
+name: IMMUNE CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-and-export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout with Git LFS
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Test research-network web UI
+        working-directory: ui/immune-research-network
+        run: npm test
+
+      - name: Build research-network web UI
+        working-directory: ui/immune-research-network
+        run: npm run build
+
+      - name: Set up Godot 4.7.2 and export templates
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.7.2
+          use-dotnet: false
+          include-templates: true
+
+      - name: Import project and validate scripts
+        run: |
+          set -o pipefail
+          godot --headless --path godot/immune --import 2>&1 | tee godot-import.log
+          ! grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" godot-import.log
+
+      - name: Run Godot release smoke
+        run: |
+          set -o pipefail
+          godot --headless --path godot/immune --script res://tools/smoke.gd 2>&1 | tee godot-smoke.log
+          grep -F "SMOKE_OK missions=3 families=6 save=v2 audio=ready gamepad=ready" godot-smoke.log
+          ! grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" godot-smoke.log
+
+      - name: Check research HUD layout
+        run: |
+          set -o pipefail
+          godot --headless --path godot/immune --script res://tools/check_overflow.gd 2>&1 | tee godot-layout.log
+          grep -F "OVERFLOW_CHECK_OK" godot-layout.log
+          ! grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" godot-layout.log
+
+      - name: Export Windows, Linux, macOS, and Web demos
+        run: |
+          set -o pipefail
+          mkdir -p godot/immune/build/releases/web
+          godot --headless --path godot/immune --export-release "Windows Desktop" build/releases/IMMUNE-windows.exe 2>&1 | tee godot-export-windows.log
+          godot --headless --path godot/immune --export-release "Linux/X11" build/releases/IMMUNE-linux.x86_64 2>&1 | tee godot-export-linux.log
+          godot --headless --path godot/immune --export-release "macOS" build/releases/IMMUNE-macOS.zip 2>&1 | tee godot-export-macos.log
+          godot --headless --path godot/immune --export-release "Web" build/releases/web/index.html 2>&1 | tee godot-export-web.log
+          ! grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" godot-export-windows.log godot-export-linux.log godot-export-macos.log godot-export-web.log
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: immune-demo-${{ github.sha }}
+          path: godot/immune/build/releases
+          if-no-files-found: error
+
+  native-release-smoke:
+    needs: validate-and-export
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Download release artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: immune-demo-${{ github.sha }}
+          path: release
+
+      - name: Launch Linux release
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -o pipefail
+          cd release
+          chmod +x IMMUNE-linux.x86_64
+          timeout 30s ./IMMUNE-linux.x86_64 --headless --audio-driver Dummy --log-file linux-release-smoke.log -- --release-smoke
+          cat linux-release-smoke.log
+          grep -F "RELEASE_SMOKE_OK platform=Linux nodes=200" linux-release-smoke.log
+          ! grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" linux-release-smoke.log
+
+      - name: Launch Windows release
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $logPath = Join-Path $PWD "windows-release-smoke.log"
+          $arguments = @(
+            "--headless",
+            "--audio-driver", "Dummy",
+            "--log-file", $logPath,
+            "--", "--release-smoke"
+          )
+          $process = Start-Process -FilePath ".\release\IMMUNE-windows.exe" -ArgumentList $arguments -Wait -PassThru
+          if ($process.ExitCode -ne 0) {
+            throw "Windows release exited with code $($process.ExitCode)"
+          }
+          $log = Get-Content $logPath -Raw
+          Write-Output $log
+          if ($log -notmatch "RELEASE_SMOKE_OK platform=Windows nodes=200") {
+            throw "Windows release smoke marker missing"
+          }
+          if ($log -match "SCRIPT ERROR|Parse Error|Compile Error|ERROR:") {
+            throw "Windows release log contains an engine error"
+          }
+
+      - name: Launch macOS release
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -o pipefail
+          cd release
+          unzip -q IMMUNE-macOS.zip -d macos
+          chmod +x macos/IMMUNE.app/Contents/MacOS/IMMUNE
+          ./macos/IMMUNE.app/Contents/MacOS/IMMUNE --headless --audio-driver Dummy --log-file macos-release-smoke.log -- --release-smoke
+          cat macos-release-smoke.log
+          grep -F "RELEASE_SMOKE_OK platform=macOS nodes=200" macos-release-smoke.log
+          ! grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" macos-release-smoke.log

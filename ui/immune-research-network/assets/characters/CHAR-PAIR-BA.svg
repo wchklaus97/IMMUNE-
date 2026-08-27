@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-64 -64 128 128" width="128" height="128">
+  <circle cx="0" cy="0" r="58" fill="#cd98a5" stroke="#fff" stroke-width="3"/>
+  <ellipse cx="0" cy="8" rx="34" ry="28" fill="#ffffff" fill-opacity="0.22"/>
+  <circle cx="-14" cy="-6" r="6" fill="#fff"/>
+  <circle cx="14" cy="-6" r="6" fill="#fff"/>
+  <circle cx="-14" cy="-6" r="3" fill="#0b1520"/>
+  <circle cx="14" cy="-6" r="3" fill="#0b1520"/>
+  <path d="M-16,18 Q0,30 16,18" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+  <text x="0" y="46" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">抗</text>
+</svg>

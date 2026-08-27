@@ -7,7 +7,13 @@ const LIFETIME := 1.15
 
 var velocity := Vector3.ZERO
 var damage := 1
+var bolt_color := Color(1.0, 0.55, 0.22, 1.0)
 var _age := 0.0
+
+
+func configure(new_damage: int, new_color: Color) -> void:
+	damage = maxi(new_damage, 1)
+	bolt_color = new_color
 
 
 func _ready() -> void:
@@ -24,9 +30,9 @@ func _ready() -> void:
 	var mi := MeshInstance3D.new()
 	mi.mesh = mesh
 	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(1.0, 0.55, 0.22, 1.0)
+	mat.albedo_color = bolt_color
 	mat.emission_enabled = true
-	mat.emission = Color(1.0, 0.45, 0.12)
+	mat.emission = bolt_color
 	mat.emission_energy_multiplier = 1.4
 	mi.material_override = mat
 	add_child(mi)

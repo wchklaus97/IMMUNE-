@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="PathogenProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/combat/pathogen_profile.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"BOSS-SPORE-QUEEN"
+display_name = "孢子母體"
+description = "由多個感染囊構成的巨型病原。"
+max_health = 30
+move_speed = 0.82
+core_damage = 5
+visual_scale = 2.35
+is_boss = true
+body_color = Color(0.72, 0.16, 0.48, 1)
+emission_strength = 0.36
+shape_variant = 1

@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="ImmuneMissionData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://resources/combat/mission_data.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/enemies/pathogen_spore.tres" id="2"]
+[ext_resource type="Resource" path="res://resources/enemies/boss_spore_queen.tres" id="3"]
+[ext_resource type="Resource" path="res://resources/difficulties/difficulty_02.tres" id="4"]
+
+[resource]
+script = ExtResource("1")
+id = &"MISSION-02"
+title = "L02 · 血流感染"
+briefing = "孢子載體已穿過第一道防線。敵人更耐久，生成速度亦更快。"
+scene_path = "res://scenes/missions/mission_02_bloodstream.tscn"
+recommended_family = &"B"
+defense_kills = 8
+cleanse_seconds = 4.5
+defense_spawn_interval = 1.55
+late_spawn_interval = 2.7
+regular_enemy = ExtResource("2")
+boss_enemy = ExtResource("3")
+difficulty = ExtResource("4")
+background_color = Color(0.025, 0.012, 0.05, 1)
+floor_color = Color(0.07, 0.025, 0.085, 1)
+lane_color = Color(0.34, 0.08, 0.28, 1)
+zone_color = Color(0.7, 0.38, 1, 1)
+rewards = {"antigen": 55, "biomass": 30, "protomass": 8}
+discovery_flag = "MISSION-02-COMPLETE"
+unlock_campaign_level = "L04"
