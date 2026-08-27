@@ -33,6 +33,7 @@ npm run build
 
 cd ../../
 godot --headless --path godot/immune --import
+godot --headless --path godot/immune --import
 godot --headless --path godot/immune --script res://tools/smoke.gd
 godot --headless --path godot/immune --script res://tools/check_overflow.gd
 godot --headless --path godot/immune --export-release "Windows Desktop" build/releases/IMMUNE-windows.exe
@@ -49,8 +50,9 @@ godot --headless --path godot/immune --export-release "Web" build/releases/web/i
 - The exported macOS `.app` is arm64/x86-64 universal, ad-hoc hardened-runtime signed, passes strict code-signature verification, and launches natively with `RELEASE_SMOKE_OK platform=macOS nodes=200`.
 - The exported Web build was exercised in Chromium through research → mission select → onboarding → live combat → pause/settings.
 - Exported Web console: 0 errors, 0 warnings; canvas fits a 1036×690 viewport without document scroll.
-- Windows and Linux exports passed binary-format and archive-integrity checks. CI now downloads and launches those exact release artifacts on native Ubuntu/Windows runners; that remote matrix remains unexecuted until the uncommitted branch is pushed.
+- GitHub Actions run [33072178177](https://github.com/wchklaus97/IMMUNE-/actions/runs/33072178177) completed successfully for commit `ee70f3c`: Web validation, Godot import/smoke/overflow, four-platform export, artifact upload, and native launch markers on Ubuntu, Windows, and macOS all passed.
+- A fresh checkout intentionally runs Godot import twice: the first pass builds the ignored `.godot` cache, and the second pass is the clean error gate. This avoids treating the project theme font's first-start cache miss as a source error.
 
 ## Honest production status
 
-The demo/vertical slice is complete. It is not yet a content-complete commercial game: B/M/N/A/D currently use polished procedural family bodies rather than final approved imported hero meshes, and the campaign still has only three missions. The next production milestone should first execute the remote native-smoke matrix, then focus on final character asset replacement, more enemy/mission content, balance/playtesting, accessibility/localization depth, Developer ID notarization, and storefront packaging.
+The demo/vertical slice is complete and its cross-platform release pipeline is green. It is not yet a content-complete commercial game: B/M/N/A/D currently use polished procedural family bodies rather than final approved imported hero meshes, and the campaign still has only three missions. The next production milestone should focus on final character asset replacement, more enemy/mission content, balance/playtesting, accessibility/localization depth, Developer ID notarization, and storefront packaging. The CI action versions also emit a non-blocking Node 20 deprecation warning and should be upgraded in a dedicated maintenance change.
