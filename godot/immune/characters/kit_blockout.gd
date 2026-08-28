@@ -31,8 +31,14 @@ static func apply(host: Node) -> void:
 			locomotion_kit.visible = false
 		if relay_dish and relay_dish.get_child_count() == 0:
 			_build_relay(relay_dish, jelly, accent)
-	elif locomotion_kit and locomotion_kit.get_child_count() == 0:
-		_build_loco(locomotion_kit, family, jelly)
+	elif locomotion_kit:
+		if locomotion_kit.get_child_count() == 0:
+			_build_loco(locomotion_kit, family, jelly)
+		# These small procedural accessories use the shared custom gel shader.
+		# Their directional shadow pass can project screen-sized wedges on the
+		# Compatibility renderer when the kit becomes visible. The character body
+		# keeps its shadow; only the cosmetic mobile attachments opt out.
+		_disable_geometry_shadows(locomotion_kit)
 
 
 static func add_mesh(parent: Node3D, mesh: Mesh, mat: Material, pos: Vector3, rot_deg: Vector3 = Vector3.ZERO, scale := Vector3.ONE) -> MeshInstance3D:
@@ -44,6 +50,13 @@ static func add_mesh(parent: Node3D, mesh: Mesh, mat: Material, pos: Vector3, ro
 	mi.scale = scale
 	parent.add_child(mi)
 	return mi
+
+
+static func _disable_geometry_shadows(node: Node) -> void:
+	if node is GeometryInstance3D:
+		(node as GeometryInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	for child in node.get_children():
+		_disable_geometry_shadows(child)
 
 
 static func _paint_core(host: Node, jelly: Material) -> void:

@@ -17,10 +17,15 @@ const _Gel := preload("res://characters/gel/gel_look.gd")
 
 ## Clean mesh first, same reasoning as tools/gel_preview.gd: a published cost number
 ## should not have been measured on a mesh with holes torn through the eyes.
-const MESH_CANDIDATES: Array[String] = [
-	"res://characters/base_t/CHAR-BASE-T-tripo-5k.glb",
-	"res://characters/base_t/CHAR-BASE-T-fix.glb",
-]
+const MESH_CANDIDATES: Dictionary = {
+	"T": [
+		"res://characters/base_t/CHAR-BASE-T-tripo-5k.glb",
+		"res://characters/base_t/CHAR-BASE-T-fix.glb",
+	],
+	"B": [
+		"res://characters/base_b/CHAR-BASE-B-meshy-t2.glb",
+	],
+}
 
 ## Frames discarded before measuring, so shader compilation and the first-frame
 ## pipeline warm-up do not land in the average.
@@ -29,20 +34,37 @@ const WARMUP_FRAMES := 60
 var _count := 10
 var _frames := 240
 var _mode := "gel"
+var _family := "T"
+var _force_sync := false
 var _opts := {}
 
 
 func _ready() -> void:
+	# Compatibility/Metal can report a zero GPU timer even when viewport timing is
+	# enabled. Disable VSync and keep CPU + wall-frame samples as honest fallbacks.
+	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	var args := _user_args()
 	_count = clampi(int(args.get("count", "10")), 1, 200)
 	_frames = clampi(int(args.get("frames", "240")), 30, 4000)
 	_mode = String(args.get("material", "gel"))
+	_family = String(args.get("family", "T")).to_upper()
+	_force_sync = String(args.get("sync", "false")).to_lower() == "true"
+	if not MESH_CANDIDATES.has(_family):
+		push_error("gel_perf.gd: unsupported family %s" % _family)
+		get_tree().quit(2)
+		return
 	# Same --set=name:value form as gel_preview, so a cost can be attributed to one
 	# feature by switching it off here rather than by guessing.
 	for entry in String(args.get("set", "")).split(",", false):
 		var pair := entry.split(":", true, 1)
-		if pair.size() == 2 and pair[1].strip_edges().is_valid_float():
-			_opts[pair[0].strip_edges()] = pair[1].strip_edges().to_float()
+		if pair.size() != 2:
+			continue
+		var key := pair[0].strip_edges()
+		var value := pair[1].strip_edges().to_lower()
+		if value == "true" or value == "false":
+			_opts[key] = value == "true"
+		elif value.is_valid_float():
+			_opts[key] = value.to_float()
 	_build_stage()
 	if not _spawn():
 		get_tree().quit(3)
@@ -89,7 +111,7 @@ func _build_stage() -> void:
 ## count that covers little screen area would flatter it.
 func _spawn() -> bool:
 	var path := ""
-	for candidate in MESH_CANDIDATES:
+	for candidate in MESH_CANDIDATES[_family]:
 		if ResourceLoader.exists(candidate):
 			path = candidate
 			break
@@ -116,10 +138,10 @@ func _spawn() -> bool:
 		add_child(node)
 		match _mode:
 			"gel":
-				_Look.apply_gel(node, "T", _opts)
+				_Look.apply_gel(node, _family, _opts)
 			"standard":
 				for mi in _mesh_instances(node):
-					mi.material_override = _Look.jelly_material("T")
+					mi.material_override = _Look.jelly_material(_family)
 			_:
 				pass
 
@@ -136,18 +158,38 @@ func _measure() -> void:
 	RenderingServer.viewport_set_measure_render_time(vp, true)
 	for _i in WARMUP_FRAMES:
 		await RenderingServer.frame_post_draw
-	var samples: Array[float] = []
+	var gpu_samples: Array[float] = []
+	var cpu_samples: Array[float] = []
+	var wall_samples: Array[float] = []
 	for _i in _frames:
+		var frame_start := Time.get_ticks_usec()
 		await RenderingServer.frame_post_draw
-		samples.append(RenderingServer.viewport_get_measured_render_time_gpu(vp))
+		if _force_sync:
+			RenderingServer.force_sync()
+		gpu_samples.append(RenderingServer.viewport_get_measured_render_time_gpu(vp))
+		cpu_samples.append(RenderingServer.viewport_get_measured_render_time_cpu(vp))
+		wall_samples.append(float(Time.get_ticks_usec() - frame_start) / 1000.0)
+	print("GEL_PERF family=%s mode=%s count=%d viewport=%s sync=%s gpu=%s cpu=%s wall=%s opts=%s" % [
+		_family,
+		_mode,
+		_count,
+		str(get_viewport().get_visible_rect().size),
+		_force_sync,
+		_summary(gpu_samples),
+		_summary(cpu_samples),
+		_summary(wall_samples),
+		_opts,
+	])
+
+
+func _summary(samples: Array[float]) -> String:
 	samples.sort()
 	var total := 0.0
-	for s in samples:
-		total += s
+	for sample in samples:
+		total += sample
 	var mean := total / float(samples.size())
 	var p95 := samples[mini(int(float(samples.size()) * 0.95), samples.size() - 1)]
-	print("GEL_PERF mode=%s count=%d viewport=%s gpu_mean_ms=%.3f gpu_p95_ms=%.3f gpu_max_ms=%.3f opts=%s" % [
-		_mode, _count, str(get_viewport().get_visible_rect().size), mean, p95, samples[-1], _opts])
+	return "mean_ms=%.3f,p95_ms=%.3f,max_ms=%.3f" % [mean, p95, samples[-1]]
 
 
 func _mesh_instances(node: Node) -> Array[MeshInstance3D]:

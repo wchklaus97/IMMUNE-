@@ -15,6 +15,19 @@
 
 六基礎塊模仍在 `scenes/kit_lock_preview.tscn`。空白鍵切駐守／移動；A 切中繼。
 
+## Jelly Material V2
+
+B 細胞使用集中式 `round_bubbles` profile：UV-free object-space 圓泡、較短吸收路徑、淺層 wet-coat 高光；舊有 directional dimple layer 只喺 B 關閉。T 細胞維持 `authored_membrane` profile，保留原本細緻膜紋理。M/N/A/D 維持安全關閉泡泡。完整設計、效能結果同 fallback 見 `docs/vfx/jelly-material-v2.md`。
+
+Compatibility renderer 下，細小 mobile duty accessories 會停用 shadow casting，避免 custom gel shadow pass 造成 screen-sized wedge；角色主體仍保留正常陰影。
+
+```bash
+godot --path godot/immune --resolution 1920x1080 res://tools/gameplay_shot.tscn -- \
+  --out=/absolute/output/path --family=B --mission=MISSION-01 --tag=B-v2
+godot --path godot/immune --resolution 1920x1080 res://tools/gel_perf.tscn -- \
+  --family=B --material=gel --count=10 --frames=300 --sync=true
+```
+
 ```powershell
 winget install --id GodotEngine.GodotEngine --version 4.7.2
 godot --path godot/immune

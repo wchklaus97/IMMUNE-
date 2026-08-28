@@ -43,6 +43,7 @@ const LINE_DIR := "res://characters/concepts/base-cell-line-v2/"
 const DUTY_CONCEPT_DIR := "res://characters/concepts/"
 
 const _Gel := preload("res://characters/gel/gel_look.gd")
+const _GelProfiles := preload("res://characters/gel/gel_profiles.gd")
 
 
 static func jelly_color(family: String) -> Color:
@@ -61,13 +62,17 @@ static func jelly_material(family: String) -> StandardMaterial3D:
 ## a ShaderMaterial instead of StandardMaterial3D, so it is offered alongside
 ## rather than swapped in — primitive blockouts have no UVs to carry a feature mask.
 static func gel_material(family: String, opts: Dictionary = {}) -> ShaderMaterial:
-	return _Gel.make_material(jelly_color(family), opts)
+	return _Gel.make_material(jelly_color(family), _GelProfiles.options(family, opts))
 
 
 ## Paints every MeshInstance3D under `root` with the gel material, keeping each
 ## surface's baked basecolor as the dark-feature mask. Use on sculpted meshes.
 static func apply_gel(root: Node, family: String, opts: Dictionary = {}) -> Array[ShaderMaterial]:
-	return _Gel.apply(root, jelly_color(family), opts)
+	return _Gel.apply(root, jelly_color(family), _GelProfiles.options(family, opts))
+
+
+static func gel_profile_name(family: String) -> StringName:
+	return _GelProfiles.profile_name(family)
 
 
 static func accent_material(family: String) -> StandardMaterial3D:

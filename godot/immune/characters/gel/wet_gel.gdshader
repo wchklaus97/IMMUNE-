@@ -71,8 +71,6 @@ group_uniforms gel;
 uniform float light_wrap : hint_range(0.0, 0.95) = 0.60;
 // How strongly the wrapped band takes on deep_color instead of albedo.
 uniform float sss_amount : hint_range(0.0, 4.0) = 1.35;
-// Screen-space SSS blur of the diffuse buffer (Forward+ only). 0 disables.
-uniform float sss_screen : hint_range(0.0, 1.0) = 0.35;
 uniform float transmit_power : hint_range(0.5, 24.0) = 2.6;
 uniform float transmit_strength : hint_range(0.0, 8.0) = 2.6;
 uniform float transmit_distort : hint_range(0.0, 1.0) = 0.30;
@@ -205,6 +203,28 @@ uniform float dimple_crease : hint_range(0.02, 1.0) = 0.34;
 uniform float dimple_round : hint_range(0.0, 1.0) = 0.85;
 uniform float dimple_triplanar_sharpness : hint_range(1.0, 16.0) = 6.0;
 
+group_uniforms bubbles;
+// Compatibility-safe Jelly V2 air pockets. Unlike the legacy triplanar field,
+// this samples an actual sparse 3D sphere distribution in object space. Any
+// surface intersecting a sphere receives a round cap and shell from every view,
+// with no UVs, tangent basis, texture fetches, or mesh modifications required.
+uniform bool bubble_enabled = false;
+uniform float bubble_scale : hint_range(1.0, 24.0) = 5.0;
+uniform float bubble_density : hint_range(0.0, 1.0) = 0.5;
+uniform float bubble_radius_min : hint_range(0.05, 0.45) = 0.17;
+uniform float bubble_radius_max : hint_range(0.05, 0.48) = 0.32;
+// Kept at or below 0.20. With radius <= 0.48 that bound guarantees the eight
+// nearest cell centres contain every sphere that can touch the current point.
+uniform float bubble_jitter : hint_range(0.0, 0.20) = 0.16;
+uniform float bubble_softness : hint_range(0.01, 0.30) = 0.08;
+uniform float bubble_depth : hint_range(0.0, 0.12) = 0.0;
+// Air absorbs less than gel. This shortens the fake optical path at a cap so the
+// centre becomes subtly brighter and less saturated without alpha sorting.
+uniform float bubble_thinness : hint_range(0.0, 0.8) = 0.0;
+uniform float bubble_shell_shadow : hint_range(0.0, 0.6) = 0.0;
+uniform float bubble_emission : hint_range(0.0, 0.3) = 0.0;
+uniform float bubble_seed : hint_range(0.0, 100.0) = 0.0;
+
 group_uniforms features;
 // The mesh's own baked basecolor. Only its darkness is used, never its hue.
 uniform sampler2D feature_tex : source_color, filter_linear_mipmap, hint_default_white;
@@ -288,6 +308,50 @@ vec2 cell_hash(vec2 p) {
 	vec3 q = fract(vec3(p.xyx) * vec3(0.1031, 0.1030, 0.0973));
 	q += dot(q, q.yzx + 33.33);
 	return fract((q.xx + q.yz) * q.zy);
+}
+
+
+// Dave Hoskins-style, sin-free 3D hash. One call supplies position jitter,
+// radius variation, and a deterministic density decision for a lattice cell.
+vec3 bubble_hash3(vec3 p) {
+	p = fract(p * vec3(0.1031, 0.1030, 0.0973));
+	p += dot(p, p.yxz + 33.33);
+	return fract((p.xxy + p.yxx) * p.zyx);
+}
+
+
+// Returns (spherical cap, shell). Sampling the eight centres around p is enough
+// because the profile bounds jitter and radius so a more distant cell cannot
+// intersect this point. This is substantially cheaper than 27-sample Worley and
+// makes the expensive path opt-in per family.
+vec2 bubble_volume(vec3 p) {
+	vec3 base = floor(p - vec3(0.5));
+	float nearest = 1e4;
+	for (int z = 0; z <= 1; z++) {
+		for (int y = 0; y <= 1; y++) {
+			for (int x = 0; x <= 1; x++) {
+				vec3 cell = base + vec3(float(x), float(y), float(z));
+				vec3 rnd = bubble_hash3(cell + vec3(
+					bubble_seed,
+					bubble_seed * 1.37 + 7.0,
+					bubble_seed * 2.11 + 13.0));
+				float presence = fract(dot(rnd, vec3(0.73, 1.37, 2.17)));
+				if (presence <= bubble_density) {
+					vec3 centre = cell + vec3(0.5) + (rnd - vec3(0.5)) * (2.0 * bubble_jitter);
+					float radius = mix(
+						min(bubble_radius_min, bubble_radius_max),
+						max(bubble_radius_min, bubble_radius_max),
+						rnd.y);
+					nearest = min(nearest, length(p - centre) / max(radius, 0.001));
+				}
+			}
+		}
+	}
+	float soft = max(bubble_softness, 0.001);
+	float inside = 1.0 - smoothstep(1.0 - soft, 1.0 + soft, nearest);
+	float cap = sqrt(max(1.0 - min(nearest * nearest, 1.0), 0.0)) * inside;
+	float shell = 1.0 - smoothstep(soft, soft * 3.0, abs(nearest - 1.0));
+	return vec2(cap, shell);
 }
 
 
@@ -425,12 +489,23 @@ void fragment() {
 		+ dot(dFdy(base_n), dFdy(VERTEX)) / (py * py);
 	float thin_c = smoothstep(curv_low, max(curv_high, curv_low + 0.01), conv);
 
-	// --- cellular dimples --------------------------------------------------
+	// --- cellular dimples + volumetric round bubbles ----------------------
 	vec3 n = base_n;
 	if (dimple_depth > 0.001) {
 		float height = cell_triplanar(v_obj_pos * dimple_scale, normalize(v_obj_normal));
 		float strength = dimple_depth * gel_mask / max(dimple_scale, 0.001);
 		n = bump_normal(n, VERTEX, height, strength);
+	}
+	vec2 bubble = vec2(0.0);
+	if (bubble_enabled && bubble_depth > 0.001 && bubble_density > 0.001) {
+		bubble = bubble_volume(v_obj_pos * bubble_scale);
+		// A very shallow positive lens lets the existing coat lobes draw a soft
+		// crescent. A negative dent made the shell read as a dark skin pore.
+		n = bump_normal(
+			n,
+			VERTEX,
+			bubble.x,
+			bubble_depth * gel_mask / max(bubble_scale, 0.001));
 	}
 	NORMAL = n;
 
@@ -445,14 +520,16 @@ void fragment() {
 	// of its green and blue and reads deep saturated orange, a thin edge has
 	// absorbed almost nothing and stays hot. Both channels therefore move across a
 	// limb, which is the cue the flat clipped plateau used to destroy.
-	vec3 through = gel_throughput(1.0 - thin);
+	float local_thickness = clamp(1.0 - thin - bubble.x * bubble_thinness, 0.0, 1.0);
+	vec3 through = gel_throughput(local_thickness);
 	vec3 body = body_color.rgb * albedo_gain * mix(vec3(1.0), through, body_absorb);
 	body = mix(body, body * (0.35 + 1.3 * lum), tex_tint_mix);
+	body *= 1.0 - bubble.y * bubble_shell_shadow * gel_mask;
 	ALBEDO = mix(body, ink_color.rgb, ink);
 	METALLIC = 0.0;
-	ROUGHNESS = mix(body_roughness, ink_roughness, ink);
+	float gel_roughness = mix(body_roughness, max(body_roughness * 0.72, 0.04), bubble.x);
+	ROUGHNESS = mix(gel_roughness, ink_roughness, ink);
 	SPECULAR = env_specular;
-	SSS_STRENGTH = sss_screen * gel_mask;
 
 	// --- inner glow + rim --------------------------------------------------
 	// `through` IS the colour of the interior radiance, not just its strength. At a
@@ -487,7 +564,10 @@ void fragment() {
 	// the body plateau is measured over. Limited on its own so a wide flooded band
 	// cannot read as an emissive stripe painted on the outline.
 	vec3 rim = rim_color.rgb * rim_energy * pow(fres, rim_power);
-	EMISSION = (peak_limit(inner, interior_budget) + peak_limit(rim, rim_budget)) * gel_mask;
+	vec3 bubble_glow = transmit_color.rgb * bubble_emission * bubble.x * (0.25 + 0.75 * fres);
+	EMISSION = (
+		peak_limit(inner + bubble_glow, interior_budget)
+		+ peak_limit(rim, rim_budget)) * gel_mask;
 
 	v_ink = ink;
 	v_hot = hot;

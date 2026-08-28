@@ -4,9 +4,11 @@ Updated: 2026-08-27
 
 ## Current milestone
 
-The requested playable demo milestone is implemented and release-checked in Godot 4.7.2 stable. The permanent research network now leads into a mission selector, three authored missions, six playable immune-cell families, and a complete three-phase combat loop.
+The requested playable demo milestone is implemented. The permanent research network leads into a mission selector, three authored missions, six playable immune-cell families, and a complete three-phase combat loop. The current local Jelly Material V2 release gate uses Godot 4.6.1 because that is the installed editor; the project target and CI baseline remain Godot 4.7.2 stable.
 
 `CHAR-BASE-B` is now the first Meshy T2 hero replacement after T: an 8,755-triangle, untextured smart-topology GLB generated from the locked B-cell reference for 5 credits. The shared wet-gel shader, aligned procedural ink face, runtime duty-kit swaps, regenerated smooth normals, and a local rear-normal repair produce the approved demo look without another paid generation.
+
+Jelly Material V2 adds a centralized `round_bubbles` B profile with sparse UV-free object-space air pockets while T keeps its `authored_membrane` profile. Bubble defaults remain off for unreviewed families and caller overrides provide a zero-cost fallback. The Forward+-only screen-space SSS write was removed from the Compatibility shader path. No Meshy request or credit was used for this material milestone.
 
 ## Playable loop
 
@@ -26,6 +28,9 @@ The requested playable demo milestone is implemented and release-checked in Godo
 - Traditional Chinese Web-safe Noto Sans HK variable font with its OFL license.
 - Windows, Linux, macOS universal, and single-threaded Web release presets, GitHub Actions validation/export/native-smoke matrix, and Git LFS rules for authored media.
 - Reproducible B-cell asset provenance plus `tools/smooth_meshy_b_normals.cpp`, which repairs missing Meshy normals and the single-view rear shading seam without moving vertices or changing topology.
+- Jelly Material V2 family profiles, object-space round B bubbles, safe-off defaults, and regression coverage on the actual imported surface override.
+- Cosmetic mobile duty accessories opt out of shadow casting after Web QA proved their custom-gel shadow pass caused screen-sized floor wedges; character bodies still cast normal shadows.
+- Headed gameplay and material capture harnesses plus CPU/GPU/wall-frame instrumentation for Compatibility backends.
 
 ## Verification commands
 
@@ -46,6 +51,15 @@ godot --headless --path godot/immune --export-release "macOS" build/releases/IMM
 godot --headless --path godot/immune --export-release "Web" build/releases/web/index.html
 ```
 
+Jelly-specific visual and performance checks:
+
+```sh
+godot --path godot/immune --resolution 1920x1080 res://tools/gameplay_shot.tscn -- \
+  --out=/absolute/output/path --family=B --mission=MISSION-01 --tag=B-v2
+godot --path godot/immune --resolution 1920x1080 res://tools/gel_perf.tscn -- \
+  --family=B --material=gel --count=10 --frames=300 --sync=true
+```
+
 ## Verified release state
 
 - Godot 4.7.2 import, expanded smoke test, and 1920×1080 HUD overflow check pass without script errors.
@@ -59,7 +73,10 @@ godot --headless --path godot/immune --export-release "Web" build/releases/web/i
 - The 2026-08-27 B-cell replacement was locally rechecked with Godot 4.6.1: two import passes, expanded smoke, 1920×1080 overflow, all four exports, strict macOS signature validation, universal-binary inspection, and headless launch passed. The Web research-network suite remains 53/53 green and its production build succeeds.
 - Meshy task `01a043a9-4884-7a6f-bd72-1a716f663403` consumed exactly 5 credits (balance 1505 → 1500). The integrated GLB retains 4,380 vertices / 8,755 faces; front, side, back, 3/4, and face screenshots passed visual review after normal repair.
 - Run the four Godot exports sequentially. Parallel exporter processes race on the shared system file `tmpproject.binary`; a sequential rerun produced 0 errors / 0 warnings in all four logs.
+- Jelly V2 followed two RED→GREEN cycles: B/T profile contracts first, then the mobile-accessory shadow regression. Six-angle B/T captures passed; B pass 1 was rejected for crater-like donut rings and pass 2 replaced them with restrained round pockets.
+- On Apple M4 Pro Compatibility/Metal, three synced 300-frame trials with ten B bodies found median CPU/wall means of 0.912/5.030 ms for StandardMaterial3D, 0.846/4.487 ms for wet gel with bubbles off, and 0.842/4.217 ms with bubbles on. The GPU timer stayed at zero; only “no measurable regression in this harness” is claimed.
+- Exported Web QA at 1600×900 and 1036×690 exercised research → B selection → onboarding → live combat → pause → mobile duty. Canvas fit both viewports with no page scroll and the browser console reported 0 errors / 0 warnings. The mobile shadow wedge found during this pass was fixed and rechecked before final export.
 
 ## Honest production status
 
-The demo/vertical slice is complete and its cross-platform release pipeline is green. It is not yet a content-complete commercial game: M/N/A/D still use polished procedural family bodies rather than final approved imported hero meshes, and the campaign still has only three missions. The next safest asset task is a no-credit M-cell reference/prompt/multi-view plan and quality gate; do not submit another paid Meshy task without explicit approval. The GL Compatibility renderer cannot use Godot's Forward+ subsurface-scattering output, so the current Web-safe gel look relies on the shader's coat, wrapped diffuse, transmission, and rim paths. Longer-term production work still includes more enemy/mission content, balance/playtesting, accessibility/localization depth, Developer ID notarization, storefront packaging, and a dedicated CI action-version maintenance change.
+The demo/vertical slice is complete and its local cross-platform release pipeline is green. It is not yet a content-complete commercial game: M/N/A/D still use polished procedural family bodies rather than final approved imported hero meshes, and the campaign still has only three missions. The next safest task is a full three-mission B/T playtest and balance pass using the final exports; after that, prepare a no-credit M-cell reference/prompt/multi-view plan and quality gate. Do not submit another paid Meshy task without explicit approval. The GL Compatibility renderer cannot use Godot's Forward+ subsurface-scattering output, so the current Web-safe gel look relies on coat, wrapped diffuse, transmission, rim, and the bounded bubble layer. A non-zero GPU capture on another backend, more enemy/mission content, accessibility/localization depth, Developer ID notarization, storefront packaging, and CI action-version maintenance remain production work.

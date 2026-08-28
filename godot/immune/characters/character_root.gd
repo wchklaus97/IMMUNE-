@@ -92,18 +92,10 @@ func _realize_imported_mesh() -> void:
 	var limbs := get_node_or_null("LimbKit") as Node3D
 	if limbs:
 		limbs.visible = false
-	var gel_opts := {}
-	if family_id == &"B":
-		# Smooth regenerated vertex normals carry both the soft silhouette and its
-		# wet highlights. The procedural cell field stays off here: on this UV-less
-		# topology it resolves as directional ripples instead of round jelly pores.
-		gel_opts = {
-			&"dimple_depth": 0.0,
-			&"thin_curvature": 0.04,
-			&"rim_energy": 0.10,
-			&"coat_strength": 1.15,
-		}
-	_Look.apply_gel(real_mesh, String(family_id), gel_opts)
+	# Family profiles are shared by imported bodies, procedural duty pieces,
+	# previews, combat, and tests. B's round-bubble profile therefore lives in
+	# gel_profiles.gd instead of being a one-off override hidden in this scene path.
+	_Look.apply_gel(real_mesh, String(family_id))
 
 
 func _process(delta: float) -> void:

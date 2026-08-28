@@ -140,7 +140,6 @@ const DEFAULTS := {
 	# needs somewhere deep to exist.
 	&"light_wrap": 0.16,
 	&"sss_amount": 0.5,
-	&"sss_screen": 0.35,
 	&"transmit_power": 2.6,
 	&"transmit_strength": 0.85,
 	&"transmit_distort": 0.30,
@@ -282,6 +281,20 @@ const DEFAULTS := {
 	# bright cracked net at face range. This is the blend that reads as dimpling and
 	# still resolves per-cell.
 	&"dimple_round": 0.68,
+	# Jelly V2 volumetric bubble defaults are deliberately off. Family profiles
+	# opt in only after a mesh passes visual and performance review.
+	&"bubble_enabled": false,
+	&"bubble_scale": 5.0,
+	&"bubble_density": 0.5,
+	&"bubble_radius_min": 0.17,
+	&"bubble_radius_max": 0.32,
+	&"bubble_jitter": 0.16,
+	&"bubble_softness": 0.08,
+	&"bubble_depth": 0.0,
+	&"bubble_thinness": 0.0,
+	&"bubble_shell_shadow": 0.0,
+	&"bubble_emission": 0.0,
+	&"bubble_seed": 0.0,
 	&"ink_low": 0.13,
 	&"ink_high": 0.36,
 	&"ink_roughness": 0.05,

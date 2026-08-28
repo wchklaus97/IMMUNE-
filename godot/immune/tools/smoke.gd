@@ -70,6 +70,11 @@ func _run() -> void:
 				push_error("CHAR-BASE-B must align its readable ink mouth with the sculpted cavity")
 				quit(1)
 				return
+			var b_runtime_gel := _find_wet_gel_material(b_real_mesh)
+			if b_runtime_gel == null or b_runtime_gel.get_shader_parameter("bubble_enabled") != true:
+				push_error("CHAR-BASE-B imported body must receive its round-bubble runtime profile")
+				quit(1)
+				return
 	var look := load("res://characters/family_look.gd")
 	for family in ["T", "B", "A"]:
 		if not by_family.has(family):
@@ -107,6 +112,10 @@ func _run() -> void:
 				invalid_b_duty = invalid_b_duty or b_loco == null or not b_loco.visible
 				if invalid_b_duty:
 					push_error("CHAR-BASE-B duty swap must preserve the imported body")
+					quit(1)
+					return
+				if not _all_geometry_shadows_disabled(b_loco):
+					push_error("CHAR-BASE-B mobile accessories must not cast oversized world shadows")
 					quit(1)
 					return
 	var research := load("res://ui/research/research_network.tscn") as PackedScene
@@ -243,6 +252,32 @@ func _run() -> void:
 	var dimple_depth := float(gel_material.get_shader_parameter("dimple_depth"))
 	if dimple_depth < 0.01 or dimple_depth > 0.03:
 		push_error("Wet-gel microtexture must remain subtle and visible")
+		quit(1)
+		return
+	var b_gel_material: ShaderMaterial = look.call("gel_material", "B")
+	if b_gel_material == null:
+		push_error("B wet-gel material failed to build")
+		quit(1)
+		return
+	if b_gel_material.get_shader_parameter("bubble_enabled") != true:
+		push_error("B Jelly V2 profile must enable object-space round bubbles")
+		quit(1)
+		return
+	if float(b_gel_material.get_shader_parameter("dimple_depth")) > 0.001:
+		push_error("B Jelly V2 profile must disable directional legacy dimples")
+		quit(1)
+		return
+	if gel_material.get_shader_parameter("bubble_enabled") == true:
+		push_error("T Jelly V2 profile must keep its authored membrane microtexture")
+		quit(1)
+		return
+	var b_fallback: ShaderMaterial = look.call("gel_material", "B", {&"bubble_enabled": false})
+	if b_fallback == null or b_fallback.get_shader_parameter("bubble_enabled") != false:
+		push_error("Jelly V2 call-site fallback must override the B family profile")
+		quit(1)
+		return
+	if look.call("gel_profile_name", "B") != &"round_bubbles":
+		push_error("B Jelly V2 profile name is not stable")
 		quit(1)
 		return
 	if not str(combat.call("phase_name")).contains("核心防守"):
@@ -385,16 +420,41 @@ func _has_gamepad_event(action: StringName) -> bool:
 
 
 func _has_wet_gel_mesh(node: Node) -> bool:
+	return _find_wet_gel_material(node) != null
+
+
+func _all_geometry_shadows_disabled(node: Node) -> bool:
+	if node is GeometryInstance3D:
+		var geometry := node as GeometryInstance3D
+		if geometry.cast_shadow != GeometryInstance3D.SHADOW_CASTING_SETTING_OFF:
+			return false
+	for child in node.get_children():
+		if not _all_geometry_shadows_disabled(child):
+			return false
+	return true
+
+
+func _find_wet_gel_material(node: Node) -> ShaderMaterial:
 	if node is MeshInstance3D:
 		var mesh_instance := node as MeshInstance3D
-		var material: Material = mesh_instance.material_override
-		if material == null and mesh_instance.mesh != null and mesh_instance.mesh.get_surface_count() > 0:
-			material = mesh_instance.mesh.surface_get_material(0)
-		if material is ShaderMaterial:
-			var shader := (material as ShaderMaterial).shader
-			if shader != null and shader.resource_path.ends_with("wet_gel.gdshader"):
-				return true
+		var materials: Array[Material] = []
+		if mesh_instance.material_override != null:
+			materials.append(mesh_instance.material_override)
+		if mesh_instance.mesh != null:
+			for surface in mesh_instance.mesh.get_surface_count():
+				var override := mesh_instance.get_surface_override_material(surface)
+				if override != null:
+					materials.append(override)
+				var source := mesh_instance.mesh.surface_get_material(surface)
+				if source != null:
+					materials.append(source)
+		for material in materials:
+			if material is ShaderMaterial:
+				var shader := (material as ShaderMaterial).shader
+				if shader != null and shader.resource_path.ends_with("wet_gel.gdshader"):
+					return material as ShaderMaterial
 	for child in node.get_children():
-		if _has_wet_gel_mesh(child):
-			return true
-	return false
+		var found := _find_wet_gel_material(child)
+		if found != null:
+			return found
+	return null
