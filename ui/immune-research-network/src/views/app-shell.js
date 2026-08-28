@@ -60,8 +60,19 @@
    */
   function renderAppChrome(chrome, viewModel) {
     const { catalog, player, filters, searchQuery, viewMode } = viewModel;
+    // Keep the live search control mounted across state renders. Replacing it
+    // on every input event drops focus and makes normal multi-character typing
+    // stop after the first character.
+    let searchWrap = chrome.toolbar.querySelector(".toolbar-search");
+    let searchInput = searchWrap?.querySelector(".toolbar-search-input");
     clear(chrome.resourceBar);
-    clear(chrome.toolbar);
+    if (searchWrap && searchInput) {
+      for (const child of [...chrome.toolbar.children]) {
+        if (child !== searchWrap) child.remove();
+      }
+    } else {
+      clear(chrome.toolbar);
+    }
 
     const brand = text(chrome.resourceBar, "div", "", "brand-block");
     text(brand, "strong", "IMMUNE", "brand-title");
@@ -125,19 +136,23 @@
     }
     chrome.resourceBar.appendChild(review);
 
-    const searchWrap = document.createElement("div");
-    searchWrap.className = "toolbar-search";
-    const searchInput = document.createElement("input");
-    searchInput.type = "search";
-    searchInput.className = "toolbar-search-input";
-    searchInput.placeholder = "搜尋研究…";
+    if (!searchWrap || !searchInput) {
+      searchWrap = document.createElement("div");
+      searchWrap.className = "toolbar-search";
+      searchInput = document.createElement("input");
+      searchInput.type = "search";
+      searchInput.className = "toolbar-search-input";
+      searchInput.placeholder = "搜尋研究…";
+      searchInput.setAttribute("aria-label", "搜尋研究");
+      searchInput.addEventListener("input", () => {
+        chrome.emit({ type: "SET_SEARCH", query: searchInput.value });
+      });
+      searchWrap.appendChild(searchInput);
+    }
     searchInput.value = searchQuery || "";
-    searchInput.setAttribute("aria-label", "搜尋研究");
-    searchInput.addEventListener("input", () => {
-      chrome.emit({ type: "SET_SEARCH", query: searchInput.value });
-    });
-    searchWrap.appendChild(searchInput);
-    chrome.toolbar.appendChild(searchWrap);
+    if (searchWrap.parentElement !== chrome.toolbar) {
+      chrome.toolbar.appendChild(searchWrap);
+    }
 
     const filtersRow = document.createElement("div");
     filtersRow.className = "toolbar-filters";

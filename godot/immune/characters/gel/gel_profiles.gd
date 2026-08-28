@@ -49,6 +49,31 @@ const FAMILY: Dictionary = {
 		&"rim_energy": 0.10,
 		&"coat_strength": 1.15,
 	},
+	# M uses an untextured 8.8k-triangle Meshy T2 sculpt. The legacy triplanar
+	# dimple normal exaggerates its triangles at grazing angles, so the sculpt uses
+	# the same view-independent air-pocket cue as B with a quieter macrophage tune.
+	"M": {
+		&"body_color": Color(0.78, 0.58, 0.98, 1.0),
+		&"deep_color": Color(0.42, 0.14, 0.66, 1.0),
+		&"transmit_color": Color(0.90, 0.80, 1.0, 1.0),
+		&"rim_color": Color(0.96, 0.88, 1.0, 1.0),
+		&"bubble_enabled": true,
+		&"bubble_scale": 5.2,
+		&"bubble_density": 0.40,
+		&"bubble_radius_min": 0.16,
+		&"bubble_radius_max": 0.30,
+		&"bubble_jitter": 0.14,
+		&"bubble_softness": 0.10,
+		&"bubble_depth": 0.010,
+		&"bubble_thinness": 0.30,
+		&"bubble_shell_shadow": 0.018,
+		&"bubble_emission": 0.025,
+		&"bubble_seed": 31.0,
+		&"dimple_depth": 0.0,
+		&"thin_curvature": 0.03,
+		&"rim_energy": 0.08,
+		&"coat_strength": 1.10,
+	},
 }
 
 
@@ -67,4 +92,6 @@ static func profile_name(family: String) -> StringName:
 		return &"round_bubbles"
 	if family == "T":
 		return &"authored_membrane"
+	if family == "M":
+		return &"macrophage_bubbles"
 	return &"base_gel"

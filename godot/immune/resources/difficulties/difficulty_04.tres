@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="DifficultyProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/combat/difficulty_profile.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"DIFFICULTY-04"
+display_name = "變異"
+rank = 4
+health_multiplier = 1.28
+speed_multiplier = 1.12
+spawn_interval_multiplier = 0.85
+boss_health_multiplier = 1.32

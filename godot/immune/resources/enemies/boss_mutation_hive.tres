@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="PathogenProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/combat/pathogen_profile.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"BOSS-MUTATION-HIVE"
+display_name = "突變巢母"
+description = "受創後加速的巨型擬態病原。"
+max_health = 52
+move_speed = 0.72
+core_damage = 6
+visual_scale = 2.62
+is_boss = true
+enrage_health_threshold = 0.5
+enrage_speed_multiplier = 1.35
+body_color = Color(0.12, 0.5, 0.44, 1)
+emission_strength = 0.46
+shape_variant = 1

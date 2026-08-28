@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="DifficultyProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/combat/difficulty_profile.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"DIFFICULTY-06"
+display_name = "系統危殆"
+rank = 6
+health_multiplier = 1.36
+speed_multiplier = 1.18
+spawn_interval_multiplier = 0.8
+boss_health_multiplier = 1.48

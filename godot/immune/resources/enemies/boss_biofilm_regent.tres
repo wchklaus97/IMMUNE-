@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="PathogenProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/combat/pathogen_profile.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"BOSS-BIOFILM-REGENT"
+display_name = "生物膜菌王"
+description = "一旦火力中斷便快速修復外膜。"
+max_health = 64
+move_speed = 0.68
+core_damage = 7
+visual_scale = 2.72
+is_boss = true
+regeneration_per_second = 1.0
+regeneration_delay = 1.25
+body_color = Color(0.14, 0.32, 0.66, 1)
+emission_strength = 0.5
+shape_variant = 2

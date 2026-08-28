@@ -15,6 +15,12 @@ extends Resource
 @export_range(0.25, 5.0, 0.05) var visual_scale: float = 1.0
 @export var is_boss: bool = false
 
+@export_group("Traits")
+@export_range(0.0, 1.0, 0.05) var enrage_health_threshold: float = 0.0
+@export_range(1.0, 3.0, 0.05) var enrage_speed_multiplier: float = 1.0
+@export_range(0.0, 10.0, 0.05) var regeneration_per_second: float = 0.0
+@export_range(0.0, 10.0, 0.05) var regeneration_delay: float = 2.0
+
 @export_group("Presentation")
 @export var body_color: Color = Color(0.42, 0.72, 0.28, 1.0)
 @export_range(0.0, 2.0, 0.05) var emission_strength: float = 0.15

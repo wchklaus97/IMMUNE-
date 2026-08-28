@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="PathogenProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/combat/pathogen_profile.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"PATHOGEN-MUTATOR"
+display_name = "突變擬態體"
+description = "生命跌至一半以下後會加速衝向核心。"
+max_health = 9
+move_speed = 1.8
+core_damage = 1
+visual_scale = 1.22
+enrage_health_threshold = 0.5
+enrage_speed_multiplier = 1.5
+body_color = Color(0.24, 0.68, 0.62, 1)
+emission_strength = 0.24
+shape_variant = 1

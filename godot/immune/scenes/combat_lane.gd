@@ -20,6 +20,7 @@ const _Tokens := preload("res://ui/research/research_tokens.gd")
 const _Content := preload("res://resources/combat/combat_content.gd")
 const _Look := preload("res://characters/family_look.gd")
 const _PauseMenu := preload("res://ui/pause_menu.gd")
+const _PlaytestTelemetry := preload("res://combat/combat_playtest_telemetry.gd")
 
 const MISSION_SELECT_SCENE := "res://ui/mission_select/mission_select.tscn"
 const NODE_FIXED := &"BASE-T-03"
@@ -35,6 +36,9 @@ const FRONT_LIMIT := 8.4
 @export var auto_spawn: bool = true
 @export var persist_rewards: bool = true
 @export var show_onboarding: bool = true
+@export var telemetry_enabled: bool = false
+@export var playtest_autopilot: bool = false
+@export var playtest_build_tag: String = "local"
 
 var current_phase: Phase = Phase.CORE_DEFENSE
 var _player: ImmuneCharacter
@@ -70,6 +74,7 @@ var _cleanse_progress: float = 0.0
 var _over: bool = false
 var _rewarded: bool = false
 var _onboarding_open: bool = false
+var _telemetry: CombatPlaytestTelemetry
 
 
 func _ready() -> void:
@@ -81,6 +86,9 @@ func _ready() -> void:
 	_family_profile = _Content.load_family(ResearchState.selected_family_id)
 	if _family_profile == null:
 		_family_profile = _Content.load_family(mission_data.recommended_family)
+	if telemetry_enabled:
+		_telemetry = _PlaytestTelemetry.new()
+		_telemetry.begin(mission_data.id, _family_profile.family_id, playtest_build_tag)
 	_build_stage()
 	_build_cleanse_zone()
 	_spawn_core()
@@ -90,6 +98,7 @@ func _ready() -> void:
 	if ResearchState.has_signal("duty_unlocked"):
 		ResearchState.duty_unlocked.connect(_on_duty_unlocked)
 	SettingsState.input_device_changed.connect(_on_input_device_changed)
+	SettingsState.settings_changed.connect(_on_settings_changed)
 	AudioDirector.play_music()
 	_set_phase(Phase.CORE_DEFENSE)
 	if show_onboarding and not SettingsState.onboarding_seen:
@@ -102,6 +111,11 @@ func _on_duty_unlocked(family: StringName, _duty: StringName) -> void:
 
 
 func _on_input_device_changed(_is_gamepad: bool) -> void:
+	_refresh_prompts()
+
+
+func _on_settings_changed() -> void:
+	_refresh_hud()
 	_refresh_prompts()
 
 
@@ -119,7 +133,10 @@ func _unhandled_input(event: InputEvent) -> void:
 func _physics_process(delta: float) -> void:
 	if _over or _onboarding_open or get_tree().paused:
 		return
+	_update_playtest_autopilot()
 	_move_player()
+	if _telemetry != null and _player != null:
+		_telemetry.tick(delta, _player.duty)
 	_try_fire(delta)
 	_update_expedition(delta)
 	if not auto_spawn:
@@ -128,7 +145,10 @@ func _physics_process(delta: float) -> void:
 	if _spawn_cd <= 0.0:
 		var base_interval := mission_data.defense_spawn_interval if current_phase == Phase.CORE_DEFENSE else mission_data.late_spawn_interval
 		_spawn_cd = base_interval * mission_data.difficulty.spawn_interval_multiplier
-		if current_phase != Phase.TOTAL_WAR or get_tree().get_nodes_in_group("bacterium").size() < 4:
+		if (
+			current_phase != Phase.TOTAL_WAR
+			or get_tree().get_nodes_in_group("bacterium").size() < mission_data.total_war_enemy_cap
+		):
 			_spawn_regular()
 
 
@@ -146,21 +166,21 @@ func _toggle_duty() -> void:
 	if _player == null:
 		return
 	if _family_profile.family_id == &"T" and not ResearchState.is_completed(NODE_MOBILE):
-		_set_status("需要完成 BASE-T-04 移動資格。按 %s 研究 T 細胞鏈。" % SettingsState.prompt(&"demo_research"))
+		_set_status(tr("STATUS_T_MOBILE_REQUIRED") % SettingsState.prompt(&"demo_research"))
 		return
 	if _player.duty == &"fixed":
 		_player.transform_duty(&"mobile")
-		_set_status("勤務轉換完成。使用 WASD／左搖桿推進；再次轉換可重新扎根。")
+		_set_status(tr("STATUS_DUTY_MOBILE"))
 	else:
 		_player.transform_duty(&"fixed")
-		_set_status("扎根完成。固定勤務會提升射速。")
+		_set_status(tr("STATUS_DUTY_FIXED"))
 	AudioDirector.play_sfx(&"duty")
 	_refresh_hud()
 
 
 func _show_intel_or_research() -> void:
 	if _family_profile.family_id != &"T":
-		_set_status("%s：%s" % [_family_profile.role_name, _family_profile.role_description])
+		_set_status("%s：%s" % [tr(_family_profile.role_name), tr(_family_profile.role_description)])
 		return
 	_research_t_chain()
 
@@ -169,20 +189,20 @@ func _research_t_chain() -> void:
 	if not ResearchState.is_completed(NODE_FIXED):
 		ResearchState.select_node(NODE_FIXED)
 		if ResearchState.complete_node(NODE_FIXED):
-			_set_status("BASE-T-03 固定炮台專精完成。再研究一次解鎖移動。")
+			_set_status(tr("STATUS_T_FIXED_COMPLETE"))
 		else:
-			_set_status("BASE-T-03 尚未符合研究條件。")
+			_set_status(tr("STATUS_T_FIXED_BLOCKED"))
 		_refresh_hud()
 		return
 	if not ResearchState.is_completed(NODE_MOBILE):
 		ResearchState.select_node(NODE_MOBILE)
 		if ResearchState.complete_node(NODE_MOBILE):
-			_set_status("BASE-T-04 移動資格已授予。現在可以轉換勤務。")
+			_set_status(tr("STATUS_T_MOBILE_COMPLETE"))
 		else:
-			_set_status("BASE-T-04 尚未符合研究條件或資源不足。")
+			_set_status(tr("STATUS_T_MOBILE_BLOCKED"))
 		_refresh_hud()
 		return
-	_set_status("移動資格已擁有。切換勤務以扎根／拔根。")
+	_set_status(tr("STATUS_T_MOBILE_OWNED"))
 
 
 func _move_player() -> void:
@@ -192,7 +212,7 @@ func _move_player() -> void:
 		_player.velocity = Vector3.ZERO
 		_player.global_position.y = PLAYER_HOME.y
 		return
-	var move_input := Input.get_vector(
+	var move_input: Vector2 = _playtest_move_input() if playtest_autopilot else Input.get_vector(
 		&"demo_move_left", &"demo_move_right", &"demo_move_back", &"demo_move_forward"
 	)
 	var move_speed := _family_profile.move_speed * (1.0 + ResearchState.global_stat("moveSpeed"))
@@ -201,6 +221,28 @@ func _move_player() -> void:
 	_player.global_position.y = PLAYER_HOME.y
 	_player.global_position.x = clampf(_player.global_position.x, -STRAFE_LIMIT, STRAFE_LIMIT)
 	_player.global_position.z = clampf(_player.global_position.z, REAR_LIMIT, FRONT_LIMIT)
+
+
+func _update_playtest_autopilot() -> void:
+	if not playtest_autopilot or _player == null:
+		return
+	var desired_duty: StringName = &"mobile" if current_phase == Phase.EXPEDITION else &"fixed"
+	if _player.duty != desired_duty:
+		_player.transform_duty(desired_duty)
+		if _telemetry != null:
+			_telemetry.record_duty_switch()
+
+
+func _playtest_move_input() -> Vector2:
+	if current_phase != Phase.EXPEDITION or _player == null:
+		return Vector2.ZERO
+	var offset := Vector2(
+		CLEANSE_CENTER.x - _player.global_position.x,
+		CLEANSE_CENTER.z - _player.global_position.z
+	)
+	if offset.length() <= 0.18:
+		return Vector2.ZERO
+	return offset.normalized()
 
 
 func _try_fire(delta: float) -> void:
@@ -221,10 +263,20 @@ func _try_fire(delta: float) -> void:
 	_player.look_at(_player.global_position + Vector3(aim.x, 0.0, aim.z), Vector3.UP, true)
 	_player.fire_skill(StringName("SKILL-%s-ACTIVE" % String(_family_profile.family_id)))
 	var bolt: _Bolt = _Bolt.new()
-	bolt.configure(_family_profile.projectile_damage, _family_profile.projectile_color)
+	bolt.configure(
+		_family_profile.projectile_damage,
+		_family_profile.projectile_color,
+		_family_profile.family_id,
+		_family_profile.hit_effect,
+		_family_profile.hit_effect_power,
+		_family_profile.hit_effect_cap,
+		_family_profile.hit_effect_threshold
+	)
 	add_child(bolt)
 	bolt.global_position = from
 	bolt.velocity = aim.normalized() * _Bolt.SPEED
+	if _telemetry != null:
+		_telemetry.record_shot()
 	AudioDirector.play_sfx(&"shot", randf_range(0.96, 1.04), -2.0)
 
 
@@ -277,6 +329,8 @@ func _wire_enemy(enemy: _Bacterium) -> void:
 
 func _on_enemy_died(was_boss: bool) -> void:
 	_kills += 1
+	if _telemetry != null:
+		_telemetry.record_enemy_defeated(was_boss)
 	if was_boss and current_phase == Phase.TOTAL_WAR:
 		_victory()
 	elif current_phase == Phase.CORE_DEFENSE and _kills >= mission_data.defense_kills:
@@ -285,6 +339,8 @@ func _on_enemy_died(was_boss: bool) -> void:
 
 
 func _on_enemy_hit(world_position: Vector3, amount: int, was_boss: bool) -> void:
+	if _telemetry != null:
+		_telemetry.record_hit(amount, was_boss)
 	AudioDirector.play_sfx(&"hit", randf_range(0.92, 1.08), -1.0)
 	_spawn_damage_number(world_position, amount, was_boss)
 	_shake_camera(0.15 if was_boss else 0.07)
@@ -318,6 +374,8 @@ func _update_expedition(delta: float) -> void:
 
 
 func _on_core_hit(hp: int, max_hp: int) -> void:
+	if _telemetry != null:
+		_telemetry.record_core_hp(hp, max_hp)
 	_core_bar.max_value = max_hp
 	_core_bar.value = hp
 	_core_value.text = "%d/%d" % [hp, max_hp]
@@ -327,22 +385,24 @@ func _on_core_hit(hp: int, max_hp: int) -> void:
 	if hp <= 0:
 		_defeat()
 	elif hp < max_hp:
-		_set_status("核心受損 %d/%d；優先清除接近核心的病原。" % [hp, max_hp])
+		_set_status(tr("STATUS_CORE_DAMAGED") % [hp, max_hp])
 
 
 func _set_phase(next_phase: Phase) -> void:
 	current_phase = next_phase
+	if _telemetry != null:
+		_telemetry.enter_phase(phase_name())
 	match current_phase:
 		Phase.CORE_DEFENSE:
 			_spawn_cd = 0.35
-			_set_status("%s：守住核心並清除第一波病原。" % mission_data.title)
+			_set_status(tr("STATUS_CORE_DEFENSE") % tr(mission_data.title))
 		Phase.EXPEDITION:
 			_cleanse_progress = 0.0
-			_set_status("遠征開始：轉換勤務，再移動到前方亮圈維持淨化。")
+			_set_status(tr("STATUS_EXPEDITION"))
 		Phase.TOTAL_WAR:
 			_clear_enemies()
 			_spawn_boss()
-			_set_status("總力戰：擊破 %s。固定勤務攻速較高。" % mission_data.boss_enemy.display_name)
+			_set_status(tr("STATUS_TOTAL_WAR") % tr(mission_data.boss_enemy.display_name))
 		Phase.VICTORY:
 			_finish_victory()
 		Phase.DEFEAT:
@@ -365,6 +425,8 @@ func _defeat() -> void:
 
 func _finish_victory() -> void:
 	_over = true
+	if _telemetry != null:
+		_telemetry.finish(true)
 	if not _rewarded:
 		_rewarded = true
 		ResearchState.grant_mission_rewards(
@@ -374,19 +436,21 @@ func _finish_victory() -> void:
 			mission_data.id,
 			persist_rewards
 		)
-	var reward_text := "抗原 +%d · 生物質 +%d · 一度原質 +%d" % [
+	var reward_text := tr("RESULT_REWARDS") % [
 		int(mission_data.rewards.get("antigen", 0)),
 		int(mission_data.rewards.get("biomass", 0)),
 		int(mission_data.rewards.get("protomass", 0)),
 	]
-	_show_result("免疫任務完成", "%s\n核心安全、前線已淨化、Boss 已清除。\n獎勵：%s" % [mission_data.title, reward_text])
+	_show_result(tr("RESULT_VICTORY_TITLE"), "%s\n%s\n%s" % [tr(mission_data.title), tr("RESULT_VICTORY_SUMMARY"), tr("RESULT_REWARD_LINE") % reward_text])
 	AudioDirector.play_sfx(&"victory")
 	combat_completed.emit(true, mission_data.rewards.duplicate(true))
 
 
 func _finish_defeat() -> void:
 	_over = true
-	_show_result("核心失守", "%s 失敗。返回任務台更換細胞或調整策略後再試。" % mission_data.title)
+	if _telemetry != null:
+		_telemetry.finish(false)
+	_show_result(tr("RESULT_DEFEAT_TITLE"), tr("RESULT_DEFEAT_BODY") % tr(mission_data.title))
 	AudioDirector.play_sfx(&"defeat")
 	combat_completed.emit(false, {})
 
@@ -394,29 +458,29 @@ func _finish_defeat() -> void:
 func phase_name() -> String:
 	match current_phase:
 		Phase.CORE_DEFENSE:
-			return "第一階段 · 核心防守"
+			return tr("PHASE_CORE_DEFENSE")
 		Phase.EXPEDITION:
-			return "第二階段 · 前線淨化"
+			return tr("PHASE_EXPEDITION")
 		Phase.TOTAL_WAR:
-			return "第三階段 · 總力戰"
+			return tr("PHASE_TOTAL_WAR")
 		Phase.VICTORY:
-			return "任務完成"
+			return tr("PHASE_VICTORY")
 		_:
-			return "任務失敗"
+			return tr("PHASE_DEFEAT")
 
 
 func objective_text() -> String:
 	match current_phase:
 		Phase.CORE_DEFENSE:
-			return "目標：清除病原 %d/%d" % [mini(_kills, mission_data.defense_kills), mission_data.defense_kills]
+			return tr("OBJECTIVE_CORE_DEFENSE") % [mini(_kills, mission_data.defense_kills), mission_data.defense_kills]
 		Phase.EXPEDITION:
-			return "目標：進入前線並維持淨化 %.1f/%.1f 秒" % [_cleanse_progress, mission_data.cleanse_seconds]
+			return tr("OBJECTIVE_EXPEDITION") % [_cleanse_progress, mission_data.cleanse_seconds]
 		Phase.TOTAL_WAR:
-			return "目標：擊破 %s" % mission_data.boss_enemy.display_name
+			return tr("OBJECTIVE_TOTAL_WAR") % tr(mission_data.boss_enemy.display_name)
 		Phase.VICTORY:
-			return "三段任務全部完成"
+			return tr("OBJECTIVE_VICTORY")
 		_:
-			return "核心生命歸零"
+			return tr("OBJECTIVE_DEFEAT")
 
 
 func debug_advance_phase() -> void:
@@ -441,6 +505,14 @@ func mission_id() -> StringName:
 
 func player_family() -> StringName:
 	return _family_profile.family_id if _family_profile else &""
+
+
+func telemetry_snapshot() -> Dictionary:
+	return _telemetry.snapshot() if _telemetry != null else {}
+
+
+func debug_is_over() -> bool:
+	return _over
 
 
 func _clear_enemies() -> void:
@@ -547,6 +619,8 @@ func _spawn_core() -> void:
 	_core.hp_changed.connect(_on_core_hit)
 	_core.breached.connect(_defeat)
 	add_child(_core)
+	if _telemetry != null:
+		_telemetry.record_core_hp(_core.hp, _Core.MAX_HP)
 
 
 func _spawn_player() -> void:
@@ -599,7 +673,7 @@ func _build_hud() -> void:
 	var core_row := HBoxContainer.new()
 	vitals.add_child(core_row)
 	var core_label := Label.new()
-	core_label.text = "免疫核心"
+	core_label.text = "UI_IMMUNE_CORE"
 	core_label.custom_minimum_size.x = 90
 	core_row.add_child(core_label)
 	_core_bar = ProgressBar.new()
@@ -672,11 +746,11 @@ func _build_hud() -> void:
 	_result_body.add_theme_font_size_override("font_size", 19)
 	result_box.add_child(_result_body)
 	var retry_button := Button.new()
-	retry_button.text = "重新挑戰"
+	retry_button.text = "UI_RETRY"
 	retry_button.pressed.connect(_restart_mission)
 	result_box.add_child(retry_button)
 	var return_button := Button.new()
-	return_button.text = "返回任務選擇"
+	return_button.text = "UI_RETURN_MISSIONS"
 	return_button.pressed.connect(_back_to_missions)
 	result_box.add_child(return_button)
 	_refresh_prompts()
@@ -692,8 +766,8 @@ func _build_pause_menu() -> void:
 func _refresh_hud() -> void:
 	if _hud == null or _core == null or _family_profile == null:
 		return
-	var duty := "固定" if _player == null or _player.duty == &"fixed" else ("中繼" if _player.duty == &"relay" else "移動")
-	_hud.text = "%s · %s · %s勤務" % [mission_data.title, _Look.DISPLAY_NAME.get(String(_family_profile.family_id), String(_family_profile.family_id)), duty]
+	var duty := tr("DUTY_FIXED") if _player == null or _player.duty == &"fixed" else (tr("DUTY_RELAY") if _player.duty == &"relay" else tr("DUTY_MOBILE"))
+	_hud.text = tr("UI_COMBAT_HUD") % [tr(mission_data.title), tr(str(_Look.DISPLAY_NAME.get(String(_family_profile.family_id), String(_family_profile.family_id)))), duty]
 	_objective.text = objective_text()
 	if _duty_button:
 		_duty_button.disabled = _over
@@ -701,11 +775,11 @@ func _refresh_hud() -> void:
 
 func _refresh_prompts() -> void:
 	if _duty_button:
-		_duty_button.text = "%s · 轉換勤務" % SettingsState.prompt(&"demo_toggle_duty")
+		_duty_button.text = tr("UI_TOGGLE_DUTY") % SettingsState.prompt(&"demo_toggle_duty")
 	if _intel_button:
-		_intel_button.text = "%s · %s" % [SettingsState.prompt(&"demo_research"), "研究 T 鏈" if _family_profile and _family_profile.family_id == &"T" else "角色情報"]
+		_intel_button.text = "%s · %s" % [SettingsState.prompt(&"demo_research"), tr("UI_RESEARCH_T") if _family_profile and _family_profile.family_id == &"T" else tr("UI_CHARACTER_INTEL")]
 	if _back_button:
-		_back_button.text = "返回任務台"
+		_back_button.text = tr("UI_RETURN_MISSION_DESK")
 
 
 func _set_status(text: String) -> void:
@@ -765,17 +839,17 @@ func _show_onboarding() -> void:
 	box.add_theme_constant_override("separation", 16)
 	panel.add_child(box)
 	var title := Label.new()
-	title.text = "任務教學"
+	title.text = "UI_TUTORIAL_TITLE"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 34)
 	box.add_child(title)
 	var body := Label.new()
-	body.text = "1 · 固定勤務會自動攻擊，並獲得較高射速。\n2 · 按 %s 轉換勤務，用 WASD／左搖桿移動。\n3 · 第二階段進入發光淨化圈並保持。\n4 · 第三階段擊破 Boss；%s 可開啟暫停與設定。" % [SettingsState.prompt(&"demo_toggle_duty"), SettingsState.prompt(&"demo_pause")]
+	body.text = (tr("UI_TUTORIAL_BODY") % [SettingsState.prompt(&"demo_toggle_duty"), SettingsState.prompt(&"demo_pause")]).replace("\\n", "\n")
 	body.add_theme_font_size_override("font_size", 21)
 	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	box.add_child(body)
 	var confirm := Button.new()
-	confirm.text = "%s · 開始任務" % SettingsState.prompt(&"demo_confirm")
+	confirm.text = tr("UI_TUTORIAL_START") % SettingsState.prompt(&"demo_confirm")
 	confirm.custom_minimum_size.y = 56
 	confirm.pressed.connect(func() -> void:
 		_onboarding_open = false

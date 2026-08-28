@@ -27,6 +27,17 @@ function carryMedia(bucket, id, target) {
   return target;
 }
 
+function generatedAtFromEnvironment() {
+  const rawEpoch = process.env.SOURCE_DATE_EPOCH;
+  if (rawEpoch === undefined || rawEpoch === "") return null;
+
+  const epochSeconds = Number(rawEpoch);
+  if (!Number.isFinite(epochSeconds) || epochSeconds < 0) {
+    throw new Error("SOURCE_DATE_EPOCH must be a non-negative number of seconds");
+  }
+  return new Date(epochSeconds * 1000).toISOString();
+}
+
 await import("../src/catalog/definitions.js");
 await import("../src/catalog/build-catalog.js");
 await import("../src/catalog/validate-catalog.js");
@@ -202,7 +213,9 @@ async function writeSvg(subdir, name, svg) {
 
 const manifest = {
   version: "1.0.0",
-  generatedAt: new Date().toISOString(),
+  // Null by default keeps normal builds byte-for-byte reproducible. Release
+  // pipelines can opt into a deterministic timestamp via SOURCE_DATE_EPOCH.
+  generatedAt: generatedAtFromEnvironment(),
   nodes: {},
   skills: {},
   characters: {},

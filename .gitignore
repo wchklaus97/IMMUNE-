@@ -37,6 +37,7 @@ credentials.json
 # --- Generated exports (regenerate locally) ---
 outputs/
 godot/immune/build/releases/
+meshy_output/
 
 # --- UI staging pilots ---
 ui/immune-research-network/staging/

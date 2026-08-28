@@ -7,6 +7,9 @@ const MISSION_PATHS := {
 	&"MISSION-01": "res://resources/missions/mission_01_core_siege.tres",
 	&"MISSION-02": "res://resources/missions/mission_02_bloodstream.tres",
 	&"MISSION-03": "res://resources/missions/mission_03_cytokine_storm.tres",
+	&"MISSION-04": "res://resources/missions/mission_04_mutation_breach.tres",
+	&"MISSION-05": "res://resources/missions/mission_05_biofilm_regency.tres",
+	&"MISSION-06": "res://resources/missions/mission_06_systemic_collapse.tres",
 }
 
 const FAMILY_PATHS := {

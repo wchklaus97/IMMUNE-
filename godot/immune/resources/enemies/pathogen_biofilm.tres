@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="PathogenProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/combat/pathogen_profile.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"PATHOGEN-BIOFILM"
+display_name = "生物膜載體"
+description = "離開火力壓制一段時間後會逐步再生。"
+max_health = 10
+move_speed = 1.62
+core_damage = 1
+visual_scale = 1.3
+regeneration_per_second = 0.75
+regeneration_delay = 1.5
+body_color = Color(0.24, 0.46, 0.72, 1)
+emission_strength = 0.26
+shape_variant = 2

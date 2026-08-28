@@ -13,3 +13,5 @@ mobile_fire_cooldown = 0.76
 fire_range = 11.5
 move_speed = 6.6
 projectile_color = Color(1, 0.44, 0.2, 1)
+signature_name = "先鋒標定"
+signature_description = "以均衡射程、傷害與機動維持穩定命中。"

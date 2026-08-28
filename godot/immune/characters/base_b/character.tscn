@@ -7,6 +7,7 @@
 script = ExtResource("1")
 family_id = &"B"
 character_id = &"CHAR-BASE-B"
+imported_face_overlay = true
 
 [node name="CoreMesh" type="Node3D" parent="."]
 

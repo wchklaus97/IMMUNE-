@@ -5,11 +5,13 @@ signal input_device_changed(is_gamepad: bool)
 
 const CONFIG_PATH := "user://immune_settings.cfg"
 const DEFAULT_VOLUMES := {"Master": 0.9, "Music": 0.55, "SFX": 0.8, "UI": 0.75}
+const SUPPORTED_LOCALES: PackedStringArray = ["zh_HK", "en"]
 
 var screen_shake_enabled: bool = true
 var reduced_motion: bool = false
 var onboarding_seen: bool = false
 var is_using_gamepad: bool = false
+var locale_code: String = "zh_HK"
 var _volumes: Dictionary = DEFAULT_VOLUMES.duplicate(true)
 
 
@@ -39,6 +41,7 @@ func load_settings() -> void:
 		_volumes[bus_name] = clampf(float(config.get_value("audio", bus_name, DEFAULT_VOLUMES[bus_name])), 0.0, 1.0)
 	screen_shake_enabled = bool(config.get_value("accessibility", "screen_shake", true))
 	reduced_motion = bool(config.get_value("accessibility", "reduced_motion", false))
+	locale_code = _normalized_locale(str(config.get_value("language", "locale", "zh_HK")))
 	onboarding_seen = bool(config.get_value("progress", "onboarding_seen", false))
 
 
@@ -48,6 +51,7 @@ func save_settings() -> Error:
 		config.set_value("audio", bus_name, _volumes[bus_name])
 	config.set_value("accessibility", "screen_shake", screen_shake_enabled)
 	config.set_value("accessibility", "reduced_motion", reduced_motion)
+	config.set_value("language", "locale", locale_code)
 	config.set_value("progress", "onboarding_seen", onboarding_seen)
 	var err := config.save(CONFIG_PATH)
 	if err != OK:
@@ -77,6 +81,16 @@ func set_screen_shake(enabled: bool) -> void:
 
 func set_reduced_motion(enabled: bool) -> void:
 	reduced_motion = enabled
+	settings_changed.emit()
+	save_settings()
+
+
+func set_locale(next_locale: String) -> void:
+	var normalized := _normalized_locale(next_locale)
+	if normalized == locale_code and TranslationServer.get_locale() == normalized:
+		return
+	locale_code = normalized
+	TranslationServer.set_locale(locale_code)
 	settings_changed.emit()
 	save_settings()
 
@@ -113,8 +127,17 @@ func prompt(action: StringName) -> String:
 
 
 func _apply_all() -> void:
+	TranslationServer.set_locale(locale_code)
 	for bus_name in _volumes.keys():
 		_apply_bus(bus_name)
+
+
+func _normalized_locale(value: String) -> String:
+	if value.begins_with("zh"):
+		return "zh_HK"
+	if value.begins_with("en"):
+		return "en"
+	return "zh_HK"
 
 
 func _apply_bus(bus_name: String) -> void:

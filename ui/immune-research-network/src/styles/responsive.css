@@ -53,13 +53,55 @@
 }
 
 @media (max-width: 1279px) {
+  .resource-bar {
+    gap: var(--space-sm);
+    padding-inline: var(--space-md);
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .brand-block {
+    min-width: 100px;
+    flex: 0 0 auto;
+  }
+
+  .resource-group {
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+    gap: var(--space-sm);
+  }
+
+  .resource-chip,
+  .bandwidth-chip,
+  .campaign-chip {
+    flex: 0 0 auto;
+    padding: 6px var(--space-sm);
+  }
+
+  .review-links {
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+    gap: var(--space-xs);
+  }
+
+  .review-link {
+    padding: 3px 7px;
+    font-size: 11px;
+  }
+
   .immune-main {
     grid-template-columns: 1fr;
-    grid-template-rows: 1fr auto;
+    grid-template-rows: minmax(0, 1fr) minmax(144px, 34%);
+  }
+
+  .canvas-wrap,
+  .tree-viewport {
+    min-height: 0;
   }
 
   .detail-panel {
-    max-height: 38vh;
+    min-height: 0;
+    max-height: none;
     border-left: none;
     border-top: 1px solid var(--immune-panel-border);
   }

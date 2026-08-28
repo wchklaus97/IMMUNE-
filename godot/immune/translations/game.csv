@@ -1,0 +1,118 @@
+keys,zh_HK,en
+UI_PAUSE_TITLE,暫停／設定,Pause / Settings
+UI_SCREEN_SHAKE,鏡頭震動,Camera shake
+UI_REDUCED_MOTION,減少動態效果,Reduce motion
+UI_LANGUAGE,介面語言,Interface language
+UI_RESUME,%s · 繼續,%s · Resume
+UI_RESTART_MISSION,重新開始任務,Restart mission
+UI_RETURN_MISSIONS,返回任務選擇,Return to mission select
+UI_MISSION_HEADING,免疫任務台,Immune Mission Desk
+UI_MISSION_SUBTITLE,選擇任務同細胞家族。六個家族都共用 wet-gel 材質同 duty 動畫管線。,Choose a mission and cell family. All six families share the wet-gel material and duty-animation pipeline.
+UI_FAMILY_HEADING,出擊細胞,Deploying cell
+UI_BACK_RESEARCH,%s · 返回研究網絡,%s · Return to research network
+UI_MISSION_LOCKED,尚未解鎖：先完成上一個免疫任務。,Locked: complete the previous immune mission first.
+UI_DIFFICULTY,難度 %d · %s · 防守 %d 隻 · 淨化 %.1f 秒,Difficulty %d · %s · Defeat %d · Cleanse %.1f sec
+UI_FAMILY_STATS,%s：%s  傷害 %d · 射程 %.1f · 移速 %.1f,%s: %s  Damage %d · Range %.1f · Speed %.1f
+UI_START_MISSION,%s · 以 %s 開始任務,%s · Start mission as %s
+UI_COMPLETE_TO_UNLOCK,完成上一任務後解鎖,Complete the previous mission to unlock
+UI_IMMUNE_CORE,免疫核心,Immune Core
+UI_RETRY,重新挑戰,Retry
+UI_COMBAT_HUD,%s · %s · %s勤務,%s · %s · %s duty
+UI_TOGGLE_DUTY,%s · 轉換勤務,%s · Switch duty
+UI_RESEARCH_T,研究 T 鏈,Research T chain
+UI_CHARACTER_INTEL,角色情報,Cell intel
+UI_RETURN_MISSION_DESK,返回任務台,Return to mission desk
+UI_TUTORIAL_TITLE,任務教學,Mission Tutorial
+UI_TUTORIAL_BODY,1 · 固定勤務會自動攻擊並獲得較高射速。\n2 · 按 %s 轉換勤務並用 WASD／左搖桿移動。\n3 · 第二階段進入發光淨化圈並保持。\n4 · 第三階段擊破 Boss；%s 可開啟暫停與設定。,1 · Fixed duty auto-attacks at a higher fire rate.\n2 · Press %s to switch duty; move with WASD / left stick.\n3 · Hold inside the glowing cleanse zone in phase two.\n4 · Defeat the boss in phase three; %s opens pause and settings.
+UI_TUTORIAL_START,%s · 開始任務,%s · Start mission
+DUTY_FIXED,固定,Fixed
+DUTY_RELAY,中繼,Relay
+DUTY_MOBILE,移動,Mobile
+STATUS_T_MOBILE_REQUIRED,需要完成 BASE-T-04 移動資格。按 %s 研究 T 細胞鏈。,Complete BASE-T-04 Mobile Clearance. Press %s to research the T-cell chain.
+STATUS_DUTY_MOBILE,勤務轉換完成。使用 WASD／左搖桿推進；再次轉換可重新扎根。,Duty switched. Move with WASD / left stick; switch again to anchor.
+STATUS_DUTY_FIXED,扎根完成。固定勤務會提升射速。,Anchored. Fixed duty increases fire rate.
+STATUS_T_FIXED_COMPLETE,BASE-T-03 固定炮台專精完成。再研究一次解鎖移動。,BASE-T-03 Fixed Turret complete. Research once more to unlock movement.
+STATUS_T_FIXED_BLOCKED,BASE-T-03 尚未符合研究條件。,BASE-T-03 research requirements are not met.
+STATUS_T_MOBILE_COMPLETE,BASE-T-04 移動資格已授予。現在可以轉換勤務。,BASE-T-04 Mobile Clearance granted. Duty switching is now available.
+STATUS_T_MOBILE_BLOCKED,BASE-T-04 尚未符合研究條件或資源不足。,BASE-T-04 requirements are not met or resources are insufficient.
+STATUS_T_MOBILE_OWNED,移動資格已擁有。切換勤務以扎根／拔根。,Mobile Clearance owned. Switch duty to anchor or move.
+STATUS_CORE_DAMAGED,核心受損 %d/%d；優先清除接近核心的病原。,Core damaged %d/%d; prioritize pathogens near the core.
+STATUS_CORE_DEFENSE,%s：守住核心並清除第一波病原。,%s: defend the core and eliminate the first wave.
+STATUS_EXPEDITION,遠征開始：轉換勤務，再移動到前方亮圈維持淨化。,Expedition started: switch duty and hold inside the glowing cleanse zone.
+STATUS_TOTAL_WAR,總力戰：擊破 %s。固定勤務攻速較高。,Total war: defeat %s. Fixed duty has a higher fire rate.
+RESULT_REWARDS,抗原 +%d · 生物質 +%d · 一度原質 +%d,Antigen +%d · Biomass +%d · Protomass +%d
+RESULT_VICTORY_TITLE,免疫任務完成,Immune Mission Complete
+RESULT_VICTORY_SUMMARY,核心安全、前線已淨化、Boss 已清除。,Core secured. Front line cleansed. Boss eliminated.
+RESULT_REWARD_LINE,獎勵：%s,Rewards: %s
+RESULT_DEFEAT_TITLE,核心失守,Core Lost
+RESULT_DEFEAT_BODY,%s 失敗。返回任務台更換細胞或調整策略後再試。,%s failed. Return to the mission desk and adjust your cell or strategy.
+PHASE_CORE_DEFENSE,第一階段 · 核心防守,Phase 1 · Core Defense
+PHASE_EXPEDITION,第二階段 · 前線淨化,Phase 2 · Front-line Cleanse
+PHASE_TOTAL_WAR,第三階段 · 總力戰,Phase 3 · Total War
+PHASE_VICTORY,任務完成,Mission Complete
+PHASE_DEFEAT,任務失敗,Mission Failed
+OBJECTIVE_CORE_DEFENSE,目標：清除病原 %d/%d,Objective: eliminate pathogens %d/%d
+OBJECTIVE_EXPEDITION,目標：進入前線並維持淨化 %.1f/%.1f 秒,Objective: hold the cleanse zone %.1f/%.1f sec
+OBJECTIVE_TOTAL_WAR,目標：擊破 %s,Objective: defeat %s
+OBJECTIVE_VICTORY,三段任務全部完成,All three mission phases complete
+OBJECTIVE_DEFEAT,核心生命歸零,Core health depleted
+T 細胞,T 細胞,T Cell
+B 細胞,B 細胞,B Cell
+巨噬細胞,巨噬細胞,Macrophage
+NK 細胞,NK 細胞,NK Cell
+抗體構造體,抗體構造體,Antibody Construct
+樹突細胞,樹突細胞,Dendritic Cell
+處決者,處決者,Executioner
+均衡射程；扎根後攻速優秀。,均衡射程；扎根後攻速優秀。,Balanced range with excellent anchored fire rate.
+集中處決,集中處決,Focused Execution
+目標生命低於 30% 時，每發追加 2 點傷害。,目標生命低於 30% 時，每發追加 2 點傷害。,Deals 2 bonus damage per shot to targets below 30% health.
+抗體砲台,抗體砲台,Antibody Artillery
+攻擊較慢，但每發造成高傷害。,攻擊較慢，但每發造成高傷害。,Fires slowly but each shot deals heavy damage.
+抗體標記,抗體標記,Antibody Mark
+連續命中同一目標會疊加標記，後續每層追加 1 點傷害，最多 2 層。,連續命中同一目標會疊加標記，後續每層追加 1 點傷害，最多 2 層。,Repeated hits mark the same target. Each prior stack adds 1 damage up to 2 stacks.
+吞噬重裝,吞噬重裝,Phagocyte Heavy
+近距高傷，移動較慢。,近距高傷，移動較慢。,High close-range damage with slower movement.
+吞噬重擊,吞噬重擊,Phagocyte Slam
+以較短射程換取高單發傷害。,以較短射程換取高單發傷害。,Trades range for high damage per shot.
+快速獵手,快速獵手,Rapid Hunter
+射速與移動速度最高，但單發傷害較低。,射速與移動速度最高，但單發傷害較低。,Highest fire and move speed with lower damage per shot.
+天然連射,天然連射,Natural Barrage
+以最高基礎射速持續壓制病原。,以最高基礎射速持續壓制病原。,Suppresses pathogens with the highest base fire rate.
+機動中繼,機動中繼,Mobile Relay
+漂浮移動；中繼模式提升遠距支援。,漂浮移動；中繼模式提升遠距支援。,Floats while moving; relay mode extends ranged support.
+遠距中繼,遠距中繼,Long-range Relay
+擁有最長射程並可在移動勤務保持火力。,擁有最長射程並可在移動勤務保持火力。,Has the longest range and keeps firing while mobile.
+標記先鋒,標記先鋒,Marker Vanguard
+中遠距穩定輸出與良好機動。,中遠距穩定輸出與良好機動。,Stable mid-range damage with good mobility.
+先鋒標定,先鋒標定,Vanguard Designation
+以均衡射程、傷害與機動維持穩定命中。,以均衡射程、傷害與機動維持穩定命中。,Maintains reliable hits through balanced range damage and mobility.
+接觸,接觸,Contact
+感染,感染,Infection
+危機,危機,Crisis
+變異,變異,Mutation
+蔓延,蔓延,Spread
+系統危殆,系統危殆,System Critical
+L01 · 核心圍城,L01 · 核心圍城,L01 · Core Siege
+快速菌群正沿血管逼近。完成防守、推進淨化區，再擊破核心破壞者。,快速菌群正沿血管逼近。完成防守、推進淨化區，再擊破核心破壞者。,Fast bacterial clusters are advancing through the vessel. Defend cleanse and destroy the Core Breaker.
+L02 · 血流感染,L02 · 血流感染,L02 · Bloodstream Infection
+孢子載體已穿過第一道防線。敵人更耐久，生成速度亦更快。,孢子載體已穿過第一道防線。敵人更耐久，生成速度亦更快。,Spore carriers breached the first defense. Enemies are tougher and spawn faster.
+L03 · 細胞因子風暴,L03 · 細胞因子風暴,L03 · Cytokine Storm
+裝甲病原與細胞因子巨像同時出現。這是 demo 目前最高難度任務。,裝甲病原與細胞因子巨像同時出現。這是 demo 目前最高難度任務。,Armored pathogens and the Cytokine Colossus appear together.
+L04 · 突變缺口,L04 · 突變缺口,L04 · Mutation Breach
+擬態病原會在低生命時突然加速。維持集中火力，避免殘血敵人穿越防線。,擬態病原會在低生命時突然加速。維持集中火力，避免殘血敵人穿越防線。,Mutators accelerate at low health. Focus fire before wounded enemies cross the line.
+L05 · 生物膜王庭,L05 · 生物膜王庭,L05 · Biofilm Regency
+生物膜載體會在火力中斷後再生。選定目標後持續射擊，逐一拆除菌王防線。,生物膜載體會在火力中斷後再生。選定目標後持續射擊，逐一拆除菌王防線。,Biofilm carriers regenerate when fire stops. Maintain focus and dismantle the regent's defense.
+L06 · 系統崩解,L06 · 系統崩解,L06 · Systemic Collapse
+最終融合病原同時擁有突變加速與離火再生。勤務切換與目標集中將決定核心存亡。,最終融合病原同時擁有突變加速與離火再生。勤務切換與目標集中將決定核心存亡。,The final fusion pathogen combines low-health acceleration and regeneration. Duty timing and focus fire decide the core's fate.
+快速菌群,快速菌群,Fast Bacterial Cluster
+核心破壞者,核心破壞者,Core Breaker
+孢子載體,孢子載體,Spore Carrier
+孢子母體,孢子母體,Spore Queen
+裝甲病原,裝甲病原,Armored Pathogen
+細胞因子巨像,細胞因子巨像,Cytokine Colossus
+突變擬態體,突變擬態體,Mutating Mimic
+突變巢母,突變巢母,Mutation Hive
+生物膜載體,生物膜載體,Biofilm Carrier
+生物膜菌王,生物膜菌王,Biofilm Regent
+高毒性融合體,高毒性融合體,Virulent Fusion
+系統吞噬者,系統吞噬者,Systemic Devourer

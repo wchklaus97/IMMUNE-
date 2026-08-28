@@ -53,8 +53,15 @@ jobs:
         run: |
           set -o pipefail
           godot --headless --path godot/immune --script res://tools/smoke.gd 2>&1 | tee godot-smoke.log
-          grep -F "SMOKE_OK missions=3 families=6 save=v2 audio=ready gamepad=ready" godot-smoke.log
+          grep -F "SMOKE_OK missions=6 families=6 save=v2 audio=ready gamepad=ready signatures=T+B traits=enrage+regen meshy=B+M gel_bubbles=B+M" godot-smoke.log
           ! grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" godot-smoke.log
+
+      - name: Run bounded campaign balance regression
+        run: |
+          set -o pipefail
+          timeout 7m godot --headless --path godot/immune --script res://tools/balance_matrix.gd -- --out=user://ci-balance.json --missions=MISSION-01,MISSION-06 --families=T,B --trials=1 2>&1 | tee godot-balance.log
+          grep -F "BALANCE_MATRIX_OK runs=4" godot-balance.log
+          ! grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" godot-balance.log
 
       - name: Check research HUD layout
         run: |

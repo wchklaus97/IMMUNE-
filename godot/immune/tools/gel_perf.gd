@@ -25,6 +25,9 @@ const MESH_CANDIDATES: Dictionary = {
 	"B": [
 		"res://characters/base_b/CHAR-BASE-B-meshy-t2.glb",
 	],
+	"M": [
+		"res://characters/base_m/CHAR-BASE-M-meshy-t2.glb",
+	],
 }
 
 ## Frames discarded before measuring, so shader compilation and the first-frame

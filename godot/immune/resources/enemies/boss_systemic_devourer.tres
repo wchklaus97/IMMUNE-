@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="PathogenProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/combat/pathogen_profile.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"BOSS-SYSTEMIC-DEVOURER"
+display_name = "系統吞噬者"
+description = "整合突變與生物膜機制的最終病原。"
+max_health = 72
+move_speed = 0.64
+core_damage = 8
+visual_scale = 2.88
+is_boss = true
+enrage_health_threshold = 0.55
+enrage_speed_multiplier = 1.3
+regeneration_per_second = 1.0
+regeneration_delay = 1.5
+body_color = Color(0.46, 0.06, 0.24, 1)
+emission_strength = 0.56
+shape_variant = 2

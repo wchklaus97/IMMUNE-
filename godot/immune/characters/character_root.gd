@@ -14,6 +14,14 @@ const _Look := preload("res://characters/family_look.gd")
 @export var family_id: StringName = &"T"
 @export var character_id: StringName = &"CHAR-BASE-T"
 
+@export_group("Imported Body")
+@export var imported_model_path: String = ""
+@export var imported_model_position: Vector3 = Vector3.ZERO
+@export var imported_model_rotation_degrees: Vector3 = Vector3.ZERO
+@export var imported_model_scale: Vector3 = Vector3.ONE
+@export var imported_face_overlay: bool = false
+@export var imported_replaces_limbs: bool = true
+
 var animation_player: AnimationPlayer
 var base_kit: Node3D
 var locomotion_kit: Node3D
@@ -63,18 +71,28 @@ func _ready() -> void:
 
 
 func _realize_imported_mesh() -> void:
-	if family_id != &"T" and family_id != &"B":
-		return
 	real_mesh = get_node_or_null("CoreMesh/RealMesh")
+	if real_mesh == null and not imported_model_path.is_empty() and ResourceLoader.exists(imported_model_path):
+		var packed := load(imported_model_path) as PackedScene
+		var core_mesh := get_node_or_null("CoreMesh") as Node3D
+		if packed != null and core_mesh != null:
+			real_mesh = packed.instantiate() as Node3D
+			if real_mesh != null:
+				real_mesh.name = "RealMesh"
+				real_mesh.position = imported_model_position
+				real_mesh.rotation_degrees = imported_model_rotation_degrees
+				real_mesh.scale = imported_model_scale
+				core_mesh.add_child(real_mesh)
+				if core_mesh is MeshInstance3D:
+					(core_mesh as MeshInstance3D).mesh = null
 	if real_mesh == null:
 		return
-	# Imported bodies keep the shared blockout path for duty kits/collision. T's
-	# textured sculpt carries its final face; B's untextured Meshy sculpt needs the
-	# procedural ink face aligned over the raised eye and mouth geometry.
+	# Imported bodies keep the shared blockout path for duty kits/collision. Each
+	# scene decides whether its sculpt carries a readable face and limb silhouette.
 	var face := get_node_or_null("Face") as Node3D
 	if face:
-		face.visible = family_id == &"B"
-		if family_id == &"B":
+		face.visible = imported_face_overlay
+		if family_id == &"B" or family_id == &"M":
 			var eye_l := face.get_node_or_null("EyeL") as Node3D
 			var eye_r := face.get_node_or_null("EyeR") as Node3D
 			var mouth := face.get_node_or_null("Mouth") as Node3D
@@ -84,14 +102,19 @@ func _realize_imported_mesh() -> void:
 			if eye_r:
 				eye_r.position = Vector3(0.13, 0.05, 0.02)
 				eye_r.scale = Vector3.ONE * 1.15
-			if mouth:
+			if mouth and family_id == &"B":
 				# Sit behind the sculpted lip as a dark cavity backing instead of
 				# floating in front of the face like a third eye.
 				mouth.position = Vector3(0.0, -0.09, -0.05)
 				mouth.scale = Vector3(2.2, 2.2, 0.45)
+			elif mouth:
+				# CHAR-BASE-M's Meshy sculpt has a real open cavity. A second ink
+				# sphere in front reads as a duplicate mouth, while the overlay eyes
+				# remain necessary because this untextured GLB has one material.
+				mouth.visible = false
 	var limbs := get_node_or_null("LimbKit") as Node3D
 	if limbs:
-		limbs.visible = false
+		limbs.visible = not imported_replaces_limbs
 	# Family profiles are shared by imported bodies, procedural duty pieces,
 	# previews, combat, and tests. B's round-bubble profile therefore lives in
 	# gel_profiles.gd instead of being a one-off override hidden in this scene path.

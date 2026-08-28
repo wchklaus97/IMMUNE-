@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="ImmuneMissionData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://resources/combat/mission_data.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/enemies/pathogen_mutator.tres" id="2"]
+[ext_resource type="Resource" path="res://resources/enemies/boss_mutation_hive.tres" id="3"]
+[ext_resource type="Resource" path="res://resources/difficulties/difficulty_04.tres" id="4"]
+
+[resource]
+script = ExtResource("1")
+id = &"MISSION-04"
+title = "L04 · 突變缺口"
+briefing = "擬態病原會在低生命時突然加速。維持集中火力，避免殘血敵人穿越防線。"
+scene_path = "res://scenes/missions/mission_04_mutation_breach.tscn"
+recommended_family = &"T"
+required_mission_id = &"MISSION-03"
+defense_kills = 10
+cleanse_seconds = 6.0
+defense_spawn_interval = 4.0
+late_spawn_interval = 2.1
+regular_enemy = ExtResource("2")
+boss_enemy = ExtResource("3")
+difficulty = ExtResource("4")
+background_color = Color(0.008, 0.04, 0.04, 1)
+floor_color = Color(0.025, 0.07, 0.068, 1)
+lane_color = Color(0.05, 0.38, 0.32, 1)
+zone_color = Color(0.24, 1, 0.74, 1)
+rewards = {"antigen": 90, "biomass": 55, "protomass": 15}
+discovery_flag = "MISSION-04-COMPLETE"
+unlock_campaign_level = "L05"

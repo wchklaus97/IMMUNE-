@@ -13,3 +13,5 @@ mobile_fire_cooldown = 1.05
 fire_range = 8.5
 move_speed = 5.1
 projectile_color = Color(0.92, 0.62, 1, 1)
+signature_name = "吞噬重擊"
+signature_description = "以較短射程換取高單發傷害。"

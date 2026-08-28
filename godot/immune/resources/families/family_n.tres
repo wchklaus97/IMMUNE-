@@ -13,3 +13,5 @@ mobile_fire_cooldown = 0.52
 fire_range = 10.0
 move_speed = 7.5
 projectile_color = Color(0.62, 1, 0.28, 1)
+signature_name = "天然連射"
+signature_description = "以最高基礎射速持續壓制病原。"

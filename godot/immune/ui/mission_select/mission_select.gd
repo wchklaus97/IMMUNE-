@@ -15,6 +15,7 @@ var _difficulty: Label
 var _family_title: Label
 var _family_role: Label
 var _start_button: Button
+var _back_button: Button
 var _mission_buttons: Array[Button] = []
 var _family_buttons: Array[Button] = []
 
@@ -99,11 +100,11 @@ func _build_ui() -> void:
 	left.add_theme_constant_override("separation", 12)
 	columns.add_child(left)
 	var heading := Label.new()
-	heading.text = "免疫任務台"
+	heading.text = "UI_MISSION_HEADING"
 	heading.add_theme_font_size_override("font_size", 38)
 	left.add_child(heading)
 	var sub := Label.new()
-	sub.text = "選擇任務同細胞家族。六個家族都共用 wet-gel 材質同 duty 動畫管線。"
+	sub.text = "UI_MISSION_SUBTITLE"
 	sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	left.add_child(sub)
 	for i in _missions.size():
@@ -114,7 +115,7 @@ func _build_ui() -> void:
 		left.add_child(button)
 		_mission_buttons.append(button)
 	var family_label := Label.new()
-	family_label.text = "出擊細胞"
+	family_label.text = "UI_FAMILY_HEADING"
 	family_label.add_theme_font_size_override("font_size", 23)
 	left.add_child(family_label)
 	var grid := GridContainer.new()
@@ -156,12 +157,12 @@ func _build_ui() -> void:
 	_start_button.custom_minimum_size.y = 58
 	_start_button.pressed.connect(_start)
 	right.add_child(_start_button)
-	var back := Button.new()
-	back.text = "%s · 返回研究網絡" % SettingsState.prompt(&"demo_back")
-	back.custom_minimum_size.y = 48
-	back.pressed.connect(_back)
-	right.add_child(back)
+	_back_button = Button.new()
+	_back_button.custom_minimum_size.y = 48
+	_back_button.pressed.connect(_back)
+	right.add_child(_back_button)
 	SettingsState.input_device_changed.connect(func(_gamepad: bool) -> void: _refresh())
+	SettingsState.settings_changed.connect(_refresh)
 
 
 func _select_mission(index: int) -> void:
@@ -182,24 +183,34 @@ func _refresh() -> void:
 	var mission := _missions[_mission_index]
 	var family := StringName(FAMILIES[_family_index])
 	var profile := _Content.load_family(family)
-	_title.text = mission.title
-	_briefing.text = mission.briefing
-	_difficulty.text = "難度 %d · %s · 防守 %d 隻 · 淨化 %.1f 秒" % [
-		mission.difficulty.rank, mission.difficulty.display_name, mission.defense_kills, mission.cleanse_seconds
+	var unlocked := _is_mission_unlocked(mission)
+	_title.text = tr(mission.title)
+	_briefing.text = tr(mission.briefing) if unlocked else "%s\n%s" % [tr(mission.briefing), tr("UI_MISSION_LOCKED")]
+	_difficulty.text = tr("UI_DIFFICULTY") % [
+		mission.difficulty.rank, tr(mission.difficulty.display_name), mission.defense_kills, mission.cleanse_seconds
 	]
-	_family_title.text = "%s · %s" % [_Look.DISPLAY_NAME.get(String(family), String(family)), profile.role_name]
-	_family_role.text = "%s  傷害 %d · 射程 %.1f · 移速 %.1f" % [
-		profile.role_description, profile.projectile_damage, profile.fire_range, profile.move_speed
-	]
-	_start_button.text = "%s · 以 %s 開始任務" % [SettingsState.prompt(&"demo_confirm"), _Look.DISPLAY_NAME.get(String(family), String(family))]
+	var family_name := tr(str(_Look.DISPLAY_NAME.get(String(family), String(family))))
+	_family_title.text = "%s · %s" % [family_name, tr(profile.role_name)]
+	_family_role.text = "%s\n%s" % [tr(profile.role_description), tr("UI_FAMILY_STATS") % [
+		tr(profile.signature_name), tr(profile.signature_description),
+		profile.projectile_damage, profile.fire_range, profile.move_speed
+	]]
+	_start_button.disabled = not unlocked
+	_start_button.text = (
+		tr("UI_START_MISSION") % [SettingsState.prompt(&"demo_confirm"), family_name]
+		if unlocked else tr("UI_COMPLETE_TO_UNLOCK")
+	)
+	_back_button.text = tr("UI_BACK_RESEARCH") % SettingsState.prompt(&"demo_back")
 	for i in _mission_buttons.size():
 		var button := _mission_buttons[i]
 		var completed := ResearchState.completed_mission_ids.has(_missions[i].id)
-		button.text = "%s%s" % [_missions[i].title, "  ✓" if completed else ""]
+		var mission_unlocked := _is_mission_unlocked(_missions[i])
+		button.disabled = not mission_unlocked
+		button.text = "%s%s" % [tr(_missions[i].title), "  ✓" if completed else ("  🔒" if not mission_unlocked else "")]
 		button.button_pressed = i == _mission_index
 	for i in _family_buttons.size():
 		var id := String(FAMILIES[i])
-		_family_buttons[i].text = "%s%s" % [_Look.DISPLAY_NAME.get(id, id), "  ●" if i == _family_index else ""]
+		_family_buttons[i].text = "%s%s" % [tr(str(_Look.DISPLAY_NAME.get(id, id))), "  ●" if i == _family_index else ""]
 	_refresh_preview(family)
 
 
@@ -222,6 +233,8 @@ func _start() -> void:
 	if _missions.is_empty():
 		return
 	var mission := _missions[_mission_index]
+	if not _is_mission_unlocked(mission):
+		return
 	var family := StringName(FAMILIES[_family_index])
 	if not ResearchState.configure_demo_run(mission.id, family):
 		push_error("MissionSelect: failed to persist selection")
@@ -241,3 +254,10 @@ func _mission_index_for(id: StringName) -> int:
 		if _missions[i].id == id:
 			return i
 	return 0
+
+
+func _is_mission_unlocked(mission: ImmuneMissionData) -> bool:
+	return (
+		mission.required_mission_id == &""
+		or ResearchState.completed_mission_ids.has(mission.required_mission_id)
+	)

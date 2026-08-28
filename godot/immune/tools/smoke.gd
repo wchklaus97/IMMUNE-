@@ -8,6 +8,20 @@ func _init() -> void:
 
 
 func _run() -> void:
+	if not TranslationServer.get_loaded_locales().has("en") or not TranslationServer.get_loaded_locales().has("zh_HK"):
+		push_error("Expected English and zh_HK translations to be registered")
+		quit(1)
+		return
+	TranslationServer.set_locale("en")
+	if TranslationServer.translate(&"UI_PAUSE_TITLE") != "Pause / Settings":
+		push_error("English translation contract is not active")
+		quit(1)
+		return
+	TranslationServer.set_locale("zh_HK")
+	if TranslationServer.translate(&"UI_PAUSE_TITLE") != "暫停／設定":
+		push_error("zh_HK translation contract is not active")
+		quit(1)
+		return
 	var packed := load("res://scenes/kit_lock_preview.tscn") as PackedScene
 	if packed == null:
 		push_error("kit_lock_preview.tscn missing")
@@ -73,6 +87,32 @@ func _run() -> void:
 			var b_runtime_gel := _find_wet_gel_material(b_real_mesh)
 			if b_runtime_gel == null or b_runtime_gel.get_shader_parameter("bubble_enabled") != true:
 				push_error("CHAR-BASE-B imported body must receive its round-bubble runtime profile")
+				quit(1)
+				return
+		elif str(unit.get("family_id")) == "M":
+			var m_real_mesh := unit.get_node_or_null("CoreMesh/RealMesh")
+			if m_real_mesh == null or unit.get("real_mesh") == null:
+				push_error("CHAR-BASE-M must realize its verified Meshy T2 body")
+				quit(1)
+				return
+			var m_face := unit.get_node_or_null("Face") as Node3D
+			var m_mouth := unit.get_node_or_null("Face/Mouth") as Node3D
+			var m_limbs := unit.get_node_or_null("LimbKit") as Node3D
+			if m_face == null or not m_face.visible or m_mouth == null or m_mouth.visible:
+				push_error("CHAR-BASE-M must keep overlay eyes but use the sculpted mouth cavity")
+				quit(1)
+				return
+			if m_limbs == null or m_limbs.visible:
+				push_error("CHAR-BASE-M sculpt must replace procedural base limbs")
+				quit(1)
+				return
+			var m_runtime_gel := _find_wet_gel_material(m_real_mesh)
+			if m_runtime_gel == null or m_runtime_gel.get_shader_parameter("bubble_enabled") != true:
+				push_error("CHAR-BASE-M imported body must receive its macrophage-bubble profile")
+				quit(1)
+				return
+			if not is_zero_approx(float(m_runtime_gel.get_shader_parameter("dimple_depth"))):
+				push_error("CHAR-BASE-M must disable triplanar dimples on its low-poly sculpt")
 				quit(1)
 				return
 	var look := load("res://characters/family_look.gd")
@@ -159,6 +199,71 @@ func _run() -> void:
 			push_error("Missing audio asset %s" % audio_path)
 			quit(1)
 			return
+	var projectile_script := load("res://combat/plasma_bolt.gd")
+	var pathogen_script := load("res://combat/bacterium.gd")
+	var projectile: Area3D = projectile_script.new()
+	var projectile_target: CharacterBody3D = pathogen_script.new()
+	projectile.call("configure", 2, Color.WHITE)
+	projectile_target.call("configure", 5, 1.0)
+	root.add_child(projectile_target)
+	await process_frame
+	var first_projectile_hit := bool(projectile.call("try_apply_hit", projectile_target))
+	var duplicate_projectile_hit := bool(projectile.call("try_apply_hit", projectile_target))
+	if not first_projectile_hit or duplicate_projectile_hit or int(projectile_target.get("hp")) != 3:
+		push_error("A plasma bolt must damage at most one pathogen once")
+		quit(1)
+		return
+	projectile.free()
+	projectile_target.queue_free()
+	await process_frame
+	var t_target: CharacterBody3D = pathogen_script.new()
+	t_target.call("configure", 10, 2.0)
+	root.add_child(t_target)
+	await process_frame
+	t_target.call("take_hit", 7)
+	var t_damage := int(t_target.call("take_profiled_hit", 2, &"T", &"execute", 2, 0, 0.3))
+	if t_damage != 4:
+		push_error("T execution must add exactly two damage at 30% HP")
+		quit(1)
+		return
+	var b_target: CharacterBody3D = pathogen_script.new()
+	b_target.call("configure", 20, 2.0)
+	root.add_child(b_target)
+	await process_frame
+	var b_hits := [
+		int(b_target.call("take_profiled_hit", 4, &"B", &"antibody_mark", 1, 2, 0.0)),
+		int(b_target.call("take_profiled_hit", 4, &"B", &"antibody_mark", 1, 2, 0.0)),
+		int(b_target.call("take_profiled_hit", 4, &"B", &"antibody_mark", 1, 2, 0.0)),
+	]
+	if b_hits != [4, 5, 6] or int(b_target.call("antibody_marks")) != 2:
+		push_error("B antibody marks must scale 4/5/6 and cap at two")
+		quit(1)
+		return
+	var trait_target: CharacterBody3D = pathogen_script.new()
+	trait_target.call("configure", 10, 2.0)
+	trait_target.set("enrage_health_threshold", 0.5)
+	trait_target.set("enrage_speed_multiplier", 1.5)
+	trait_target.set("regeneration_per_second", 60.0)
+	trait_target.set("regeneration_delay", 0.0)
+	root.add_child(trait_target)
+	await process_frame
+	trait_target.call("take_hit", 6)
+	if not is_equal_approx(float(trait_target.call("current_move_speed")), 3.0):
+		push_error("Low-health pathogen enrage speed is invalid")
+		quit(1)
+		return
+	var trait_hp_before := int(trait_target.get("hp"))
+	await physics_frame
+	await physics_frame
+	if int(trait_target.get("hp")) <= trait_hp_before:
+		push_error("Pathogen regeneration did not resume after its delay")
+		quit(1)
+		return
+	if is_instance_valid(t_target):
+		t_target.queue_free()
+	b_target.queue_free()
+	trait_target.queue_free()
+	await process_frame
 	for family_id in ["T", "B", "M", "N", "A", "D"]:
 		var skill_vfx := "res://vfx/skills/SKILL-%s-ACTIVE.tscn" % family_id
 		if not ResourceLoader.exists(skill_vfx):
@@ -176,11 +281,12 @@ func _run() -> void:
 			return
 	var content := load("res://resources/combat/combat_content.gd")
 	var mission_ids: Array[StringName] = content.call("mission_ids")
-	if mission_ids.size() != 3:
-		push_error("Expected 3 authored missions, got %d" % mission_ids.size())
+	if mission_ids.size() != 6:
+		push_error("Expected 6 authored missions, got %d" % mission_ids.size())
 		quit(1)
 		return
 	var previous_rank := 0
+	var previous_mission_id: StringName = &""
 	var seen_mission_ids: Array[StringName] = []
 	for mission_id in mission_ids:
 		var mission: ImmuneMissionData = content.call("load_mission", mission_id)
@@ -197,7 +303,12 @@ func _run() -> void:
 			push_error("Mission %s difficulty progression or scene path is invalid" % mission_id)
 			quit(1)
 			return
+		if mission.required_mission_id != previous_mission_id:
+			push_error("Mission %s prerequisite chain is invalid" % mission_id)
+			quit(1)
+			return
 		previous_rank = mission.difficulty.rank
+		previous_mission_id = mission.id
 	var combat_packed := load("res://scenes/combat_lane.tscn") as PackedScene
 	if combat_packed == null:
 		push_error("combat_lane.tscn missing")
@@ -278,6 +389,52 @@ func _run() -> void:
 		return
 	if look.call("gel_profile_name", "B") != &"round_bubbles":
 		push_error("B Jelly V2 profile name is not stable")
+		quit(1)
+		return
+	var m_gel_material: ShaderMaterial = look.call("gel_material", "M")
+	if m_gel_material == null:
+		push_error("M wet-gel material failed to build")
+		quit(1)
+		return
+	if m_gel_material.get_shader_parameter("bubble_enabled") != true:
+		push_error("M Jelly V2 profile must enable object-space round bubbles")
+		quit(1)
+		return
+	if not is_zero_approx(float(m_gel_material.get_shader_parameter("dimple_depth"))):
+		push_error("M Jelly V2 profile must disable directional legacy dimples")
+		quit(1)
+		return
+	if look.call("gel_profile_name", "M") != &"macrophage_bubbles":
+		push_error("M Jelly V2 profile name is not stable")
+		quit(1)
+		return
+	var telemetry_script := load("res://combat/combat_playtest_telemetry.gd")
+	var telemetry: CombatPlaytestTelemetry = telemetry_script.new()
+	telemetry.begin(&"MISSION-TEST", &"T", "smoke")
+	telemetry.record_core_hp(12, 12)
+	telemetry.enter_phase("core")
+	telemetry.tick(0.5, &"fixed")
+	telemetry.record_shot()
+	telemetry.record_hit(2, false)
+	telemetry.enter_phase("expedition")
+	telemetry.record_duty_switch()
+	telemetry.tick(0.25, &"mobile")
+	telemetry.finish(true)
+	var telemetry_snapshot: Dictionary = telemetry.snapshot()
+	if not bool(telemetry_snapshot.get("victory", false)):
+		push_error("Playtest telemetry must preserve the victory result")
+		quit(1)
+		return
+	if int(telemetry_snapshot.get("shots_fired", 0)) != 1 or int(telemetry_snapshot.get("shots_hit", 0)) != 1:
+		push_error("Playtest telemetry shot contract is invalid")
+		quit(1)
+		return
+	if float(telemetry_snapshot.get("phase_durations", {}).get("core", 0.0)) != 0.5:
+		push_error("Playtest telemetry phase timing contract is invalid")
+		quit(1)
+		return
+	if int(telemetry_snapshot.get("core_hp", 0)) != 12:
+		push_error("Playtest telemetry must preserve initial core HP")
 		quit(1)
 		return
 	if not str(combat.call("phase_name")).contains("核心防守"):
@@ -392,11 +549,34 @@ func _run() -> void:
 			push_error("Mission %s difficulty health scaling mismatch" % mission.id)
 			quit(1)
 			return
+		if spawned_enemy.scale != Vector3.ONE:
+			push_error("Mission %s pathogen physics body must not use root scaling" % mission.id)
+			quit(1)
+			return
+		var mission_core: Node3D = null
+		for candidate in get_nodes_in_group("immune_core"):
+			if mission_runtime.is_ancestor_of(candidate):
+				mission_core = candidate as Node3D
+				break
+		if mission_core == null:
+			push_error("Mission %s missing runtime core for contact regression" % mission.id)
+			quit(1)
+			return
+		var core_hp_before := int(mission_core.get("hp"))
+		var contact_distance := float(spawned_enemy.call("core_contact_distance"))
+		spawned_enemy.global_position = mission_core.global_position + Vector3(0.0, 0.0, contact_distance - 0.01)
+		spawned_enemy.reset_physics_interpolation()
+		await physics_frame
+		await physics_frame
+		if int(mission_core.get("hp")) >= core_hp_before:
+			push_error("Mission %s pathogen contact must damage the core without collision deadlock" % mission.id)
+			quit(1)
+			return
 		mission_runtime.queue_free()
 		await process_frame
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(smoke_save))
 	research_state.call("seed_demo")
-	print("SMOKE_OK missions=3 families=6 save=v2 audio=ready gamepad=ready")
+	print("SMOKE_OK missions=6 families=6 save=v2 audio=ready gamepad=ready signatures=T+B traits=enrage+regen meshy=B+M gel_bubbles=B+M")
 	var audio_director := root.get_node_or_null("AudioDirector")
 	if audio_director != null:
 		audio_director.call("stop_all")

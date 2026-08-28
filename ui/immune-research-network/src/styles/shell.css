@@ -506,12 +506,13 @@ input:focus-visible,
 }
 
 .form-dual.form-triple {
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .form-portrait {
-  width: 132px;
-  height: 132px;
+  width: min(100%, 132px);
+  height: auto;
+  aspect-ratio: 1;
   border-radius: 12px;
   object-fit: cover;
   background: #00ff00;
@@ -527,6 +528,7 @@ input:focus-visible,
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.03);
   min-height: 140px;
+  min-width: 0;
 }
 
 .form-card.unlocked {

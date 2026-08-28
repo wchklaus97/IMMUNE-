@@ -1,13 +1,14 @@
 # Jelly Material V2
 
-Updated: 2026-08-27
+Updated: 2026-08-28
 
 ## Player-facing intent
 
 The imported immune-cell bodies should read as soft, wet jelly at lineup,
-research, combat, and face-close-up distances. B should show a restrained layer
-of round air pockets under its membrane without looking diseased, cratered, or
-covered in a tiled noise texture. T keeps its authored fine membrane pattern.
+research, combat, and face-close-up distances. B and M show restrained round air
+pockets under the membrane without looking diseased, cratered, or covered in a
+tiled noise texture. T keeps its authored fine membrane pattern; M is a lighter
+lavender than B so the two purple families remain distinguishable.
 
 ## Scope
 
@@ -19,15 +20,15 @@ In this milestone:
 - centralize family profiles so preview, combat, and duty pieces agree;
 - remove the Forward+-only screen-space SSS output from the Compatibility path;
 - retain a zero-cost fallback by disabling the bubble layer;
-- verify B and T in isolation and in the playable demo;
+- verify B, M, and T in isolation and in the playable demo;
 - measure CPU and wall-frame cost when Compatibility/Metal returns no GPU timer.
 
 Out of scope:
 
-- another paid Meshy generation;
+- another paid Meshy generation after the approved M task;
 - changing B's topology, normals, silhouette, face, or duty-kit layout;
 - alpha-blended refraction, screen-texture refraction, or Forward+-only SSS;
-- enabling unreviewed bubble profiles on M, N, A, or D.
+- enabling unreviewed bubble profiles on N, A, or D.
 
 ## Visual pillars
 
@@ -58,7 +59,8 @@ Family choices live in `characters/gel/gel_profiles.gd`:
 |---|---|---:|---:|
 | T | `authored_membrane` | Off | On |
 | B | `round_bubbles` | On | Off |
-| M/N/A/D | `base_gel` | Off | Existing defaults |
+| M | `macrophage_bubbles` | On | Off |
+| N/A/D | `base_gel` | Off | Existing defaults |
 
 Call-site overrides merge last, so diagnostics can disable or isolate one effect
 without editing the production profile.
@@ -67,8 +69,8 @@ without editing the production profile.
 
 ### Gate 1 — contract
 
-- B material exposes and enables `bubble_enabled`.
-- B sets `dimple_depth` to zero.
+- B and M materials expose and enable `bubble_enabled`.
+- B and M set `dimple_depth` to zero.
 - T leaves `bubble_enabled` off and retains subtle legacy dimples.
 - An explicit call-site override wins over the family profile.
 
@@ -80,14 +82,14 @@ without editing the production profile.
 
 ### Gate 3 — visual review
 
-- B bubbles are round at front, 3/4, side, and back angles.
+- B and M bubbles are round at front, 3/4, side, and back angles.
 - No triplanar seams, dark donut field, cracked-net pattern, or visible shimmer.
 - At face distance, bubbles remain subordinate to eyes and mouth.
 - T retains its authored membrane detail and colour identity.
 
 ### Gate 4 — gameplay and performance
 
-- B remains readable in lineup/research and live combat lighting.
+- B and M remain readable in lineup/research and live combat lighting.
 - Ten-character stress measurements are repeated; median CPU and wall-frame
   values are reported. GPU results are reported only when the backend returns a
   non-zero timer.
@@ -133,18 +135,38 @@ cover the regression.
 ### Performance
 
 Compatibility/Metal on Apple M4 Pro returned a zero GPU timer, so no GPU number
-is claimed. Three 300-frame trials at 1920×1080 with ten B bodies and an explicit
-render sync produced these medians:
+is claimed. A 2026-08-28 repeat used three synced 300-frame trials at 1920×1080
+with ten B bodies and produced these medians:
 
 | Material path | CPU mean | Wall-frame mean |
 |---|---:|---:|
-| StandardMaterial3D | 0.912 ms | 5.030 ms |
-| Wet gel, bubbles off | 0.846 ms | 4.487 ms |
-| Wet gel, bubbles on | 0.842 ms | 4.217 ms |
+| StandardMaterial3D | 1.035 ms | 3.617 ms |
+| Wet gel, bubbles off | 1.053 ms | 4.070 ms |
+| Wet gel, bubbles on | 1.035 ms | 3.892 ms |
 
 The ordering is within run-to-run noise; the supported conclusion is that this
 harness found no measurable regression from enabling bubbles. It does not prove
 that the bubble path is faster, and a non-zero GPU capture remains a production
 follow-up on another backend.
 
-No Meshy request was submitted and no generation credits were consumed.
+### M integration and performance
+
+The approved M Image-to-3D task consumed 5 credits. Its geometry passed silhouette
+and face-count checks but omitted normals, so the workflow preserved the original
+download and generated smooth normals locally without changing its 8,832 triangles
+or bounds. Visual pass 1 exposed flat shading and a duplicate procedural mouth;
+pass 2 disabled the legacy triplanar dimple normal and used round bubbles; pass 3
+added smooth normals; pass 4 separated M from B with a pale-lavender colour ramp.
+Front, 3/4, side, back, face, MISSION-06 fixed, mobile, and boss views then passed.
+
+Three synced 300-frame trials at 1920×1080 with ten M bodies produced:
+
+| Material path | CPU median mean | Wall-frame median mean |
+|---|---:|---:|
+| StandardMaterial3D | 0.969 ms | 4.266 ms |
+| Wet gel, bubbles off | 0.926 ms | 4.076 ms |
+| Wet gel, bubbles on | 0.963 ms | 4.306 ms |
+
+Compatibility/Metal again returned a zero GPU timer. The differences are within
+run-to-run noise; this harness found no measurable bubble regression but does not
+claim the bubble path is faster.

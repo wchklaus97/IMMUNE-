@@ -13,3 +13,5 @@ mobile_fire_cooldown = 0.58
 fire_range = 13.5
 move_speed = 7.0
 projectile_color = Color(1, 0.78, 0.3, 1)
+signature_name = "遠距中繼"
+signature_description = "擁有最長射程並可在移動勤務保持火力。"

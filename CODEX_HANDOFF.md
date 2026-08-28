@@ -1,38 +1,154 @@
 # IMMUNE demo handoff
 
-Updated: 2026-08-27
+Updated: 2026-08-28
 
 ## Current milestone
 
-The requested playable demo milestone is implemented. The permanent research network leads into a mission selector, three authored missions, six playable immune-cell families, and a complete three-phase combat loop. The current local Jelly Material V2 release gate uses Godot 4.6.1 because that is the installed editor; the project target and CI baseline remain Godot 4.7.2 stable.
+IMMUNE v0.4.0 is a playable six-mission vertical slice. The permanent 200-node
+research network leads to a sequential mission desk, six playable base-cell
+families, and a three-phase combat loop: Core Defense, Front-line Cleanse, and
+Boss Total War. The local validation editor is Godot 4.6.1; the project and CI
+target remain Godot 4.7.2 stable.
 
-`CHAR-BASE-B` is now the first Meshy T2 hero replacement after T: an 8,755-triangle, untextured smart-topology GLB generated from the locked B-cell reference for 5 credits. The shared wet-gel shader, aligned procedural ink face, runtime duty-kit swaps, regenerated smooth normals, and a local rear-normal repair produce the approved demo look without another paid generation.
+The latest tranche adds:
 
-Jelly Material V2 adds a centralized `round_bubbles` B profile with sparse UV-free object-space air pockets while T keeps its `authored_membrane` profile. Bubble defaults remain off for unreviewed families and caller overrides provide a zero-cost fallback. The Forward+-only screen-space SSS write was removed from the Compatibility shader path. No Meshy request or credit was used for this material milestone.
+- MISSION-04 low-health enrage, MISSION-05 out-of-fire regeneration, and
+  MISSION-06's combined systemic threat;
+- T focused execution below 30% health and B antibody mark stacking;
+- deterministic combat telemetry plus a real-scene balance matrix;
+- Traditional Chinese / English mission and combat UI with a persisted runtime
+  locale selector;
+- a Meshy-7-aware, no-credit-by-default M-cell generation and GLB intake
+  pipeline; and
+- four-platform v0.4.0 release artifacts.
 
 ## Playable loop
 
-1. Explore the 200-node permanent research network.
-2. Press `C` or use the combat button to open the immune mission console.
-3. Select one of three missions, one of six families, and a difficulty.
-4. Complete Core Defense, Forward Cleanse, and Boss Total War.
+1. Explore the permanent research network.
+2. Press `C` or use the combat button to open the mission desk.
+3. Select one of six missions and one of six cell families.
+4. Complete Core Defense, Front-line Cleanse, and Boss Total War.
 5. Receive antigen, biomass, protomass, discovery, and campaign rewards.
-6. Return to the research network with versioned progress preserved.
+6. Unlock the next mission and return to the research network with versioned
+   progress preserved.
 
-## Implemented systems
+## Architecture and ownership
 
-- Three data-driven mission resources and scenes with escalating enemy/difficulty profiles.
-- T/B/M/N/A/D playable family profiles, shared wet-gel shader treatment, duty forms, animations, and active-skill VFX entries.
-- Health bars, damage numbers, hit flash, camera shake, haptics, onboarding, pause/settings, audio buses, original music/SFX, keyboard, and gamepad input.
-- Version 2 JSON save data with version 1 migration, mission selection, completion records, settings persistence, and safe catalog validation.
-- Traditional Chinese Web-safe Noto Sans HK variable font with its OFL license.
-- Windows, Linux, macOS universal, and single-threaded Web release presets, GitHub Actions validation/export/native-smoke matrix, and Git LFS rules for authored media.
-- Reproducible B-cell asset provenance plus `tools/smooth_meshy_b_normals.cpp`, which repairs missing Meshy normals and the single-view rear shading seam without moving vertices or changing topology.
-- Jelly Material V2 family profiles, object-space round B bubbles, safe-off defaults, and regression coverage on the actual imported surface override.
-- Cosmetic mobile duty accessories opt out of shadow casting after Web QA proved their custom-gel shadow pass caused screen-sized floor wedges; character bodies still cast normal shadows.
-- Headed gameplay and material capture harnesses plus CPU/GPU/wall-frame instrumentation for Compatibility backends.
+- `godot/immune/autoload/` owns catalog, research/save state, persisted settings,
+  audio, and shared VFX lookup.
+- `godot/immune/resources/combat/` defines typed mission, difficulty, family,
+  and pathogen data contracts.
+- `godot/immune/scenes/combat_lane.gd` owns the three-phase mission FSM and
+  composes core, player, enemies, HUD, telemetry, and pause/settings.
+- `godot/immune/combat/` owns enemy traits, projectile signatures, the core, and
+  local playtest telemetry.
+- `godot/immune/ui/mission_select/` owns sequential campaign selection and family
+  preview; `ui/research/` owns the permanent network.
+- `godot/immune/characters/character_root.gd` is the shared procedural/imported
+  hero-body adapter. Missing optional GLBs always retain the procedural fallback.
+- `tools/meshy/` owns the reviewed paid-generation gate, no-network tests, task
+  metadata, GLB validation, and explicit M-slot installation.
+- `.github/workflows/ci.yml` owns Godot 4.7.2 import/smoke, bounded first/final
+  mission balance, layout, exports, and three native launch checks.
 
-## Verification commands
+## Balance candidate 1
+
+All six missions passed one deterministic T run and one deterministic B run at
+1× physics speed: 12/12 victories, a strictly increasing duration ladder for
+each family, real projectile hits, both duty forms, regular core contact, and
+one boss defeat per run. MISSION-06 finishes at 89.750 s for T and 81.283 s for
+B, with both cores at 12/12. The full evidence table and tuning rationale live
+in `docs/godot-prompter/specs/2026-08-28-immune-campaign-expansion-results.md`.
+
+CI intentionally runs a smaller four-run sentinel: MISSION-01 and MISSION-06 for
+T and B. The harness has both a 120-second simulated-game timeout and a
+150-second wall timeout per run.
+
+## Jelly and hero assets
+
+`CHAR-BASE-B` remains an approved Meshy T2 hero replacement: 8,755 triangle
+faces, untextured GLB, aligned procedural ink face, hidden procedural limbs, and
+the `round_bubbles` wet-gel profile. T retains its imported authored membrane.
+
+`CHAR-BASE-M` is now the second approved Meshy T2 replacement. Task
+`01a0478d-eb9c-7bb1-9d52-0b220cb002a8` produced an untextured 8,832-triangle
+GLB. The downloaded file omitted vertex normals, so the workflow stopped before
+visual acceptance, preserved the immutable download, and created a zero-credit
+Assimp smooth-normal derivative. Geometry, bounds, and face count are unchanged.
+The installed derivative SHA-256 is
+`1eadda4a9c8dfccbd27c5471edf6e2079518d239832cc0dc64f3a46be95bcd4a`.
+M uses aligned ink eyes, its sculpted mouth cavity, hidden procedural base limbs,
+and the pale-lavender `macrophage_bubbles` profile. N/A/D remain polished
+procedural family bodies.
+
+Jelly performance was repeated on 2026-08-28 with ten B bodies, three synced
+300-frame trials at 1920×1080 on Apple M4 Pro Compatibility/Metal. Median CPU /
+wall means were 1.035 / 3.617 ms for StandardMaterial3D, 1.053 / 4.070 ms for gel
+with bubbles off, and 1.035 / 3.892 ms for gel with bubbles on. The GPU timer
+remained zero, so only “no measurable regression in this harness” is claimed.
+
+The same three-trial harness was repeated with ten imported M bodies. Median CPU
+/ wall means were 0.969 / 4.266 ms for StandardMaterial3D, 0.926 / 4.076 ms for
+gel with bubbles off, and 0.963 / 4.306 ms for gel with bubbles on. The GPU timer
+again remained zero; the supported conclusion is no measurable M bubble
+regression, not that the gel path is faster.
+
+## Meshy state and cost boundary
+
+Official Meshy API docs and the 2026-08-28 changelog were reviewed. The latest
+authenticated API response used server version `v2026.08.28.post1`. One approved
+M-cell Image-to-3D task consumed exactly 5 credits, moving the balance from 1,500
+to 1,495. No retry, second generation, texture, remesh, rig, or animation task was
+submitted.
+
+The selected M route is Image-to-3D Smart Topology, Meshy-7-compatible
+`meshy-t2`, triangle topology, 8,000 target faces, untextured GLB, expected cost
+5 credits. Dry-run remains the default. A future paid task still requires both
+`--execute --approve-credits 5`. All paid POST failures, including HTTP 429/5xx,
+stop without automatic retry; inspect Meshy's task list before another create
+call. Do not rerun the completed M generation merely to recreate the installed
+asset: both the immutable download and verified derivative are stored locally.
+
+```sh
+python3 -m unittest tools/meshy/test_workflow.py
+python3 tools/meshy/run_m_cell_asset.py
+python3 tools/meshy/run_m_cell_asset.py --balance-only
+python3 tools/meshy/validate_hero_glb.py \
+  --project-dir meshy_output/20260828_164806_char-base-m_01a0478d
+```
+
+## Verification completed
+
+- Godot 4.6.1: two import passes, six-mission smoke, bilingual translation
+  contract, 1920×1080 overflow check, and the four-run CI balance sentinel pass.
+- Campaign candidate: full six-mission × T/B 12-run matrix passes.
+- Web research app: 53/53 Node tests pass and the production single-file build
+  succeeds.
+- Exports: Windows x86-64, Linux x86-64, macOS universal, and single-threaded Web
+  rebuilt sequentially after M installation with v0.4.0 content. All four export
+  logs contain no script, parse, compile, or engine errors.
+- macOS: arm64+x86_64, strict code-signature verification, ad-hoc hardened
+  runtime signature, bundle/version `com.wchklaus97.immune` / `0.4.0`, and native
+  `RELEASE_SMOKE_OK platform=macOS nodes=200`.
+- Exported Web: Chromium research → mission → M selection → M combat →
+  Fixed/Mobile duty → pause/resume flow with real mouse and keyboard input;
+  1600×900 and 1280×720 canvas fit, no document scroll, all eight requested
+  resources returned 200, and the console reported 0 errors / 0 warnings.
+- M integration balance: MISSION-01 M completed in 22.367 s with core 12/12;
+  MISSION-06 M completed in 88.633 s with core 12/12 and 83 projectile hits.
+- Meshy: dry-run, balance-only request, four no-network safety tests, B validation,
+  one approved 5-credit M generation, smooth-normal geometry invariant, M GLB
+  validation, six-angle visual review, M6 gameplay review, and installation pass.
+
+Generated local artifacts (ignored by Git):
+
+- `godot/immune/build/releases/IMMUNE-windows.exe`
+- `godot/immune/build/releases/IMMUNE-linux.x86_64`
+- `godot/immune/build/releases/IMMUNE-macOS.zip`
+- `godot/immune/build/releases/web/index.html`
+- `outputs/playtests/campaign-expansion-candidate-1-12run.json`
+
+## Repeatable release commands
 
 ```sh
 cd ui/immune-research-network
@@ -40,43 +156,39 @@ npm test
 npm run build
 
 cd ../../
-mkdir -p godot/immune/build/releases/web
 godot --headless --path godot/immune --import
 godot --headless --path godot/immune --import
 godot --headless --path godot/immune --script res://tools/smoke.gd
 godot --headless --path godot/immune --script res://tools/check_overflow.gd
+godot --headless --path godot/immune --script res://tools/balance_matrix.gd -- \
+  --out=outputs/playtests/campaign-expansion-candidate-1.json --trials=1
 godot --headless --path godot/immune --export-release "Windows Desktop" build/releases/IMMUNE-windows.exe
 godot --headless --path godot/immune --export-release "Linux/X11" build/releases/IMMUNE-linux.x86_64
 godot --headless --path godot/immune --export-release "macOS" build/releases/IMMUNE-macOS.zip
 godot --headless --path godot/immune --export-release "Web" build/releases/web/index.html
 ```
 
-Jelly-specific visual and performance checks:
+Run exports sequentially. Parallel Godot exporters race on the shared
+`tmpproject.binary` file.
 
-```sh
-godot --path godot/immune --resolution 1920x1080 res://tools/gameplay_shot.tscn -- \
-  --out=/absolute/output/path --family=B --mission=MISSION-01 --tag=B-v2
-godot --path godot/immune --resolution 1920x1080 res://tools/gel_perf.tscn -- \
-  --family=B --material=gel --count=10 --frames=300 --sync=true
-```
+## Honest status and next development tranche
 
-## Verified release state
+The six-mission vertical slice and local cross-platform release pipeline are
+complete. It is not a content-complete commercial release. Remaining work is:
 
-- Godot 4.7.2 import, expanded smoke test, and 1920×1080 HUD overflow check pass without script errors.
-- Web research-network suite passes 53/53 tests and its production build succeeds.
-- Windows x86-64, Linux x86-64, macOS universal, and Web release exports complete without export warnings or errors.
-- The exported macOS `.app` is arm64/x86-64 universal, ad-hoc hardened-runtime signed, passes strict code-signature verification, and launches natively with `RELEASE_SMOKE_OK platform=macOS nodes=200`.
-- The exported Web build was exercised in Chromium through research → mission select → onboarding → live combat → pause/settings.
-- Exported Web console: 0 errors, 0 warnings; canvas fits a 1036×690 viewport without document scroll.
-- GitHub Actions run [33072178177](https://github.com/wchklaus97/IMMUNE-/actions/runs/33072178177) completed successfully for commit `ee70f3c`: Web validation, Godot import/smoke/overflow, four-platform export, artifact upload, and native launch markers on Ubuntu, Windows, and macOS all passed.
-- A fresh checkout intentionally runs Godot import twice: the first pass builds the ignored `.godot` cache, and the second pass is the clean error gate. This avoids treating the project theme font's first-start cache miss as a source error.
-- The 2026-08-27 B-cell replacement was locally rechecked with Godot 4.6.1: two import passes, expanded smoke, 1920×1080 overflow, all four exports, strict macOS signature validation, universal-binary inspection, and headless launch passed. The Web research-network suite remains 53/53 green and its production build succeeds.
-- Meshy task `01a043a9-4884-7a6f-bd72-1a716f663403` consumed exactly 5 credits (balance 1505 → 1500). The integrated GLB retains 4,380 vertices / 8,755 faces; front, side, back, 3/4, and face screenshots passed visual review after normal repair.
-- Run the four Godot exports sequentially. Parallel exporter processes race on the shared system file `tmpproject.binary`; a sequential rerun produced 0 errors / 0 warnings in all four logs.
-- Jelly V2 followed two RED→GREEN cycles: B/T profile contracts first, then the mobile-accessory shadow regression. Six-angle B/T captures passed; B pass 1 was rejected for crater-like donut rings and pass 2 replaced them with restrained round pockets.
-- On Apple M4 Pro Compatibility/Metal, three synced 300-frame trials with ten B bodies found median CPU/wall means of 0.912/5.030 ms for StandardMaterial3D, 0.846/4.487 ms for wet gel with bubbles off, and 0.842/4.217 ms with bubbles on. The GPU timer stayed at zero; only “no measurable regression in this harness” is claimed.
-- Exported Web QA at 1600×900 and 1036×690 exercised research → B selection → onboarding → live combat → pause → mobile duty. Canvas fit both viewports with no page scroll and the browser console reported 0 errors / 0 warnings. The mobile shadow wedge found during this pass was fixed and rechecked before final export.
+1. Replace N/A/D procedural hero bodies only after each reference and cost gate
+   is approved; never batch paid retries after a failed task.
+2. Expand English localization from the complete mission/combat flow into the
+   200-node authored research catalog; that source content remains zh-HK-first.
+3. Run the checked-in CI on Godot 4.7.2 after commit/push. Local proof is on
+   4.6.1 because that is the installed editor.
+4. Add a Developer ID Application identity, notarization credentials, privacy /
+   storefront metadata, and store-specific packaging. The current macOS artifact
+   is valid ad-hoc signed but cannot be publicly notarized with the credentials
+   available on this machine.
+5. Capture a non-zero GPU timing result on a backend that exposes it and perform
+   longer human playtests across all six families, not only the deterministic T/B
+   balance baseline.
 
-## Honest production status
-
-The demo/vertical slice is complete and its local cross-platform release pipeline is green. It is not yet a content-complete commercial game: M/N/A/D still use polished procedural family bodies rather than final approved imported hero meshes, and the campaign still has only three missions. The next safest task is a full three-mission B/T playtest and balance pass using the final exports; after that, prepare a no-credit M-cell reference/prompt/multi-view plan and quality gate. Do not submit another paid Meshy task without explicit approval. The GL Compatibility renderer cannot use Godot's Forward+ subsurface-scattering output, so the current Web-safe gel look relies on coat, wrapped diffuse, transmission, rim, and the bounded bubble layer. A non-zero GPU capture on another backend, more enemy/mission content, accessibility/localization depth, Developer ID notarization, storefront packaging, and CI action-version maintenance remain production work.
+These are explicit external/product gates, not hidden broken demo work. No commit,
+push, release upload, notarization, or storefront submission was performed.

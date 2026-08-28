@@ -12,6 +12,7 @@ title = "L02 · 血流感染"
 briefing = "孢子載體已穿過第一道防線。敵人更耐久，生成速度亦更快。"
 scene_path = "res://scenes/missions/mission_02_bloodstream.tscn"
 recommended_family = &"B"
+required_mission_id = &"MISSION-01"
 defense_kills = 8
 cleanse_seconds = 4.5
 defense_spawn_interval = 1.55

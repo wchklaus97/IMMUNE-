@@ -8,7 +8,9 @@ signal state_changed()
 
 const SAVE_VERSION := 2
 const SAVE_PATH := "user://immune_demo_save.json"
-const VALID_MISSIONS: PackedStringArray = ["MISSION-01", "MISSION-02", "MISSION-03"]
+const VALID_MISSIONS: PackedStringArray = [
+	"MISSION-01", "MISSION-02", "MISSION-03", "MISSION-04", "MISSION-05", "MISSION-06",
+]
 const VALID_FAMILIES: PackedStringArray = ["T", "B", "M", "N", "A", "D"]
 
 const DEMO_COMPLETED: PackedStringArray = [

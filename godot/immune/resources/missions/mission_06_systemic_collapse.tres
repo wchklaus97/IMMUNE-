@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="ImmuneMissionData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://resources/combat/mission_data.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/enemies/pathogen_virulent.tres" id="2"]
+[ext_resource type="Resource" path="res://resources/enemies/boss_systemic_devourer.tres" id="3"]
+[ext_resource type="Resource" path="res://resources/difficulties/difficulty_06.tres" id="4"]
+
+[resource]
+script = ExtResource("1")
+id = &"MISSION-06"
+title = "L06 · 系統崩解"
+briefing = "最終融合病原同時擁有突變加速與離火再生。勤務切換與目標集中將決定核心存亡。"
+scene_path = "res://scenes/missions/mission_06_systemic_collapse.tscn"
+recommended_family = &"D"
+required_mission_id = &"MISSION-05"
+defense_kills = 12
+cleanse_seconds = 8.0
+defense_spawn_interval = 5.8
+late_spawn_interval = 1.9
+total_war_enemy_cap = 1
+regular_enemy = ExtResource("2")
+boss_enemy = ExtResource("3")
+difficulty = ExtResource("4")
+background_color = Color(0.045, 0.004, 0.02, 1)
+floor_color = Color(0.085, 0.012, 0.045, 1)
+lane_color = Color(0.48, 0.02, 0.19, 1)
+zone_color = Color(1, 0.2, 0.52, 1)
+rewards = {"antigen": 140, "biomass": 90, "protomass": 24, "fusionCore": 1}
+discovery_flag = "MISSION-06-COMPLETE"
+unlock_campaign_level = "L06"

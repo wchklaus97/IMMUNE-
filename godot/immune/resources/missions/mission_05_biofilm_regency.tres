@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="ImmuneMissionData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://resources/combat/mission_data.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/enemies/pathogen_biofilm.tres" id="2"]
+[ext_resource type="Resource" path="res://resources/enemies/boss_biofilm_regent.tres" id="3"]
+[ext_resource type="Resource" path="res://resources/difficulties/difficulty_05.tres" id="4"]
+
+[resource]
+script = ExtResource("1")
+id = &"MISSION-05"
+title = "L05 · 生物膜王庭"
+briefing = "生物膜載體會在火力中斷後再生。選定目標後持續射擊，逐一拆除菌王防線。"
+scene_path = "res://scenes/missions/mission_05_biofilm_regency.tscn"
+recommended_family = &"B"
+required_mission_id = &"MISSION-04"
+defense_kills = 11
+cleanse_seconds = 7.0
+defense_spawn_interval = 4.8
+late_spawn_interval = 2.0
+regular_enemy = ExtResource("2")
+boss_enemy = ExtResource("3")
+difficulty = ExtResource("4")
+background_color = Color(0.008, 0.018, 0.055, 1)
+floor_color = Color(0.018, 0.042, 0.1, 1)
+lane_color = Color(0.09, 0.2, 0.52, 1)
+zone_color = Color(0.26, 0.7, 1, 1)
+rewards = {"antigen": 110, "biomass": 70, "protomass": 18}
+discovery_flag = "MISSION-05-COMPLETE"
+unlock_campaign_level = "L06"

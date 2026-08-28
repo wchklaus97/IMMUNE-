@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="PathogenProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/combat/pathogen_profile.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"PATHOGEN-VIRULENT"
+display_name = "高毒性融合體"
+description = "兼具低血加速與離火再生，需要持續集中輸出。"
+max_health = 11
+move_speed = 1.7
+core_damage = 2
+visual_scale = 1.36
+enrage_health_threshold = 0.5
+enrage_speed_multiplier = 1.4
+regeneration_per_second = 0.4
+regeneration_delay = 2.0
+body_color = Color(0.66, 0.14, 0.36, 1)
+emission_strength = 0.3
+shape_variant = 2
