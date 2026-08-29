@@ -116,6 +116,26 @@ Three failures were treated as workflow findings rather than bypassed:
 Generated kits, downloads, screenshots, raw reports, and aggregates remain
 ignored under `outputs/`.
 
+## Remote verification
+
+GitHub Actions run `33257048004` verifies commit `81a3cbe` on Godot 4.7.2.
+The 11m39s `validate-and-export` job passed the 25-test tool suite, playtest
+template, 53-test research UI, localization/release contracts, Godot import and
+smoke, bounded T/B campaign balance, all-six-family MISSION-01 regression, HUD
+layout, four exports, hosted Web compatibility flow, and both artifact uploads.
+Native artifact launch then passed on Linux in 9s, Windows in 21s, and macOS in
+45s.
+
+The downloaded schema-v2 Web report is explicitly `compatibility-only`; both
+profiles used hosted ANGLE Vulkan SwiftShader. Baseline measured 1.158 mean /
+1.111 p05 FPS with a 900 ms maximum frame, and the 4x-CPU profile measured
+1.324 / 1.304 with a 766.8 ms maximum. Each profile recorded all eight expected
+events, four HTTP 200 release resources, and zero console, page, or effective
+request errors. All eight uploaded research, mission-select, combat, and pause
+screenshots were visually reviewed without blank canvases, clipping, or state
+mismatches. These figures prove compatibility and liveness only, not hardware
+performance.
+
 ## Repeatable commands
 
 ```sh

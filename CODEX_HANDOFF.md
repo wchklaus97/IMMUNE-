@@ -247,9 +247,15 @@ python3 tools/meshy/validate_hero_glb.py \
   export was blocked; synthetic draft/complete downloads and a one-report
   insufficient-sample aggregate were validated without treating them as human
   evidence. The unchanged exported Godot Web artifact then passed the strict
-  local flow at 120.006 / 101.010
-  mean/p05 FPS on Metal and 15.093 / 13.387 under 4x CPU plus SwiftShader. Full
-  workflow, privacy boundary, and failure corrections are in
+  local flow at 120.006 / 101.010 mean/p05 FPS on Metal and 15.093 / 13.387
+  under 4x CPU plus SwiftShader.
+  GitHub Actions run `33257048004` verifies commit `81a3cbe`: the 11m39s main
+  job and Linux 9s, Windows 21s, and macOS 45s native artifact launches all
+  pass. Its downloaded compatibility-only report records hosted SwiftShader at
+  1.158 / 1.324 mean FPS, 900 / 766.8 ms maximum frames, all eight events and
+  four resource 200s per profile, no effective errors, and eight visually
+  reviewed screenshots. This remains liveness evidence, not a hardware
+  benchmark. Full workflow, privacy boundary, and failure corrections are in
   `docs/godot-prompter/specs/2026-08-29-human-playtest-campaign-kit.md`.
 - Exported-Web compatibility stress and playtest intake (2026-08-29): 15/15
   local tool tests, anonymous six-family template validation, fresh Web export,
