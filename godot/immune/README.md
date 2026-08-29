@@ -81,6 +81,8 @@ N/A/D 已經用 `characters/authored_jelly_body.gd` 完成零-credit production 
 
 ```bash
 mkdir -p godot/immune/build/releases/web
+node --test tools/validate_release_contract.test.mjs
+node tools/validate_release_contract.mjs
 godot --headless --path godot/immune --import
 godot --headless --path godot/immune --script res://tools/smoke.gd
 godot --headless --path godot/immune --script res://tools/check_overflow.gd
@@ -88,9 +90,18 @@ godot --headless --path godot/immune --export-release "Windows Desktop" build/re
 godot --headless --path godot/immune --export-release "Linux/X11" build/releases/IMMUNE-linux.x86_64
 godot --headless --path godot/immune --export-release "macOS" build/releases/IMMUNE-macOS.zip
 godot --headless --path godot/immune --export-release "Web" build/releases/web/index.html
+node tools/validate_release_contract.mjs --artifacts=godot/immune/build/releases
 ```
 
-匯出需要安裝 Godot 4.7.2 export templates。GitHub Actions 會自動執行 web tests/build、Godot smoke、首尾關 T/B 平衡回歸、HUD overflow check、四平台匯出，以及 Linux／Windows／macOS 原生成品啟動測試。大型 `.glb`、`.wav`、`.ogg`、`.ttf` 等資產已由 `.gitattributes` 指派到 Git LFS。繁中／英文介面使用 `fonts/NotoSansHK-VF.ttf`，授權文字見 `fonts/OFL.txt`。
+匯出需要安裝 Godot 4.7.2 export templates，四個 exporter 必須順序執行。`build/.gdignore` 會阻止 Godot 將生成成品重新當作 source asset import。GitHub Actions 會自動執行 release identity/tag contract、web tests/build、Godot smoke、首尾關 T/B 平衡回歸、HUD overflow check、四平台匯出、artifact contract，以及 Linux／Windows／macOS 原生成品啟動與 metadata 測試。完整決策同 binary evidence 見 `docs/godot-prompter/specs/2026-08-29-release-identity-hardening.md`。
+
+準備正式 tag 時先做精確版本 preflight；呢個命令唔會建立 tag 或發佈：
+
+```bash
+node tools/validate_release_contract.mjs --tag=v0.4.0
+```
+
+大型 `.glb`、`.wav`、`.ogg`、`.ttf` 等資產已由 `.gitattributes` 指派到 Git LFS。繁中／英文介面使用 `fonts/NotoSansHK-VF.ttf`，授權文字見 `fonts/OFL.txt`。
 
 研究星盤：拖曳平移、滾輪縮放、點節點、左欄點家族聚焦。`R` 研究，`F` 追蹤，`Home` 回核心，`Esc` 顯示全圖，`C` 進戰鬥切片。
 

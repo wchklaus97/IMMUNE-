@@ -37,7 +37,10 @@ The latest tranche adds:
   styled mission/vitals/action HUD, and a Compatibility-safe A RelayDish; and
 - a fail-fast 36-run headed campaign soak with telemetry v2 plus a reproducible
   Instruments Metal-trace analyzer; and
-- four-platform v0.4.0 release artifacts.
+- four-platform v0.4.0 release artifacts; and
+- a release identity/artifact contract with a canonical jelly-core icon,
+  Windows PE metadata, macOS bundle verification, safe tag/version matching,
+  generated-output import isolation, and native CI evidence.
 
 ## Playable loop
 
@@ -72,9 +75,14 @@ The latest tranche adds:
   research translation artifact and its CI drift contract.
 - `tools/validate_translation_csv.mjs` owns the shared game/research CSV shape,
   duplicate, blank, placeholder-parity, and English-script checks.
+- `tools/validate_release_contract.mjs` owns project/preset identity, tag/version
+  coherence, credential-path rejection, and four-platform artifact structure.
+- `godot/immune/build/.gdignore` prevents generated release/capture output from
+  re-entering Godot's source import pipeline.
 - `.github/workflows/ci.yml` owns Godot 4.7.2 import/smoke, catalog translation
-  drift, bounded T/B first/final mission balance, all-family MISSION-01 balance,
-  bilingual layout, exports, and three native launch checks.
+  drift, release identity/tag validation, bounded T/B first/final mission
+  balance, all-family MISSION-01 balance, bilingual layout, exports, artifact
+  validation, and three native launch/metadata checks.
 
 ## Balance candidate 1
 
@@ -207,6 +215,14 @@ python3 tools/meshy/validate_hero_glb.py \
 
 ## Verification completed
 
+- Release identity hardening (2026-08-29): contract tests went RED on the absent
+  icon/Windows metadata and GREEN after the project/preset update; actionlint,
+  four fresh exports, and the complete artifact contract pass. Windows PE
+  inspection proves six icon resources plus matching product/company/description
+  and 0.4.0 version data. macOS strict deep signature, bundle/version/icon,
+  arm64+x86_64, and exported 200-node smoke pass. Web generates 1024 and 180 px
+  alpha icons, and `.gdignore` leaves no release `.import` sidecars. Full evidence
+  is in `docs/godot-prompter/specs/2026-08-29-release-identity-hardening.md`.
 - Six-family Fizzy convergence (2026-08-29): fresh six-angle baseline review,
   RED-to-GREEN profile/runtime contracts, final complete mission-desk framing at
   1600x900 and 1280x720, T/B Compatibility comparisons, and a current B
@@ -309,6 +325,7 @@ Generated local artifacts (ignored by Git):
 - `outputs/playtests/metal-traces/`
 - `outputs/player-qa-20260829/`
 - `outputs/combat-polish-20260829/`
+- `outputs/release-hardening-20260829/`
 
 ## Repeatable release commands
 
@@ -319,6 +336,8 @@ npm run build
 
 cd ../../
 node --test tools/analyze_metal_gpu_trace.test.mjs
+node --test tools/validate_release_contract.test.mjs
+node tools/validate_release_contract.mjs
 node tools/generate_catalog_localization.mjs --check
 node tools/validate_translation_csv.mjs
 godot --headless --path godot/immune --import
@@ -337,6 +356,7 @@ godot --headless --path godot/immune --export-release "Windows Desktop" build/re
 godot --headless --path godot/immune --export-release "Linux/X11" build/releases/IMMUNE-linux.x86_64
 godot --headless --path godot/immune --export-release "macOS" build/releases/IMMUNE-macOS.zip
 godot --headless --path godot/immune --export-release "Web" build/releases/web/index.html
+node tools/validate_release_contract.mjs --artifacts=godot/immune/build/releases
 ```
 
 Run exports sequentially. Parallel Godot exporters race on the shared
@@ -361,6 +381,9 @@ commercial release. Remaining work is:
    complete. The remaining product-risk gate is longer human playtesting across
    all six families for fun, readability, accessibility, and control feel; the
    deterministic autopilot cannot honestly prove those qualities.
+5. A future public tag must be an explicit owner-approved publishing action.
+   Run `node tools/validate_release_contract.mjs --tag=v0.4.0` first; no tag,
+   GitHub Release, upload, notarization, or storefront submission was performed.
 
 These are explicit external/product gates, not hidden broken demo work. No release
 upload, notarization, or storefront submission was performed.

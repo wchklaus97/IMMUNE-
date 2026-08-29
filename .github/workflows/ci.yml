@@ -39,6 +39,15 @@ jobs:
           node tools/validate_translation_csv.mjs
           node tools/generate_catalog_localization.mjs --check
 
+      - name: Validate release identity contract
+        run: |
+          node --test tools/validate_release_contract.test.mjs
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            node tools/validate_release_contract.mjs --tag="$GITHUB_REF_NAME"
+          else
+            node tools/validate_release_contract.mjs
+          fi
+
       - name: Set up Godot 4.7.2 and export templates
         uses: chickensoft-games/setup-godot@v2
         with:
@@ -55,35 +64,35 @@ jobs:
         run: |
           set -o pipefail
           godot --headless --path godot/immune --import 2>&1 | tee godot-import.log
-          ! grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" godot-import.log
+          if grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" godot-import.log; then exit 1; fi
 
       - name: Run Godot release smoke
         run: |
           set -o pipefail
           godot --headless --path godot/immune --script res://tools/smoke.gd 2>&1 | tee godot-smoke.log
           grep -F "SMOKE_OK missions=6 families=6 save=v2 audio=ready gamepad=ready signatures=T+B traits=enrage+regen meshy=B authored_jelly=M+N+A+D gel_fizzy=T+B+M+N+A+D" godot-smoke.log
-          ! grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" godot-smoke.log
+          if grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" godot-smoke.log; then exit 1; fi
 
       - name: Run bounded campaign balance regression
         run: |
           set -o pipefail
           timeout 7m godot --headless --path godot/immune --script res://tools/balance_matrix.gd -- --out=user://ci-balance.json --missions=MISSION-01,MISSION-06 --families=T,B --trials=1 2>&1 | tee godot-balance.log
           grep -F "BALANCE_MATRIX_OK runs=4" godot-balance.log
-          ! grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" godot-balance.log
+          if grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" godot-balance.log; then exit 1; fi
 
       - name: Run six-family gameplay regression
         run: |
           set -o pipefail
           timeout 8m godot --headless --path godot/immune --script res://tools/balance_matrix.gd -- --out=user://ci-six-family.json --missions=MISSION-01 --families=T,B,M,N,A,D --trials=1 2>&1 | tee godot-six-family.log
           grep -F "BALANCE_MATRIX_OK runs=6" godot-six-family.log
-          ! grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" godot-six-family.log
+          if grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" godot-six-family.log; then exit 1; fi
 
       - name: Check research HUD layout
         run: |
           set -o pipefail
           godot --headless --path godot/immune --script res://tools/check_overflow.gd 2>&1 | tee godot-layout.log
           grep -F "OVERFLOW_CHECK_OK" godot-layout.log
-          ! grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" godot-layout.log
+          if grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" godot-layout.log; then exit 1; fi
 
       - name: Export Windows, Linux, macOS, and Web demos
         run: |
@@ -93,7 +102,8 @@ jobs:
           godot --headless --path godot/immune --export-release "Linux/X11" build/releases/IMMUNE-linux.x86_64 2>&1 | tee godot-export-linux.log
           godot --headless --path godot/immune --export-release "macOS" build/releases/IMMUNE-macOS.zip 2>&1 | tee godot-export-macos.log
           godot --headless --path godot/immune --export-release "Web" build/releases/web/index.html 2>&1 | tee godot-export-web.log
-          ! grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" godot-export-windows.log godot-export-linux.log godot-export-macos.log godot-export-web.log
+          if grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" godot-export-windows.log godot-export-linux.log godot-export-macos.log godot-export-web.log; then exit 1; fi
+          node tools/validate_release_contract.mjs --artifacts=godot/immune/build/releases
 
       - name: Upload release artifacts
         uses: actions/upload-artifact@v7
@@ -128,7 +138,7 @@ jobs:
           timeout 30s ./IMMUNE-linux.x86_64 --headless --audio-driver Dummy --log-file linux-release-smoke.log -- --release-smoke
           cat linux-release-smoke.log
           grep -F "RELEASE_SMOKE_OK platform=Linux nodes=200" linux-release-smoke.log
-          ! grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" linux-release-smoke.log
+          if grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" linux-release-smoke.log; then exit 1; fi
 
       - name: Launch Windows release
         if: runner.os == 'Windows'
@@ -153,6 +163,22 @@ jobs:
           if ($log -match "SCRIPT ERROR|Parse Error|Compile Error|ERROR:") {
             throw "Windows release log contains an engine error"
           }
+          $versionInfo = (Get-Item ".\release\IMMUNE-windows.exe").VersionInfo
+          if ($versionInfo.ProductName -ne "IMMUNE") {
+            throw "Windows ProductName mismatch: $($versionInfo.ProductName)"
+          }
+          if ($versionInfo.CompanyName -ne "wchklaus97") {
+            throw "Windows CompanyName mismatch: $($versionInfo.CompanyName)"
+          }
+          if ($versionInfo.FileDescription -ne "IMMUNE playable demo") {
+            throw "Windows FileDescription mismatch: $($versionInfo.FileDescription)"
+          }
+          if (-not $versionInfo.FileVersion.StartsWith("0.4.0")) {
+            throw "Windows FileVersion mismatch: $($versionInfo.FileVersion)"
+          }
+          if (-not $versionInfo.ProductVersion.StartsWith("0.4.0")) {
+            throw "Windows ProductVersion mismatch: $($versionInfo.ProductVersion)"
+          }
 
       - name: Launch macOS release
         if: runner.os == 'macOS'
@@ -162,7 +188,15 @@ jobs:
           cd release
           unzip -q IMMUNE-macOS.zip -d macos
           chmod +x macos/IMMUNE.app/Contents/MacOS/IMMUNE
+          codesign --verify --deep --strict macos/IMMUNE.app
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' macos/IMMUNE.app/Contents/Info.plist)" = "com.wchklaus97.immune"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' macos/IMMUNE.app/Contents/Info.plist)" = "0.4.0"
+          icon_file="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIconFile' macos/IMMUNE.app/Contents/Info.plist)"
+          test -n "$icon_file"
+          test -f "macos/IMMUNE.app/Contents/Resources/$icon_file"
+          architectures="$(lipo -archs macos/IMMUNE.app/Contents/MacOS/IMMUNE)"
+          [[ "$architectures" == *arm64* && "$architectures" == *x86_64* ]]
           log_path="$PWD/macos-release-smoke.log"
           ./macos/IMMUNE.app/Contents/MacOS/IMMUNE --headless --audio-driver Dummy -- --release-smoke 2>&1 | tee "$log_path"
           grep -F "RELEASE_SMOKE_OK platform=macOS nodes=200" "$log_path"
-          ! grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" "$log_path"
+          if grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" "$log_path"; then exit 1; fi
