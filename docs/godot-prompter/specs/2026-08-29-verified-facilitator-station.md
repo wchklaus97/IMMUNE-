@@ -116,6 +116,23 @@ the campaign.
   showed the expected provenance, family order, controls, and complete game
   canvas. Evidence remains ignored under
   `outputs/playtest-session-station-qa/`.
+- Functional commit `ebf5b9ca48251d2e73f43f07e4d53aa2c8927d82`
+  passed GitHub Actions run
+  [`33259930365`](https://github.com/wchklaus97/IMMUNE-/actions/runs/33259930365).
+  Validation/export completed in 11m22s; the downloaded artifacts then launched
+  successfully on Linux in 11s, Windows in 15s, and macOS in 49s. The hosted
+  Web artifact is schema v2 and `compatibility-only`: both SwiftShader profiles
+  completed all eight ordered QA events, returned HTTP 200 for the four required
+  resources, fit their 1600x900 and 1280x720 canvases without document scroll,
+  and produced no console, page, or effective request errors. All eight hosted
+  screenshots were visually reviewed with no blank, clipped, or displaced
+  research, mission, combat, or pause state. The intentionally retained raw
+  SwiftShader cadence was 1.220 mean / 1.200 p05 FPS with an 833.4 ms maximum
+  frame at baseline and 1.395 / 1.364 with a 733.3 ms maximum under 4x CPU
+  throttling. These are liveness values from software rendering, not a target
+  hardware performance result. The downloaded report SHA-256 is
+  `350172f65421c7e5836d4e9b0cb0109682994888dc79e6b57108d103490181ba`;
+  ignored evidence is under `outputs/web-release-qa-ci-run-33259930365/`.
 
 ## Next safe work
 

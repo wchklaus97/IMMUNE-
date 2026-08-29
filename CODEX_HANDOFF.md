@@ -53,8 +53,9 @@ The latest tranche adds:
   allowlists, tamper verification, and no-overwrite protection; and
 - a checksum-gated facilitator station that locks one participant and platform,
   checks native entry/sidecar contracts and Linux permissions, serves Web and
-  the assigned form only on loopback, and cannot expose native executables over
-  HTTP.
+  the assigned form only on loopback, cannot expose native executables over
+  HTTP, and travels inside the schema-v2 campaign with all five facilitator
+  sources separately checksummed.
 
 ## Playable loop
 
@@ -276,6 +277,17 @@ python3 tools/meshy/validate_hero_glb.py \
   install. This remains session integrity evidence, not a human result. Full
   evidence is in
   `docs/godot-prompter/specs/2026-08-29-verified-facilitator-station.md`.
+  Functional commit `ebf5b9c` passed GitHub Actions run `33259930365`: main
+  validation/export in 11m22s and native Linux/Windows/macOS artifact launch in
+  11s/15s/49s. The downloaded schema-v2 hosted-Web report completed eight
+  ordered events and four HTTP-200 resources per profile with exact canvas fit,
+  no scroll, and zero console/page/effective-request errors. All eight
+  screenshots were visually reviewed without blank output, clipping, or state
+  displacement. Hosted SwiftShader reported 1.220/1.200 mean/p05 FPS and an
+  833.4 ms maximum frame at baseline, then 1.395/1.364 and 733.3 ms under 4x CPU
+  throttling. This remains compatibility-only liveness evidence, not a real
+  low-end hardware benchmark. The downloaded report SHA-256 is
+  `350172f65421c7e5836d4e9b0cb0109682994888dc79e6b57108d103490181ba`.
 - Provenance-locked playtest distribution (2026-08-29): the successful
   `81a3cbe` artifact from run `33257048004` was downloaded and passed the
   strengthened release contract with exactly 14 allowlisted files. An atomic
@@ -477,6 +489,7 @@ Generated local artifacts (ignored by Git):
 - `outputs/playtest-campaign-web-qa-81a3cbe/`
 - `outputs/ci-web-release-qa-downloaded-33258313619/`
 - `outputs/playtest-session-station-qa/`
+- `outputs/web-release-qa-ci-run-33259930365/`
 - `outputs/playtests/human/`
 
 ## Repeatable release commands
