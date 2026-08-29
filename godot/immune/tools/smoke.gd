@@ -956,13 +956,26 @@ func _gel_surface_noise_error(gel: ShaderMaterial) -> String:
 		return "must keep a subtle smooth 3D wet-skin microtexture"
 	if inclusion_depth > 0.02:
 		return "wet-skin microtexture exceeds the anti-rubber depth limit"
+	var membrane_cell_scale := float(gel.get_shader_parameter("microbubble_scale"))
+	if membrane_cell_scale < 44.0 or membrane_cell_scale > 52.0:
+		return "rounded membrane cells must remain visible at gameplay distance"
+	var membrane_cell_density := float(gel.get_shader_parameter("microbubble_density"))
+	if membrane_cell_density < 0.999:
+		return "rounded membrane cells must cover the complete wet surface"
 	var membrane_cell_depth := float(gel.get_shader_parameter("microbubble_depth"))
-	if membrane_cell_depth < 0.003 or membrane_cell_depth > 0.012:
+	if membrane_cell_depth < 0.028 or membrane_cell_depth > 0.042:
 		return "rounded membrane-cell depth is outside the stable wet-skin range"
+	var membrane_cell_radius_min := float(gel.get_shader_parameter("microbubble_radius_min"))
 	var membrane_cell_radius := float(gel.get_shader_parameter("microbubble_radius_max"))
 	var membrane_cell_jitter := float(gel.get_shader_parameter("microbubble_jitter"))
-	if membrane_cell_radius < 0.50 or membrane_cell_radius + membrane_cell_jitter >= 1.0:
-		return "rounded membrane cells must overlap without leaving the eight-sample lattice bound"
+	if membrane_cell_radius_min < 0.70 or membrane_cell_radius < 0.78:
+		return "rounded membrane cells are too small for continuous surface coverage"
+	if membrane_cell_jitter < 0.10 or membrane_cell_jitter > 0.16:
+		return "rounded membrane-cell jitter must break up the visible lattice without becoming unstable"
+	if membrane_cell_radius_min - membrane_cell_jitter < 0.56:
+		return "rounded membrane-cell jitter opens visible gaps in the wet surface"
+	if membrane_cell_radius + membrane_cell_jitter >= 0.96:
+		return "rounded membrane cells exceed the eight-sample lattice safety bound"
 	if float(gel.get_shader_parameter("microbubble_thinness")) > 0.02:
 		return "rounded membrane cells must shape highlights rather than paint thickness spots"
 	if float(gel.get_shader_parameter("bubble_shell_emission")) > 0.12:

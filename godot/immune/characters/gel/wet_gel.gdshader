@@ -360,6 +360,19 @@ vec3 bubble_hash3(vec3 p) {
 }
 
 
+// Rotate the dense membrane-cell lattice away from the character's authored
+// up/side/front axes. The sphere centres remain a seamless 3D object-space
+// distribution, but their rows no longer read as horizontal quilting on round
+// heads and limbs. This orthonormal frame costs three dot products and no extra
+// hash, texture, or bubble-volume sample.
+vec3 membrane_cell_frame(vec3 p) {
+	return vec3(
+		dot(p, vec3(0.811107, 0.324443, 0.486664)),
+		dot(p, vec3(-0.371391, 0.928477, 0.0)),
+		dot(p, vec3(-0.451856, -0.180743, 0.873589)));
+}
+
+
 // Smooth object-space value noise shared by sub-bubble inclusions and the
 // optional shallow wet-skin normal. Eight hashes keep that combined path cheap.
 float inclusion_noise(vec3 p) {
@@ -587,7 +600,7 @@ void fragment() {
 	vec2 microbubble = vec2(0.0);
 	if (microbubble_enabled && microbubble_depth > 0.001 && microbubble_density > 0.001) {
 		microbubble = bubble_volume_at(
-			v_obj_pos * microbubble_scale,
+			membrane_cell_frame(v_obj_pos * microbubble_scale),
 			microbubble_density,
 			microbubble_radius_min,
 			microbubble_radius_max,

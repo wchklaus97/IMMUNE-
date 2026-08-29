@@ -40,6 +40,11 @@ The latest tranche adds:
   is near-neutral so it no longer shifts warm families red. The final convergence
   also removes B's sparse emissive membrane-cell override and aligns M's
   production wet-coat roughness with the shared 0.030 contract;
+- Jelly V4 organic membrane convergence: all six Fizzy bodies replace the V3
+  isolated highlight spots with continuous, bounded rounded cells at gameplay
+  distance, and the shared shader rotates the object-space sampling frame to
+  remove horizontal quilting for only three dot products and no extra noise,
+  texture, or bubble sample;
 - a balance-neutral biological combat arena, phase-readable cleanse zone,
   styled mission/vitals/action HUD, and a Compatibility-safe A RelayDish; and
 - a fail-fast 36-run headed campaign soak with telemetry v2 plus a reproducible
@@ -63,9 +68,10 @@ The latest tranche adds:
   the assigned form only on loopback, cannot expose native executables over
   HTTP, and travels inside the schema-v2 campaign with all five facilitator
   sources separately checksummed; and
-- a refreshed portable Jelly V3 campaign sourced from successful Godot 4.7.2
+- a historical portable Jelly V3 campaign sourced from successful Godot 4.7.2
   run `33262958960`, locking all six tester kits to code commit `2b077c5` with
-  43 checksums and a verified exported-Web research-to-pause rehearsal.
+  43 checksums and a verified exported-Web research-to-pause rehearsal. Current
+  V4 source supersedes it, so it must not be used for new V4 reports.
 
 ## Playable loop
 
@@ -282,6 +288,21 @@ python3 tools/meshy/validate_hero_glb.py \
 ```
 
 ## Verification completed
+
+- Jelly V4 local release gate (2026-08-30): reference/V3 audit, three stopped
+  probe rounds, a witnessed RED smoke contract, and GREEN six-family production
+  profiles. Six six-angle close-up sets, six mission cards, and 18 gameplay
+  frames were regenerated; contact-sheet review found continuous wet cells with
+  no horizontal quilt, moire, broken face, colour shift, or distant readability
+  regression. A three-trial ten-body interleaved V3/V4 comparison measured V4
+  at 1.021 ms CPU mean / 1.225 ms CPU p95 and 2.270 ms wall mean / 4.477 ms wall
+  p95: +4.3%/+4.2% CPU and +0.7%/+1.7% wall versus the old constants. Root tools
+  pass 36/36, Web UI 53/53 plus build, Meshy 6/6, translation/catalog checks,
+  two imports, smoke, overflow, all-family M1 6/6, T/B first/final 4/4, four
+  sequential exports, artifact contract, universal macOS native smoke, and
+  exported-Web compatibility QA all pass locally. Full rationale and claim
+  boundaries are in
+  `docs/godot-prompter/specs/2026-08-30-jelly-membrane-v4.md`.
 
 - Verified facilitator station (2026-08-29): four new tests cover exact
   Web/Windows/Linux/macOS entry contracts, unknown participant/platform,
@@ -559,6 +580,7 @@ Generated local artifacts (ignored by Git):
 - `outputs/playtest-session-station-qa/`
 - `outputs/web-release-qa-ci-run-33259930365/`
 - `outputs/jelly-v3-lookdev/`
+- `outputs/jelly-v4-lookdev/`
 - `outputs/release-ci-33262958960-jelly-v3/`
 - `outputs/human-playtest-campaigns/immune-v0.4.0-2b077c5-run-33262958960-jelly-v3-portable-v1/`
 - `outputs/jelly-v3-playtest-campaign-qa/`
@@ -644,10 +666,11 @@ commercial release. Remaining work is:
 4. Non-zero GPU timing, a 34-minute automated all-family campaign soak, and an
    exported-Web 4x-CPU/SwiftShader compatibility stress are complete. The
    remaining product-risk gates are longer human playtesting across all six
-   families for final Jelly V3 art-direction approval,
+   families for final Jelly V4 art-direction approval,
    fun/readability/accessibility/control feel, and a repeat on an agreed real
-   lower-end Windows/Web machine. Use the verified `2b077c5` Jelly V3 campaign,
-   checksum-gated facilitator station, and checked-in campaign plan;
+   lower-end Windows/Web machine. Do not use the verified `2b077c5` Jelly V3
+   campaign for V4 results; generate a new checksum-gated campaign only from a
+   successful V4 CI artifact, then use its facilitator station and campaign plan;
    deterministic automation, session preflight, and synthetic form fixtures
    cannot honestly prove those qualities.
 5. A future public tag must be an explicit owner-approved publishing action.

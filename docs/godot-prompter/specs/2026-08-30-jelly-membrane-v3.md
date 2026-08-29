@@ -3,6 +3,10 @@
 Status: implemented and locally verified on 2026-08-30 with Godot 4.6.1.
 The project and CI target remain Godot 4.7.2 stable.
 
+Superseded for current source by
+`2026-08-30-jelly-membrane-v4.md`. This file remains the immutable V3 decision
+and release-campaign record; do not use its campaign as evidence for V4.
+
 ## Goal and boundary
 
 This tranche responds to the rejected solid/plastic texture by moving all six

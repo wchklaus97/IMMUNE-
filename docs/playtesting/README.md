@@ -36,9 +36,14 @@ assigned.
 
 ## Prepare the verified six-person campaign
 
-The recommended Jelly V3 path packages the exact successful CI artifact once,
-plus six counterbalanced participant kits. For commit `2b077c5` from Actions
-run `33262958960`:
+The following Jelly V3 path is retained as a historical reproducibility record.
+Current source contains Jelly V4 and therefore must not collect or label new V4
+human results with this older artifact. Wait for a successful V4 CI artifact
+and a new provenance-locked campaign before starting the next participant set.
+
+The historical V3 path packages the exact successful CI artifact once, plus six
+counterbalanced participant kits. For commit `2b077c5` from Actions run
+`33262958960`:
 
 ```sh
 gh run download 33262958960 \
