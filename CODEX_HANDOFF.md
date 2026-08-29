@@ -62,7 +62,10 @@ The latest tranche adds:
   checks native entry/sidecar contracts and Linux permissions, serves Web and
   the assigned form only on loopback, cannot expose native executables over
   HTTP, and travels inside the schema-v2 campaign with all five facilitator
-  sources separately checksummed.
+  sources separately checksummed; and
+- a refreshed portable Jelly V3 campaign sourced from successful Godot 4.7.2
+  run `33262958960`, locking all six tester kits to code commit `2b077c5` with
+  43 checksums and a verified exported-Web research-to-pause rehearsal.
 
 ## Playable loop
 
@@ -437,6 +440,22 @@ python3 tools/meshy/validate_hero_glb.py \
   jobs all completed successfully. The follow-up handoff-only commit uses
   `[skip ci]` to record that terminal result without recursively launching the
   same full pipeline.
+- Jelly V3 human-playtest campaign (2026-08-30): the exact successful artifact
+  from run `33262958960` passed the 14-file release contract and was packaged as
+  `immune-v0.4.0-2b077c5-run-33262958960-jelly-v3-portable-v1`. Its artifact-set
+  SHA-256 is
+  `82b37917f97bcdbd58675561026958e5d97874af411a413457a9665e3e80a05d`;
+  both repository and bundled verifiers pass six participants / 14 artifacts,
+  all 43 checksums are covered, and Web/Windows/Linux/macOS preflights pass. A
+  real loopback Chromium rehearsal at 1280x720 completed the exported research,
+  mission selection, family selection, combat, duty-change, and pause sequence
+  with exact canvas fit, isolation, required HTTP-200 resources, and no effective
+  request failure. The initial checker incorrectly rejected known PCK/WASM
+  cancellations after successful 200 responses; it was stopped, diagnosed, and
+  rerun with the checked-in strict classifier. This is campaign-integrity
+  evidence only: no participant report or human-quality claim was created. Full
+  evidence is in
+  `docs/godot-prompter/specs/2026-08-30-jelly-v3-human-playtest-campaign.md`.
 - Godot 4.6.1: two import passes, six-mission smoke, bilingual translation
   contract, 1920×1080 overflow check, and the four-run CI balance sentinel pass.
 - Research localization (2026-08-29): deterministic 406-row generator check;
@@ -540,6 +559,9 @@ Generated local artifacts (ignored by Git):
 - `outputs/playtest-session-station-qa/`
 - `outputs/web-release-qa-ci-run-33259930365/`
 - `outputs/jelly-v3-lookdev/`
+- `outputs/release-ci-33262958960-jelly-v3/`
+- `outputs/human-playtest-campaigns/immune-v0.4.0-2b077c5-run-33262958960-jelly-v3-portable-v1/`
+- `outputs/jelly-v3-playtest-campaign-qa/`
 - `outputs/playtests/human/`
 
 ## Repeatable release commands
@@ -553,24 +575,24 @@ cd ../../
 npm ci --ignore-scripts
 npm run test:tools
 npm run validate:playtest-template
-gh run download 33257048004 \
-  -n immune-demo-81a3cbe1a5ba60227bbe0d8c873c55d07871b729 \
-  -D outputs/release-ci-33257048004
+gh run download 33262958960 \
+  -n immune-demo-2b077c57c82881cca2d33cb6c07abed4b944776a \
+  -D outputs/release-ci-33262958960-jelly-v3
 npm run create:playtest-campaign -- \
-  --artifacts=outputs/release-ci-33257048004 \
-  --build-commit=81a3cbe1a5ba60227bbe0d8c873c55d07871b729 \
-  --source-run=33257048004 \
-  --source-artifact=immune-demo-81a3cbe1a5ba60227bbe0d8c873c55d07871b729 \
-  --out=outputs/human-playtest-campaigns/immune-v0.4.0-81a3cbe-run-33257048004-portable-v4
+  --artifacts=outputs/release-ci-33262958960-jelly-v3 \
+  --build-commit=2b077c57c82881cca2d33cb6c07abed4b944776a \
+  --source-run=33262958960 \
+  --source-artifact=immune-demo-2b077c57c82881cca2d33cb6c07abed4b944776a \
+  --out=outputs/human-playtest-campaigns/immune-v0.4.0-2b077c5-run-33262958960-jelly-v3-portable-v1
 npm run create:playtest-campaign -- \
-  --verify=outputs/human-playtest-campaigns/immune-v0.4.0-81a3cbe-run-33257048004-portable-v4
-cd outputs/human-playtest-campaigns/immune-v0.4.0-81a3cbe-run-33257048004-portable-v4
+  --verify=outputs/human-playtest-campaigns/immune-v0.4.0-2b077c5-run-33262958960-jelly-v3-portable-v1
+cd outputs/human-playtest-campaigns/immune-v0.4.0-2b077c5-run-33262958960-jelly-v3-portable-v1
 node facilitator/run_human_playtest_session.mjs --campaign=. \
   --participant=tester-01 --platform=web --open
 cd ../../..
 npm run aggregate:playtests -- \
-  --dir=outputs/playtests/human/raw/81a3cbe \
-  --out=outputs/playtests/human/aggregate-81a3cbe.json \
+  --dir=outputs/playtests/human/raw/2b077c5 \
+  --out=outputs/playtests/human/aggregate-2b077c5.json \
   --minimum-participants=3 --require-minimum
 node tools/validate_release_contract.mjs
 node tools/generate_catalog_localization.mjs --check
@@ -624,7 +646,7 @@ commercial release. Remaining work is:
    remaining product-risk gates are longer human playtesting across all six
    families for final Jelly V3 art-direction approval,
    fun/readability/accessibility/control feel, and a repeat on an agreed real
-   lower-end Windows/Web machine. Use the verified 81a3cbe campaign,
+   lower-end Windows/Web machine. Use the verified `2b077c5` Jelly V3 campaign,
    checksum-gated facilitator station, and checked-in campaign plan;
    deterministic automation, session preflight, and synthetic form fixtures
    cannot honestly prove those qualities.

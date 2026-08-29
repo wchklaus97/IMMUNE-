@@ -185,6 +185,13 @@ is compatibility stress, not a hardware benchmark.
 - GitHub Actions run `33262958960` on code commit
   `2b077c57c82881cca2d33cb6c07abed4b944776a`: main Godot 4.7.2
   validation/export plus Linux, Windows, and macOS native artifact jobs all pass.
+- The exact successful artifact was downloaded and repackaged as the portable
+  six-person Jelly V3 campaign. The release contract accepts exactly 14 files;
+  both campaign verifiers pass 6 participants / 14 artifacts and all 43
+  checksums. Web/Windows/Linux/macOS preflight and a real 1280x720 exported-Web
+  research-to-pause browser flow pass. This is distribution-integrity evidence,
+  not a human result. Full evidence is in
+  `2026-08-30-jelly-v3-human-playtest-campaign.md`.
 
 ## Failure handling recorded
 
@@ -205,6 +212,7 @@ No failed render or invalid screenshot was promoted as evidence.
 - Human side-by-side approval of final T/B/M/N/A/D texture and translucency.
 - A real agreed lower-end Windows/Web GPU pass; the measured local hardware is
   an Apple M4 Pro and SwiftShader is not a substitute.
-- Godot 4.7.2 remote CI is required for the committed result.
+- At least three complete adult reports from the provenance-locked Jelly V3
+  campaign; six are recommended for the first counterbalanced rotation.
 - Developer ID signing, notarization, store metadata, public tag/release, and
   upload remain explicit owner-authorized release operations and were not done.

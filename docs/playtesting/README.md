@@ -36,24 +36,24 @@ assigned.
 
 ## Prepare the verified six-person campaign
 
-The recommended path packages the exact successful CI artifact once, plus six
-counterbalanced participant kits. For commit `81a3cbe` from Actions run
-`33257048004`:
+The recommended Jelly V3 path packages the exact successful CI artifact once,
+plus six counterbalanced participant kits. For commit `2b077c5` from Actions
+run `33262958960`:
 
 ```sh
-gh run download 33257048004 \
-  -n immune-demo-81a3cbe1a5ba60227bbe0d8c873c55d07871b729 \
-  -D outputs/release-ci-33257048004
+gh run download 33262958960 \
+  -n immune-demo-2b077c57c82881cca2d33cb6c07abed4b944776a \
+  -D outputs/release-ci-33262958960-jelly-v3
 
 npm run create:playtest-campaign -- \
-  --artifacts=outputs/release-ci-33257048004 \
-  --build-commit=81a3cbe1a5ba60227bbe0d8c873c55d07871b729 \
-  --source-run=33257048004 \
-  --source-artifact=immune-demo-81a3cbe1a5ba60227bbe0d8c873c55d07871b729 \
-  --out=outputs/human-playtest-campaigns/immune-v0.4.0-81a3cbe-run-33257048004-portable-v4
+  --artifacts=outputs/release-ci-33262958960-jelly-v3 \
+  --build-commit=2b077c57c82881cca2d33cb6c07abed4b944776a \
+  --source-run=33262958960 \
+  --source-artifact=immune-demo-2b077c57c82881cca2d33cb6c07abed4b944776a \
+  --out=outputs/human-playtest-campaigns/immune-v0.4.0-2b077c5-run-33262958960-jelly-v3-portable-v1
 
 npm run create:playtest-campaign -- \
-  --verify=outputs/human-playtest-campaigns/immune-v0.4.0-81a3cbe-run-33257048004-portable-v4
+  --verify=outputs/human-playtest-campaigns/immune-v0.4.0-2b077c5-run-33262958960-jelly-v3-portable-v1
 ```
 
 The generated bundle contains:
@@ -81,7 +81,7 @@ Use the station instead of manually matching a participant folder, executable,
 sidecar, and Web server:
 
 ```sh
-cd outputs/human-playtest-campaigns/immune-v0.4.0-81a3cbe-run-33257048004-portable-v4
+cd outputs/human-playtest-campaigns/immune-v0.4.0-2b077c5-run-33262958960-jelly-v3-portable-v1
 node facilitator/run_human_playtest_session.mjs \
   --campaign=. \
   --participant=tester-01 \
@@ -116,8 +116,8 @@ the commit that produced the artifact, not the current documentation HEAD:
 ```sh
 npm run create:playtest-kit -- \
   --participant=tester-01 \
-  --build-commit=81a3cbe1a5ba60227bbe0d8c873c55d07871b729 \
-  --out=outputs/human-playtest-kits/tester-01-build-81a3cbe
+  --build-commit=2b077c57c82881cca2d33cb6c07abed4b944776a \
+  --out=outputs/human-playtest-kits/tester-01-build-2b077c5
 ```
 
 The output contains:
@@ -154,7 +154,7 @@ Validate every completed file separately:
 
 ```sh
 node tools/validate_human_playtest.mjs \
-  outputs/playtests/human/raw/81a3cbe/tester-01-six-family-playtest-complete.json
+  outputs/playtests/human/raw/2b077c5/tester-01-six-family-playtest-complete.json
 ```
 
 The validator rejects incomplete sessions, placeholders, unknown families,
@@ -165,8 +165,8 @@ hidden in free text.
 
 ```sh
 npm run aggregate:playtests -- \
-  --dir=outputs/playtests/human/raw/81a3cbe \
-  --out=outputs/playtests/human/aggregate-81a3cbe.json \
+  --dir=outputs/playtests/human/raw/2b077c5 \
+  --out=outputs/playtests/human/aggregate-2b077c5.json \
   --minimum-participants=3 \
   --require-minimum
 ```
