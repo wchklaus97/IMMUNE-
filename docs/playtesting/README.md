@@ -50,19 +50,23 @@ npm run create:playtest-campaign -- \
   --build-commit=81a3cbe1a5ba60227bbe0d8c873c55d07871b729 \
   --source-run=33257048004 \
   --source-artifact=immune-demo-81a3cbe1a5ba60227bbe0d8c873c55d07871b729 \
-  --out=outputs/human-playtest-campaigns/immune-v0.4.0-81a3cbe-run-33257048004
+  --out=outputs/human-playtest-campaigns/immune-v0.4.0-81a3cbe-run-33257048004-portable-v4
 
 npm run create:playtest-campaign -- \
-  --verify=outputs/human-playtest-campaigns/immune-v0.4.0-81a3cbe-run-33257048004
+  --verify=outputs/human-playtest-campaigns/immune-v0.4.0-81a3cbe-run-33257048004-portable-v4
 ```
 
 The generated bundle contains:
 
 - `artifacts/`: the exact Windows, Linux, macOS, and complete Web builds;
 - `participants/tester-01` through `tester-06`: one assigned offline kit each;
+- `facilitator/`: the portable session runner plus its four validation
+  dependencies, so the copied campaign needs Node.js but no repository checkout
+  or npm install;
 - `campaign-manifest.json`: CI source, full commit, 14-file artifact inventory,
-  participant order, sizes, and SHA-256 values;
-- `SHA256SUMS`: all 14 artifact and 24 participant-kit file checksums; and
+  participant order, portable runner inventory, sizes, and SHA-256 values;
+- `SHA256SUMS`: all 14 artifact, 24 participant-kit, and 5 facilitator-file
+  checksums; and
 - `README.md`: facilitator distribution instructions.
 
 The generator requires the Windows and Linux `.pck` sidecars and both Web audio
@@ -70,6 +74,39 @@ worklets, rejects unexpected files, verifies the completed copy, writes through
 a temporary sibling directory, and refuses to overwrite an existing campaign.
 The verifier also rejects altered manifests, path traversal, checksum drift,
 and any unchecksummed debug/private file added later.
+
+## Start a verified facilitator session
+
+Use the station instead of manually matching a participant folder, executable,
+sidecar, and Web server:
+
+```sh
+cd outputs/human-playtest-campaigns/immune-v0.4.0-81a3cbe-run-33257048004-portable-v4
+node facilitator/run_human_playtest_session.mjs \
+  --campaign=. \
+  --participant=tester-01 \
+  --platform=web \
+  --open
+```
+
+Choose exactly one of `web`, `windows`, `linux`, or `macos`. The portable runner
+and validators are themselves checksummed campaign files. Before opening the
+station, the runner revalidates the complete campaign, checks that the assigned
+participant and cyclic family order match the manifest, selects only the
+platform's allowlisted entry and companion files, and verifies the Linux execute
+bit when relevant. Use `--preflight-only` to print the exact native launch path
+and exit without starting a server.
+
+The station binds only to `127.0.0.1`, uses `no-store` and same-origin isolation
+headers, shows the full build commit and assigned family order, and serves only
+the selected kit. For Web it serves the complete verified export with the
+correct WASM MIME type. For native platforms it shows the exact launch
+instructions but never serves an executable over HTTP. Closing the terminal or
+pressing Ctrl+C stops the station.
+
+This preflight is distribution-integrity evidence only. It creates no report,
+does not count as a participant, and cannot establish fun, accessibility,
+visual quality, control feel, or real-hardware performance.
 
 ## Prepare one kit only
 
@@ -95,12 +132,12 @@ not destroyed accidentally.
 
 ## Run one session
 
-1. Verify the campaign bundle immediately before distribution.
-2. Give the participant one exact platform build and only their assigned kit.
-3. Keep the Windows/Linux executable beside its matching `.pck`; serve the
-   complete Web folder over local HTTP.
-4. Confirm that the artifact, campaign manifest, and kit use the same full
-   commit.
+1. Start the verified station for the assigned participant and platform.
+2. Confirm the station displays the expected full commit and family order.
+3. For native sessions, launch only the file shown by the station and keep its
+   required companion files together.
+4. For Web sessions, use the station's **Open Web game** button rather than
+   opening `index.html` with `file://`.
 5. Ask the participant not to enter names or contact details.
 6. Let the participant play each family in the assigned order.
 7. Explain only the normal controls. Avoid coaching family strategy after play

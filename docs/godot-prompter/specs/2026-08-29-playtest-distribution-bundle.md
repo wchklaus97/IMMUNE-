@@ -124,10 +124,27 @@ eight research, mission-selection, combat, and pause screenshots were visually
 reviewed: the expected state was present, the canvas fit the viewport, no UI was
 clipped, and the highlighted jelly character remained visible in both profiles.
 
+The distribution is now consumed through the checksum-gated facilitator station
+documented in
+`docs/godot-prompter/specs/2026-08-29-verified-facilitator-station.md`. It
+re-verifies the campaign before every session, locks the participant order and
+platform entry, provides a loopback-only Web server with the correct WASM MIME,
+and never serves native executables over HTTP. This reduces facilitator setup
+errors but remains operational evidence rather than human evidence.
+
+The recommended copied bundle is now schema v2. It adds five separately hashed
+files under `facilitator/`—the runner and four validation dependencies—to the 14
+artifacts and 24 kit files, for 43 `SHA256SUMS` entries. The bundle therefore
+needs Node.js but no repository checkout or npm install. Schema-v1 evidence
+remains verifiable. Manifest entries are checked with `lstat`, so a symlink to
+matching content outside the campaign is rejected rather than accepted by hash;
+the same prohibition applies to root metadata entries and participant kit
+directories.
+
 ## Next safe work
 
-Verify the bundle immediately before copying it to a facilitator device, then
-assign `tester-01` through `tester-06` to real adults. Collect a minimum of three
-valid reports and preferably all six, with both locales and at least one real
-Windows integrated-GPU session. Keep raw JSON local and aggregate only reports
-from commit `81a3cbe`.
+Start the verified station for the assigned participant and platform, then give
+`tester-01` through `tester-06` to real adults. Collect a minimum of three valid
+reports and preferably all six, with both locales and at least one real Windows
+integrated-GPU session. Keep raw JSON local and aggregate only reports from
+commit `81a3cbe`.

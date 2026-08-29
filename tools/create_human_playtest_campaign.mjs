@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 
 import { createHash } from "node:crypto";
-import { createReadStream } from "node:fs";
+import { createReadStream, realpathSync } from "node:fs";
 import {
   copyFile,
+  lstat,
   mkdir,
   mkdtemp,
   readFile,
@@ -23,7 +24,15 @@ import { validateReleaseContract } from "./validate_release_contract.mjs";
 const ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)), "..");
 const PARTICIPANT_COUNT = 6;
 const KIT_FILES = ["README.md", "index.html", "manifest.json", "report.json"];
-const CAMPAIGN_ROOT_ENTRIES = ["README.md", "SHA256SUMS", "artifacts", "campaign-manifest.json", "participants"];
+const FACILITATOR_FILES = [
+  "create_human_playtest_campaign.mjs",
+  "create_human_playtest_kit.mjs",
+  "run_human_playtest_session.mjs",
+  "validate_human_playtest.mjs",
+  "validate_release_contract.mjs",
+];
+const CAMPAIGN_ROOT_ENTRIES_V1 = ["README.md", "SHA256SUMS", "artifacts", "campaign-manifest.json", "participants"];
+const CAMPAIGN_ROOT_ENTRIES_V2 = [...CAMPAIGN_ROOT_ENTRIES_V1, "facilitator"];
 
 export const CAMPAIGN_ARTIFACT_PATHS = [
   "IMMUNE-linux.pck",
@@ -46,6 +55,15 @@ function argument(name, fallback = "") {
   const prefix = `--${name}=`;
   const match = process.argv.slice(2).find((entry) => entry.startsWith(prefix));
   return match ? match.slice(prefix.length) : fallback;
+}
+
+function isMainModule(url) {
+  if (!process.argv[1]) return false;
+  try {
+    return realpathSync(fileURLToPath(url)) === realpathSync(process.argv[1]);
+  } catch {
+    return fileURLToPath(url) === resolve(process.argv[1]);
+  }
 }
 
 async function exists(path) {
@@ -156,8 +174,26 @@ Do not replace, rename, or mix the files under \`artifacts/\`. Verify the bundle
 before distribution:
 
 \`\`\`sh
-node tools/create_human_playtest_campaign.mjs --verify=/absolute/path/to/this-campaign
+node facilitator/create_human_playtest_campaign.mjs --verify=.
 \`\`\`
+
+From the campaign root, start its self-contained checksum-gated facilitator
+station for one assigned participant:
+
+\`\`\`sh
+node facilitator/run_human_playtest_session.mjs \\
+  --campaign=. \\
+  --participant=tester-01 \\
+  --platform=web \\
+  --open
+\`\`\`
+
+Use \`web\`, \`windows\`, \`linux\`, or \`macos\`. The checked-in runner and its
+validation dependencies are included under \`facilitator/\` and covered by
+\`SHA256SUMS\`; no repository checkout or npm install is required. The loopback
+station shows the exact build, assigned order, platform files, and offline form.
+For Web it also serves the complete verified export; for native platforms it
+never serves the executable over HTTP.
 
 ## Distribution
 
@@ -189,7 +225,11 @@ async function writeKit(root, kit) {
 async function verifyEntry(root, entry, errors) {
   const target = join(root, entry.path);
   try {
-    const info = await stat(target);
+    const info = await lstat(target);
+    if (info.isSymbolicLink()) {
+      errors.push(`${entry.path}: symbolic links are forbidden`);
+      return;
+    }
     if (!info.isFile()) {
       errors.push(`${entry.path}: expected a file`);
       return;
@@ -206,24 +246,30 @@ export async function verifyHumanPlaytestCampaign(campaignRoot) {
   const absoluteRoot = resolve(campaignRoot);
   const manifest = JSON.parse(await readFile(join(absoluteRoot, "campaign-manifest.json"), "utf8"));
   const errors = [];
+  const schemaVersion = manifest.schema_version;
+  const expectedRootEntries = schemaVersion === 2 ? CAMPAIGN_ROOT_ENTRIES_V2 : CAMPAIGN_ROOT_ENTRIES_V1;
   try {
     const rootDirents = await readdir(absoluteRoot, { withFileTypes: true });
     const rootEntries = rootDirents.map((entry) => entry.name).sort();
-    for (const entry of rootEntries.filter((entry) => !CAMPAIGN_ROOT_ENTRIES.includes(entry))) {
+    for (const entry of rootEntries.filter((entry) => !expectedRootEntries.includes(entry))) {
       errors.push(`unexpected campaign entry: ${entry}`);
     }
-    for (const entry of CAMPAIGN_ROOT_ENTRIES.filter((entry) => !rootEntries.includes(entry))) {
+    for (const entry of expectedRootEntries.filter((entry) => !rootEntries.includes(entry))) {
       errors.push(`missing campaign entry: ${entry}`);
     }
-    const expectedDirectories = new Set(["artifacts", "participants"]);
-    for (const entry of rootDirents.filter((entry) => CAMPAIGN_ROOT_ENTRIES.includes(entry.name))) {
+    const expectedDirectories = new Set(["artifacts", "participants", ...(schemaVersion === 2 ? ["facilitator"] : [])]);
+    for (const entry of rootDirents.filter((entry) => expectedRootEntries.includes(entry.name))) {
+      if (entry.isSymbolicLink()) {
+        errors.push(`campaign entry symbolic links are forbidden: ${entry.name}`);
+        continue;
+      }
       const shouldBeDirectory = expectedDirectories.has(entry.name);
       if (shouldBeDirectory !== entry.isDirectory()) errors.push(`campaign entry type mismatch: ${entry.name}`);
     }
   } catch (error) {
     errors.push(`campaign root: cannot scan (${error instanceof Error ? error.message : String(error)})`);
   }
-  if (manifest.schema_version !== 1) errors.push("schema_version: expected 1");
+  if (![1, 2].includes(schemaVersion)) errors.push("schema_version: expected 1 or 2");
   if (manifest.kind !== "human-playtest-campaign-bundle") errors.push("kind: unexpected campaign kind");
   if (manifest.status !== "ready-for-human-distribution") errors.push("status: campaign is not ready for distribution");
   if (typeof manifest.build?.version !== "string" || !/^\d+\.\d+\.\d+$/u.test(manifest.build.version)) {
@@ -271,6 +317,9 @@ export async function verifyHumanPlaytestCampaign(campaignRoot) {
       if (participant.kit_path !== expectedKitPath) errors.push(`${expectedCode}: kit path mismatch`);
       const kitRoot = join(absoluteRoot, expectedKitPath);
       try {
+        const kitInfo = await lstat(kitRoot);
+        if (kitInfo.isSymbolicLink()) throw new Error("participant directory symbolic links are forbidden");
+        if (!kitInfo.isDirectory()) throw new Error("participant kit path is not a directory");
         const actualKitFiles = (await readdir(kitRoot)).sort();
         const expectedKitFiles = [...KIT_FILES].sort();
         for (const file of actualKitFiles.filter((file) => !expectedKitFiles.includes(file))) {
@@ -313,10 +362,41 @@ export async function verifyHumanPlaytestCampaign(campaignRoot) {
     }
     if (starts.size !== PARTICIPANT_COUNT) errors.push("participants: starting-family rotation is not counterbalanced");
   }
+  if (schemaVersion === 2) {
+    const expectedPaths = FACILITATOR_FILES.map((name) => `facilitator/${name}`);
+    if (manifest.facilitator?.entry_path !== "facilitator/run_human_playtest_session.mjs") {
+      errors.push("facilitator.entry_path: unexpected portable runner");
+    }
+    if (!Array.isArray(manifest.facilitator?.files) || manifest.facilitator.files.length !== FACILITATOR_FILES.length) {
+      errors.push(`facilitator.files: expected ${FACILITATOR_FILES.length}`);
+    } else {
+      const actualPaths = manifest.facilitator.files.map((entry) => entry.path);
+      if (JSON.stringify(actualPaths) !== JSON.stringify(expectedPaths)) {
+        errors.push("facilitator.files: path contract mismatch");
+      } else {
+        await Promise.all(manifest.facilitator.files.map((entry) => verifyEntry(absoluteRoot, entry, errors)));
+      }
+    }
+    try {
+      const actualFiles = (await readdir(join(absoluteRoot, "facilitator"))).sort();
+      const expectedFiles = [...FACILITATOR_FILES].sort();
+      for (const file of actualFiles.filter((entry) => !expectedFiles.includes(entry))) {
+        errors.push(`facilitator: unexpected file ${file}`);
+      }
+      for (const file of expectedFiles.filter((entry) => !actualFiles.includes(entry))) {
+        errors.push(`facilitator: missing file ${file}`);
+      }
+    } catch (error) {
+      errors.push(`facilitator: cannot scan (${error instanceof Error ? error.message : String(error)})`);
+    }
+  } else if (manifest.facilitator !== undefined) {
+    errors.push("facilitator: schema v1 must not declare portable runner files");
+  }
   if (Array.isArray(manifest.artifacts) && Array.isArray(manifest.participants)) {
     const checksumEntries = [
       ...manifest.artifacts.map((entry) => ({ ...entry, path: `artifacts/${entry.path}` })),
       ...manifest.participants.flatMap((participant) => Array.isArray(participant.files) ? participant.files : []),
+      ...(schemaVersion === 2 && Array.isArray(manifest.facilitator?.files) ? manifest.facilitator.files : []),
     ];
     try {
       const savedChecksums = await readFile(join(absoluteRoot, "SHA256SUMS"), "utf8");
@@ -358,6 +438,13 @@ export async function createHumanPlaytestCampaign({
       await copyFile(join(absoluteArtifacts, path), destination);
     }
 
+    const facilitatorRoot = join(staging, "facilitator");
+    await mkdir(facilitatorRoot, { recursive: true });
+    for (const file of FACILITATOR_FILES) {
+      await copyFile(join(ROOT, "tools", file), join(facilitatorRoot, file));
+    }
+    const facilitatorFiles = await inventory(facilitatorRoot, FACILITATOR_FILES, "facilitator");
+
     const participants = [];
     for (let index = 1; index <= participantCount; index += 1) {
       const participantCode = `tester-${String(index).padStart(2, "0")}`;
@@ -376,7 +463,7 @@ export async function createHumanPlaytestCampaign({
 
     const artifactSetSha256 = createHash("sha256").update(checksumLines(artifactInventory)).digest("hex");
     const manifest = {
-      schema_version: 1,
+      schema_version: 2,
       kind: "human-playtest-campaign-bundle",
       status: "ready-for-human-distribution",
       evidence_class: "playtest-distribution-provenance-not-human-results",
@@ -389,11 +476,16 @@ export async function createHumanPlaytestCampaign({
       artifact_set_sha256: artifactSetSha256,
       artifacts: artifactInventory,
       participants,
+      facilitator: {
+        entry_path: "facilitator/run_human_playtest_session.mjs",
+        files: facilitatorFiles,
+      },
       claim_boundary: "Distribution integrity only. This bundle contains no human results and does not prove fun, accessibility, visual quality, control feel, or hardware performance.",
     };
     const allChecksums = [
       ...artifactInventory.map((entry) => ({ ...entry, path: `artifacts/${entry.path}` })),
       ...participants.flatMap((participant) => participant.files),
+      ...facilitatorFiles,
     ];
     await Promise.all([
       writeFile(join(staging, "campaign-manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`),
@@ -438,7 +530,7 @@ async function main() {
   console.log(`HUMAN_PLAYTEST_CAMPAIGN_OK participants=${result.manifest.participants.length} artifacts=${result.manifest.artifacts.length} artifact_set_sha256=${result.manifest.artifact_set_sha256} out=${result.outputRoot}`);
 }
 
-if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
+if (isMainModule(import.meta.url)) {
   main().catch((error) => {
     console.error(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;

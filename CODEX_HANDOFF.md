@@ -50,7 +50,11 @@ The latest tranche adds:
   aggregator that cannot silently mix builds or duplicate participants; and
 - an atomic six-participant distribution bundle sourced from the successful CI
   release artifact, with complete runtime sidecars, per-file SHA-256, exact
-  allowlists, tamper verification, and no-overwrite protection.
+  allowlists, tamper verification, and no-overwrite protection; and
+- a checksum-gated facilitator station that locks one participant and platform,
+  checks native entry/sidecar contracts and Linux permissions, serves Web and
+  the assigned form only on loopback, and cannot expose native executables over
+  HTTP.
 
 ## Playable loop
 
@@ -99,6 +103,11 @@ The latest tranche adds:
   provenance, exact 14-file release allowlisting, atomic artifact copying, six
   counterbalanced kits, SHA-256 inventory, distribution verification, and
   rejection of unchecksummed or path-traversing additions.
+- `tools/run_human_playtest_session.mjs` owns per-session campaign revalidation,
+  assigned participant/family order, exact platform entry and companions,
+  Linux executable permission, and the no-store loopback facilitator station.
+  It serves only the selected kit and verified Web allowlist; native
+  executables are never HTTP routes.
 - `tools/validate_human_playtest.mjs` owns the anonymous six-family report shape
   and PII rejection; `docs/playtesting/six-family-playtest-template.json` is its
   blank local-only contract and contains no fabricated participant results.
@@ -244,6 +253,29 @@ python3 tools/meshy/validate_hero_glb.py \
 
 ## Verification completed
 
+- Verified facilitator station (2026-08-29): four new tests cover exact
+  Web/Windows/Linux/macOS entry contracts, unknown participant/platform,
+  checksum tampering, lost Linux execute permissions, path traversal, loopback
+  Web serving, assigned-form isolation, and the native no-executable HTTP
+  boundary. Three more campaign tests cover portable spawned CLI execution,
+  legacy schema-v1 readability, and bundled-runner tampering/symlinks; the full root
+  suite passes 36/36. The schema-v2 portable `81a3cbe` campaign contains 14
+  artifacts, 24 kit files, and 5 facilitator files; its bundled verifier and
+  independent `shasum` both pass all 43 entries. The bundle's own runner passed
+  all four `--preflight-only` modes. A real tester-01 Web station served the
+  assigned form and 39,514,754-byte WASM with HTTP 200 and the correct
+  MIME/security headers; Chrome at 1280x720 proved full provenance, zero
+  station/game console or page errors, an unclipped no-scroll canvas, and
+  ordered `engine_ready` / `research_ready`. Visual review passed for both the
+  station and research screen. Two rehearsal findings became regressions: Web
+  `launch=` now points to `index.html` rather than the apple-touch icon, and an
+  inline station favicon prevents Chrome's implicit 404. A portability audit
+  also found `/var` versus `/private/var` could silently skip CLI `main()`;
+  realpath-aware detection and explicit bundled-command stdout assertions now
+  cover it. The copied campaign needs Node.js but no repo checkout or npm
+  install. This remains session integrity evidence, not a human result. Full
+  evidence is in
+  `docs/godot-prompter/specs/2026-08-29-verified-facilitator-station.md`.
 - Provenance-locked playtest distribution (2026-08-29): the successful
   `81a3cbe` artifact from run `33257048004` was downloaded and passed the
   strengthened release contract with exactly 14 allowlisted files. An atomic
@@ -440,9 +472,11 @@ Generated local artifacts (ignored by Git):
 - `outputs/web-release-qa-final-20260829/`
 - `outputs/human-playtest-kits/`
 - `outputs/human-playtest-campaigns/immune-v0.4.0-81a3cbe-run-33257048004/`
+- `outputs/human-playtest-campaigns/immune-v0.4.0-81a3cbe-run-33257048004-portable-v4/`
 - `outputs/release-ci-33257048004/`
 - `outputs/playtest-campaign-web-qa-81a3cbe/`
 - `outputs/ci-web-release-qa-downloaded-33258313619/`
+- `outputs/playtest-session-station-qa/`
 - `outputs/playtests/human/`
 
 ## Repeatable release commands
@@ -464,9 +498,13 @@ npm run create:playtest-campaign -- \
   --build-commit=81a3cbe1a5ba60227bbe0d8c873c55d07871b729 \
   --source-run=33257048004 \
   --source-artifact=immune-demo-81a3cbe1a5ba60227bbe0d8c873c55d07871b729 \
-  --out=outputs/human-playtest-campaigns/immune-v0.4.0-81a3cbe-run-33257048004
+  --out=outputs/human-playtest-campaigns/immune-v0.4.0-81a3cbe-run-33257048004-portable-v4
 npm run create:playtest-campaign -- \
-  --verify=outputs/human-playtest-campaigns/immune-v0.4.0-81a3cbe-run-33257048004
+  --verify=outputs/human-playtest-campaigns/immune-v0.4.0-81a3cbe-run-33257048004-portable-v4
+cd outputs/human-playtest-campaigns/immune-v0.4.0-81a3cbe-run-33257048004-portable-v4
+node facilitator/run_human_playtest_session.mjs --campaign=. \
+  --participant=tester-01 --platform=web --open
+cd ../../..
 npm run aggregate:playtests -- \
   --dir=outputs/playtests/human/raw/81a3cbe \
   --out=outputs/playtests/human/aggregate-81a3cbe.json \
@@ -522,9 +560,10 @@ commercial release. Remaining work is:
    exported-Web 4x-CPU/SwiftShader compatibility stress are complete. The
    remaining product-risk gates are longer human playtesting across all six
    families for fun/readability/accessibility/control feel and a repeat on an
-   agreed real lower-end Windows/Web machine. Use the verified 81a3cbe campaign
-   bundle and checked-in campaign plan; deterministic automation and synthetic
-   form fixtures cannot honestly prove those qualities.
+   agreed real lower-end Windows/Web machine. Use the verified 81a3cbe campaign,
+   checksum-gated facilitator station, and checked-in campaign plan;
+   deterministic automation, session preflight, and synthetic form fixtures
+   cannot honestly prove those qualities.
 5. A future public tag must be an explicit owner-approved publishing action.
    Run `node tools/validate_release_contract.mjs --tag=v0.4.0` first; no tag,
    GitHub Release, upload, notarization, or storefront submission was performed.

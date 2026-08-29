@@ -124,9 +124,13 @@ npm run create:playtest-campaign -- \
   --build-commit=81a3cbe1a5ba60227bbe0d8c873c55d07871b729 \
   --source-run=33257048004 \
   --source-artifact=immune-demo-81a3cbe1a5ba60227bbe0d8c873c55d07871b729 \
-  --out=outputs/human-playtest-campaigns/immune-v0.4.0-81a3cbe-run-33257048004
+  --out=outputs/human-playtest-campaigns/immune-v0.4.0-81a3cbe-run-33257048004-portable-v4
 npm run create:playtest-campaign -- \
-  --verify=outputs/human-playtest-campaigns/immune-v0.4.0-81a3cbe-run-33257048004
+  --verify=outputs/human-playtest-campaigns/immune-v0.4.0-81a3cbe-run-33257048004-portable-v4
+cd outputs/human-playtest-campaigns/immune-v0.4.0-81a3cbe-run-33257048004-portable-v4
+node facilitator/run_human_playtest_session.mjs --campaign=. \
+  --participant=tester-01 --platform=web --open
+cd ../../..
 node tools/validate_human_playtest.mjs /absolute/path/to/completed-report.json
 npm run aggregate:playtests -- \
   --dir=outputs/playtests/human/raw/81a3cbe \
@@ -134,9 +138,14 @@ npm run aggregate:playtests -- \
   --minimum-participants=3 --require-minimum
 ```
 
-最低三位只代表初步可比較樣本，建議六位；synthetic browser fixture 唔係真人
-證據。完整 facilitator 流程見 `docs/playtesting/README.md`，設計同失敗分析見
-`docs/godot-prompter/specs/2026-08-29-playtest-distribution-bundle.md`。
+schema-v2 campaign 會將 portable session runner 同四個驗證依賴一齊 checksum；複製
+campaign 後只需 Node.js，唔需要 repo 或 npm install。runner 會先重驗 campaign、
+tester 次序、平台入口／sidecar 同 Linux execute bit，再開一個只綁 `127.0.0.1`
+嘅 facilitator station；Web 成品會以正確 WASM MIME 由同一 station 提供，native
+executable 唔會經 HTTP 服務。最低三位只代表初步可比較樣本，建議六位；synthetic
+browser fixture 同 session preflight 都唔係真人證據。完整 facilitator 流程見
+`docs/playtesting/README.md`，設計同失敗分析見
+`docs/godot-prompter/specs/2026-08-29-verified-facilitator-station.md`。
 
 準備正式 tag 時先做精確版本 preflight；呢個命令唔會建立 tag 或發佈：
 

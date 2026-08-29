@@ -110,6 +110,9 @@ test("keeps the checked-in campaign plan aligned with the runtime contract", asy
   assert.ok(plan.required_report_contracts.includes("no-identifying-fields-or-email-values"));
   assert.ok(plan.distribution_contracts.includes("complete-four-platform-artifact-allowlist"));
   assert.ok(plan.distribution_contracts.includes("no-unchecksummed-distribution-files"));
+  assert.ok(plan.session_preflight_contracts.includes("reverify-campaign-before-each-session"));
+  assert.ok(plan.session_preflight_contracts.includes("native-executables-not-served-over-http"));
+  assert.ok(plan.session_preflight_contracts.includes("portable-runner-and-validation-dependencies-checksummed-in-bundle"));
 });
 
 test("CLI accepts a positional completed report and writes a provisional aggregate", async (context) => {

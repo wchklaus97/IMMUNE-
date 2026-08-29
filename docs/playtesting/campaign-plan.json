@@ -29,6 +29,17 @@
     "atomic-output-and-no-overwrite",
     "no-unchecksummed-distribution-files"
   ],
+  "session_preflight_contracts": [
+    "reverify-campaign-before-each-session",
+    "assigned-participant-and-family-order",
+    "platform-specific-entry-and-sidecar-contract",
+    "linux-executable-bit",
+    "loopback-only-no-store-facilitator-station",
+    "web-complete-allowlist-with-wasm-mime",
+    "native-executables-not-served-over-http",
+    "portable-runner-and-validation-dependencies-checksummed-in-bundle",
+    "no-human-evidence-created-by-preflight"
+  ],
   "facilitator_coverage_targets": [
     "both-zh_HK-and-en",
     "real-Windows-integrated-GPU",
