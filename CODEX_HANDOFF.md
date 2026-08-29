@@ -29,7 +29,9 @@ The latest tranche adds:
 - a Meshy-7-aware, no-credit-by-default M-cell generation and GLB intake
   pipeline;
 - zero-credit source-authored Fizzy production bodies for N, A, and D, with
-  fixed/mobile/relay integration; and
+  fixed/mobile/relay integration;
+- a balance-neutral biological combat arena, phase-readable cleanse zone,
+  styled mission/vitals/action HUD, and a Compatibility-safe A RelayDish; and
 - four-platform v0.4.0 release artifacts.
 
 ## Playable loop
@@ -49,7 +51,8 @@ The latest tranche adds:
 - `godot/immune/resources/combat/` defines typed mission, difficulty, family,
   and pathogen data contracts.
 - `godot/immune/scenes/combat_lane.gd` owns the three-phase mission FSM and
-  composes core, player, enemies, HUD, telemetry, and pause/settings.
+  composes core, player, enemies, presentation-only arena meshes, HUD, telemetry,
+  and pause/settings.
 - `godot/immune/combat/` owns enemy traits, projectile signatures, the core, and
   local playtest telemetry.
 - `godot/immune/ui/mission_select/` owns sequential campaign selection and family
@@ -186,6 +189,16 @@ python3 tools/meshy/validate_hero_glb.py \
   replace raw codes and internal pipeline language. The shared CSV validator
   passes 2 files / 595 rows. Evidence and rationale live in
   `docs/godot-prompter/specs/2026-08-29-player-facing-mission-desk-qa.md`.
+- Combat presentation and Web renderer pass (2026-08-29): 58-degree combat
+  camera, 20 collision-free biological arena meshes, two cleanse rings plus
+  eight signal markers, styled top HUD, and three 220x52 action controls. The
+  A RelayDish uses shadow-free, fully opaque accent geometry; its thin torus no
+  longer submits the wet-gel/transparent path that produced screen-sized black
+  triangles on Compatibility/Web. Six families × two resolutions × three states
+  produced 36/36 headed captures with zero leaks. Real Chromium Fixed-to-Relay
+  input passes at 1600x900 and 1280x720 with exact canvas fit, no scroll, and
+  zero console errors/warnings. Details live in
+  `docs/godot-prompter/specs/2026-08-29-combat-presentation-polish.md`.
 - Six-family runtime regression (2026-08-29): MISSION-01 passes for T/B/M/N/A/D
   at real 1x simulation speed with real hits, both applicable duties, and 12/12
   Core health. Focused N/D/A MISSION-06 runs and the unchanged T/B first/final
@@ -194,8 +207,8 @@ python3 tools/meshy/validate_hero_glb.py \
 - Web research app: 53/53 Node tests pass and the production single-file build
   succeeds.
 - Exports: Windows x86-64, Linux x86-64, macOS universal, and single-threaded Web
-  rebuilt sequentially after M installation with v0.4.0 content. All four export
-  logs contain no script, parse, compile, or engine errors.
+  rebuilt sequentially after the combat presentation pass with v0.4.0 content.
+  All four export logs contain no script, parse, compile, or engine errors.
 - macOS: arm64+x86_64, strict code-signature verification, ad-hoc hardened
   runtime signature, bundle/version `com.wchklaus97.immune` / `0.4.0`, and native
   `RELEASE_SMOKE_OK platform=macOS nodes=200`.
@@ -239,6 +252,7 @@ Generated local artifacts (ignored by Git):
 - `godot/immune/build/releases/web/index.html`
 - `outputs/playtests/campaign-expansion-candidate-1-12run.json`
 - `outputs/player-qa-20260829/`
+- `outputs/combat-polish-20260829/`
 
 ## Repeatable release commands
 

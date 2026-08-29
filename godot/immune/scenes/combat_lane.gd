@@ -65,6 +65,8 @@ var _result_body: Label
 var _damage_layer: Control
 var _cleanse_zone: MeshInstance3D
 var _cleanse_material: StandardMaterial3D
+var _cleanse_ring_materials: Array[StandardMaterial3D] = []
+var _arena_visuals: Node3D
 var _pause_menu: ImmunePauseMenu
 var _spawn_cd: float = 1.0
 var _fire_cd: float = 0.35
@@ -551,8 +553,10 @@ func _build_stage() -> void:
 	rim.light_energy = 0.38
 	add_child(rim)
 	_camera = Camera3D.new()
+	_camera.name = "CombatCamera"
 	_camera.position = Vector3(0.0, 13.8, 14.8)
 	_camera.rotation_degrees = Vector3(-47, 0, 0)
+	_camera.fov = 58.0
 	_camera.current = true
 	_camera_home = _camera.position
 	add_child(_camera)
@@ -566,7 +570,10 @@ func _build_stage() -> void:
 	floor_mi.position = Vector3(0.0, -0.1, 2.0)
 	var floor_mat := StandardMaterial3D.new()
 	floor_mat.albedo_color = mission_data.floor_color
-	floor_mat.roughness = 0.92
+	floor_mat.roughness = 0.68
+	floor_mat.emission_enabled = true
+	floor_mat.emission = mission_data.floor_color.lightened(0.08)
+	floor_mat.emission_energy_multiplier = 0.08
 	floor_mi.material_override = floor_mat
 	floor_body.add_child(floor_mi)
 	var floor_shape := BoxShape3D.new()
@@ -588,6 +595,114 @@ func _build_stage() -> void:
 	lane_mat.emission_energy_multiplier = 0.14
 	lane.material_override = lane_mat
 	add_child(lane)
+	_build_arena_visuals()
+
+
+func _build_arena_visuals() -> void:
+	# This layer is deliberately mesh-only: it adds biological depth without
+	# changing the floor collision, pathing bounds, or combat balance.
+	_arena_visuals = Node3D.new()
+	_arena_visuals.name = "ArenaVisuals"
+	add_child(_arena_visuals)
+	var tissue_color := mission_data.floor_color.lightened(0.16)
+	var tissue_material := _arena_material(tissue_color, 1.0, 0.08, 0.7)
+	var vein_material := _arena_material(mission_data.lane_color.lightened(0.18), 0.9, 0.24, 0.5)
+	var signal_material := _arena_material(mission_data.zone_color, 0.74, 0.34, 0.42)
+	for side in [-1.0, 1.0]:
+		var tissue_mesh := BoxMesh.new()
+		tissue_mesh.size = Vector3(4.7, 0.08, 31.0)
+		_add_arena_mesh(
+			"SideTissue%s" % ("Left" if side < 0.0 else "Right"),
+			tissue_mesh,
+			Vector3(side * 5.5, -0.015, 2.0),
+			tissue_material
+		)
+		var outer_rail := CapsuleMesh.new()
+		outer_rail.radius = 0.16
+		outer_rail.height = 30.2
+		_add_arena_mesh(
+			"OuterMembrane%s" % ("Left" if side < 0.0 else "Right"),
+			outer_rail,
+			Vector3(side * 7.35, 0.12, 2.0),
+			vein_material,
+			Vector3(90.0, 0.0, 0.0)
+		)
+		var lane_rail := CapsuleMesh.new()
+		lane_rail.radius = 0.045
+		lane_rail.height = 26.0
+		_add_arena_mesh(
+			"LaneVein%s" % ("Left" if side < 0.0 else "Right"),
+			lane_rail,
+			Vector3(side * 1.24, 0.075, 2.0),
+			signal_material,
+			Vector3(90.0, 0.0, 0.0)
+		)
+	var organoid_z: PackedFloat32Array = [-10.4, -6.2, -2.0, 2.1, 6.2, 10.4]
+	for i in organoid_z.size():
+		for side in [-1.0, 1.0]:
+			var blob := SphereMesh.new()
+			blob.radius = 0.46
+			blob.height = 0.92
+			var side_name := "L" if side < 0.0 else "R"
+			var x_offset := 0.28 if i % 2 == 0 else -0.18
+			var squash := 0.30 + float((i + (0 if side < 0.0 else 1)) % 3) * 0.055
+			_add_arena_mesh(
+				"Organoid%s%d" % [side_name, i + 1],
+				blob,
+				Vector3(side * (4.65 + x_offset), 0.14, organoid_z[i]),
+				signal_material if i % 3 == 1 else tissue_material,
+				Vector3(0.0, float(i * 17) * side, 0.0),
+				Vector3(1.55 + float(i % 2) * 0.35, squash, 0.92 + float(i % 3) * 0.16)
+			)
+	var core_ring := TorusMesh.new()
+	core_ring.inner_radius = 2.25
+	core_ring.outer_radius = 2.42
+	core_ring.rings = 32
+	core_ring.ring_segments = 8
+	_add_arena_mesh(
+		"CoreMembraneRing", core_ring, Vector3(0.0, 0.04, -10.2), vein_material
+	)
+	var home_ring := TorusMesh.new()
+	home_ring.inner_radius = 0.9
+	home_ring.outer_radius = 1.02
+	home_ring.rings = 24
+	home_ring.ring_segments = 8
+	_add_arena_mesh(
+		"PlayerHomeRing", home_ring, Vector3(0.0, 0.04, PLAYER_HOME.z), signal_material
+	)
+
+
+func _add_arena_mesh(
+	node_name: String,
+	mesh: Mesh,
+	mesh_position: Vector3,
+	material: Material,
+	mesh_rotation: Vector3 = Vector3.ZERO,
+	mesh_scale: Vector3 = Vector3.ONE
+) -> MeshInstance3D:
+	var instance := MeshInstance3D.new()
+	instance.name = node_name
+	instance.mesh = mesh
+	instance.position = mesh_position
+	instance.rotation_degrees = mesh_rotation
+	instance.scale = mesh_scale
+	instance.material_override = material
+	_arena_visuals.add_child(instance)
+	return instance
+
+
+func _arena_material(
+	color: Color, alpha: float, emission_energy: float, material_roughness: float
+) -> StandardMaterial3D:
+	var material := StandardMaterial3D.new()
+	if alpha < 0.999:
+		material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.albedo_color = Color(color, alpha)
+	material.roughness = material_roughness
+	material.emission_enabled = emission_energy > 0.0
+	material.emission = color
+	material.emission_energy_multiplier = emission_energy
+	return material
 
 
 func _build_cleanse_zone() -> void:
@@ -607,6 +722,42 @@ func _build_cleanse_zone() -> void:
 	_cleanse_material.emission_energy_multiplier = 0.18
 	_cleanse_zone.material_override = _cleanse_material
 	add_child(_cleanse_zone)
+	var ring_root := Node3D.new()
+	ring_root.name = "CleanseVisuals"
+	add_child(ring_root)
+	_cleanse_ring_materials.clear()
+	for ring_data in [
+		{"name": "OuterRing", "inner": 2.08, "outer": 2.22},
+		{"name": "InnerRing", "inner": 1.20, "outer": 1.28},
+	]:
+		var ring := MeshInstance3D.new()
+		ring.name = str(ring_data["name"])
+		var ring_mesh := TorusMesh.new()
+		ring_mesh.inner_radius = float(ring_data["inner"])
+		ring_mesh.outer_radius = float(ring_data["outer"])
+		ring_mesh.rings = 32
+		ring_mesh.ring_segments = 8
+		ring.mesh = ring_mesh
+		ring.position = Vector3(CLEANSE_CENTER.x, 0.07, CLEANSE_CENTER.z)
+		var ring_material := _arena_material(mission_data.zone_color, 0.42, 0.38, 0.38)
+		ring.material_override = ring_material
+		_cleanse_ring_materials.append(ring_material)
+		ring_root.add_child(ring)
+	for i in 8:
+		var marker := MeshInstance3D.new()
+		marker.name = "SignalMarker%02d" % (i + 1)
+		var marker_mesh := SphereMesh.new()
+		marker_mesh.radius = 0.09
+		marker_mesh.height = 0.18
+		marker.mesh = marker_mesh
+		var angle := TAU * float(i) / 8.0
+		marker.position = Vector3(
+			CLEANSE_CENTER.x + cos(angle) * 2.15,
+			0.13,
+			CLEANSE_CENTER.z + sin(angle) * 2.15
+		)
+		marker.material_override = _cleanse_ring_materials[0]
+		ring_root.add_child(marker)
 
 
 func _update_zone_look() -> void:
@@ -615,6 +766,9 @@ func _update_zone_look() -> void:
 	var active := current_phase == Phase.EXPEDITION
 	_cleanse_material.albedo_color = Color(mission_data.zone_color, 0.34 if active else 0.08)
 	_cleanse_material.emission_energy_multiplier = 0.75 if active else 0.12
+	for ring_material in _cleanse_ring_materials:
+		ring_material.albedo_color = Color(mission_data.zone_color, 0.86 if active else 0.36)
+		ring_material.emission_energy_multiplier = 1.1 if active else 0.3
 
 
 func _spawn_core() -> void:
@@ -652,12 +806,19 @@ func _build_hud() -> void:
 	top_margin.add_theme_constant_override("margin_right", 24)
 	layer.add_child(top_margin)
 	var top_row := HBoxContainer.new()
-	top_row.add_theme_constant_override("separation", 24)
+	top_row.add_theme_constant_override("separation", 16)
 	top_margin.add_child(top_row)
+	var briefing_panel := PanelContainer.new()
+	briefing_panel.name = "MissionBriefingPanel"
+	briefing_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	briefing_panel.add_theme_stylebox_override("panel", _panel_box(
+		Color(0.018, 0.052, 0.078, 0.9), Color(mission_data.zone_color, 0.34), 10
+	))
+	top_row.add_child(briefing_panel)
 	var panel := VBoxContainer.new()
 	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	panel.add_theme_constant_override("separation", 6)
-	top_row.add_child(panel)
+	briefing_panel.add_child(panel)
 	_hud = Label.new()
 	_hud.add_theme_font_size_override("font_size", 21)
 	_hud.add_theme_color_override("font_color", _Tokens.TEXT)
@@ -671,9 +832,16 @@ func _build_hud() -> void:
 	_status.add_theme_color_override("font_color", _Tokens.CYAN)
 	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	panel.add_child(_status)
+	var vitals_panel := PanelContainer.new()
+	vitals_panel.name = "VitalsPanel"
+	vitals_panel.custom_minimum_size.x = 360
+	vitals_panel.add_theme_stylebox_override("panel", _panel_box(
+		Color(0.02, 0.045, 0.065, 0.92), Color(_Tokens.CYAN, 0.26), 10
+	))
+	top_row.add_child(vitals_panel)
 	var vitals := VBoxContainer.new()
-	vitals.custom_minimum_size.x = 340
-	top_row.add_child(vitals)
+	vitals.add_theme_constant_override("separation", 8)
+	vitals_panel.add_child(vitals)
 	var core_row := HBoxContainer.new()
 	vitals.add_child(core_row)
 	var core_label := Label.new()
@@ -686,6 +854,7 @@ func _build_hud() -> void:
 	_core_bar.max_value = _Core.MAX_HP
 	_core_bar.value = _Core.MAX_HP
 	_core_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_style_progress_bar(_core_bar, _Tokens.CYAN)
 	core_row.add_child(_core_bar)
 	_core_value = Label.new()
 	_core_value.text = "%d/%d" % [_Core.MAX_HP, _Core.MAX_HP]
@@ -701,30 +870,48 @@ func _build_hud() -> void:
 	_boss_bar.show_percentage = false
 	_boss_bar.step = 0.0
 	_boss_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_style_progress_bar(_boss_bar, Color(1.0, 0.34, 0.3))
 	_boss_row.add_child(_boss_bar)
 	_boss_value = Label.new()
 	_boss_row.add_child(_boss_value)
 	var bottom_margin := MarginContainer.new()
 	bottom_margin.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	bottom_margin.offset_top = -94.0
 	bottom_margin.add_theme_constant_override("margin_left", 24)
 	bottom_margin.add_theme_constant_override("margin_right", 24)
 	bottom_margin.add_theme_constant_override("margin_bottom", 18)
 	layer.add_child(bottom_margin)
+	var action_center := CenterContainer.new()
+	action_center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	bottom_margin.add_child(action_center)
+	var action_panel := PanelContainer.new()
+	action_panel.name = "ActionTray"
+	action_panel.custom_minimum_size = Vector2(748, 70)
+	action_panel.add_theme_stylebox_override("panel", _panel_box(
+		Color(0.012, 0.032, 0.048, 0.94), Color(_Tokens.CYAN, 0.34), 12
+	))
+	action_center.add_child(action_panel)
 	var actions := HBoxContainer.new()
 	actions.alignment = BoxContainer.ALIGNMENT_CENTER
 	actions.add_theme_constant_override("separation", 10)
-	bottom_margin.add_child(actions)
+	action_panel.add_child(actions)
 	_duty_button = Button.new()
-	_duty_button.custom_minimum_size = Vector2(220, 48)
+	_duty_button.name = "DutyButton"
+	_duty_button.custom_minimum_size = Vector2(220, 52)
 	_duty_button.pressed.connect(_toggle_duty)
+	_style_action_button(_duty_button, _Tokens.family_color(String(_family_profile.family_id)), true)
 	actions.add_child(_duty_button)
 	_intel_button = Button.new()
-	_intel_button.custom_minimum_size = Vector2(220, 48)
+	_intel_button.name = "IntelButton"
+	_intel_button.custom_minimum_size = Vector2(220, 52)
 	_intel_button.pressed.connect(_show_intel_or_research)
+	_style_action_button(_intel_button, _Tokens.CYAN)
 	actions.add_child(_intel_button)
 	_back_button = Button.new()
-	_back_button.custom_minimum_size = Vector2(220, 48)
+	_back_button.name = "MissionDeskButton"
+	_back_button.custom_minimum_size = Vector2(220, 52)
 	_back_button.pressed.connect(_back_to_missions)
+	_style_action_button(_back_button, _Tokens.MUTED)
 	actions.add_child(_back_button)
 	_damage_layer = Control.new()
 	_damage_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -737,6 +924,9 @@ func _build_hud() -> void:
 	_result_panel = PanelContainer.new()
 	_result_panel.visible = false
 	_result_panel.custom_minimum_size = Vector2(680, 320)
+	_result_panel.add_theme_stylebox_override("panel", _panel_box(
+		Color(0.018, 0.045, 0.068, 0.98), Color(_Tokens.CYAN, 0.62), 16
+	))
 	result_center.add_child(_result_panel)
 	var result_box := VBoxContainer.new()
 	result_box.add_theme_constant_override("separation", 14)
@@ -758,6 +948,67 @@ func _build_hud() -> void:
 	return_button.pressed.connect(_back_to_missions)
 	result_box.add_child(return_button)
 	_refresh_prompts()
+
+
+func _panel_box(fill: Color, border: Color, radius: int) -> StyleBoxFlat:
+	var box := StyleBoxFlat.new()
+	box.bg_color = fill
+	box.border_color = border
+	box.set_border_width_all(1)
+	box.set_corner_radius_all(radius)
+	box.content_margin_left = 14.0
+	box.content_margin_right = 14.0
+	box.content_margin_top = 10.0
+	box.content_margin_bottom = 10.0
+	return box
+
+
+func _style_action_button(button: Button, accent: Color, primary: bool = false) -> void:
+	button.add_theme_font_size_override("font_size", 16)
+	button.add_theme_color_override("font_color", Color.WHITE if primary else _Tokens.TEXT)
+	button.add_theme_color_override("font_hover_color", Color.WHITE)
+	button.add_theme_color_override("font_pressed_color", Color.WHITE)
+	button.add_theme_color_override("font_focus_color", Color.WHITE)
+	button.add_theme_color_override("font_disabled_color", Color(0.42, 0.5, 0.55))
+	button.add_theme_stylebox_override("normal", _button_box(
+		Color(accent.darkened(0.72), 0.92), Color(accent, 0.72), 1
+	))
+	button.add_theme_stylebox_override("hover", _button_box(
+		Color(accent.darkened(0.58), 0.96), accent, 2
+	))
+	button.add_theme_stylebox_override("pressed", _button_box(
+		Color(accent.darkened(0.44), 0.98), accent.lightened(0.12), 2
+	))
+	button.add_theme_stylebox_override("focus", _button_box(Color.TRANSPARENT, accent, 2))
+	button.add_theme_stylebox_override("disabled", _button_box(
+		Color(0.018, 0.028, 0.038, 0.88), Color(0.12, 0.16, 0.19, 0.7), 1
+	))
+
+
+func _button_box(fill: Color, border: Color, border_width: int) -> StyleBoxFlat:
+	var box := StyleBoxFlat.new()
+	box.bg_color = fill
+	box.border_color = border
+	box.set_border_width_all(border_width)
+	box.set_corner_radius_all(9)
+	box.content_margin_left = 12.0
+	box.content_margin_right = 12.0
+	box.content_margin_top = 8.0
+	box.content_margin_bottom = 8.0
+	return box
+
+
+func _style_progress_bar(bar: ProgressBar, accent: Color) -> void:
+	var background := StyleBoxFlat.new()
+	background.bg_color = Color(0.008, 0.018, 0.026, 0.92)
+	background.border_color = Color(accent, 0.28)
+	background.set_border_width_all(1)
+	background.set_corner_radius_all(5)
+	var fill := StyleBoxFlat.new()
+	fill.bg_color = Color(accent, 0.88)
+	fill.set_corner_radius_all(5)
+	bar.add_theme_stylebox_override("background", background)
+	bar.add_theme_stylebox_override("fill", fill)
 
 
 func _build_pause_menu() -> void:

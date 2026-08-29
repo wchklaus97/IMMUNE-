@@ -32,7 +32,11 @@ static func apply(host: Node) -> void:
 		if locomotion_kit:
 			locomotion_kit.visible = false
 		if relay_dish and relay_dish.get_child_count() == 0:
-			_build_relay(relay_dish, jelly, accent)
+			_build_relay(relay_dish, accent)
+		# These cosmetic relay attachments do not need to participate in the world
+		# shadow map; opting out also avoids oversized wedges on Compatibility/Web.
+		if relay_dish:
+			_disable_geometry_shadows(relay_dish)
 	elif locomotion_kit:
 		if locomotion_kit.get_child_count() == 0:
 			_build_loco(locomotion_kit, family, jelly)
@@ -246,21 +250,37 @@ static func _build_loco(locomotion_kit: Node3D, family: String, jelly: Material)
 			_add_wheels(locomotion_kit, jelly, 0.28, 4)
 
 
-static func _build_relay(relay_dish: Node3D, jelly: Material, accent: Material) -> void:
+static func _build_relay(relay_dish: Node3D, accent: Material) -> void:
+	var relay_material := accent.duplicate() as StandardMaterial3D
+	if relay_material != null:
+		# family_look accents opt into alpha for general-purpose UI previews. Relay
+		# geometry is fully opaque and must stay out of Web's transparent depth pass.
+		relay_material.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
+	else:
+		relay_material = StandardMaterial3D.new()
+		relay_material.albedo_color = Color(0.98, 0.86, 0.45, 1.0)
+		relay_material.metallic = 0.55
+		relay_material.roughness = 0.16
 	var dish := CylinderMesh.new()
 	dish.top_radius = 0.28
 	dish.bottom_radius = 0.08
 	dish.height = 0.08
-	add_mesh(relay_dish, dish, accent, Vector3(0.0, 0.62, 0.08), Vector3(62, 0, 0))
+	var dish_mesh := add_mesh(relay_dish, dish, relay_material, Vector3(0.0, 0.62, 0.08), Vector3(62, 0, 0))
+	dish_mesh.name = "Dish"
 	var ring := TorusMesh.new()
 	ring.inner_radius = 0.16
 	ring.outer_radius = 0.22
-	add_mesh(relay_dish, ring, jelly, Vector3(0.0, -0.42, 0.0), Vector3(90, 0, 0))
+	# Compatibility/Web can mis-rasterize the derivative-heavy wet-gel shader on
+	# this very thin torus into screen-sized opaque triangles. The metallic relay
+	# accent preserves the approved gold-ring silhouette without that shader path.
+	var ring_mesh := add_mesh(relay_dish, ring, relay_material, Vector3(0.0, -0.42, 0.0), Vector3(90, 0, 0))
+	ring_mesh.name = "RelayRing"
 	var probe := CylinderMesh.new()
 	probe.top_radius = 0.03
 	probe.bottom_radius = 0.03
 	probe.height = 0.36
-	add_mesh(relay_dish, probe, accent, Vector3(0.0, 0.42, 0.18), Vector3(20, 0, 0))
+	var probe_mesh := add_mesh(relay_dish, probe, relay_material, Vector3(0.0, 0.42, 0.18), Vector3(20, 0, 0))
+	probe_mesh.name = "Probe"
 
 
 static func _add_wheels(parent: Node3D, jelly: Material, radius: float, count: int) -> void:

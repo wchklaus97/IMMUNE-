@@ -48,6 +48,7 @@ func _ready() -> void:
 	_combat.set("show_onboarding", false)
 	add_child(_combat)
 	await _settle(8)
+	_report_presentation_contract()
 	_combat.call("debug_spawn_regular")
 	await _settle(1)
 	# Stop gameplay simulation while leaving renderers, AnimationPlayers, and
@@ -57,13 +58,19 @@ func _ready() -> void:
 	await _settle(12)
 	_hide_particles(_combat)
 	await _save("%s-combat-fixed.png" % _tag)
-	_combat.call("_toggle_duty")
-	_restore_camera()
-	await _settle(24)
-	_hide_particles(_combat)
-	await _save("%s-combat-mobile.png" % _tag)
+	# Mobile duty belongs to the expedition beat. Advancing the phase first also
+	# refreshes the cleanse materials before Metal viewport readback.
 	_combat.call("debug_advance_phase")
 	await _settle(3)
+	_combat.call("_toggle_duty")
+	_restore_camera()
+	# Frame-count waits run far faster than real time in this harness. The duty
+	# animation is one second long, so wait on the clock before readback or the
+	# capture can land on a transient squash frame that obscures the arena.
+	await get_tree().create_timer(1.1).timeout
+	await _settle(6)
+	_hide_particles(_combat)
+	await _save("%s-combat-mobile.png" % _tag)
 	_combat.call("debug_advance_phase")
 	_restore_camera()
 	_freeze_simulation()
@@ -72,8 +79,13 @@ func _ready() -> void:
 	await _save("%s-combat-boss.png" % _tag)
 	AudioDirector.stop_all()
 	_combat.queue_free()
-	await get_tree().process_frame
-	await get_tree().process_frame
+	# Imported bodies allocate animation libraries and shader materials at
+	# runtime. Give deferred frees and the render thread time to release them so
+	# batch QA does not report intermittent three-resource leaks at process exit.
+	for _frame in 5:
+		await get_tree().process_frame
+	await RenderingServer.frame_post_draw
+	RenderingServer.force_sync()
 	_combat = null
 	get_tree().quit(0)
 
@@ -98,6 +110,26 @@ func _restore_camera() -> void:
 	var camera := _combat.get("_camera") as Camera3D
 	if camera != null:
 		camera.position = _combat.get("_camera_home")
+
+
+func _report_presentation_contract() -> void:
+	var camera := _combat.get("_camera") as Camera3D
+	var arena := _combat.get_node_or_null("ArenaVisuals") as Node3D
+	var cleanse := _combat.get_node_or_null("CleanseVisuals") as Node3D
+	var button_rects: Array[String] = []
+	for property in ["_duty_button", "_intel_button", "_back_button"]:
+		var button := _combat.get(property) as Button
+		if button != null:
+			button_rects.append("%s=%s" % [button.name, button.get_global_rect()])
+	print(
+		"GAMEPLAY_PRESENTATION camera_fov=%.1f arena_meshes=%d cleanse_marks=%d buttons=[%s]"
+		% [
+			camera.fov if camera != null else -1.0,
+			arena.get_child_count() if arena != null else 0,
+			cleanse.get_child_count() if cleanse != null else 0,
+			", ".join(button_rects),
+		]
+	)
 
 
 func _freeze_simulation() -> void:

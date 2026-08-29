@@ -225,6 +225,15 @@ func _run() -> void:
 				return
 		if unit.has_method("transform_duty"):
 			unit.call("transform_duty", &"mobile")
+			var duty_burst := unit.get_node_or_null("KitSwapBurst") as GPUParticles3D
+			if duty_burst != null and duty_burst.draw_pass_1 == null and duty_burst.emitting:
+				push_error("%s must not submit its unconfigured duty particle placeholder" % unit.get("family_id"))
+				quit(1)
+				return
+			if duty_burst != null and duty_burst.cast_shadow != GeometryInstance3D.SHADOW_CASTING_SETTING_OFF:
+				push_error("%s duty particle placeholder must not cast world shadows" % unit.get("family_id"))
+				quit(1)
+				return
 			if str(unit.get("family_id")) == "B":
 				var b_base := unit.get_node_or_null("DutyKits/BaseKit") as Node3D
 				var b_loco := unit.get_node_or_null("DutyKits/LocomotionKit") as Node3D
@@ -279,6 +288,16 @@ func _run() -> void:
 				invalid_a_duty = invalid_a_duty or a_relay == null or not a_relay.visible
 				if invalid_a_duty or unit.get("duty") != &"relay":
 					push_error("CHAR-BASE-A mobile request must preserve its authored body and open RelayDish")
+					quit(1)
+					return
+				if not _all_geometry_shadows_disabled(a_relay):
+					push_error("CHAR-BASE-A RelayDish must not cast oversized world shadows")
+					quit(1)
+					return
+				var a_relay_ring := a_relay.get_node_or_null("RelayRing") as MeshInstance3D
+				var a_relay_material := a_relay_ring.material_override as StandardMaterial3D if a_relay_ring != null else null
+				if a_relay_material == null or a_relay_material.transparency != BaseMaterial3D.TRANSPARENCY_DISABLED:
+					push_error("CHAR-BASE-A RelayRing must use the Compatibility-safe relay material")
 					quit(1)
 					return
 	var research := load("res://ui/research/research_network.tscn") as PackedScene
@@ -490,6 +509,50 @@ func _run() -> void:
 		push_error("Combat lane missing reusable pause/settings menu")
 		quit(1)
 		return
+	var combat_camera := combat.get("_camera") as Camera3D
+	if combat_camera == null or combat_camera.fov < 45.0 or combat_camera.fov > 60.0:
+		push_error("Combat camera must preserve the player-readable 45-60 degree framing")
+		quit(1)
+		return
+	var arena_visuals := combat.get_node_or_null("ArenaVisuals") as Node3D
+	if arena_visuals == null or arena_visuals.get_child_count() < 18:
+		push_error("Combat lane missing the biological arena presentation layer")
+		quit(1)
+		return
+	for visual in arena_visuals.get_children():
+		if visual is CollisionObject3D or visual is CollisionShape3D:
+			push_error("ArenaVisuals must remain presentation-only and collision-free")
+			quit(1)
+			return
+		if visual is not MeshInstance3D:
+			push_error("ArenaVisuals may only contain lightweight mesh instances")
+			quit(1)
+			return
+	var cleanse_visuals := combat.get_node_or_null("CleanseVisuals") as Node3D
+	if cleanse_visuals == null or cleanse_visuals.get_child_count() != 10:
+		push_error("Cleanse zone must retain two rings and eight signal markers")
+		quit(1)
+		return
+	for property in ["_duty_button", "_intel_button", "_back_button"]:
+		var action_button := combat.get(property) as Button
+		if action_button == null or not action_button.visible:
+			push_error("Combat HUD action button %s is missing or hidden" % property)
+			quit(1)
+			return
+		if action_button.size.x < 210.0 or action_button.size.y < 48.0:
+			push_error("Combat HUD action button %s is below its readable hit target" % property)
+			quit(1)
+			return
+		if action_button.get_theme_stylebox("normal") == null:
+			push_error("Combat HUD action button %s is missing its authored style" % property)
+			quit(1)
+			return
+		var action_rect := action_button.get_global_rect()
+		var viewport_rect := combat.get_viewport().get_visible_rect()
+		if action_rect.position.y < viewport_rect.size.y * 0.82 or action_rect.end.y > viewport_rect.end.y + 1.0:
+			push_error("Combat HUD action button %s escaped the bottom action tray" % property)
+			quit(1)
+			return
 	var gel_material: ShaderMaterial = look.call("gel_material", "T")
 	if gel_material == null:
 		push_error("T wet-gel material failed to build")

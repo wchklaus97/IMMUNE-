@@ -65,6 +65,7 @@ func _ready() -> void:
 	if kit_swap_burst:
 		kit_swap_burst.emitting = false
 		kit_swap_burst.one_shot = true
+		kit_swap_burst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	if family_id == &"A":
 		_cache_hover_homes()
 		_apply_hover(A_HOVER_LIFT)
@@ -158,7 +159,10 @@ func transform_duty(new_duty: StringName) -> void:
 	if new_duty == duty:
 		return
 	duty = new_duty
-	if kit_swap_burst:
+	# The base scenes intentionally keep an empty particle placeholder. Submitting
+	# a GPUParticles3D restart without both a process material and draw mesh can
+	# rasterize undefined full-screen triangles on the Compatibility/Web renderer.
+	if kit_swap_burst and kit_swap_burst.process_material != null and kit_swap_burst.draw_pass_1 != null:
 		kit_swap_burst.restart()
 	_apply_duty(new_duty)
 	if animation_player == null:
