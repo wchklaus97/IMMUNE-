@@ -14,12 +14,12 @@ jobs:
 
     steps:
       - name: Checkout with Git LFS
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           lfs: true
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22
 
@@ -96,7 +96,7 @@ jobs:
           ! grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" godot-export-windows.log godot-export-linux.log godot-export-macos.log godot-export-web.log
 
       - name: Upload release artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: immune-demo-${{ github.sha }}
           path: godot/immune/build/releases
@@ -113,7 +113,7 @@ jobs:
 
     steps:
       - name: Download release artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: immune-demo-${{ github.sha }}
           path: release
