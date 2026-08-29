@@ -229,14 +229,17 @@ uniform float bubble_shell_emission : hint_range(0.0, 0.5) = 0.0;
 uniform float bubble_seed : hint_range(0.0, 100.0) = 0.0;
 
 group_uniforms microbubbles;
-// Optional second frequency for the dense champagne-sized inclusions visible in
-// the locked jelly references. It is off by default so existing families and GPU
-// cost remain unchanged until a profile explicitly opts in.
+// Optional second 3D field. Sparse, small radii read as champagne inclusions;
+// dense overlapping radii make a continuous rounded membrane microstructure.
+// It is off by default so existing families and GPU cost remain unchanged until
+// a profile explicitly opts in.
 uniform bool microbubble_enabled = false;
-uniform float microbubble_scale : hint_range(8.0, 64.0) = 30.0;
+uniform float microbubble_scale : hint_range(8.0, 96.0) = 30.0;
 uniform float microbubble_density : hint_range(0.0, 1.0) = 0.65;
-uniform float microbubble_radius_min : hint_range(0.04, 0.35) = 0.10;
-uniform float microbubble_radius_max : hint_range(0.04, 0.40) = 0.24;
+uniform float microbubble_radius_min : hint_range(0.04, 0.75) = 0.10;
+// Keep radius + jitter below 1.0. That bound guarantees that a centre outside
+// the eight sampled lattice corners cannot touch the current point.
+uniform float microbubble_radius_max : hint_range(0.04, 0.80) = 0.24;
 uniform float microbubble_jitter : hint_range(0.0, 0.20) = 0.16;
 uniform float microbubble_softness : hint_range(0.01, 0.30) = 0.10;
 uniform float microbubble_depth : hint_range(0.0, 0.08) = 0.0;
@@ -248,10 +251,15 @@ uniform float microbubble_seed : hint_range(0.0, 100.0) = 0.0;
 
 group_uniforms inclusions;
 // Fine irregular inclusions fill the visual gap between the two explicit bubble
-// radii. They are emission-only: no high-frequency normal means no sparkle crawl
-// when the character shrinks to gameplay size.
+// radii. Profiles may also reuse the smooth field for a shallow normal; fwidth
+// keeps the visible inclusion mask stable when a character shrinks on screen.
 uniform bool inclusion_enabled = false;
 uniform float inclusion_scale : hint_range(16.0, 240.0) = 140.0;
+// Reuses the same smooth 3D field as the fine inclusions for a shallow wet-skin
+// normal. Unlike the retired triplanar Voronoi path it has no cell borders or
+// projection seams, so low values add orange-peel microvariation without a
+// cracked-net read. Zero keeps the legacy/default path bit-for-bit flat.
+uniform float inclusion_depth : hint_range(0.0, 0.04) = 0.0;
 uniform float inclusion_threshold : hint_range(0.3, 0.95) = 0.70;
 uniform float inclusion_softness : hint_range(0.01, 0.25) = 0.06;
 uniform float inclusion_emission : hint_range(0.0, 0.5) = 0.0;
@@ -352,8 +360,8 @@ vec3 bubble_hash3(vec3 p) {
 }
 
 
-// Smooth object-space value noise for sub-bubble inclusions. Eight hashes are
-// enough because this layer never drives normals or silhouettes.
+// Smooth object-space value noise shared by sub-bubble inclusions and the
+// optional shallow wet-skin normal. Eight hashes keep that combined path cheap.
 float inclusion_noise(vec3 p) {
 	vec3 cell = floor(p);
 	vec3 f = fract(p);
@@ -592,6 +600,23 @@ void fragment() {
 			microbubble.x,
 			microbubble_depth * gel_mask / max(microbubble_scale, 0.001));
 	}
+	float inclusion = 0.0;
+	if (inclusion_enabled && (inclusion_depth > 0.001 || inclusion_emission > 0.001)) {
+		float inoise = inclusion_noise(
+			v_obj_pos * inclusion_scale
+			+ vec3(inclusion_seed, inclusion_seed * 1.31, inclusion_seed * 2.17));
+		// Widen the transition by the on-screen footprint. This turns the field into
+		// stable sub-pixel sparkle density instead of a shimmering binary pattern.
+		float aa = max(inclusion_softness, fwidth(inoise) * 0.85);
+		inclusion = smoothstep(inclusion_threshold - aa, inclusion_threshold + aa, inoise);
+		if (inclusion_depth > 0.001) {
+			n = bump_normal(
+				n,
+				VERTEX,
+				inoise,
+				inclusion_depth * gel_mask / max(inclusion_scale, 0.001));
+		}
+	}
 	NORMAL = n;
 
 	float fres = clamp(1.0 - abs(dot(n, VIEW)), 0.0, 1.0);
@@ -659,16 +684,6 @@ void fragment() {
 	// the body plateau is measured over. Limited on its own so a wide flooded band
 	// cannot read as an emissive stripe painted on the outline.
 	vec3 rim = rim_color.rgb * rim_energy * pow(fres, rim_power);
-	float inclusion = 0.0;
-	if (inclusion_enabled && inclusion_emission > 0.001) {
-		float inoise = inclusion_noise(
-			v_obj_pos * inclusion_scale
-			+ vec3(inclusion_seed, inclusion_seed * 1.31, inclusion_seed * 2.17));
-		// Widen the transition by the on-screen footprint. This turns the field into
-		// stable sub-pixel sparkle density instead of a shimmering binary pattern.
-		float aa = max(inclusion_softness, fwidth(inoise) * 0.85);
-		inclusion = smoothstep(inclusion_threshold - aa, inclusion_threshold + aa, inoise);
-	}
 	vec3 bubble_glow = transmit_color.rgb * (
 		bubble_emission * bubble.x
 		+ bubble_shell_emission * bubble.y

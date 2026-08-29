@@ -77,7 +77,8 @@ func _user_args() -> Dictionary:
 
 
 ## "rim_energy:2.4,body_color:#ff8a10" -> {rim_energy: 2.4, body_color: Color(...)}
-## Floats and #hex colours both parse, so a look sweep can be driven from the shell.
+## Booleans, floats, and #hex colours parse, so feature ablations and look sweeps
+## can both be driven from the shell without passing invalid string uniforms.
 func _parse_overrides(spec: String) -> Dictionary:
 	var out := {}
 	for entry in spec.split(",", false):
@@ -86,7 +87,10 @@ func _parse_overrides(spec: String) -> Dictionary:
 			continue
 		var key := pair[0].strip_edges()
 		var raw := pair[1].strip_edges()
-		if raw.begins_with("#"):
+		var lowered := raw.to_lower()
+		if lowered == "true" or lowered == "false":
+			out[key] = lowered == "true"
+		elif raw.begins_with("#"):
 			out[key] = Color.from_string(raw, Color.MAGENTA)
 		elif raw.is_valid_float():
 			out[key] = raw.to_float()

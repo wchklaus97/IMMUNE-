@@ -11,6 +11,14 @@ uniform float edge_alpha : hint_range(0.0, 0.8) = 0.34;
 uniform float edge_power : hint_range(0.5, 10.0) = 3.2;
 uniform float shell_roughness : hint_range(0.005, 0.3) = 0.035;
 uniform float rim_emission : hint_range(0.0, 2.0) = 0.12;
+// Zero preserves the separately scaled authored M/N/A/D shell meshes. Imported
+// T/B bodies use this shader as a next pass and opt into a small normal-space
+// expansion, avoiding z-fighting without duplicating their mesh hierarchy.
+uniform float shell_thickness : hint_range(0.0, 0.03) = 0.0;
+
+void vertex() {
+	VERTEX += NORMAL * shell_thickness;
+}
 
 void fragment() {
 	float fresnel = clamp(1.0 - abs(dot(normalize(NORMAL), normalize(VIEW))), 0.0, 1.0);

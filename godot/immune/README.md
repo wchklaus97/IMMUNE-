@@ -15,9 +15,17 @@
 
 六基礎塊模仍在 `scenes/kit_lock_preview.tscn`。空白鍵切駐守／移動；A 切中繼。
 
-## Jelly Material V2
+## Jelly Material V3
 
-T 同 B 已經收斂到同 M/N/A/D 一致嘅 Fizzy 材質語言：六個 family 都保留各自顏色、輪廓同五官，同時使用 UV-free object-space 圓泡、微氣泡、細 inclusions、較短吸收路徑同 clear wet surface。T 已移除舊嘅 directional dimple rubber 感；B 保留 Meshy sculpt 同 `round_bubbles` profile。N 保留青檸色雙腳同扁嘴；A 保留琥珀色無腳 hover／Relay；D 保留深橙色雙腳同五瓣 crown。完整視覺驗證同最新 Metal 效能見 `docs/godot-prompter/specs/2026-08-29-six-family-fizzy-visual-convergence.md`；底層設計同 fallback 見 `docs/vfx/jelly-material-v2.md`。
+六個 family 保留各自顏色、輪廓同五官，同時使用 UV-free object-space
+圓膜細胞、柔和 inclusions、深色核心、透光邊緣同 clear wet surface。T/B
+使用 Compatibility-safe expanded next pass；M/N/A/D 保留獨立 authored shell，
+所以唔會重疊兩層膜。T 已移除舊 directional-dimple rubber 感並校正成參考圖嘅
+飽和橙色；B 保留 Meshy sculpt，但唔再用稀疏發光水滴圈。N 保留青檸色雙腳同
+扁嘴；A 保留琥珀色無腳 hover／Relay；D 保留深橙色雙腳同五瓣 crown。
+完整 Jelly V3 視覺、RED/GREEN 合約、效能同失敗分析見
+`docs/godot-prompter/specs/2026-08-30-jelly-membrane-v3.md`；底層 shader
+fallback 仍見 `docs/vfx/jelly-material-v2.md`。
 
 Compatibility renderer 下，細小 mobile duty accessories 會停用 shadow casting，避免 custom gel shadow pass 造成 screen-sized wedge；角色主體仍保留正常陰影。
 

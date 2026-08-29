@@ -45,8 +45,13 @@ func _ready() -> void:
 	_desk.call("_shutdown_preview")
 	_desk.queue_free()
 	_desk = null
-	for _frame in 4:
+	# Runtime gel bodies own generated ShaderMaterials and next-pass membranes.
+	# A frame-only wait can finish in microseconds and race Compatibility's render
+	# thread at process exit, so give both the scene tree and real clock a bounded
+	# drain before the final sync.
+	for _frame in 10:
 		await get_tree().process_frame
+	await get_tree().create_timer(0.1).timeout
 	RenderingServer.force_sync()
 	await get_tree().process_frame
 	get_tree().quit(0)

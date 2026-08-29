@@ -104,12 +104,17 @@ func _build_preview_stage(host: Control) -> void:
 	env.environment = environment
 	_preview_stage.add_child(env)
 	var key := DirectionalLight3D.new()
+	key.name = "CellPreviewKey"
 	key.rotation_degrees = Vector3(-40, -25, 0)
-	key.light_color = Color(1.0, 0.78, 0.58)
+	# A near-neutral warm key keeps the gel inviting without shifting T/A/D red
+	# or collapsing B/M purple. The material is colour-managed under this family
+	# review light; a strongly amber key made the mission desk lie about the asset.
+	key.light_color = Color(1.0, 0.95, 0.88)
 	key.light_energy = 1.55
 	key.shadow_enabled = true
 	_preview_stage.add_child(key)
 	var rim := DirectionalLight3D.new()
+	rim.name = "CellPreviewRim"
 	rim.rotation_degrees = Vector3(-20, 155, 0)
 	rim.light_color = Color(0.34, 0.58, 1.0)
 	rim.light_energy = 0.85

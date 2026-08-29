@@ -9,10 +9,25 @@ extends RefCounted
 ## reaches back the other way, which keeps the preload graph acyclic.
 
 const SHADER_PATH := "res://characters/gel/wet_gel.gdshader"
+const MEMBRANE_SHADER_PATH := "res://characters/gel/jelly_shell.gdshader"
 
 ## Uniforms that carry family identity. Everything else is shared look tuning.
 ## All four are derived from the one palette entry, so a family is one Color.
 const FAMILY_UNIFORMS: Array[StringName] = [&"body_color", &"deep_color", &"transmit_color", &"rim_color"]
+
+## Builder-only controls for the optional clear membrane next pass. They never
+## reach wet_gel.gdshader: the membrane is a separately compiled transparent
+## pass so the opaque core keeps stable depth ordering on Compatibility/Web.
+const MEMBRANE_OPTIONS: Array[StringName] = [
+	&"membrane_enabled",
+	&"membrane_color",
+	&"membrane_face_alpha",
+	&"membrane_edge_alpha",
+	&"membrane_edge_power",
+	&"membrane_roughness",
+	&"membrane_rim_emission",
+	&"membrane_thickness",
+]
 
 ## How far the palette colour's saturation is pushed for the body albedo. A gel
 ## absorbs its complement, so the channel opposite the family hue must sit AT
@@ -295,6 +310,7 @@ const DEFAULTS := {
 	&"bubble_shell_shadow": 0.0,
 	&"bubble_emission": 0.0,
 	&"bubble_seed": 0.0,
+	&"inclusion_depth": 0.0,
 	&"ink_low": 0.13,
 	&"ink_high": 0.36,
 	&"ink_roughness": 0.05,
@@ -333,6 +349,31 @@ static func rim_color(jelly: Color) -> Color:
 		1.0)
 
 
+static func _option(opts: Dictionary, key: StringName, fallback: Variant) -> Variant:
+	if opts.has(key):
+		return opts[key]
+	return opts.get(String(key), fallback)
+
+
+static func _make_membrane(jelly: Color, opts: Dictionary) -> ShaderMaterial:
+	var shader := load(MEMBRANE_SHADER_PATH) as Shader
+	if shader == null:
+		push_error("ImmuneGelLook: cannot load %s" % MEMBRANE_SHADER_PATH)
+		return null
+	var membrane := ShaderMaterial.new()
+	membrane.shader = shader
+	var clear_tint := rim_color(jelly).lerp(Color.WHITE, 0.16)
+	membrane.set_shader_parameter(&"shell_color", _option(opts, &"membrane_color", clear_tint))
+	membrane.set_shader_parameter(&"face_alpha", _option(opts, &"membrane_face_alpha", 0.012))
+	membrane.set_shader_parameter(&"edge_alpha", _option(opts, &"membrane_edge_alpha", 0.44))
+	membrane.set_shader_parameter(&"edge_power", _option(opts, &"membrane_edge_power", 2.6))
+	membrane.set_shader_parameter(&"shell_roughness", _option(opts, &"membrane_roughness", 0.025))
+	membrane.set_shader_parameter(&"rim_emission", _option(opts, &"membrane_rim_emission", 0.22))
+	membrane.set_shader_parameter(&"shell_thickness", _option(opts, &"membrane_thickness", 0.006))
+	membrane.render_priority = 1
+	return membrane
+
+
 static func make_material(jelly: Color, opts: Dictionary = {}) -> ShaderMaterial:
 	var shader := load(SHADER_PATH) as Shader
 	if shader == null:
@@ -348,7 +389,14 @@ static func make_material(jelly: Color, opts: Dictionary = {}) -> ShaderMaterial
 	mat.set_shader_parameter(&"rim_color", rim_color(jelly))
 	mat.set_shader_parameter(&"use_feature_tex", false)
 	for key in opts:
-		mat.set_shader_parameter(StringName(key), opts[key])
+		var uniform_name := StringName(key)
+		if MEMBRANE_OPTIONS.has(uniform_name):
+			continue
+		mat.set_shader_parameter(uniform_name, opts[key])
+	if bool(_option(opts, &"membrane_enabled", false)):
+		var membrane := _make_membrane(jelly, opts)
+		if membrane != null:
+			mat.next_pass = membrane
 	return mat
 
 

@@ -1,6 +1,6 @@
 # IMMUNE demo handoff
 
-Updated: 2026-08-29
+Updated: 2026-08-30
 
 ## Current milestone
 
@@ -33,6 +33,13 @@ The latest tranche adds:
 - six-family Fizzy visual convergence: T drops its rubber-like directional
   dimples, T/B gain the accepted bubble/microbubble/inclusion hierarchy, and the
   mission desk now presents complete close hero views at 1600x900 and 1280x720;
+- Jelly V3 membrane convergence: T/B gain Compatibility-safe expanded next-pass
+  membranes, all six bodies gain quiet overlapping rounded wet-skin cells and
+  shallow smooth 3D microvariation, bright concentric interior rings are capped,
+  T is ACES-corrected back to a saturated orange core, and the mission hero key
+  is near-neutral so it no longer shifts warm families red. The final convergence
+  also removes B's sparse emissive membrane-cell override and aligns M's
+  production wet-coat roughness with the shared 0.030 contract;
 - a balance-neutral biological combat arena, phase-readable cleanse zone,
   styled mission/vitals/action HUD, and a Compatibility-safe A RelayDish; and
 - a fail-fast 36-run headed campaign soak with telemetry v2 plus a reproducible
@@ -84,6 +91,11 @@ The latest tranche adds:
   hero-body adapter. Missing optional GLBs always retain the procedural fallback.
 - `godot/immune/characters/authored_jelly_body.gd` owns the reusable N/A/D
   production silhouette, family material profiles, face, membrane, and D crown.
+- `godot/immune/characters/gel/gel_look.gd`, `gel_profiles.gd`,
+  `wet_gel.gdshader`, and `jelly_shell.gdshader` own the shared opaque-core,
+  Compatibility-safe membrane, spectral thickness, bubble, inclusion, and
+  rounded wet-skin response. T/B use a next pass; M/N/A/D keep authored shell
+  geometry.
 - `tools/meshy/` owns the reviewed paid-generation gate, no-network tests, task
   metadata, GLB validation, and explicit M-slot installation.
 - `tools/generate_catalog_localization.mjs` owns the deterministic 406-row
@@ -224,6 +236,20 @@ post-warm-up frames. Against the existing matched StandardMaterial3D baseline,
 the p95 delta is +0.453 ms. Full visual, failure-analysis, and performance
 evidence lives in
 `docs/godot-prompter/specs/2026-08-29-six-family-fizzy-visual-convergence.md`.
+
+Jelly V3 was remeasured with three 300-frame trials per case, ten bodies, and the
+actual 1920x1080 Compatibility/OpenGL-on-Metal viewport. Median T CPU/wall p95
+moved from 0.622/2.437 ms at the fresh baseline to 0.786/2.885 ms; B's main V3
+pass, before the final constant-only parameter convergence, moved from
+0.663/2.579 ms to 0.696/2.827 ms. A matched T membrane-off ablation measured
+0.742/2.594 ms, attributing 0.291 ms wall p95 to the clear second pass. The pass
+is retained for its visibly cleaner, less-washed boundary; this is a measured
+quality/cost decision, not a no-regression claim. The Compatibility GPU timer
+again returned zero, so no GPU number is inferred. Final B constants were then
+checked in an interleaved same-window A/B and measured 4.297 ms wall p95 versus
+4.688 ms for the former overrides; cross-window absolute cadence is not compared.
+Full failures, visual probes, RED/GREEN contracts, and evidence are in
+`docs/godot-prompter/specs/2026-08-30-jelly-membrane-v3.md`.
 
 ## Meshy state and cost boundary
 
@@ -388,6 +414,23 @@ python3 tools/meshy/validate_hero_glb.py \
   bilingual overflow, T/B first/final four-run balance, six-family MISSION-01,
   four platform exports, strict ad-hoc hardened-runtime macOS signature, and the
   exported universal macOS release smoke all pass locally.
+- Jelly V3 release gate (2026-08-30): fresh six-family baseline, four rejected
+  visual candidates plus controlled colour/texture/membrane sweeps, RED/GREEN
+  material and neutral-preview-light contracts, six final close-up sets, both
+  locales at 1280x720 mission selection, and 36 bilingual combat frames pass
+  visual inspection. Capture teardown reproduced an intermittent three-resource
+  exit warning, added a bounded render drain, then passed two mission plus two
+  A-combat replay batches with no leak/error. Root tools pass 36/36; Web UI
+  53/53 plus build; Meshy 6/6; two imports, smoke, bilingual overflow, T/B 4/4,
+  all-family 6/6, four sequential exports, artifact validation, universal macOS
+  native smoke, and exported-Web Metal/SwiftShader QA all pass locally.
+- Jelly V3 final-parameter evidence (2026-08-30): B/M six-angle close-ups,
+  1600x900 English and bilingual 1280x720 mission desks, and both B/M combat
+  locales were regenerated after removing B's sparse emissive override and
+  aligning M's coat. An interleaved three-trial ten-body B comparison found the
+  final constants no slower than the former overrides (median wall p95 4.297 ms
+  versus 4.688 ms in the same noisy host window); cross-window absolute cadence
+  is not treated as an optimization claim.
 - Godot 4.6.1: two import passes, six-mission smoke, bilingual translation
   contract, 1920×1080 overflow check, and the four-run CI balance sentinel pass.
 - Research localization (2026-08-29): deterministic 406-row generator check;
@@ -490,6 +533,7 @@ Generated local artifacts (ignored by Git):
 - `outputs/ci-web-release-qa-downloaded-33258313619/`
 - `outputs/playtest-session-station-qa/`
 - `outputs/web-release-qa-ci-run-33259930365/`
+- `outputs/jelly-v3-lookdev/`
 - `outputs/playtests/human/`
 
 ## Repeatable release commands
@@ -572,8 +616,9 @@ commercial release. Remaining work is:
 4. Non-zero GPU timing, a 34-minute automated all-family campaign soak, and an
    exported-Web 4x-CPU/SwiftShader compatibility stress are complete. The
    remaining product-risk gates are longer human playtesting across all six
-   families for fun/readability/accessibility/control feel and a repeat on an
-   agreed real lower-end Windows/Web machine. Use the verified 81a3cbe campaign,
+   families for final Jelly V3 art-direction approval,
+   fun/readability/accessibility/control feel, and a repeat on an agreed real
+   lower-end Windows/Web machine. Use the verified 81a3cbe campaign,
    checksum-gated facilitator station, and checked-in campaign plan;
    deterministic automation, session preflight, and synthetic form fixtures
    cannot honestly prove those qualities.

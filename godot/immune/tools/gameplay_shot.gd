@@ -79,14 +79,16 @@ func _ready() -> void:
 	await _save("%s-combat-boss.png" % _tag)
 	AudioDirector.stop_all()
 	_combat.queue_free()
+	_combat = null
 	# Imported bodies allocate animation libraries and shader materials at
-	# runtime. Give deferred frees and the render thread time to release them so
-	# batch QA does not report intermittent three-resource leaks at process exit.
-	for _frame in 5:
+	# runtime. Frame-only waits can finish before Compatibility's render thread,
+	# so pair a bounded real-time drain with deferred frees before final sync.
+	for _frame in 10:
 		await get_tree().process_frame
+	await get_tree().create_timer(0.1).timeout
 	await RenderingServer.frame_post_draw
 	RenderingServer.force_sync()
-	_combat = null
+	await get_tree().process_frame
 	get_tree().quit(0)
 
 

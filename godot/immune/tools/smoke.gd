@@ -196,6 +196,11 @@ func _run() -> void:
 				push_error("CHAR-BASE-M fizzy profile must keep microbubbles and fine inclusions")
 				quit(1)
 				return
+			var m_noise_error := _gel_surface_noise_error(m_runtime_gel)
+			if not m_noise_error.is_empty():
+				push_error("CHAR-BASE-M %s" % m_noise_error)
+				quit(1)
+				return
 			var m_shell_material := m_shell.material_override as ShaderMaterial
 			if m_shell_material == null or m_shell_material.shader == null or not m_shell_material.shader.resource_path.ends_with("jelly_shell.gdshader"):
 				push_error("CHAR-BASE-M accepted body must keep its authored clear membrane")
@@ -588,6 +593,16 @@ func _run() -> void:
 		push_error("T Fizzy profile must enable bubbles, microbubbles, and fine inclusions")
 		quit(1)
 		return
+	var t_membrane_error := _gel_membrane_error(gel_material)
+	if not t_membrane_error.is_empty():
+		push_error("T Fizzy profile %s" % t_membrane_error)
+		quit(1)
+		return
+	var t_noise_error := _gel_surface_noise_error(gel_material)
+	if not t_noise_error.is_empty():
+		push_error("T Fizzy profile %s" % t_noise_error)
+		quit(1)
+		return
 	var b_gel_material: ShaderMaterial = look.call("gel_material", "B")
 	if b_gel_material == null:
 		push_error("B wet-gel material failed to build")
@@ -603,6 +618,16 @@ func _run() -> void:
 		return
 	if b_gel_material.get_shader_parameter("microbubble_enabled") != true or b_gel_material.get_shader_parameter("inclusion_enabled") != true:
 		push_error("B Fizzy profile must enable microbubbles and fine inclusions")
+		quit(1)
+		return
+	var b_membrane_error := _gel_membrane_error(b_gel_material)
+	if not b_membrane_error.is_empty():
+		push_error("B Fizzy profile %s" % b_membrane_error)
+		quit(1)
+		return
+	var b_noise_error := _gel_surface_noise_error(b_gel_material)
+	if not b_noise_error.is_empty():
+		push_error("B Fizzy profile %s" % b_noise_error)
 		quit(1)
 		return
 	var b_fallback: ShaderMaterial = look.call("gel_material", "B", {&"bubble_enabled": false})
@@ -851,6 +876,11 @@ func _run() -> void:
 		push_error("Mission desk must use the close hero-preview camera")
 		quit(1)
 		return
+	var preview_key := preview_stage.get_node_or_null("CellPreviewKey") as DirectionalLight3D
+	if preview_key == null or preview_key.light_color.g < 0.90 or preview_key.light_color.b < 0.84:
+		push_error("Mission desk must use a near-neutral preview key so family gel colours stay truthful")
+		quit(1)
+		return
 	var mission_buttons: Array = mission_desk.get("_mission_buttons")
 	var desk_family_buttons: Array = mission_desk.get("_family_buttons")
 	if mission_buttons.size() != 6 or desk_family_buttons.size() != 6:
@@ -907,6 +937,43 @@ func _has_wet_gel_mesh(node: Node) -> bool:
 	return _find_wet_gel_material(node) != null
 
 
+func _gel_membrane_error(gel: ShaderMaterial) -> String:
+	var membrane := gel.next_pass as ShaderMaterial
+	if membrane == null or membrane.shader == null:
+		return "must attach a clear membrane next pass"
+	if not membrane.shader.resource_path.ends_with("jelly_shell.gdshader"):
+		return "must use the Compatibility-safe clear membrane shader"
+	if float(membrane.get_shader_parameter("shell_thickness")) <= 0.0:
+		return "membrane must expand beyond the wet-gel core"
+	if float(membrane.get_shader_parameter("face_alpha")) > 0.03:
+		return "membrane face alpha must not wash out the gel core"
+	return ""
+
+
+func _gel_surface_noise_error(gel: ShaderMaterial) -> String:
+	var inclusion_depth := float(gel.get_shader_parameter("inclusion_depth"))
+	if inclusion_depth <= 0.0:
+		return "must keep a subtle smooth 3D wet-skin microtexture"
+	if inclusion_depth > 0.02:
+		return "wet-skin microtexture exceeds the anti-rubber depth limit"
+	var membrane_cell_depth := float(gel.get_shader_parameter("microbubble_depth"))
+	if membrane_cell_depth < 0.003 or membrane_cell_depth > 0.012:
+		return "rounded membrane-cell depth is outside the stable wet-skin range"
+	var membrane_cell_radius := float(gel.get_shader_parameter("microbubble_radius_max"))
+	var membrane_cell_jitter := float(gel.get_shader_parameter("microbubble_jitter"))
+	if membrane_cell_radius < 0.50 or membrane_cell_radius + membrane_cell_jitter >= 1.0:
+		return "rounded membrane cells must overlap without leaving the eight-sample lattice bound"
+	if float(gel.get_shader_parameter("microbubble_thinness")) > 0.02:
+		return "rounded membrane cells must shape highlights rather than paint thickness spots"
+	if float(gel.get_shader_parameter("bubble_shell_emission")) > 0.12:
+		return "large-bubble rings exceed the quiet interior limit"
+	if float(gel.get_shader_parameter("microbubble_shell_emission")) > 0.08:
+		return "microbubble rings exceed the quiet interior limit"
+	if float(gel.get_shader_parameter("inclusion_emission")) > 0.06:
+		return "fine inclusions exceed the quiet interior limit"
+	return ""
+
+
 func _authored_jelly_error(unit: Node, family: String) -> String:
 	var real_mesh := unit.get_node_or_null("CoreMesh/RealMesh") as Node3D
 	if real_mesh == null or unit.get("real_mesh") == null:
@@ -934,6 +1001,9 @@ func _authored_jelly_error(unit: Node, family: String) -> String:
 		return "CHAR-BASE-%s authored body must keep its Fizzy bubble material" % family
 	if runtime_gel.get_shader_parameter("microbubble_enabled") != true or runtime_gel.get_shader_parameter("inclusion_enabled") != true:
 		return "CHAR-BASE-%s authored Fizzy profile must keep microbubbles and inclusions" % family
+	var noise_error := _gel_surface_noise_error(runtime_gel)
+	if not noise_error.is_empty():
+		return "CHAR-BASE-%s %s" % [family, noise_error]
 	var shell_material := shell.material_override as ShaderMaterial
 	if shell_material == null or shell_material.shader == null or not shell_material.shader.resource_path.ends_with("jelly_shell.gdshader"):
 		return "CHAR-BASE-%s authored body must keep its clear membrane" % family
