@@ -30,6 +30,9 @@ The latest tranche adds:
   pipeline;
 - zero-credit source-authored Fizzy production bodies for N, A, and D, with
   fixed/mobile/relay integration;
+- six-family Fizzy visual convergence: T drops its rubber-like directional
+  dimples, T/B gain the accepted bubble/microbubble/inclusion hierarchy, and the
+  mission desk now presents complete close hero views at 1600x900 and 1280x720;
 - a balance-neutral biological combat arena, phase-readable cleanse zone,
   styled mission/vitals/action HUD, and a Compatibility-safe A RelayDish; and
 - a fail-fast 36-run headed campaign soak with telemetry v2 plus a reproducible
@@ -106,7 +109,12 @@ physics distorted collisions and autopilot timing; balance evidence remains 1x.
 
 `CHAR-BASE-B` remains an approved Meshy T2 hero replacement: 8,755 triangle
 faces, untextured GLB, aligned procedural ink face, hidden procedural limbs, and
-the `round_bubbles` wet-gel profile. T retains its imported authored membrane.
+the `round_bubbles` wet-gel profile. T keeps its imported authored body and face
+texture.
+Both now share the accepted Fizzy clear-surface response and three interior
+scales (round bubbles, microbubbles, and fine inclusions); T no longer uses the
+directional dimple normal field that made it read as rough rubber. This local
+material pass submitted no Meshy task and consumed no credit.
 
 `CHAR-BASE-M` retains a rejected Meshy T2 candidate for provenance only. Task
 `01a0478d-eb9c-7bb1-9d52-0b220cb002a8` produced an untextured 8,832-triangle
@@ -161,6 +169,15 @@ complete post-warm-up frames are used and the comparison is not generalized to
 Compatibility/Web/other GPUs. Full methodology is in
 `docs/godot-prompter/specs/2026-08-29-all-family-soak-and-metal-gpu.md`.
 
+After the T/B Fizzy convergence, a fresh Compatibility pass at ten bodies and
+180 frames measured T gel at 1.055 ms CPU p95 / 4.149 ms wall p95 and B gel at
+0.969 ms CPU p95 / 6.426 ms wall p95. A new Forward+/Metal trace of the current B
+profile measured 6.719 ms mean / 8.085 ms p95 / 13.117 ms max across 370
+post-warm-up frames. Against the existing matched StandardMaterial3D baseline,
+the p95 delta is +0.453 ms. Full visual, failure-analysis, and performance
+evidence lives in
+`docs/godot-prompter/specs/2026-08-29-six-family-fizzy-visual-convergence.md`.
+
 ## Meshy state and cost boundary
 
 Official Meshy API docs and the 2026-08-28 changelog were reviewed. The latest
@@ -190,6 +207,16 @@ python3 tools/meshy/validate_hero_glb.py \
 
 ## Verification completed
 
+- Six-family Fizzy convergence (2026-08-29): fresh six-angle baseline review,
+  RED-to-GREEN profile/runtime contracts, final complete mission-desk framing at
+  1600x900 and 1280x720, T/B Compatibility comparisons, and a current B
+  Forward+/Metal trace pass. The two rejected framing attempts are preserved as
+  generated evidence; no Meshy request or credit was used.
+- Current Fizzy release gate (2026-08-29): 53/53 Web tests and build, translation
+  2 files / 595 rows, Meshy 6/6 no-network tests, two Godot imports, smoke,
+  bilingual overflow, T/B first/final four-run balance, six-family MISSION-01,
+  four platform exports, strict ad-hoc hardened-runtime macOS signature, and the
+  exported universal macOS release smoke all pass locally.
 - Godot 4.6.1: two import passes, six-mission smoke, bilingual translation
   contract, 1920×1080 overflow check, and the four-run CI balance sentinel pass.
 - Research localization (2026-08-29): deterministic 406-row generator check;

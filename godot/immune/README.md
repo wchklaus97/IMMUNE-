@@ -17,7 +17,7 @@
 
 ## Jelly Material V2
 
-B 細胞使用集中式 `round_bubbles` profile；M 嘅已接受 Fizzy body 同 N/A/D 三個零-credit authored bodies 都使用 UV-free object-space 圓泡、微氣泡、細 inclusions、較短吸收路徑同 clear membrane。T 維持 `authored_membrane` profile。N 保留青檸色雙腳同扁嘴；A 保留琥珀色無腳 hover／Relay；D 保留深橙色雙腳同五瓣 crown。完整設計、效能結果同 fallback 見 `docs/vfx/jelly-material-v2.md`。
+T 同 B 已經收斂到同 M/N/A/D 一致嘅 Fizzy 材質語言：六個 family 都保留各自顏色、輪廓同五官，同時使用 UV-free object-space 圓泡、微氣泡、細 inclusions、較短吸收路徑同 clear wet surface。T 已移除舊嘅 directional dimple rubber 感；B 保留 Meshy sculpt 同 `round_bubbles` profile。N 保留青檸色雙腳同扁嘴；A 保留琥珀色無腳 hover／Relay；D 保留深橙色雙腳同五瓣 crown。完整視覺驗證同最新 Metal 效能見 `docs/godot-prompter/specs/2026-08-29-six-family-fizzy-visual-convergence.md`；底層設計同 fallback 見 `docs/vfx/jelly-material-v2.md`。
 
 Compatibility renderer 下，細小 mobile duty accessories 會停用 shadow casting，避免 custom gel shadow pass 造成 screen-sized wedge；角色主體仍保留正常陰影。
 

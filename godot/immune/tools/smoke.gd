@@ -111,6 +111,16 @@ func _run() -> void:
 			push_error("%s missing grounded feet" % unit.get("family_id"))
 			quit(1)
 			return
+		if str(unit.get("family_id")) == "T":
+			var t_runtime_gel := _find_wet_gel_material(unit)
+			if t_runtime_gel == null or t_runtime_gel.get_shader_parameter("bubble_enabled") != true:
+				push_error("CHAR-BASE-T runtime body must receive its Fizzy bubble profile")
+				quit(1)
+				return
+			if t_runtime_gel.get_shader_parameter("microbubble_enabled") != true or t_runtime_gel.get_shader_parameter("inclusion_enabled") != true:
+				push_error("CHAR-BASE-T Fizzy runtime profile must keep microbubbles and inclusions")
+				quit(1)
+				return
 		if str(unit.get("family_id")) == "B":
 			var b_real_mesh := unit.get_node_or_null("CoreMesh/RealMesh")
 			if b_real_mesh == null or unit.get("real_mesh") == null:
@@ -131,6 +141,10 @@ func _run() -> void:
 			var b_runtime_gel := _find_wet_gel_material(b_real_mesh)
 			if b_runtime_gel == null or b_runtime_gel.get_shader_parameter("bubble_enabled") != true:
 				push_error("CHAR-BASE-B imported body must receive its round-bubble runtime profile")
+				quit(1)
+				return
+			if b_runtime_gel.get_shader_parameter("microbubble_enabled") != true or b_runtime_gel.get_shader_parameter("inclusion_enabled") != true:
+				push_error("CHAR-BASE-B Fizzy runtime profile must keep microbubbles and inclusions")
 				quit(1)
 				return
 		elif str(unit.get("family_id")) == "M":
@@ -566,9 +580,12 @@ func _run() -> void:
 		push_error("Wet-gel coat is too strong for the soft reference")
 		quit(1)
 		return
-	var dimple_depth := float(gel_material.get_shader_parameter("dimple_depth"))
-	if dimple_depth < 0.01 or dimple_depth > 0.03:
-		push_error("Wet-gel microtexture must remain subtle and visible")
+	if not is_zero_approx(float(gel_material.get_shader_parameter("dimple_depth"))):
+		push_error("T Fizzy profile must disable directional legacy dimples")
+		quit(1)
+		return
+	if gel_material.get_shader_parameter("bubble_enabled") != true or gel_material.get_shader_parameter("microbubble_enabled") != true or gel_material.get_shader_parameter("inclusion_enabled") != true:
+		push_error("T Fizzy profile must enable bubbles, microbubbles, and fine inclusions")
 		quit(1)
 		return
 	var b_gel_material: ShaderMaterial = look.call("gel_material", "B")
@@ -584,8 +601,8 @@ func _run() -> void:
 		push_error("B Jelly V2 profile must disable directional legacy dimples")
 		quit(1)
 		return
-	if gel_material.get_shader_parameter("bubble_enabled") == true:
-		push_error("T Jelly V2 profile must keep its authored membrane microtexture")
+	if b_gel_material.get_shader_parameter("microbubble_enabled") != true or b_gel_material.get_shader_parameter("inclusion_enabled") != true:
+		push_error("B Fizzy profile must enable microbubbles and fine inclusions")
 		quit(1)
 		return
 	var b_fallback: ShaderMaterial = look.call("gel_material", "B", {&"bubble_enabled": false})
@@ -829,6 +846,11 @@ func _run() -> void:
 		push_error("Mission desk must confine the cell preview to its own SubViewport")
 		quit(1)
 		return
+	var preview_camera := preview_stage.get_node_or_null("CellPreviewCamera") as Camera3D
+	if preview_camera == null or preview_camera.fov > 30.0 or preview_camera.position.z > 3.8:
+		push_error("Mission desk must use the close hero-preview camera")
+		quit(1)
+		return
 	var mission_buttons: Array = mission_desk.get("_mission_buttons")
 	var desk_family_buttons: Array = mission_desk.get("_family_buttons")
 	if mission_buttons.size() != 6 or desk_family_buttons.size() != 6:
@@ -858,7 +880,7 @@ func _run() -> void:
 	TranslationServer.set_locale("zh_HK")
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(smoke_save))
 	research_state.call("seed_demo")
-	print("SMOKE_OK missions=6 families=6 save=v2 audio=ready gamepad=ready signatures=T+B traits=enrage+regen meshy=B authored_jelly=M+N+A+D gel_bubbles=B+M+N+A+D")
+	print("SMOKE_OK missions=6 families=6 save=v2 audio=ready gamepad=ready signatures=T+B traits=enrage+regen meshy=B authored_jelly=M+N+A+D gel_fizzy=T+B+M+N+A+D")
 	var audio_director := root.get_node_or_null("AudioDirector")
 	if audio_director != null:
 		audio_director.call("stop_all")

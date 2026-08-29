@@ -5,12 +5,15 @@ const _Look := preload("res://characters/family_look.gd")
 const RESEARCH_SCENE := "res://ui/research/research_network.tscn"
 const FAMILIES: PackedStringArray = ["T", "B", "M", "N", "A", "D"]
 const PREVIEW_SCALE := {
-	"T": 1.65,
-	"B": 2.20,
-	"M": 1.25,
-	"N": 1.55,
-	"A": 1.25,
-	"D": 1.30,
+	"T": 1.72,
+	"B": 1.58,
+	"M": 1.32,
+	"N": 1.62,
+	"A": 1.32,
+	"D": 1.36,
+}
+const PREVIEW_Y := {
+	"B": 0.64,
 }
 const TEXT := Color("d8e9f4")
 const MUTED := Color("91a8b8")
@@ -108,8 +111,9 @@ func _build_preview_stage(host: Control) -> void:
 	rim.light_energy = 0.85
 	_preview_stage.add_child(rim)
 	var camera := Camera3D.new()
-	camera.position = Vector3(1.25, 1.65, 4.5)
-	camera.fov = 36.0
+	camera.name = "CellPreviewCamera"
+	camera.position = Vector3(1.0, 1.45, 3.75)
+	camera.fov = 29.5
 	camera.look_at_from_position(camera.position, Vector3(0.0, 0.55, 0.0), Vector3.UP)
 	camera.current = true
 	_preview_stage.add_child(camera)
@@ -291,7 +295,7 @@ func _refresh_preview(family: StringName) -> void:
 	_preview = scene.instantiate() as ImmuneCharacter
 	if _preview == null:
 		return
-	_preview.position = Vector3(0.0, -0.12, 0.0)
+	_preview.position = Vector3(0.0, float(PREVIEW_Y.get(String(family), -0.12)), 0.0)
 	_preview.rotation_degrees.y = -18
 	_preview.scale = Vector3.ONE * float(PREVIEW_SCALE.get(String(family), 1.45))
 	_preview_stage.add_child(_preview)

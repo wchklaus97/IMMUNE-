@@ -22,32 +22,92 @@ const BASE: Dictionary = {
 	&"bubble_seed": 0.0,
 }
 
+# The production Fizzy language already approved on M/N/A/D: a smooth clear
+# coat, softened absorption, three readable interior scales, and no directional
+# triplanar dimples. T and B still keep their own sculpt, face texture, colour,
+# bubble scale, and seeds; this layer only makes their material response belong
+# to the same poured-gel family.
+const FIZZY: Dictionary = {
+	&"albedo_gain": 0.92,
+	&"body_roughness": 0.20,
+	&"coat_roughness": 0.060,
+	&"coat_strength": 1.48,
+	&"spec_energy": 0.19,
+	&"light_wrap": 0.28,
+	&"sss_amount": 0.74,
+	&"transmit_strength": 1.18,
+	&"thin_glow": 0.46,
+	&"rim_energy": 0.22,
+	&"interior_budget": 0.16,
+	&"rim_budget": 0.09,
+	&"body_budget": 0.96,
+	&"body_absorb": 0.68,
+	&"extinction_density": 2.35,
+	&"extinction_spread": 1.30,
+	&"extinction_shape": 2.05,
+	&"dimple_depth": 0.0,
+	&"bubble_enabled": true,
+	&"bubble_scale": 9.0,
+	&"bubble_density": 0.86,
+	&"bubble_radius_min": 0.12,
+	&"bubble_radius_max": 0.30,
+	&"bubble_jitter": 0.17,
+	&"bubble_softness": 0.085,
+	&"bubble_depth": 0.004,
+	&"bubble_thinness": 0.40,
+	&"bubble_shell_shadow": 0.0,
+	&"bubble_emission": 0.020,
+	&"bubble_shell_emission": 0.30,
+	&"microbubble_enabled": true,
+	&"microbubble_scale": 46.0,
+	&"microbubble_density": 0.94,
+	&"microbubble_radius_min": 0.10,
+	&"microbubble_radius_max": 0.29,
+	&"microbubble_jitter": 0.17,
+	&"microbubble_softness": 0.090,
+	&"microbubble_depth": 0.004,
+	&"microbubble_thinness": 0.20,
+	&"microbubble_shell_shadow": 0.0,
+	&"microbubble_emission": 0.022,
+	&"microbubble_shell_emission": 0.25,
+	&"inclusion_enabled": true,
+	&"inclusion_scale": 180.0,
+	&"inclusion_threshold": 0.65,
+	&"inclusion_softness": 0.050,
+	&"inclusion_emission": 0.15,
+}
+
 const FAMILY: Dictionary = {
-	# T's authored texture already carries fine membrane cells and face detail.
-	# Keep the existing dimple layer and do not stack B's larger air-pocket cue.
+	# T keeps its authored face and finer bubbles so the aggressive sculpt remains
+	# distinct without retaining the old rubber-like dimple normal field.
 	"T": {
-		&"bubble_enabled": false,
+		&"bubble_scale": 10.5,
+		&"bubble_density": 0.76,
+		&"bubble_radius_min": 0.10,
+		&"bubble_radius_max": 0.25,
+		&"bubble_seed": 223.0,
+		&"microbubble_scale": 52.0,
+		&"microbubble_seed": 227.0,
+		&"inclusion_seed": 229.0,
 	},
 	# B's UV-less Meshy sculpt exposed the directional seams of the old triplanar
 	# field. Sparse 3D spheres intersect the actual surface as round pockets from
 	# every view and make the body read as gel without changing its topology.
 	"B": {
-		&"bubble_enabled": true,
-		&"bubble_scale": 4.8,
-		&"bubble_density": 0.46,
-		&"bubble_radius_min": 0.18,
-		&"bubble_radius_max": 0.34,
+		&"bubble_scale": 8.0,
+		&"bubble_density": 0.88,
+		&"bubble_radius_min": 0.13,
+		&"bubble_radius_max": 0.31,
 		&"bubble_jitter": 0.16,
 		&"bubble_softness": 0.09,
-		&"bubble_depth": 0.014,
-		&"bubble_thinness": 0.38,
-		&"bubble_shell_shadow": 0.025,
-		&"bubble_emission": 0.035,
+		&"bubble_depth": 0.005,
+		&"bubble_thinness": 0.44,
+		&"bubble_emission": 0.024,
+		&"bubble_shell_emission": 0.34,
 		&"bubble_seed": 19.0,
-		&"dimple_depth": 0.0,
-		&"thin_curvature": 0.04,
-		&"rim_energy": 0.10,
-		&"coat_strength": 1.15,
+		&"microbubble_scale": 43.0,
+		&"microbubble_seed": 23.0,
+		&"inclusion_seed": 29.0,
 	},
 	# M uses an untextured 8.8k-triangle Meshy T2 sculpt. The legacy triplanar
 	# dimple normal exaggerates its triangles at grazing angles, so the sculpt uses
@@ -79,6 +139,9 @@ const FAMILY: Dictionary = {
 
 static func options(family: String, overrides: Dictionary = {}) -> Dictionary:
 	var merged := BASE.duplicate(true)
+	if family == "T" or family == "B":
+		for key in FIZZY:
+			merged[key] = FIZZY[key]
 	var family_values: Dictionary = FAMILY.get(family, {})
 	for key in family_values:
 		merged[key] = family_values[key]
