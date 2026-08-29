@@ -111,6 +111,26 @@ error contract 同兩秒 frame watchdog。兩種報告都保留所有 cadence �
 完整門檻、失敗證據同六家族匿名真人 playtest template 見
 `docs/godot-prompter/specs/2026-08-29-constrained-web-and-human-playtest.md`。
 
+真人測試唔再只靠手動複製 template。以下命令會為每位匿名參與者建立一個
+指定 exact build commit、六家族輪換次序、完全離線雙語表格嘅 kit；收集後逐份
+驗證，再只輸出冇 participant code、裝置文字或自由文字嘅數字 aggregate：
+
+```bash
+npm run create:playtest-kit -- \
+  --participant=tester-01 \
+  --build-commit=5021665c73862f9aa8a2e7adf514c86841f4c4e5 \
+  --out=outputs/human-playtest-kits/tester-01-build-5021665
+node tools/validate_human_playtest.mjs /absolute/path/to/completed-report.json
+npm run aggregate:playtests -- \
+  --dir=outputs/playtests/human/raw/5021665 \
+  --out=outputs/playtests/human/aggregate-5021665.json \
+  --minimum-participants=3 --require-minimum
+```
+
+最低三位只代表初步可比較樣本，建議六位；synthetic browser fixture 唔係真人
+證據。完整 facilitator 流程見 `docs/playtesting/README.md`，設計同失敗分析見
+`docs/godot-prompter/specs/2026-08-29-human-playtest-campaign-kit.md`。
+
 準備正式 tag 時先做精確版本 preflight；呢個命令唔會建立 tag 或發佈：
 
 ```bash

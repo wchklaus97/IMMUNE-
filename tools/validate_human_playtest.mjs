@@ -4,8 +4,8 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const FAMILIES = ["T", "B", "M", "N", "A", "D"];
-const RATING_KEYS = [
+export const HUMAN_PLAYTEST_FAMILIES = ["T", "B", "M", "N", "A", "D"];
+export const HUMAN_PLAYTEST_RATING_KEYS = [
   "controls",
   "combat_readability",
   "family_role_clarity",
@@ -13,15 +13,25 @@ const RATING_KEYS = [
   "game_feel",
 ];
 const FORBIDDEN_PII_KEYS = new Set([
+  "accountname",
   "address",
+  "contact",
+  "contactdetails",
   "dateofbirth",
   "dob",
   "email",
   "emailaddress",
   "fullname",
+  "firstname",
+  "ipaddress",
+  "lastname",
+  "legalname",
+  "name",
   "phone",
   "phonenumber",
   "postaladdress",
+  "socialhandle",
+  "username",
 ]);
 const INPUTS = new Set(["keyboard-mouse", "controller", "touch"]);
 const LOCALES = new Set(["zh_HK", "en"]);
@@ -37,6 +47,12 @@ function textPresent(value) {
 }
 
 function scanPiiKeys(value, path, errors) {
+  if (typeof value === "string") {
+    if (/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/iu.test(value)) {
+      errors.push(`${path}: personally identifying value is forbidden`);
+    }
+    return;
+  }
   if (Array.isArray(value)) {
     value.forEach((entry, index) => scanPiiKeys(entry, `${path}[${index}]`, errors));
     return;
@@ -59,7 +75,7 @@ function validateRatings(errors, ratings, label, allowIncomplete) {
     errors.push(`${label}: expected an object`);
     return;
   }
-  for (const key of RATING_KEYS) {
+  for (const key of HUMAN_PLAYTEST_RATING_KEYS) {
     const value = ratings[key];
     const minimum = allowIncomplete ? 0 : 1;
     if (!Number.isInteger(value) || value < minimum || value > 5) {
@@ -122,7 +138,7 @@ export function validateHumanPlaytest(report, { allowIncomplete = false } = {}) 
         errors.push(`${label}: expected an object`);
         continue;
       }
-      if (!FAMILIES.includes(session.family)) errors.push(`${label}.family: unknown ${JSON.stringify(session.family)}`);
+      if (!HUMAN_PLAYTEST_FAMILIES.includes(session.family)) errors.push(`${label}.family: unknown ${JSON.stringify(session.family)}`);
       if (seen.has(session.family)) errors.push(`${label}.family: duplicate ${session.family}`);
       seen.add(session.family);
       if (session.mission !== "MISSION-01") {
@@ -148,10 +164,10 @@ export function validateHumanPlaytest(report, { allowIncomplete = false } = {}) 
         }
       }
     }
-    for (const family of FAMILIES) {
+    for (const family of HUMAN_PLAYTEST_FAMILIES) {
       if (!seen.has(family)) errors.push(`sessions: missing family ${family}`);
     }
-    if (report.sessions.length !== FAMILIES.length) errors.push(`sessions: expected exactly ${FAMILIES.length} family sessions`);
+    if (report.sessions.length !== HUMAN_PLAYTEST_FAMILIES.length) errors.push(`sessions: expected exactly ${HUMAN_PLAYTEST_FAMILIES.length} family sessions`);
   }
 
   const summary = report.summary;
@@ -159,7 +175,7 @@ export function validateHumanPlaytest(report, { allowIncomplete = false } = {}) 
     errors.push("summary: expected an object");
   } else {
     for (const key of ["most_distinct_family", "least_distinct_family"]) {
-      if (!allowIncomplete && !FAMILIES.includes(summary[key])) errors.push(`summary.${key}: expected a family ID`);
+      if (!allowIncomplete && !HUMAN_PLAYTEST_FAMILIES.includes(summary[key])) errors.push(`summary.${key}: expected a family ID`);
       if (allowIncomplete && typeof summary[key] !== "string") errors.push(`summary.${key}: expected text`);
     }
     const replayMinimum = allowIncomplete ? 0 : 1;
@@ -170,7 +186,7 @@ export function validateHumanPlaytest(report, { allowIncomplete = false } = {}) 
   }
 
   if (errors.length) throw new Error(`HUMAN_PLAYTEST_FAILED\n- ${errors.join("\n- ")}`);
-  return { status: report.status, families: FAMILIES.length, complete: !allowIncomplete };
+  return { status: report.status, families: HUMAN_PLAYTEST_FAMILIES.length, complete: !allowIncomplete };
 }
 
 async function main() {

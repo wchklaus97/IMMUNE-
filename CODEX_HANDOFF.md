@@ -44,7 +44,10 @@ The latest tranche adds:
 - a real exported-Web research-to-combat browser gate with host-default and
   4x-CPU/SwiftShader profiles, explicit local-performance versus hosted-CI
   compatibility gate modes, failure diagnostics, eight screenshots, and an
-  anonymous six-family human-playtest intake contract.
+  anonymous six-family human-playtest intake contract; and
+- a provenance-locked, counterbalanced offline human-playtest kit with a
+  bilingual accessible form, strict PII validation, and a numeric-only campaign
+  aggregator that cannot silently mix builds or duplicate participants.
 
 ## Playable loop
 
@@ -85,9 +88,15 @@ The latest tranche adds:
   ordered opt-in QA events, canvas/resource/console contracts, baseline and
   constrained-software cadence evidence, renderer-aware warning classification,
   explicit gate modes, screenshots, and failure diagnostics.
-- `tools/validate_human_playtest.mjs` owns the anonymous six-family report shape;
-  `docs/playtesting/six-family-playtest-template.json` is its blank local-only
-  intake form and contains no fabricated participant results.
+- `tools/create_human_playtest_kit.mjs` owns exact-build participant-kit
+  generation, deterministic six-family order rotation, offline bilingual form,
+  and overwrite refusal.
+- `tools/validate_human_playtest.mjs` owns the anonymous six-family report shape
+  and PII rejection; `docs/playtesting/six-family-playtest-template.json` is its
+  blank local-only contract and contains no fabricated participant results.
+- `tools/aggregate_human_playtests.mjs` owns same-build/unique-participant
+  enforcement and numeric-only campaign summaries. `docs/playtesting/` owns the
+  facilitator instructions and machine-readable campaign plan.
 - `godot/immune/build/.gdignore` prevents generated release/capture output from
   re-entering Godot's source import pipeline.
 - `.github/workflows/ci.yml` owns Godot 4.7.2 import/smoke, catalog translation
@@ -227,6 +236,21 @@ python3 tools/meshy/validate_hero_glb.py \
 
 ## Verification completed
 
+- Offline human-playtest campaign kit (2026-08-29): 25/25 root tool tests pass,
+  including deterministic/counterbalanced kit generation, overwrite refusal,
+  free-text email and identity-field rejection, aggregate privacy, mixed-build
+  and duplicate-participant failure, plus spawned CLI coverage. The blank
+  template validates; a real generated kit was inspected in desktop dark,
+  desktop light, and 390x844 mobile. Mobile programmatic audit found one H1,
+  zero horizontal overflow, zero unlabeled fields, zero undersized ordinary
+  controls, zero external requests, and zero console errors. Empty completed
+  export was blocked; synthetic draft/complete downloads and a one-report
+  insufficient-sample aggregate were validated without treating them as human
+  evidence. The unchanged exported Godot Web artifact then passed the strict
+  local flow at 120.006 / 101.010
+  mean/p05 FPS on Metal and 15.093 / 13.387 under 4x CPU plus SwiftShader. Full
+  workflow, privacy boundary, and failure corrections are in
+  `docs/godot-prompter/specs/2026-08-29-human-playtest-campaign-kit.md`.
 - Exported-Web compatibility stress and playtest intake (2026-08-29): 15/15
   local tool tests, anonymous six-family template validation, fresh Web export,
   and real Chrome research → mission desk → B/MISSION-01 → mobile duty → pause
@@ -374,6 +398,8 @@ Generated local artifacts (ignored by Git):
 - `outputs/combat-polish-20260829/`
 - `outputs/release-hardening-20260829/`
 - `outputs/web-release-qa-final-20260829/`
+- `outputs/human-playtest-kits/`
+- `outputs/playtests/human/`
 
 ## Repeatable release commands
 
@@ -386,6 +412,14 @@ cd ../../
 npm ci --ignore-scripts
 npm run test:tools
 npm run validate:playtest-template
+npm run create:playtest-kit -- \
+  --participant=tester-01 \
+  --build-commit=5021665c73862f9aa8a2e7adf514c86841f4c4e5 \
+  --out=outputs/human-playtest-kits/tester-01-build-5021665
+npm run aggregate:playtests -- \
+  --dir=outputs/playtests/human/raw/5021665 \
+  --out=outputs/playtests/human/aggregate-5021665.json \
+  --minimum-participants=3 --require-minimum
 node tools/validate_release_contract.mjs
 node tools/generate_catalog_localization.mjs --check
 node tools/validate_translation_csv.mjs
@@ -437,8 +471,9 @@ commercial release. Remaining work is:
    exported-Web 4x-CPU/SwiftShader compatibility stress are complete. The
    remaining product-risk gates are longer human playtesting across all six
    families for fun/readability/accessibility/control feel and a repeat on an
-   agreed real lower-end Windows/Web machine. Use the checked-in anonymous
-   template; deterministic automation cannot honestly prove those qualities.
+   agreed real lower-end Windows/Web machine. Use the checked-in campaign plan
+   and generated offline kits; deterministic automation and synthetic form
+   fixtures cannot honestly prove those qualities.
 5. A future public tag must be an explicit owner-approved publishing action.
    Run `node tools/validate_release_contract.mjs --tag=v0.4.0` first; no tag,
    GitHub Release, upload, notarization, or storefront submission was performed.

@@ -76,3 +76,16 @@ test("requires anonymous participant codes and the shared MISSION-01 comparison"
   invalid.sessions[0].mission = "MISSION-02";
   assert.throws(() => validateHumanPlaytest(invalid), /participant_code|MISSION-01/u);
 });
+
+test("rejects identifying values hidden inside free-text notes", () => {
+  const invalid = report("complete");
+  invalid.sessions[0].bugs.push("Contact me at tester@example.com for a recording.");
+  assert.throws(() => validateHumanPlaytest(invalid), /personally identifying value|bugs\[0\]/u);
+});
+
+test("rejects account and contact identity fields even when their names are reformatted", () => {
+  const invalid = report("complete");
+  invalid.tester.account_name = "sample-account";
+  invalid.tester.contactDetails = "private contact details";
+  assert.throws(() => validateHumanPlaytest(invalid), /account_name|contactDetails/u);
+});

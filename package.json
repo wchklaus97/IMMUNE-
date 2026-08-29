@@ -6,6 +6,8 @@
   "scripts": {
     "test:tools": "node --test tools/*.test.mjs",
     "test:web-release": "node tools/web_release_qa.mjs",
+    "create:playtest-kit": "node tools/create_human_playtest_kit.mjs",
+    "aggregate:playtests": "node tools/aggregate_human_playtests.mjs",
     "validate:playtest-template": "node tools/validate_human_playtest.mjs docs/playtesting/six-family-playtest-template.json --allow-incomplete",
     "serve": "node tools/serve.mjs",
     "capture": "node tools/capture-ux.mjs",

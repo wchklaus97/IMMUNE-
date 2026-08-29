@@ -159,7 +159,13 @@ fields and external telemetry.
 - complete mode rejects placeholders, missing families, malformed build data,
   incomplete ratings/notes, and common PII keys.
 
-This creates a trustworthy intake format but does not fabricate six human
+The intake is now operationalized by a provenance-locked offline kit generator,
+counterbalanced family order, bilingual form, and numeric-only campaign
+aggregator. The workflow, privacy boundary, browser review, and diagnosed
+failures are recorded in
+`docs/godot-prompter/specs/2026-08-29-human-playtest-campaign-kit.md`.
+
+This creates a trustworthy collection path but does not fabricate six human
 sessions. Actual participants and actual target hardware are still required.
 
 ## Repeatable commands

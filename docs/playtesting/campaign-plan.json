@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "campaign": "IMMUNE six-family MISSION-01 human playtest",
+  "evidence_class": "human-self-report-not-automated-telemetry",
+  "privacy": "anonymous-local-only",
+  "mission": "MISSION-01",
+  "families": ["T", "B", "M", "N", "A", "D"],
+  "minimum_participants": 3,
+  "recommended_participants": 6,
+  "participant_code_pattern": "tester-[a-z0-9]{2,16}",
+  "session_design": {
+    "type": "within-subject",
+    "family_order": "deterministic-cyclic-rotation",
+    "duty_switch_requested": true
+  },
+  "required_report_contracts": [
+    "same-build-version-and-commit",
+    "unique-anonymous-participant-code",
+    "all-six-families-played",
+    "shared-MISSION-01",
+    "no-identifying-fields-or-email-values"
+  ],
+  "facilitator_coverage_targets": [
+    "both-zh_HK-and-en",
+    "real-Windows-integrated-GPU",
+    "controller-if-controller-support-is-claimed"
+  ],
+  "claim_boundary": "Meeting the minimum creates an initial comparable sample only. Facilitator review is still required for fun, accessibility, control feel, visual clarity, repeated defects, and real hardware coverage."
+}
