@@ -182,6 +182,9 @@ is compatibility stress, not a hardware benchmark.
 - Exported macOS: ad-hoc signature, arm64+x86_64, bundle/version/icon, and
   `RELEASE_SMOKE_OK platform=macOS nodes=200`: pass.
 - Exported Web baseline plus constrained software flow: pass.
+- GitHub Actions run `33262958960` on code commit
+  `2b077c57c82881cca2d33cb6c07abed4b944776a`: main Godot 4.7.2
+  validation/export plus Linux, Windows, and macOS native artifact jobs all pass.
 
 ## Failure handling recorded
 

@@ -431,6 +431,12 @@ python3 tools/meshy/validate_hero_glb.py \
   final constants no slower than the former overrides (median wall p95 4.297 ms
   versus 4.688 ms in the same noisy host window); cross-window absolute cadence
   is not treated as an optimization claim.
+- Jelly V3 remote gate (2026-08-30): GitHub Actions run `33262958960` verified
+  code commit `2b077c57c82881cca2d33cb6c07abed4b944776a` on Godot 4.7.2. The main
+  validation/export job and independent Linux, Windows, and macOS native artifact
+  jobs all completed successfully. The follow-up handoff-only commit uses
+  `[skip ci]` to record that terminal result without recursively launching the
+  same full pipeline.
 - Godot 4.6.1: two import passes, six-mission smoke, bilingual translation
   contract, 1920×1080 overflow check, and the four-run CI balance sentinel pass.
 - Research localization (2026-08-29): deterministic 406-row generator check;
