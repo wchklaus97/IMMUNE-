@@ -17,7 +17,7 @@
 
 ## Jelly Material V2
 
-B 細胞使用集中式 `round_bubbles` profile；新 M Meshy 雕模使用較淡薰衣草色嘅 `macrophage_bubbles` profile。兩者都有 UV-free object-space 圓泡、較短吸收路徑、淺層 wet-coat 高光，並關閉會放大低面數法線嘅 directional dimple。T 維持 `authored_membrane` profile；N/A/D 安全關閉泡泡。完整設計、效能結果同 fallback 見 `docs/vfx/jelly-material-v2.md`。
+B 細胞使用集中式 `round_bubbles` profile；M 嘅已接受 Fizzy body 同 N/A/D 三個零-credit authored bodies 都使用 UV-free object-space 圓泡、微氣泡、細 inclusions、較短吸收路徑同 clear membrane。T 維持 `authored_membrane` profile。N 保留青檸色雙腳同扁嘴；A 保留琥珀色無腳 hover／Relay；D 保留深橙色雙腳同五瓣 crown。完整設計、效能結果同 fallback 見 `docs/vfx/jelly-material-v2.md`。
 
 Compatibility renderer 下，細小 mobile duty accessories 會停用 shadow casting，避免 custom gel shadow pass 造成 screen-sized wedge；角色主體仍保留正常陰影。
 
@@ -45,7 +45,7 @@ godot --headless --path godot/immune --script res://tools/balance_matrix.gd -- \
 
 完整 6 關 × T/B candidate 1（12 runs）已通過；CI 另外固定跑 MISSION-01 與 MISSION-06 嘅 T/B 四組 bounded regression。結果同調校理由見 `docs/godot-prompter/specs/2026-08-28-immune-campaign-expansion-results.md`。
 
-## Meshy hero 資產管線
+## Hero 資產管線
 
 M 細胞 hero replacement 已由一次獲批准嘅 Meshy Image-to-3D 任務完成：`meshy-t2` smart topology、8,000 target faces、實際 8,832 triangles、untextured GLB，再由 Godot wet-gel shader 上色。下載檔缺少 normals；本機零-credit smooth-normal 衍生檔保持相同 geometry/bounds，已通過驗證並安裝。預設 runner 仍然只做 dry-run，避免誤重跑已完成任務：
 
@@ -57,6 +57,8 @@ python3 tools/meshy/validate_hero_glb.py \
 ```
 
 真正生成仍必須同時提供 `--execute --approve-credits 5`；不要為咗重建本地檔而再次執行，原始下載、task metadata 同 smooth derivative 已保留。完整 API、失敗處理、smooth normals、驗證同安裝流程見 `tools/meshy/README.md` 及 `docs/vfx/meshy-api-2026-08-28.md`。
+
+N/A/D 已經用 `characters/authored_jelly_body.gd` 完成零-credit production body，同 demo 嘅 fixed/mobile/relay duty 接通；唔需要 Meshy 先可以玩。三份 Meshy manifest 仍保留作將來逐個 asset 比較，但預設只 dry-run，今次驗證全部係 `network_calls=0 credits=0`。實作同驗收證據見 `docs/godot-prompter/specs/2026-08-29-nad-authored-jelly.md`。
 
 ## Release 驗證與匯出
 

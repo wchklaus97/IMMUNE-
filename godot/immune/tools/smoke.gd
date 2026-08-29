@@ -147,6 +147,12 @@ func _run() -> void:
 				push_error("CHAR-BASE-M scene must lock the accepted fizzy production adapter")
 				quit(1)
 				return
+		elif str(unit.get("family_id")) in ["N", "A", "D"]:
+			var authored_error := _authored_jelly_error(unit, str(unit.get("family_id")))
+			if not authored_error.is_empty():
+				push_error(authored_error)
+				quit(1)
+				return
 	var look := load("res://characters/family_look.gd")
 	for family in ["T", "B", "A"]:
 		if not by_family.has(family):
@@ -203,6 +209,32 @@ func _run() -> void:
 					return
 				if not _all_geometry_shadows_disabled(m_loco):
 					push_error("CHAR-BASE-M mobile accessories must not cast oversized world shadows")
+					quit(1)
+					return
+			elif str(unit.get("family_id")) in ["N", "D"]:
+				var authored_base := unit.get_node_or_null("DutyKits/BaseKit") as Node3D
+				var authored_loco := unit.get_node_or_null("DutyKits/LocomotionKit") as Node3D
+				var authored_body := unit.get_node_or_null("CoreMesh/RealMesh") as Node3D
+				var invalid_authored_duty := authored_body == null or not authored_body.visible
+				invalid_authored_duty = invalid_authored_duty or authored_base == null or authored_base.visible
+				invalid_authored_duty = invalid_authored_duty or authored_loco == null or not authored_loco.visible
+				if invalid_authored_duty:
+					push_error("CHAR-BASE-%s duty swap must preserve its authored body" % unit.get("family_id"))
+					quit(1)
+					return
+				if not _all_geometry_shadows_disabled(authored_loco):
+					push_error("CHAR-BASE-%s mobile accessories must not cast oversized world shadows" % unit.get("family_id"))
+					quit(1)
+					return
+			elif str(unit.get("family_id")) == "A":
+				var a_base := unit.get_node_or_null("DutyKits/BaseKit") as Node3D
+				var a_relay := unit.get_node_or_null("DutyKits/RelayDish") as Node3D
+				var a_body := unit.get_node_or_null("CoreMesh/RealMesh") as Node3D
+				var invalid_a_duty := a_body == null or not a_body.visible
+				invalid_a_duty = invalid_a_duty or a_base == null or a_base.visible
+				invalid_a_duty = invalid_a_duty or a_relay == null or not a_relay.visible
+				if invalid_a_duty or unit.get("duty") != &"relay":
+					push_error("CHAR-BASE-A mobile request must preserve its authored body and open RelayDish")
 					quit(1)
 					return
 	var research := load("res://ui/research/research_network.tscn") as PackedScene
@@ -623,7 +655,7 @@ func _run() -> void:
 		await process_frame
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(smoke_save))
 	research_state.call("seed_demo")
-	print("SMOKE_OK missions=6 families=6 save=v2 audio=ready gamepad=ready signatures=T+B traits=enrage+regen meshy=B reference_m=fizzy gel_bubbles=B+M")
+	print("SMOKE_OK missions=6 families=6 save=v2 audio=ready gamepad=ready signatures=T+B traits=enrage+regen meshy=B authored_jelly=M+N+A+D gel_bubbles=B+M+N+A+D")
 	var audio_director := root.get_node_or_null("AudioDirector")
 	if audio_director != null:
 		audio_director.call("stop_all")
@@ -648,6 +680,59 @@ func _has_gamepad_event(action: StringName) -> bool:
 
 func _has_wet_gel_mesh(node: Node) -> bool:
 	return _find_wet_gel_material(node) != null
+
+
+func _authored_jelly_error(unit: Node, family: String) -> String:
+	var real_mesh := unit.get_node_or_null("CoreMesh/RealMesh") as Node3D
+	if real_mesh == null or unit.get("real_mesh") == null:
+		return "CHAR-BASE-%s must realize its zero-credit authored jelly body" % family
+	var face := unit.get_node_or_null("Face") as Node3D
+	var limbs := unit.get_node_or_null("LimbKit") as Node3D
+	if face == null or face.visible or limbs == null or limbs.visible:
+		return "CHAR-BASE-%s authored body must replace the procedural face and limbs" % family
+	if unit.get_node_or_null("WeaponSocket").get_child_count() != 0:
+		return "CHAR-BASE-%s authored body must replace procedural identity props" % family
+	if unit.get_node_or_null("CoreMesh/Bubble0") != null:
+		return "CHAR-BASE-%s authored body must replace procedural bubble geometry" % family
+	var base := unit.get_node_or_null("DutyKits/BaseKit") as Node3D
+	if base == null or base.get_child_count() != 0:
+		return "CHAR-BASE-%s authored body must replace the procedural fixed kit" % family
+	var body := real_mesh.get_node_or_null("Body") as MeshInstance3D
+	var shell := real_mesh.get_node_or_null("BodyShell") as MeshInstance3D
+	if body == null or shell == null:
+		return "CHAR-BASE-%s authored body must expose Body and BodyShell" % family
+	for authored_path in ["EyeL", "EyeR", "MouthCavity"]:
+		if real_mesh.get_node_or_null(authored_path) == null:
+			return "CHAR-BASE-%s authored body missing %s" % [family, authored_path]
+	var runtime_gel := body.material_override as ShaderMaterial
+	if runtime_gel == null or runtime_gel.get_shader_parameter("bubble_enabled") != true:
+		return "CHAR-BASE-%s authored body must keep its Fizzy bubble material" % family
+	if runtime_gel.get_shader_parameter("microbubble_enabled") != true or runtime_gel.get_shader_parameter("inclusion_enabled") != true:
+		return "CHAR-BASE-%s authored Fizzy profile must keep microbubbles and inclusions" % family
+	var shell_material := shell.material_override as ShaderMaterial
+	if shell_material == null or shell_material.shader == null or not shell_material.shader.resource_path.ends_with("jelly_shell.gdshader"):
+		return "CHAR-BASE-%s authored body must keep its clear membrane" % family
+	var expected_path := "res://characters/base_%s/reference_body.tscn" % family.to_lower()
+	if not bool(unit.get("imported_preserves_materials")) or str(unit.get("imported_model_path")) != expected_path:
+		return "CHAR-BASE-%s scene must lock its authored production adapter" % family
+	for replacement_flag in ["imported_replaces_limbs", "imported_replaces_identity", "imported_replaces_bubbles", "imported_replaces_fixed_kit"]:
+		if not bool(unit.get(replacement_flag)):
+			return "CHAR-BASE-%s production adapter must lock %s" % [family, replacement_flag]
+	if not _all_geometry_shadows_disabled(real_mesh):
+		return "CHAR-BASE-%s authored body must not cast internal primitive shadows" % family
+	if family == "A":
+		if real_mesh.get_node_or_null("FootL") != null or real_mesh.get_node_or_null("FootR") != null:
+			return "CHAR-BASE-A authored body must preserve its footless hover silhouette"
+	else:
+		if real_mesh.get_node_or_null("FootL") == null or real_mesh.get_node_or_null("FootR") == null:
+			return "CHAR-BASE-%s authored body must preserve its grounded feet" % family
+	if family == "N" and real_mesh.get_node_or_null("MouthRim") == null:
+		return "CHAR-BASE-N authored body must preserve its short pill mouth"
+	if family == "D":
+		for crown_index in 5:
+			if real_mesh.get_node_or_null("Crown%d" % crown_index) == null:
+				return "CHAR-BASE-D authored body must preserve all five crown lobes"
+	return ""
 
 
 func _all_geometry_shadows_disabled(node: Node) -> bool:

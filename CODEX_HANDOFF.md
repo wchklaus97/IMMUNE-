@@ -19,7 +19,9 @@ The latest tranche adds:
 - Traditional Chinese / English mission and combat UI with a persisted runtime
   locale selector;
 - a Meshy-7-aware, no-credit-by-default M-cell generation and GLB intake
-  pipeline; and
+  pipeline;
+- zero-credit source-authored Fizzy production bodies for N, A, and D, with
+  fixed/mobile/relay integration; and
 - four-platform v0.4.0 release artifacts.
 
 ## Playable loop
@@ -46,6 +48,8 @@ The latest tranche adds:
   preview; `ui/research/` owns the permanent network.
 - `godot/immune/characters/character_root.gd` is the shared procedural/imported
   hero-body adapter. Missing optional GLBs always retain the procedural fallback.
+- `godot/immune/characters/authored_jelly_body.gd` owns the reusable N/A/D
+  production silhouette, family material profiles, face, membrane, and D crown.
 - `tools/meshy/` owns the reviewed paid-generation gate, no-network tests, task
   metadata, GLB validation, and explicit M-slot installation.
 - `.github/workflows/ci.yml` owns Godot 4.7.2 import/smoke, bounded first/final
@@ -84,10 +88,20 @@ shipping M scene now instantiates
 with embedded eyes and mouth, medium bubbles, microbubbles, fine inclusions, and a
 Compatibility-safe fresnel membrane. The adapter preserves those authored
 materials and suppresses only M's conflicting procedural face, limbs, identity,
-bubbles, and fixed kit; the existing mobile duty kit remains functional. New
-shader paths default off for every other family. The rejected GLB remains in the
-repository but is no longer the M runtime body and must not be used as the visual
-baseline for N/A/D. N/A/D remain procedural and their paid tasks are paused.
+bubbles, and fixed kit; the existing mobile duty kit remains functional. The
+rejected GLB remains in the repository but is no longer the M runtime body.
+
+`CHAR-BASE-N`, `CHAR-BASE-A`, and `CHAR-BASE-D` are now source-authored Fizzy
+production bodies, not generic runtime blockouts. One reusable builder keeps
+family-specific colours and random seeds while matching the locked silhouette:
+N is lime, grounded, and has a short pill mouth; A is amber, footless, hovering,
+and relay-only; D is deep orange, grounded, and has five crown lobes. Their
+adapters preserve the authored bubble/microbubble/inclusion core and clear
+membrane, suppress conflicting procedural pieces, and retain N/D locomotion or A
+RelayDish as appropriate. The pass used no Meshy POST and consumed no credit.
+Six-angle and gameplay evidence is checked in under
+`godot/immune/build/shots/nad-production*`. Full implementation evidence lives
+in `docs/godot-prompter/specs/2026-08-29-nad-authored-jelly.md`.
 
 Jelly performance was repeated on 2026-08-28 with ten B bodies, three synced
 300-frame trials at 1920×1080 on Apple M4 Pro Compatibility/Metal. Median CPU /
@@ -165,6 +179,13 @@ python3 tools/meshy/validate_hero_glb.py \
 - CI macOS smoke logging no longer assumes Godot creates `--log-file`. The app's
   stdout/stderr is captured with `tee`, so the successful release marker visible
   in Actions is also guaranteed to exist in the file checked by `grep`.
+- N/A/D authored production pass (2026-08-29): three locked silhouettes wired
+  into their real scenes with family Fizzy cores and clear membranes; 18
+  multi-angle and 9 gameplay captures; expanded body/duty/shadow smoke; 53/53
+  Web tests; 6/6 Meshy workflow tests; three manifest dry-runs with
+  `network_calls=0 credits=0`; HUD overflow; four-run T/B balance sentinel; four
+  release exports; exported macOS native smoke; and Web HTML/WASM/PCK HTTP checks
+  all pass locally.
 
 Generated local artifacts (ignored by Git):
 
@@ -199,11 +220,13 @@ Run exports sequentially. Parallel Godot exporters race on the shared
 
 ## Honest status and next development tranche
 
-The six-mission vertical slice and local cross-platform release pipeline are
-complete. It is not a content-complete commercial release. Remaining work is:
+The six-mission vertical slice, all six base-cell playable bodies, and local
+cross-platform release pipeline are complete. It is not a content-complete
+commercial release. Remaining work is:
 
-1. Replace N/A/D procedural hero bodies only after each reference and cost gate
-   is approved; never batch paid retries after a failed task.
+1. Keep the N/A/D Meshy manifests as optional comparisons only. Any paid task
+   still needs a separate exact 5-credit approval; never batch paid retries after
+   a failed task. The playable demo no longer depends on these generations.
 2. Expand English localization from the complete mission/combat flow into the
    200-node authored research catalog; that source content remains zh-HK-first.
 3. Treat the checked-in CI on Godot 4.7.2 as the final remote gate. Local proof is
