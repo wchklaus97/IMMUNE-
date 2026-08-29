@@ -2,59 +2,59 @@ keys,zh_HK,en
 RESEARCH_CORE_IMMUNE_NAME,免疫核心,Immune Core
 RESEARCH_CORE_IMMUNE_DESCRIPTION,整張永久研究網絡的起點。核心外圍是六層全域基建（防線、遠征、戰爭、機動、融合、生存）與狀態化學，不綁單一家族。,"The origin of the permanent research network. Six global infrastructure rings—Defense, Expedition, War, Mobility, Fusion, and Survival—plus Status Chemistry surround the Core without belonging to one family."
 RESEARCH_CHAR_BASE_T_NAME,T 細胞,T Cell
-RESEARCH_CHAR_BASE_T_DESCRIPTION,T 細胞 的角色身份錨點，標示此家族的研究扇區起點。,T Cell identity anchor marking the start of this family's research sector.
+RESEARCH_CHAR_BASE_T_DESCRIPTION,T 細胞 的角色身份錨點，標示此家族的研究扇區起點。,Marks the entry point to the T Cell research sector.
 RESEARCH_CHAR_BASE_B_NAME,B 細胞,B Cell
-RESEARCH_CHAR_BASE_B_DESCRIPTION,B 細胞 的角色身份錨點，標示此家族的研究扇區起點。,B Cell identity anchor marking the start of this family's research sector.
+RESEARCH_CHAR_BASE_B_DESCRIPTION,B 細胞 的角色身份錨點，標示此家族的研究扇區起點。,Marks the entry point to the B Cell research sector.
 RESEARCH_CHAR_BASE_M_NAME,巨噬細胞,Macrophage
-RESEARCH_CHAR_BASE_M_DESCRIPTION,巨噬細胞 的角色身份錨點，標示此家族的研究扇區起點。,Macrophage identity anchor marking the start of this family's research sector.
+RESEARCH_CHAR_BASE_M_DESCRIPTION,巨噬細胞 的角色身份錨點，標示此家族的研究扇區起點。,Marks the entry point to the Macrophage research sector.
 RESEARCH_CHAR_BASE_N_NAME,NK 細胞,NK Cell
-RESEARCH_CHAR_BASE_N_DESCRIPTION,NK 細胞 的角色身份錨點，標示此家族的研究扇區起點。,NK Cell identity anchor marking the start of this family's research sector.
+RESEARCH_CHAR_BASE_N_DESCRIPTION,NK 細胞 的角色身份錨點，標示此家族的研究扇區起點。,Marks the entry point to the NK Cell research sector.
 RESEARCH_CHAR_BASE_A_NAME,抗體構造體,Antibody Construct
-RESEARCH_CHAR_BASE_A_DESCRIPTION,抗體構造體 的角色身份錨點，標示此家族的研究扇區起點。,Antibody Construct identity anchor marking the start of this family's research sector.
+RESEARCH_CHAR_BASE_A_DESCRIPTION,抗體構造體 的角色身份錨點，標示此家族的研究扇區起點。,Marks the entry point to the Antibody Construct research sector.
 RESEARCH_CHAR_BASE_D_NAME,樹突細胞,Dendritic Cell
-RESEARCH_CHAR_BASE_D_DESCRIPTION,樹突細胞 的角色身份錨點，標示此家族的研究扇區起點。,Dendritic Cell identity anchor marking the start of this family's research sector.
+RESEARCH_CHAR_BASE_D_DESCRIPTION,樹突細胞 的角色身份錨點，標示此家族的研究扇區起點。,Marks the entry point to the Dendritic Cell research sector.
 RESEARCH_CHAR_PAIR_TB_NAME,記憶獵手,Memory Hunter
-RESEARCH_CHAR_PAIR_TB_DESCRIPTION,記憶獵手 雙家族融合角色錨點，匯聚 T 與 B 兩系能力。,"Memory Hunter, a dual-family fusion character anchor combining the T and B lineages."
+RESEARCH_CHAR_PAIR_TB_DESCRIPTION,記憶獵手 雙家族融合角色錨點，匯聚 T 與 B 兩系能力。,Memory Hunter is a dual-family fusion combining the T Cell and B Cell lineages.
 RESEARCH_CHAR_PAIR_TM_NAME,吞噬突擊,Phagocyte Assault
-RESEARCH_CHAR_PAIR_TM_DESCRIPTION,吞噬突擊 雙家族融合角色錨點，匯聚 T 與 M 兩系能力。,"Phagocyte Assault, a dual-family fusion character anchor combining the T and M lineages."
+RESEARCH_CHAR_PAIR_TM_DESCRIPTION,吞噬突擊 雙家族融合角色錨點，匯聚 T 與 M 兩系能力。,Phagocyte Assault is a dual-family fusion combining the T Cell and Macrophage lineages.
 RESEARCH_CHAR_PAIR_TN_NAME,細胞毒刃,Cytotoxic Blade
-RESEARCH_CHAR_PAIR_TN_DESCRIPTION,細胞毒刃 雙家族融合角色錨點，匯聚 T 與 N 兩系能力。,"Cytotoxic Blade, a dual-family fusion character anchor combining the T and N lineages."
+RESEARCH_CHAR_PAIR_TN_DESCRIPTION,細胞毒刃 雙家族融合角色錨點，匯聚 T 與 N 兩系能力。,Cytotoxic Blade is a dual-family fusion combining the T Cell and NK Cell lineages.
 RESEARCH_CHAR_PAIR_TA_NAME,精準抗體,Precision Antibody
-RESEARCH_CHAR_PAIR_TA_DESCRIPTION,精準抗體 雙家族融合角色錨點，匯聚 T 與 A 兩系能力。,"Precision Antibody, a dual-family fusion character anchor combining the T and A lineages."
+RESEARCH_CHAR_PAIR_TA_DESCRIPTION,精準抗體 雙家族融合角色錨點，匯聚 T 與 A 兩系能力。,Precision Antibody is a dual-family fusion combining the T Cell and Antibody Construct lineages.
 RESEARCH_CHAR_PAIR_TD_NAME,免疫指揮,Immune Command
-RESEARCH_CHAR_PAIR_TD_DESCRIPTION,免疫指揮 雙家族融合角色錨點，匯聚 T 與 D 兩系能力。,"Immune Command, a dual-family fusion character anchor combining the T and D lineages."
+RESEARCH_CHAR_PAIR_TD_DESCRIPTION,免疫指揮 雙家族融合角色錨點，匯聚 T 與 D 兩系能力。,Immune Command is a dual-family fusion combining the T Cell and Dendritic Cell lineages.
 RESEARCH_CHAR_PAIR_BM_NAME,抗原處理,Antigen Processing
-RESEARCH_CHAR_PAIR_BM_DESCRIPTION,抗原處理 雙家族融合角色錨點，匯聚 B 與 M 兩系能力。,"Antigen Processing, a dual-family fusion character anchor combining the B and M lineages."
+RESEARCH_CHAR_PAIR_BM_DESCRIPTION,抗原處理 雙家族融合角色錨點，匯聚 B 與 M 兩系能力。,Antigen Processing is a dual-family fusion combining the B Cell and Macrophage lineages.
 RESEARCH_CHAR_PAIR_BN_NAME,標記處決,Marked Execution
-RESEARCH_CHAR_PAIR_BN_DESCRIPTION,標記處決 雙家族融合角色錨點，匯聚 B 與 N 兩系能力。,"Marked Execution, a dual-family fusion character anchor combining the B and N lineages."
+RESEARCH_CHAR_PAIR_BN_DESCRIPTION,標記處決 雙家族融合角色錨點，匯聚 B 與 N 兩系能力。,Marked Execution is a dual-family fusion combining the B Cell and NK Cell lineages.
 RESEARCH_CHAR_PAIR_BA_NAME,抗體風暴,Antibody Storm
-RESEARCH_CHAR_PAIR_BA_DESCRIPTION,抗體風暴 雙家族融合角色錨點，匯聚 B 與 A 兩系能力。,"Antibody Storm, a dual-family fusion character anchor combining the B and A lineages."
+RESEARCH_CHAR_PAIR_BA_DESCRIPTION,抗體風暴 雙家族融合角色錨點，匯聚 B 與 A 兩系能力。,Antibody Storm is a dual-family fusion combining the B Cell and Antibody Construct lineages.
 RESEARCH_CHAR_PAIR_BD_NAME,抗原呈現,Antigen Presentation
-RESEARCH_CHAR_PAIR_BD_DESCRIPTION,抗原呈現 雙家族融合角色錨點，匯聚 B 與 D 兩系能力。,"Antigen Presentation, a dual-family fusion character anchor combining the B and D lineages."
+RESEARCH_CHAR_PAIR_BD_DESCRIPTION,抗原呈現 雙家族融合角色錨點，匯聚 B 與 D 兩系能力。,Antigen Presentation is a dual-family fusion combining the B Cell and Dendritic Cell lineages.
 RESEARCH_CHAR_PAIR_MN_NAME,感染清除,Infection Clearance
-RESEARCH_CHAR_PAIR_MN_DESCRIPTION,感染清除 雙家族融合角色錨點，匯聚 M 與 N 兩系能力。,"Infection Clearance, a dual-family fusion character anchor combining the M and N lineages."
+RESEARCH_CHAR_PAIR_MN_DESCRIPTION,感染清除 雙家族融合角色錨點，匯聚 M 與 N 兩系能力。,Infection Clearance is a dual-family fusion combining the Macrophage and NK Cell lineages.
 RESEARCH_CHAR_PAIR_MA_NAME,免疫壁壘,Immune Bulwark
-RESEARCH_CHAR_PAIR_MA_DESCRIPTION,免疫壁壘 雙家族融合角色錨點，匯聚 M 與 A 兩系能力。,"Immune Bulwark, a dual-family fusion character anchor combining the M and A lineages."
+RESEARCH_CHAR_PAIR_MA_DESCRIPTION,免疫壁壘 雙家族融合角色錨點，匯聚 M 與 A 兩系能力。,Immune Bulwark is a dual-family fusion combining the Macrophage and Antibody Construct lineages.
 RESEARCH_CHAR_PAIR_MD_NAME,抗原中樞,Antigen Nexus
-RESEARCH_CHAR_PAIR_MD_DESCRIPTION,抗原中樞 雙家族融合角色錨點，匯聚 M 與 D 兩系能力。,"Antigen Nexus, a dual-family fusion character anchor combining the M and D lineages."
+RESEARCH_CHAR_PAIR_MD_DESCRIPTION,抗原中樞 雙家族融合角色錨點，匯聚 M 與 D 兩系能力。,Antigen Nexus is a dual-family fusion combining the Macrophage and Dendritic Cell lineages.
 RESEARCH_CHAR_PAIR_NA_NAME,抗體追獵,Antibody Pursuit
-RESEARCH_CHAR_PAIR_NA_DESCRIPTION,抗體追獵 雙家族融合角色錨點，匯聚 N 與 A 兩系能力。,"Antibody Pursuit, a dual-family fusion character anchor combining the N and A lineages."
+RESEARCH_CHAR_PAIR_NA_DESCRIPTION,抗體追獵 雙家族融合角色錨點，匯聚 N 與 A 兩系能力。,Antibody Pursuit is a dual-family fusion combining the NK Cell and Antibody Construct lineages.
 RESEARCH_CHAR_PAIR_ND_NAME,獵殺信標,Hunter Beacon
-RESEARCH_CHAR_PAIR_ND_DESCRIPTION,獵殺信標 雙家族融合角色錨點，匯聚 N 與 D 兩系能力。,"Hunter Beacon, a dual-family fusion character anchor combining the N and D lineages."
+RESEARCH_CHAR_PAIR_ND_DESCRIPTION,獵殺信標 雙家族融合角色錨點，匯聚 N 與 D 兩系能力。,Hunter Beacon is a dual-family fusion combining the NK Cell and Dendritic Cell lineages.
 RESEARCH_CHAR_PAIR_AD_NAME,免疫網絡,Immune Network
-RESEARCH_CHAR_PAIR_AD_DESCRIPTION,免疫網絡 雙家族融合角色錨點，匯聚 A 與 D 兩系能力。,"Immune Network, a dual-family fusion character anchor combining the A and D lineages."
+RESEARCH_CHAR_PAIR_AD_DESCRIPTION,免疫網絡 雙家族融合角色錨點，匯聚 A 與 D 兩系能力。,Immune Network is a dual-family fusion combining the Antibody Construct and Dendritic Cell lineages.
 RESEARCH_CHAR_TRIPLE_TBA_NAME,適應免疫核心,Adaptive Immune Core
-RESEARCH_CHAR_TRIPLE_TBA_DESCRIPTION,適應免疫核心 三家族融合角色錨點，整合 T、B、A 三系終極能力。,"Adaptive Immune Core, a three-family fusion character anchor integrating the ultimate capabilities of the T, B, A lineages."
+RESEARCH_CHAR_TRIPLE_TBA_DESCRIPTION,適應免疫核心 三家族融合角色錨點，整合 T、B、A 三系終極能力。,"Adaptive Immune Core is a three-family fusion integrating the ultimate capabilities of the T Cell, B Cell, and Antibody Construct lineages."
 RESEARCH_CHAR_TRIPLE_TND_NAME,全域截擊中樞,Global Interception Nexus
-RESEARCH_CHAR_TRIPLE_TND_DESCRIPTION,全域截擊中樞 三家族融合角色錨點，整合 T、N、D 三系終極能力。,"Global Interception Nexus, a three-family fusion character anchor integrating the ultimate capabilities of the T, N, D lineages."
+RESEARCH_CHAR_TRIPLE_TND_DESCRIPTION,全域截擊中樞 三家族融合角色錨點，整合 T、N、D 三系終極能力。,"Global Interception Nexus is a three-family fusion integrating the ultimate capabilities of the T Cell, NK Cell, and Dendritic Cell lineages."
 RESEARCH_CHAR_TRIPLE_MAD_NAME,組織防衛聖域,Tissue Defense Sanctuary
-RESEARCH_CHAR_TRIPLE_MAD_DESCRIPTION,組織防衛聖域 三家族融合角色錨點，整合 M、A、D 三系終極能力。,"Tissue Defense Sanctuary, a three-family fusion character anchor integrating the ultimate capabilities of the M, A, D lineages."
+RESEARCH_CHAR_TRIPLE_MAD_DESCRIPTION,組織防衛聖域 三家族融合角色錨點，整合 M、A、D 三系終極能力。,"Tissue Defense Sanctuary is a three-family fusion integrating the ultimate capabilities of the Macrophage, Antibody Construct, and Dendritic Cell lineages."
 RESEARCH_CHAR_TRIPLE_BMD_NAME,組織再生工廠,Tissue Regeneration Foundry
-RESEARCH_CHAR_TRIPLE_BMD_DESCRIPTION,組織再生工廠 三家族融合角色錨點，整合 B、M、D 三系終極能力。,"Tissue Regeneration Foundry, a three-family fusion character anchor integrating the ultimate capabilities of the B, M, D lineages."
+RESEARCH_CHAR_TRIPLE_BMD_DESCRIPTION,組織再生工廠 三家族融合角色錨點，整合 B、M、D 三系終極能力。,"Tissue Regeneration Foundry is a three-family fusion integrating the ultimate capabilities of the B Cell, Macrophage, and Dendritic Cell lineages."
 RESEARCH_CHAR_TRIPLE_BNA_NAME,抗體獵殺蜂群,Antibody Hunter Swarm
-RESEARCH_CHAR_TRIPLE_BNA_DESCRIPTION,抗體獵殺蜂群 三家族融合角色錨點，整合 B、N、A 三系終極能力。,"Antibody Hunter Swarm, a three-family fusion character anchor integrating the ultimate capabilities of the B, N, A lineages."
+RESEARCH_CHAR_TRIPLE_BNA_DESCRIPTION,抗體獵殺蜂群 三家族融合角色錨點，整合 B、N、A 三系終極能力。,"Antibody Hunter Swarm is a three-family fusion integrating the ultimate capabilities of the B Cell, NK Cell, and Antibody Construct lineages."
 RESEARCH_CHAR_TRIPLE_TMN_NAME,凋亡反應爐,Apoptosis Reactor
-RESEARCH_CHAR_TRIPLE_TMN_DESCRIPTION,凋亡反應爐 三家族融合角色錨點，整合 T、M、N 三系終極能力。,"Apoptosis Reactor, a three-family fusion character anchor integrating the ultimate capabilities of the T, M, N lineages."
+RESEARCH_CHAR_TRIPLE_TMN_DESCRIPTION,凋亡反應爐 三家族融合角色錨點，整合 T、M、N 三系終極能力。,"Apoptosis Reactor is a three-family fusion integrating the ultimate capabilities of the T Cell, Macrophage, and NK Cell lineages."
 RESEARCH_CHAR_APEX_MEMORY_NAME,長期免疫記憶庫,Long-term Immune Archive
 RESEARCH_CHAR_APEX_MEMORY_DESCRIPTION,長期免疫記憶庫 隱藏 Apex 身份錨點，需對應雙家族 ★4 協議與遠征發現。,"Long-term Immune Archive, a hidden Apex identity anchor requiring its matching dual-family Rank 4 protocol and an expedition discovery."
 RESEARCH_CHAR_APEX_STERILE_NAME,無菌聖域,Sterile Sanctuary
@@ -64,189 +64,189 @@ RESEARCH_CHAR_APEX_SILENT_DESCRIPTION,靜默獵殺網 隱藏 Apex 身份錨點�
 RESEARCH_CHAR_PRIME_NAME,IMMUNE PRIME,IMMUNE PRIME
 RESEARCH_CHAR_PRIME_DESCRIPTION,六大家族終極與任意三個命名三融合成果匯聚的終局身份，不要求完成其餘 199 個節點。,The endgame identity formed from all six family ultimates and any three named triple fusions. It does not require completion of the other 199 nodes.
 RESEARCH_BASE_T_01_NAME,T 細胞部署資格,T Cell Deployment Clearance
-RESEARCH_BASE_T_01_DESCRIPTION,解鎖 T 細胞 的部署與陣容使用資格。,Unlocks deployment and formation access for the T Cell.
+RESEARCH_BASE_T_01_DESCRIPTION,解鎖 T 細胞 的部署與陣容使用資格。,Unlocks the T Cell for deployment and formation use.
 RESEARCH_BASE_T_02_NAME,細胞毒殺核心,Cytotoxic Core
-RESEARCH_BASE_T_02_DESCRIPTION,強化 T 細胞 的核心被動與生物學定位。,Strengthens the T Cell's core passive and biological role.
+RESEARCH_BASE_T_02_DESCRIPTION,強化 T 細胞 的核心被動與生物學定位。,Strengthens the T Cell's signature passive and battlefield role.
 RESEARCH_BASE_T_03_NAME,T 細胞固定炮台專精,T Cell Fixed Turret Specialization
-RESEARCH_BASE_T_03_DESCRIPTION,提升 T 細胞 作為固定炮台的效率與射程。,Improves the T Cell's efficiency and range as a fixed turret.
+RESEARCH_BASE_T_03_DESCRIPTION,提升 T 細胞 作為固定炮台的效率與射程。,Improves the T Cell's efficiency and range while on fixed duty.
 RESEARCH_BASE_T_04_NAME,T 細胞移動資格,T Cell Mobility Clearance
-RESEARCH_BASE_T_04_DESCRIPTION,授予 T 細胞 在全面戰爭中的移動部署資格。,Grants the T Cell mobile deployment clearance for Total War.
+RESEARCH_BASE_T_04_DESCRIPTION,授予 T 細胞 在全面戰爭中的移動部署資格。,Unlocks mobile duty for the T Cell in Total War.
 RESEARCH_BASE_T_05_NAME,抗原特異追獵,Antigen-specific Pursuit
-RESEARCH_BASE_T_05_DESCRIPTION,優化 T 細胞 的目標選擇與戰鬥 AI 行為。,Optimizes the T Cell's target selection and combat AI behavior.
+RESEARCH_BASE_T_05_DESCRIPTION,優化 T 細胞 的目標選擇與戰鬥 AI 行為。,Refines the T Cell's target priorities and combat behavior.
 RESEARCH_BASE_T_06_NAME,T 細胞陣容共鳴,T Cell Formation Resonance
-RESEARCH_BASE_T_06_DESCRIPTION,增幅 T 細胞 與相鄰角色的陣容連結效果。,Amplifies formation links between the T Cell and adjacent characters.
+RESEARCH_BASE_T_06_DESCRIPTION,增幅 T 細胞 與相鄰角色的陣容連結效果。,Strengthens formation links between the T Cell and adjacent characters.
 RESEARCH_BASE_T_07_NAME,細胞毒覺醒,Cytotoxic Awakening
-RESEARCH_BASE_T_07_DESCRIPTION,覺醒 T 細胞 的特殊被動與天賦能力。,Awakens the T Cell's special passive and talent abilities.
+RESEARCH_BASE_T_07_DESCRIPTION,覺醒 T 細胞 的特殊被動與天賦能力。,Awakens the T Cell's advanced passive and talent abilities.
 RESEARCH_BASE_T_08_NAME,T 細胞終極免疫,T Cell Ultimate Immunity
-RESEARCH_BASE_T_08_DESCRIPTION,T 細胞 家族終極永久研究，解鎖高階融合與 Apex 資格。,"The T Cell family's ultimate permanent research, unlocking advanced fusion and Apex eligibility."
+RESEARCH_BASE_T_08_DESCRIPTION,T 細胞 家族終極永久研究，解鎖高階融合與 Apex 資格。,"Completes the T Cell research line, unlocking advanced fusion and Apex eligibility."
 RESEARCH_BASE_B_01_NAME,B 細胞部署資格,B Cell Deployment Clearance
-RESEARCH_BASE_B_01_DESCRIPTION,解鎖 B 細胞 的部署與陣容使用資格。,Unlocks deployment and formation access for the B Cell.
+RESEARCH_BASE_B_01_DESCRIPTION,解鎖 B 細胞 的部署與陣容使用資格。,Unlocks the B Cell for deployment and formation use.
 RESEARCH_BASE_B_02_NAME,抗體分泌核心,Antibody Secretion Core
-RESEARCH_BASE_B_02_DESCRIPTION,強化 B 細胞 的核心被動與生物學定位。,Strengthens the B Cell's core passive and biological role.
+RESEARCH_BASE_B_02_DESCRIPTION,強化 B 細胞 的核心被動與生物學定位。,Strengthens the B Cell's signature passive and battlefield role.
 RESEARCH_BASE_B_03_NAME,B 細胞固定炮台專精,B Cell Fixed Turret Specialization
-RESEARCH_BASE_B_03_DESCRIPTION,提升 B 細胞 作為固定炮台的效率與射程。,Improves the B Cell's efficiency and range as a fixed turret.
+RESEARCH_BASE_B_03_DESCRIPTION,提升 B 細胞 作為固定炮台的效率與射程。,Improves the B Cell's efficiency and range while on fixed duty.
 RESEARCH_BASE_B_04_NAME,B 細胞移動資格,B Cell Mobility Clearance
-RESEARCH_BASE_B_04_DESCRIPTION,授予 B 細胞 在全面戰爭中的移動部署資格。,Grants the B Cell mobile deployment clearance for Total War.
+RESEARCH_BASE_B_04_DESCRIPTION,授予 B 細胞 在全面戰爭中的移動部署資格。,Unlocks mobile duty for the B Cell in Total War.
 RESEARCH_BASE_B_05_NAME,遠距標記鎖定,Long-range Mark Lock
-RESEARCH_BASE_B_05_DESCRIPTION,優化 B 細胞 的目標選擇與戰鬥 AI 行為。,Optimizes the B Cell's target selection and combat AI behavior.
+RESEARCH_BASE_B_05_DESCRIPTION,優化 B 細胞 的目標選擇與戰鬥 AI 行為。,Refines the B Cell's target priorities and combat behavior.
 RESEARCH_BASE_B_06_NAME,B 細胞陣容共鳴,B Cell Formation Resonance
-RESEARCH_BASE_B_06_DESCRIPTION,增幅 B 細胞 與相鄰角色的陣容連結效果。,Amplifies formation links between the B Cell and adjacent characters.
+RESEARCH_BASE_B_06_DESCRIPTION,增幅 B 細胞 與相鄰角色的陣容連結效果。,Strengthens formation links between the B Cell and adjacent characters.
 RESEARCH_BASE_B_07_NAME,漿細胞覺醒,Plasma Cell Awakening
-RESEARCH_BASE_B_07_DESCRIPTION,覺醒 B 細胞 的特殊被動與天賦能力。,Awakens the B Cell's special passive and talent abilities.
+RESEARCH_BASE_B_07_DESCRIPTION,覺醒 B 細胞 的特殊被動與天賦能力。,Awakens the B Cell's advanced passive and talent abilities.
 RESEARCH_BASE_B_08_NAME,B 細胞終極免疫,B Cell Ultimate Immunity
-RESEARCH_BASE_B_08_DESCRIPTION,B 細胞 家族終極永久研究，解鎖高階融合與 Apex 資格。,"The B Cell family's ultimate permanent research, unlocking advanced fusion and Apex eligibility."
+RESEARCH_BASE_B_08_DESCRIPTION,B 細胞 家族終極永久研究，解鎖高階融合與 Apex 資格。,"Completes the B Cell research line, unlocking advanced fusion and Apex eligibility."
 RESEARCH_BASE_M_01_NAME,巨噬細胞部署資格,Macrophage Deployment Clearance
-RESEARCH_BASE_M_01_DESCRIPTION,解鎖 巨噬細胞 的部署與陣容使用資格。,Unlocks deployment and formation access for the Macrophage.
+RESEARCH_BASE_M_01_DESCRIPTION,解鎖 巨噬細胞 的部署與陣容使用資格。,Unlocks the Macrophage for deployment and formation use.
 RESEARCH_BASE_M_02_NAME,吞噬回收核心,Phagocytic Recovery Core
-RESEARCH_BASE_M_02_DESCRIPTION,強化 巨噬細胞 的核心被動與生物學定位。,Strengthens the Macrophage's core passive and biological role.
+RESEARCH_BASE_M_02_DESCRIPTION,強化 巨噬細胞 的核心被動與生物學定位。,Strengthens the Macrophage's signature passive and battlefield role.
 RESEARCH_BASE_M_03_NAME,巨噬固定炮台專精,Macrophage Fixed Turret Specialization
-RESEARCH_BASE_M_03_DESCRIPTION,提升 巨噬細胞 作為固定炮台的效率與射程。,Improves the Macrophage's efficiency and range as a fixed turret.
+RESEARCH_BASE_M_03_DESCRIPTION,提升 巨噬細胞 作為固定炮台的效率與射程。,Improves the Macrophage's efficiency and range while on fixed duty.
 RESEARCH_BASE_M_04_NAME,巨噬細胞移動資格,Macrophage Mobility Clearance
-RESEARCH_BASE_M_04_DESCRIPTION,授予 巨噬細胞 在全面戰爭中的移動部署資格。,Grants the Macrophage mobile deployment clearance for Total War.
+RESEARCH_BASE_M_04_DESCRIPTION,授予 巨噬細胞 在全面戰爭中的移動部署資格。,Unlocks mobile duty for the Macrophage in Total War.
 RESEARCH_BASE_M_05_NAME,感染殘留追獵,Infection Residue Pursuit
-RESEARCH_BASE_M_05_DESCRIPTION,優化 巨噬細胞 的目標選擇與戰鬥 AI 行為。,Optimizes the Macrophage's target selection and combat AI behavior.
+RESEARCH_BASE_M_05_DESCRIPTION,優化 巨噬細胞 的目標選擇與戰鬥 AI 行為。,Refines the Macrophage's target priorities and combat behavior.
 RESEARCH_BASE_M_06_NAME,巨噬陣容共鳴,Macrophage Formation Resonance
-RESEARCH_BASE_M_06_DESCRIPTION,增幅 巨噬細胞 與相鄰角色的陣容連結效果。,Amplifies formation links between the Macrophage and adjacent characters.
+RESEARCH_BASE_M_06_DESCRIPTION,增幅 巨噬細胞 與相鄰角色的陣容連結效果。,Strengthens formation links between the Macrophage and adjacent characters.
 RESEARCH_BASE_M_07_NAME,組織修復覺醒,Tissue Repair Awakening
-RESEARCH_BASE_M_07_DESCRIPTION,覺醒 巨噬細胞 的特殊被動與天賦能力。,Awakens the Macrophage's special passive and talent abilities.
+RESEARCH_BASE_M_07_DESCRIPTION,覺醒 巨噬細胞 的特殊被動與天賦能力。,Awakens the Macrophage's advanced passive and talent abilities.
 RESEARCH_BASE_M_08_NAME,巨噬終極免疫,Macrophage Ultimate Immunity
-RESEARCH_BASE_M_08_DESCRIPTION,巨噬細胞 家族終極永久研究，解鎖高階融合與 Apex 資格。,"The Macrophage family's ultimate permanent research, unlocking advanced fusion and Apex eligibility."
+RESEARCH_BASE_M_08_DESCRIPTION,巨噬細胞 家族終極永久研究，解鎖高階融合與 Apex 資格。,"Completes the Macrophage research line, unlocking advanced fusion and Apex eligibility."
 RESEARCH_BASE_N_01_NAME,NK 細胞部署資格,NK Cell Deployment Clearance
-RESEARCH_BASE_N_01_DESCRIPTION,解鎖 NK 細胞 的部署與陣容使用資格。,Unlocks deployment and formation access for the NK Cell.
+RESEARCH_BASE_N_01_DESCRIPTION,解鎖 NK 細胞 的部署與陣容使用資格。,Unlocks the NK Cell for deployment and formation use.
 RESEARCH_BASE_N_02_NAME,天然細胞毒核心,Natural Cytotoxic Core
-RESEARCH_BASE_N_02_DESCRIPTION,強化 NK 細胞 的核心被動與生物學定位。,Strengthens the NK Cell's core passive and biological role.
+RESEARCH_BASE_N_02_DESCRIPTION,強化 NK 細胞 的核心被動與生物學定位。,Strengthens the NK Cell's signature passive and battlefield role.
 RESEARCH_BASE_N_03_NAME,NK 固定炮台專精,NK Cell Fixed Turret Specialization
-RESEARCH_BASE_N_03_DESCRIPTION,提升 NK 細胞 作為固定炮台的效率與射程。,Improves the NK Cell's efficiency and range as a fixed turret.
+RESEARCH_BASE_N_03_DESCRIPTION,提升 NK 細胞 作為固定炮台的效率與射程。,Improves the NK Cell's efficiency and range while on fixed duty.
 RESEARCH_BASE_N_04_NAME,NK 細胞移動資格,NK Cell Mobility Clearance
-RESEARCH_BASE_N_04_DESCRIPTION,授予 NK 細胞 在全面戰爭中的移動部署資格。,Grants the NK Cell mobile deployment clearance for Total War.
+RESEARCH_BASE_N_04_DESCRIPTION,授予 NK 細胞 在全面戰爭中的移動部署資格。,Unlocks mobile duty for the NK Cell in Total War.
 RESEARCH_BASE_N_05_NAME,異常細胞獵殺,Abnormal Cell Hunt
-RESEARCH_BASE_N_05_DESCRIPTION,優化 NK 細胞 的目標選擇與戰鬥 AI 行為。,Optimizes the NK Cell's target selection and combat AI behavior.
+RESEARCH_BASE_N_05_DESCRIPTION,優化 NK 細胞 的目標選擇與戰鬥 AI 行為。,Refines the NK Cell's target priorities and combat behavior.
 RESEARCH_BASE_N_06_NAME,NK 陣容共鳴,NK Cell Formation Resonance
-RESEARCH_BASE_N_06_DESCRIPTION,增幅 NK 細胞 與相鄰角色的陣容連結效果。,Amplifies formation links between the NK Cell and adjacent characters.
-RESEARCH_BASE_N_07_NAME,無抗體覺醒,Antibody-free Awakening
-RESEARCH_BASE_N_07_DESCRIPTION,覺醒 NK 細胞 的特殊被動與天賦能力。,Awakens the NK Cell's special passive and talent abilities.
+RESEARCH_BASE_N_06_DESCRIPTION,增幅 NK 細胞 與相鄰角色的陣容連結效果。,Strengthens formation links between the NK Cell and adjacent characters.
+RESEARCH_BASE_N_07_NAME,無抗體覺醒,Antibody-independent Awakening
+RESEARCH_BASE_N_07_DESCRIPTION,覺醒 NK 細胞 的特殊被動與天賦能力。,Awakens the NK Cell's advanced passive and talent abilities.
 RESEARCH_BASE_N_08_NAME,NK 終極免疫,NK Cell Ultimate Immunity
-RESEARCH_BASE_N_08_DESCRIPTION,NK 細胞 家族終極永久研究，解鎖高階融合與 Apex 資格。,"The NK Cell family's ultimate permanent research, unlocking advanced fusion and Apex eligibility."
+RESEARCH_BASE_N_08_DESCRIPTION,NK 細胞 家族終極永久研究，解鎖高階融合與 Apex 資格。,"Completes the NK Cell research line, unlocking advanced fusion and Apex eligibility."
 RESEARCH_BASE_A_01_NAME,抗體構造體部署資格,Antibody Construct Deployment Clearance
-RESEARCH_BASE_A_01_DESCRIPTION,解鎖 抗體構造體 的部署與陣容使用資格。,Unlocks deployment and formation access for the Antibody Construct.
+RESEARCH_BASE_A_01_DESCRIPTION,解鎖 抗體構造體 的部署與陣容使用資格。,Unlocks the Antibody Construct for deployment and formation use.
 RESEARCH_BASE_A_02_NAME,中和抗體核心,Neutralizing Antibody Core
-RESEARCH_BASE_A_02_DESCRIPTION,強化 抗體構造體 的核心被動與生物學定位。,Strengthens the Antibody Construct's core passive and biological role.
+RESEARCH_BASE_A_02_DESCRIPTION,強化 抗體構造體 的核心被動與生物學定位。,Strengthens the Antibody Construct's signature passive and battlefield role.
 RESEARCH_BASE_A_03_NAME,抗體固定炮台專精,Antibody Fixed Turret Specialization
-RESEARCH_BASE_A_03_DESCRIPTION,提升 抗體構造體 作為固定炮台的效率與射程。,Improves the Antibody Construct's efficiency and range as a fixed turret.
+RESEARCH_BASE_A_03_DESCRIPTION,提升 抗體構造體 作為固定炮台的效率與射程。,Improves the Antibody Construct's efficiency and range while on fixed duty.
 RESEARCH_BASE_A_04_NAME,抗體固定中繼資格,Antibody Fixed Relay Clearance
-RESEARCH_BASE_A_04_DESCRIPTION,授予抗體構造體固定中繼資格，強化陣線中繼而非移動單位。,"Grants the Antibody Construct fixed-relay clearance, strengthening formation relays instead of creating a mobile unit."
+RESEARCH_BASE_A_04_DESCRIPTION,授予抗體構造體固定中繼資格，強化陣線中繼而非移動單位。,"Unlocks fixed-relay duty for the Antibody Construct, extending formation support without creating a mobile unit."
 RESEARCH_BASE_A_05_NAME,抗原中和鎖定,Antigen Neutralization Lock
-RESEARCH_BASE_A_05_DESCRIPTION,優化 抗體構造體 的目標選擇與戰鬥 AI 行為。,Optimizes the Antibody Construct's target selection and combat AI behavior.
+RESEARCH_BASE_A_05_DESCRIPTION,優化 抗體構造體 的目標選擇與戰鬥 AI 行為。,Refines the Antibody Construct's target priorities and combat behavior.
 RESEARCH_BASE_A_06_NAME,抗體陣容共鳴,Antibody Formation Resonance
-RESEARCH_BASE_A_06_DESCRIPTION,增幅 抗體構造體 與相鄰角色的陣容連結效果。,Amplifies formation links between the Antibody Construct and adjacent characters.
+RESEARCH_BASE_A_06_DESCRIPTION,增幅 抗體構造體 與相鄰角色的陣容連結效果。,Strengthens formation links between the Antibody Construct and adjacent characters.
 RESEARCH_BASE_A_07_NAME,多價抗體覺醒,Multivalent Antibody Awakening
-RESEARCH_BASE_A_07_DESCRIPTION,覺醒 抗體構造體 的特殊被動與天賦能力。,Awakens the Antibody Construct's special passive and talent abilities.
+RESEARCH_BASE_A_07_DESCRIPTION,覺醒 抗體構造體 的特殊被動與天賦能力。,Awakens the Antibody Construct's advanced passive and talent abilities.
 RESEARCH_BASE_A_08_NAME,抗體終極免疫,Antibody Ultimate Immunity
-RESEARCH_BASE_A_08_DESCRIPTION,抗體構造體 家族終極永久研究，解鎖高階融合與 Apex 資格。,"The Antibody Construct family's ultimate permanent research, unlocking advanced fusion and Apex eligibility."
+RESEARCH_BASE_A_08_DESCRIPTION,抗體構造體 家族終極永久研究，解鎖高階融合與 Apex 資格。,"Completes the Antibody Construct research line, unlocking advanced fusion and Apex eligibility."
 RESEARCH_BASE_D_01_NAME,樹突細胞部署資格,Dendritic Cell Deployment Clearance
-RESEARCH_BASE_D_01_DESCRIPTION,解鎖 樹突細胞 的部署與陣容使用資格。,Unlocks deployment and formation access for the Dendritic Cell.
+RESEARCH_BASE_D_01_DESCRIPTION,解鎖 樹突細胞 的部署與陣容使用資格。,Unlocks the Dendritic Cell for deployment and formation use.
 RESEARCH_BASE_D_02_NAME,抗原呈現核心,Antigen Presentation Core
-RESEARCH_BASE_D_02_DESCRIPTION,強化 樹突細胞 的核心被動與生物學定位。,Strengthens the Dendritic Cell's core passive and biological role.
+RESEARCH_BASE_D_02_DESCRIPTION,強化 樹突細胞 的核心被動與生物學定位。,Strengthens the Dendritic Cell's signature passive and battlefield role.
 RESEARCH_BASE_D_03_NAME,樹突固定炮台專精,Dendritic Fixed Turret Specialization
-RESEARCH_BASE_D_03_DESCRIPTION,提升 樹突細胞 作為固定炮台的效率與射程。,Improves the Dendritic Cell's efficiency and range as a fixed turret.
+RESEARCH_BASE_D_03_DESCRIPTION,提升 樹突細胞 作為固定炮台的效率與射程。,Improves the Dendritic Cell's efficiency and range while on fixed duty.
 RESEARCH_BASE_D_04_NAME,樹突細胞移動資格,Dendritic Cell Mobility Clearance
-RESEARCH_BASE_D_04_DESCRIPTION,授予 樹突細胞 在全面戰爭中的移動部署資格。,Grants the Dendritic Cell mobile deployment clearance for Total War.
+RESEARCH_BASE_D_04_DESCRIPTION,授予 樹突細胞 在全面戰爭中的移動部署資格。,Unlocks mobile duty for the Dendritic Cell in Total War.
 RESEARCH_BASE_D_05_NAME,免疫信號引導,Immune Signal Guidance
-RESEARCH_BASE_D_05_DESCRIPTION,優化 樹突細胞 的目標選擇與戰鬥 AI 行為。,Optimizes the Dendritic Cell's target selection and combat AI behavior.
+RESEARCH_BASE_D_05_DESCRIPTION,優化 樹突細胞 的目標選擇與戰鬥 AI 行為。,Refines the Dendritic Cell's target priorities and combat behavior.
 RESEARCH_BASE_D_06_NAME,樹突陣容共鳴,Dendritic Formation Resonance
-RESEARCH_BASE_D_06_DESCRIPTION,增幅 樹突細胞 與相鄰角色的陣容連結效果。,Amplifies formation links between the Dendritic Cell and adjacent characters.
+RESEARCH_BASE_D_06_DESCRIPTION,增幅 樹突細胞 與相鄰角色的陣容連結效果。,Strengthens formation links between the Dendritic Cell and adjacent characters.
 RESEARCH_BASE_D_07_NAME,共刺激覺醒,Co-stimulation Awakening
-RESEARCH_BASE_D_07_DESCRIPTION,覺醒 樹突細胞 的特殊被動與天賦能力。,Awakens the Dendritic Cell's special passive and talent abilities.
+RESEARCH_BASE_D_07_DESCRIPTION,覺醒 樹突細胞 的特殊被動與天賦能力。,Awakens the Dendritic Cell's advanced passive and talent abilities.
 RESEARCH_BASE_D_08_NAME,樹突終極免疫,Dendritic Ultimate Immunity
-RESEARCH_BASE_D_08_DESCRIPTION,樹突細胞 家族終極永久研究，解鎖高階融合與 Apex 資格。,"The Dendritic Cell family's ultimate permanent research, unlocking advanced fusion and Apex eligibility."
+RESEARCH_BASE_D_08_DESCRIPTION,樹突細胞 家族終極永久研究，解鎖高階融合與 Apex 資格。,"Completes the Dendritic Cell research line, unlocking advanced fusion and Apex eligibility."
 RESEARCH_PAIR_TB_S1_NAME,記憶獵手｜基礎相性,Memory Hunter | Base Affinity
-RESEARCH_PAIR_TB_S1_DESCRIPTION,建立 T 與 B 兩系在戰場上的基礎相性連結。,Establishes a base battlefield affinity link between the T and B lineages.
+RESEARCH_PAIR_TB_S1_DESCRIPTION,建立 T 與 B 兩系在戰場上的基礎相性連結。,Establishes a battlefield affinity link between the T Cell and B Cell lineages.
 RESEARCH_PAIR_TB_S2_NAME,記憶獵手｜強化協同,Memory Hunter | Enhanced Synergy
-RESEARCH_PAIR_TB_S2_DESCRIPTION,強化 記憶獵手 路線的協同共鳴，為實體融合鋪路。,Strengthens the Memory Hunter route's synergy resonance and prepares it for physical fusion.
+RESEARCH_PAIR_TB_S2_DESCRIPTION,強化 記憶獵手 路線的協同共鳴，為實體融合鋪路。,Strengthens the Memory Hunter route's synergy and prepares the fusion form for deployment.
 RESEARCH_PAIR_TB_S4_NAME,記憶獵手｜傳承特質協議,Memory Hunter | Legacy Trait Protocol
 RESEARCH_PAIR_TB_S4_DESCRIPTION,解鎖 記憶獵手 傳承特質研究協議，可在關卡前裝備。,Unlocks the Memory Hunter legacy-trait research protocol for pre-mission equipment.
 RESEARCH_PAIR_TM_S1_NAME,吞噬突擊｜基礎相性,Phagocyte Assault | Base Affinity
-RESEARCH_PAIR_TM_S1_DESCRIPTION,建立 T 與 M 兩系在戰場上的基礎相性連結。,Establishes a base battlefield affinity link between the T and M lineages.
+RESEARCH_PAIR_TM_S1_DESCRIPTION,建立 T 與 M 兩系在戰場上的基礎相性連結。,Establishes a battlefield affinity link between the T Cell and Macrophage lineages.
 RESEARCH_PAIR_TM_S2_NAME,吞噬突擊｜強化協同,Phagocyte Assault | Enhanced Synergy
-RESEARCH_PAIR_TM_S2_DESCRIPTION,強化 吞噬突擊 路線的協同共鳴，為實體融合鋪路。,Strengthens the Phagocyte Assault route's synergy resonance and prepares it for physical fusion.
+RESEARCH_PAIR_TM_S2_DESCRIPTION,強化 吞噬突擊 路線的協同共鳴，為實體融合鋪路。,Strengthens the Phagocyte Assault route's synergy and prepares the fusion form for deployment.
 RESEARCH_PAIR_TM_S4_NAME,吞噬突擊｜傳承特質協議,Phagocyte Assault | Legacy Trait Protocol
 RESEARCH_PAIR_TM_S4_DESCRIPTION,解鎖 吞噬突擊 傳承特質研究協議，可在關卡前裝備。,Unlocks the Phagocyte Assault legacy-trait research protocol for pre-mission equipment.
 RESEARCH_PAIR_TN_S1_NAME,細胞毒刃｜基礎相性,Cytotoxic Blade | Base Affinity
-RESEARCH_PAIR_TN_S1_DESCRIPTION,建立 T 與 N 兩系在戰場上的基礎相性連結。,Establishes a base battlefield affinity link between the T and N lineages.
+RESEARCH_PAIR_TN_S1_DESCRIPTION,建立 T 與 N 兩系在戰場上的基礎相性連結。,Establishes a battlefield affinity link between the T Cell and NK Cell lineages.
 RESEARCH_PAIR_TN_S2_NAME,細胞毒刃｜強化協同,Cytotoxic Blade | Enhanced Synergy
-RESEARCH_PAIR_TN_S2_DESCRIPTION,強化 細胞毒刃 路線的協同共鳴，為實體融合鋪路。,Strengthens the Cytotoxic Blade route's synergy resonance and prepares it for physical fusion.
+RESEARCH_PAIR_TN_S2_DESCRIPTION,強化 細胞毒刃 路線的協同共鳴，為實體融合鋪路。,Strengthens the Cytotoxic Blade route's synergy and prepares the fusion form for deployment.
 RESEARCH_PAIR_TN_S4_NAME,細胞毒刃｜傳承特質協議,Cytotoxic Blade | Legacy Trait Protocol
 RESEARCH_PAIR_TN_S4_DESCRIPTION,解鎖 細胞毒刃 傳承特質研究協議，可在關卡前裝備。,Unlocks the Cytotoxic Blade legacy-trait research protocol for pre-mission equipment.
 RESEARCH_PAIR_TA_S1_NAME,精準抗體｜基礎相性,Precision Antibody | Base Affinity
-RESEARCH_PAIR_TA_S1_DESCRIPTION,建立 T 與 A 兩系在戰場上的基礎相性連結。,Establishes a base battlefield affinity link between the T and A lineages.
+RESEARCH_PAIR_TA_S1_DESCRIPTION,建立 T 與 A 兩系在戰場上的基礎相性連結。,Establishes a battlefield affinity link between the T Cell and Antibody Construct lineages.
 RESEARCH_PAIR_TA_S2_NAME,精準抗體｜強化協同,Precision Antibody | Enhanced Synergy
-RESEARCH_PAIR_TA_S2_DESCRIPTION,強化 精準抗體 路線的協同共鳴，為實體融合鋪路。,Strengthens the Precision Antibody route's synergy resonance and prepares it for physical fusion.
+RESEARCH_PAIR_TA_S2_DESCRIPTION,強化 精準抗體 路線的協同共鳴，為實體融合鋪路。,Strengthens the Precision Antibody route's synergy and prepares the fusion form for deployment.
 RESEARCH_PAIR_TA_S4_NAME,精準抗體｜傳承特質協議,Precision Antibody | Legacy Trait Protocol
 RESEARCH_PAIR_TA_S4_DESCRIPTION,解鎖 精準抗體 傳承特質研究協議，可在關卡前裝備。,Unlocks the Precision Antibody legacy-trait research protocol for pre-mission equipment.
 RESEARCH_PAIR_TD_S1_NAME,免疫指揮｜基礎相性,Immune Command | Base Affinity
-RESEARCH_PAIR_TD_S1_DESCRIPTION,建立 T 與 D 兩系在戰場上的基礎相性連結。,Establishes a base battlefield affinity link between the T and D lineages.
+RESEARCH_PAIR_TD_S1_DESCRIPTION,建立 T 與 D 兩系在戰場上的基礎相性連結。,Establishes a battlefield affinity link between the T Cell and Dendritic Cell lineages.
 RESEARCH_PAIR_TD_S2_NAME,免疫指揮｜強化協同,Immune Command | Enhanced Synergy
-RESEARCH_PAIR_TD_S2_DESCRIPTION,強化 免疫指揮 路線的協同共鳴，為實體融合鋪路。,Strengthens the Immune Command route's synergy resonance and prepares it for physical fusion.
+RESEARCH_PAIR_TD_S2_DESCRIPTION,強化 免疫指揮 路線的協同共鳴，為實體融合鋪路。,Strengthens the Immune Command route's synergy and prepares the fusion form for deployment.
 RESEARCH_PAIR_TD_S4_NAME,免疫指揮｜傳承特質協議,Immune Command | Legacy Trait Protocol
 RESEARCH_PAIR_TD_S4_DESCRIPTION,解鎖 免疫指揮 傳承特質研究協議，可在關卡前裝備。,Unlocks the Immune Command legacy-trait research protocol for pre-mission equipment.
 RESEARCH_PAIR_BM_S1_NAME,抗原處理｜基礎相性,Antigen Processing | Base Affinity
-RESEARCH_PAIR_BM_S1_DESCRIPTION,建立 B 與 M 兩系在戰場上的基礎相性連結。,Establishes a base battlefield affinity link between the B and M lineages.
+RESEARCH_PAIR_BM_S1_DESCRIPTION,建立 B 與 M 兩系在戰場上的基礎相性連結。,Establishes a battlefield affinity link between the B Cell and Macrophage lineages.
 RESEARCH_PAIR_BM_S2_NAME,抗原處理｜強化協同,Antigen Processing | Enhanced Synergy
-RESEARCH_PAIR_BM_S2_DESCRIPTION,強化 抗原處理 路線的協同共鳴，為實體融合鋪路。,Strengthens the Antigen Processing route's synergy resonance and prepares it for physical fusion.
+RESEARCH_PAIR_BM_S2_DESCRIPTION,強化 抗原處理 路線的協同共鳴，為實體融合鋪路。,Strengthens the Antigen Processing route's synergy and prepares the fusion form for deployment.
 RESEARCH_PAIR_BM_S4_NAME,抗原處理｜傳承特質協議,Antigen Processing | Legacy Trait Protocol
 RESEARCH_PAIR_BM_S4_DESCRIPTION,解鎖 抗原處理 傳承特質研究協議，可在關卡前裝備。,Unlocks the Antigen Processing legacy-trait research protocol for pre-mission equipment.
 RESEARCH_PAIR_BN_S1_NAME,標記處決｜基礎相性,Marked Execution | Base Affinity
-RESEARCH_PAIR_BN_S1_DESCRIPTION,建立 B 與 N 兩系在戰場上的基礎相性連結。,Establishes a base battlefield affinity link between the B and N lineages.
+RESEARCH_PAIR_BN_S1_DESCRIPTION,建立 B 與 N 兩系在戰場上的基礎相性連結。,Establishes a battlefield affinity link between the B Cell and NK Cell lineages.
 RESEARCH_PAIR_BN_S2_NAME,標記處決｜強化協同,Marked Execution | Enhanced Synergy
-RESEARCH_PAIR_BN_S2_DESCRIPTION,強化 標記處決 路線的協同共鳴，為實體融合鋪路。,Strengthens the Marked Execution route's synergy resonance and prepares it for physical fusion.
+RESEARCH_PAIR_BN_S2_DESCRIPTION,強化 標記處決 路線的協同共鳴，為實體融合鋪路。,Strengthens the Marked Execution route's synergy and prepares the fusion form for deployment.
 RESEARCH_PAIR_BN_S4_NAME,標記處決｜傳承特質協議,Marked Execution | Legacy Trait Protocol
 RESEARCH_PAIR_BN_S4_DESCRIPTION,解鎖 標記處決 傳承特質研究協議，可在關卡前裝備。,Unlocks the Marked Execution legacy-trait research protocol for pre-mission equipment.
 RESEARCH_PAIR_BA_S1_NAME,抗體風暴｜基礎相性,Antibody Storm | Base Affinity
-RESEARCH_PAIR_BA_S1_DESCRIPTION,建立 B 與 A 兩系在戰場上的基礎相性連結。,Establishes a base battlefield affinity link between the B and A lineages.
+RESEARCH_PAIR_BA_S1_DESCRIPTION,建立 B 與 A 兩系在戰場上的基礎相性連結。,Establishes a battlefield affinity link between the B Cell and Antibody Construct lineages.
 RESEARCH_PAIR_BA_S2_NAME,抗體風暴｜強化協同,Antibody Storm | Enhanced Synergy
-RESEARCH_PAIR_BA_S2_DESCRIPTION,強化 抗體風暴 路線的協同共鳴，為實體融合鋪路。,Strengthens the Antibody Storm route's synergy resonance and prepares it for physical fusion.
+RESEARCH_PAIR_BA_S2_DESCRIPTION,強化 抗體風暴 路線的協同共鳴，為實體融合鋪路。,Strengthens the Antibody Storm route's synergy and prepares the fusion form for deployment.
 RESEARCH_PAIR_BA_S4_NAME,抗體風暴｜傳承特質協議,Antibody Storm | Legacy Trait Protocol
 RESEARCH_PAIR_BA_S4_DESCRIPTION,解鎖 抗體風暴 傳承特質研究協議，可在關卡前裝備。,Unlocks the Antibody Storm legacy-trait research protocol for pre-mission equipment.
 RESEARCH_PAIR_BD_S1_NAME,抗原呈現｜基礎相性,Antigen Presentation | Base Affinity
-RESEARCH_PAIR_BD_S1_DESCRIPTION,建立 B 與 D 兩系在戰場上的基礎相性連結。,Establishes a base battlefield affinity link between the B and D lineages.
+RESEARCH_PAIR_BD_S1_DESCRIPTION,建立 B 與 D 兩系在戰場上的基礎相性連結。,Establishes a battlefield affinity link between the B Cell and Dendritic Cell lineages.
 RESEARCH_PAIR_BD_S2_NAME,抗原呈現｜強化協同,Antigen Presentation | Enhanced Synergy
-RESEARCH_PAIR_BD_S2_DESCRIPTION,強化 抗原呈現 路線的協同共鳴，為實體融合鋪路。,Strengthens the Antigen Presentation route's synergy resonance and prepares it for physical fusion.
+RESEARCH_PAIR_BD_S2_DESCRIPTION,強化 抗原呈現 路線的協同共鳴，為實體融合鋪路。,Strengthens the Antigen Presentation route's synergy and prepares the fusion form for deployment.
 RESEARCH_PAIR_BD_S4_NAME,抗原呈現｜傳承特質協議,Antigen Presentation | Legacy Trait Protocol
 RESEARCH_PAIR_BD_S4_DESCRIPTION,解鎖 抗原呈現 傳承特質研究協議，可在關卡前裝備。,Unlocks the Antigen Presentation legacy-trait research protocol for pre-mission equipment.
 RESEARCH_PAIR_MN_S1_NAME,感染清除｜基礎相性,Infection Clearance | Base Affinity
-RESEARCH_PAIR_MN_S1_DESCRIPTION,建立 M 與 N 兩系在戰場上的基礎相性連結。,Establishes a base battlefield affinity link between the M and N lineages.
+RESEARCH_PAIR_MN_S1_DESCRIPTION,建立 M 與 N 兩系在戰場上的基礎相性連結。,Establishes a battlefield affinity link between the Macrophage and NK Cell lineages.
 RESEARCH_PAIR_MN_S2_NAME,感染清除｜強化協同,Infection Clearance | Enhanced Synergy
-RESEARCH_PAIR_MN_S2_DESCRIPTION,強化 感染清除 路線的協同共鳴，為實體融合鋪路。,Strengthens the Infection Clearance route's synergy resonance and prepares it for physical fusion.
+RESEARCH_PAIR_MN_S2_DESCRIPTION,強化 感染清除 路線的協同共鳴，為實體融合鋪路。,Strengthens the Infection Clearance route's synergy and prepares the fusion form for deployment.
 RESEARCH_PAIR_MN_S4_NAME,感染清除｜傳承特質協議,Infection Clearance | Legacy Trait Protocol
 RESEARCH_PAIR_MN_S4_DESCRIPTION,解鎖 感染清除 傳承特質研究協議，可在關卡前裝備。,Unlocks the Infection Clearance legacy-trait research protocol for pre-mission equipment.
 RESEARCH_PAIR_MA_S1_NAME,免疫壁壘｜基礎相性,Immune Bulwark | Base Affinity
-RESEARCH_PAIR_MA_S1_DESCRIPTION,建立 M 與 A 兩系在戰場上的基礎相性連結。,Establishes a base battlefield affinity link between the M and A lineages.
+RESEARCH_PAIR_MA_S1_DESCRIPTION,建立 M 與 A 兩系在戰場上的基礎相性連結。,Establishes a battlefield affinity link between the Macrophage and Antibody Construct lineages.
 RESEARCH_PAIR_MA_S2_NAME,免疫壁壘｜強化協同,Immune Bulwark | Enhanced Synergy
-RESEARCH_PAIR_MA_S2_DESCRIPTION,強化 免疫壁壘 路線的協同共鳴，為實體融合鋪路。,Strengthens the Immune Bulwark route's synergy resonance and prepares it for physical fusion.
+RESEARCH_PAIR_MA_S2_DESCRIPTION,強化 免疫壁壘 路線的協同共鳴，為實體融合鋪路。,Strengthens the Immune Bulwark route's synergy and prepares the fusion form for deployment.
 RESEARCH_PAIR_MA_S4_NAME,免疫壁壘｜傳承特質協議,Immune Bulwark | Legacy Trait Protocol
 RESEARCH_PAIR_MA_S4_DESCRIPTION,解鎖 免疫壁壘 傳承特質研究協議，可在關卡前裝備。,Unlocks the Immune Bulwark legacy-trait research protocol for pre-mission equipment.
 RESEARCH_PAIR_MD_S1_NAME,抗原中樞｜基礎相性,Antigen Nexus | Base Affinity
-RESEARCH_PAIR_MD_S1_DESCRIPTION,建立 M 與 D 兩系在戰場上的基礎相性連結。,Establishes a base battlefield affinity link between the M and D lineages.
+RESEARCH_PAIR_MD_S1_DESCRIPTION,建立 M 與 D 兩系在戰場上的基礎相性連結。,Establishes a battlefield affinity link between the Macrophage and Dendritic Cell lineages.
 RESEARCH_PAIR_MD_S2_NAME,抗原中樞｜強化協同,Antigen Nexus | Enhanced Synergy
-RESEARCH_PAIR_MD_S2_DESCRIPTION,強化 抗原中樞 路線的協同共鳴，為實體融合鋪路。,Strengthens the Antigen Nexus route's synergy resonance and prepares it for physical fusion.
+RESEARCH_PAIR_MD_S2_DESCRIPTION,強化 抗原中樞 路線的協同共鳴，為實體融合鋪路。,Strengthens the Antigen Nexus route's synergy and prepares the fusion form for deployment.
 RESEARCH_PAIR_MD_S4_NAME,抗原中樞｜傳承特質協議,Antigen Nexus | Legacy Trait Protocol
 RESEARCH_PAIR_MD_S4_DESCRIPTION,解鎖 抗原中樞 傳承特質研究協議，可在關卡前裝備。,Unlocks the Antigen Nexus legacy-trait research protocol for pre-mission equipment.
 RESEARCH_PAIR_NA_S1_NAME,抗體追獵｜基礎相性,Antibody Pursuit | Base Affinity
-RESEARCH_PAIR_NA_S1_DESCRIPTION,建立 N 與 A 兩系在戰場上的基礎相性連結。,Establishes a base battlefield affinity link between the N and A lineages.
+RESEARCH_PAIR_NA_S1_DESCRIPTION,建立 N 與 A 兩系在戰場上的基礎相性連結。,Establishes a battlefield affinity link between the NK Cell and Antibody Construct lineages.
 RESEARCH_PAIR_NA_S2_NAME,抗體追獵｜強化協同,Antibody Pursuit | Enhanced Synergy
-RESEARCH_PAIR_NA_S2_DESCRIPTION,強化 抗體追獵 路線的協同共鳴，為實體融合鋪路。,Strengthens the Antibody Pursuit route's synergy resonance and prepares it for physical fusion.
+RESEARCH_PAIR_NA_S2_DESCRIPTION,強化 抗體追獵 路線的協同共鳴，為實體融合鋪路。,Strengthens the Antibody Pursuit route's synergy and prepares the fusion form for deployment.
 RESEARCH_PAIR_NA_S4_NAME,抗體追獵｜傳承特質協議,Antibody Pursuit | Legacy Trait Protocol
 RESEARCH_PAIR_NA_S4_DESCRIPTION,解鎖 抗體追獵 傳承特質研究協議，可在關卡前裝備。,Unlocks the Antibody Pursuit legacy-trait research protocol for pre-mission equipment.
 RESEARCH_PAIR_ND_S1_NAME,獵殺信標｜基礎相性,Hunter Beacon | Base Affinity
-RESEARCH_PAIR_ND_S1_DESCRIPTION,建立 N 與 D 兩系在戰場上的基礎相性連結。,Establishes a base battlefield affinity link between the N and D lineages.
+RESEARCH_PAIR_ND_S1_DESCRIPTION,建立 N 與 D 兩系在戰場上的基礎相性連結。,Establishes a battlefield affinity link between the NK Cell and Dendritic Cell lineages.
 RESEARCH_PAIR_ND_S2_NAME,獵殺信標｜強化協同,Hunter Beacon | Enhanced Synergy
-RESEARCH_PAIR_ND_S2_DESCRIPTION,強化 獵殺信標 路線的協同共鳴，為實體融合鋪路。,Strengthens the Hunter Beacon route's synergy resonance and prepares it for physical fusion.
+RESEARCH_PAIR_ND_S2_DESCRIPTION,強化 獵殺信標 路線的協同共鳴，為實體融合鋪路。,Strengthens the Hunter Beacon route's synergy and prepares the fusion form for deployment.
 RESEARCH_PAIR_ND_S4_NAME,獵殺信標｜傳承特質協議,Hunter Beacon | Legacy Trait Protocol
 RESEARCH_PAIR_ND_S4_DESCRIPTION,解鎖 獵殺信標 傳承特質研究協議，可在關卡前裝備。,Unlocks the Hunter Beacon legacy-trait research protocol for pre-mission equipment.
 RESEARCH_PAIR_AD_S1_NAME,免疫網絡｜基礎相性,Immune Network | Base Affinity
-RESEARCH_PAIR_AD_S1_DESCRIPTION,建立 A 與 D 兩系在戰場上的基礎相性連結。,Establishes a base battlefield affinity link between the A and D lineages.
+RESEARCH_PAIR_AD_S1_DESCRIPTION,建立 A 與 D 兩系在戰場上的基礎相性連結。,Establishes a battlefield affinity link between the Antibody Construct and Dendritic Cell lineages.
 RESEARCH_PAIR_AD_S2_NAME,免疫網絡｜強化協同,Immune Network | Enhanced Synergy
-RESEARCH_PAIR_AD_S2_DESCRIPTION,強化 免疫網絡 路線的協同共鳴，為實體融合鋪路。,Strengthens the Immune Network route's synergy resonance and prepares it for physical fusion.
+RESEARCH_PAIR_AD_S2_DESCRIPTION,強化 免疫網絡 路線的協同共鳴，為實體融合鋪路。,Strengthens the Immune Network route's synergy and prepares the fusion form for deployment.
 RESEARCH_PAIR_AD_S4_NAME,免疫網絡｜傳承特質協議,Immune Network | Legacy Trait Protocol
 RESEARCH_PAIR_AD_S4_DESCRIPTION,解鎖 免疫網絡 傳承特質研究協議，可在關卡前裝備。,Unlocks the Immune Network legacy-trait research protocol for pre-mission equipment.
 RESEARCH_TRIPLE_TBA_ROLE_NAME,適應免疫核心｜戰場定位,Adaptive Immune Core | Battlefield Role

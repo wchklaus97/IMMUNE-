@@ -17,6 +17,10 @@ func _run() -> void:
 		push_error("English translation contract is not active")
 		quit(1)
 		return
+	if TranslationServer.translate(&"UI_MISSION_SUBTITLE") != "Choose a mission, then deploy the cell family best suited to the threat.":
+		push_error("English mission-desk copy is truncated or stale")
+		quit(1)
+		return
 	TranslationServer.set_locale("zh_HK")
 	if TranslationServer.translate(&"UI_PAUSE_TITLE") != "暫停／設定":
 		push_error("zh_HK translation contract is not active")
@@ -713,6 +717,49 @@ func _run() -> void:
 			return
 		mission_runtime.queue_free()
 		await process_frame
+	TranslationServer.set_locale("en")
+	var mission_desk_packed := load("res://ui/mission_select/mission_select.tscn") as PackedScene
+	if mission_desk_packed == null:
+		push_error("Mission desk scene failed to load")
+		quit(1)
+		return
+	var mission_desk := mission_desk_packed.instantiate()
+	root.add_child(mission_desk)
+	await process_frame
+	await process_frame
+	var preview_stage := mission_desk.get("_preview_stage") as Node3D
+	var preview_viewport := mission_desk.get("_preview_viewport") as SubViewport
+	if preview_stage == null or preview_viewport == null or not preview_viewport.own_world_3d:
+		push_error("Mission desk must confine the cell preview to its own SubViewport")
+		quit(1)
+		return
+	var mission_buttons: Array = mission_desk.get("_mission_buttons")
+	var desk_family_buttons: Array = mission_desk.get("_family_buttons")
+	if mission_buttons.size() != 6 or desk_family_buttons.size() != 6:
+		push_error("Mission desk must expose six mission and six family buttons")
+		quit(1)
+		return
+	for button in mission_buttons + desk_family_buttons:
+		if button is not Button or not (button as Button).toggle_mode:
+			push_error("Mission desk selection buttons must retain a visible pressed state")
+			quit(1)
+			return
+	for i in family_ids.size():
+		mission_desk.call("_select_family", i)
+		await process_frame
+		var preview := mission_desk.get("_preview") as Node3D
+		var expected_duty: StringName = &"relay" if family_ids[i] == "A" else &"mobile"
+		if preview == null or preview.get_parent() != preview_stage:
+			push_error("Mission desk preview escaped its frame for family %s" % family_ids[i])
+			quit(1)
+			return
+		if StringName(preview.get("family_id")) != StringName(family_ids[i]) or StringName(preview.get("duty")) != expected_duty:
+			push_error("Mission desk preview state mismatch for family %s" % family_ids[i])
+			quit(1)
+			return
+	mission_desk.queue_free()
+	await process_frame
+	TranslationServer.set_locale("zh_HK")
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(smoke_save))
 	research_state.call("seed_demo")
 	print("SMOKE_OK missions=6 families=6 save=v2 audio=ready gamepad=ready signatures=T+B traits=enrage+regen meshy=B authored_jelly=M+N+A+D gel_bubbles=B+M+N+A+D")

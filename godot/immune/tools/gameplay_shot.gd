@@ -4,13 +4,15 @@ extends Node
 ##
 ## Run:
 ##   godot --path <proj> --resolution 1920x1080 res://tools/gameplay_shot.tscn -- \
-##     --out=<absolute-dir> [--family=B] [--mission=MISSION-01] [--tag=B-v2]
+##     --out=<absolute-dir> [--family=B] [--mission=MISSION-01] [--tag=B-v2] \
+##     [--locale=zh_HK|en]
 
 var _args := {}
 var _out_dir := ""
 var _family := "B"
 var _mission := "MISSION-01"
 var _tag := "gameplay"
+var _locale := "zh_HK"
 var _combat: Node
 
 
@@ -20,6 +22,12 @@ func _ready() -> void:
 	_family = String(_args.get("family", "B")).to_upper()
 	_mission = String(_args.get("mission", "MISSION-01"))
 	_tag = String(_args.get("tag", "%s-v2" % _family))
+	_locale = String(_args.get("locale", "zh_HK"))
+	if _locale not in ["zh_HK", "en"]:
+		push_error("gameplay_shot.gd: --locale must be zh_HK or en")
+		get_tree().quit(2)
+		return
+	TranslationServer.set_locale(_locale)
 	if _out_dir.is_empty():
 		push_error("gameplay_shot.gd: --out=<dir> required")
 		get_tree().quit(2)

@@ -89,7 +89,7 @@ const BASE_RESEARCH_NAMES = {
     "NK Cell Mobility Clearance",
     "Abnormal Cell Hunt",
     "NK Cell Formation Resonance",
-    "Antibody-free Awakening",
+    "Antibody-independent Awakening",
     "NK Cell Ultimate Immunity"
   ],
   A: [
@@ -179,19 +179,30 @@ function researchKey(id, field) {
   return `RESEARCH_${id.replace(/[^A-Za-z0-9]+/g, "_")}_${field.toUpperCase()}`;
 }
 
+function familyList(familyIds) {
+  const names = familyIds.map((id) => {
+    const name = FAMILY_NAMES[id];
+    if (!name) throw new Error(`Unknown family id ${id}`);
+    return name;
+  });
+  if (names.length === 1) return names[0];
+  if (names.length === 2) return `${names[0]} and ${names[1]}`;
+  return `${names.slice(0, -1).join(", ")}, and ${names.at(-1)}`;
+}
+
 function baseDescription(family, slot) {
   const name = FAMILY_NAMES[family];
   const descriptions = [
-    `Unlocks deployment and formation access for the ${name}.`,
-    `Strengthens the ${name}'s core passive and biological role.`,
-    `Improves the ${name}'s efficiency and range as a fixed turret.`,
+    `Unlocks the ${name} for deployment and formation use.`,
+    `Strengthens the ${name}'s signature passive and battlefield role.`,
+    `Improves the ${name}'s efficiency and range while on fixed duty.`,
     family === "A"
-      ? "Grants the Antibody Construct fixed-relay clearance, strengthening formation relays instead of creating a mobile unit."
-      : `Grants the ${name} mobile deployment clearance for Total War.`,
-    `Optimizes the ${name}'s target selection and combat AI behavior.`,
-    `Amplifies formation links between the ${name} and adjacent characters.`,
-    `Awakens the ${name}'s special passive and talent abilities.`,
-    `The ${name} family's ultimate permanent research, unlocking advanced fusion and Apex eligibility.`
+      ? "Unlocks fixed-relay duty for the Antibody Construct, extending formation support without creating a mobile unit."
+      : `Unlocks mobile duty for the ${name} in Total War.`,
+    `Refines the ${name}'s target priorities and combat behavior.`,
+    `Strengthens formation links between the ${name} and adjacent characters.`,
+    `Awakens the ${name}'s advanced passive and talent abilities.`,
+    `Completes the ${name} research line, unlocking advanced fusion and Apex eligibility.`
   ];
   return descriptions[slot - 1];
 }
@@ -200,13 +211,13 @@ function characterTranslation(node) {
   const name = CHARACTER_NAMES[node.id];
   if (!name) throw new Error(`Missing character name for ${node.id}`);
   if (node.id.startsWith("CHAR-BASE-")) {
-    return [name, `${name} identity anchor marking the start of this family's research sector.`];
+    return [name, `Marks the entry point to the ${name} research sector.`];
   }
   if (node.id.startsWith("CHAR-PAIR-")) {
-    return [name, `${name}, a dual-family fusion character anchor combining the ${node.familyIds[0]} and ${node.familyIds[1]} lineages.`];
+    return [name, `${name} is a dual-family fusion combining the ${familyList(node.familyIds)} lineages.`];
   }
   if (node.id.startsWith("CHAR-TRIPLE-")) {
-    return [name, `${name}, a three-family fusion character anchor integrating the ultimate capabilities of the ${node.familyIds.join(", ")} lineages.`];
+    return [name, `${name} is a three-family fusion integrating the ultimate capabilities of the ${familyList(node.familyIds)} lineages.`];
   }
   if (node.id === "CHAR-PRIME") {
     return [name, "The endgame identity formed from all six family ultimates and any three named triple fusions. It does not require completion of the other 199 nodes."];
@@ -235,8 +246,8 @@ function generatedTranslation(node) {
     const characterName = CHARACTER_NAMES[`CHAR-PAIR-${code}`];
     const stageNames = { S1: "Base Affinity", S2: "Enhanced Synergy", S4: "Legacy Trait Protocol" };
     const descriptions = {
-      S1: `Establishes a base battlefield affinity link between the ${node.familyIds[0]} and ${node.familyIds[1]} lineages.`,
-      S2: `Strengthens the ${characterName} route's synergy resonance and prepares it for physical fusion.`,
+      S1: `Establishes a battlefield affinity link between the ${familyList(node.familyIds)} lineages.`,
+      S2: `Strengthens the ${characterName} route's synergy and prepares the fusion form for deployment.`,
       S4: `Unlocks the ${characterName} legacy-trait research protocol for pre-mission equipment.`
     };
     return [`${characterName} | ${stageNames[stage]}`, descriptions[stage]];
@@ -293,6 +304,12 @@ export function buildCatalogLocalization(catalog) {
       if (seen.has(key)) throw new Error(`Duplicate translation key ${key}`);
       if (!String(zh).trim() || !String(en).trim()) throw new Error(`Blank ${field} translation for ${node.id}`);
       if (/[\u3400-\u9fff]/u.test(en)) throw new Error(`English ${field} still contains Han text for ${node.id}: ${en}`);
+      if (/\b[TBMNAD](?:,\s*[TBMNAD])*(?:,?\s+and\s+[TBMNAD])?\s+lineages\b/u.test(en)) {
+        throw new Error(`English ${field} uses raw family codes for ${node.id}: ${en}`);
+      }
+      if (en.includes("family's ultimate permanent research") || en.includes("physical fusion")) {
+        throw new Error(`English ${field} contains retired internal phrasing for ${node.id}: ${en}`);
+      }
       seen.add(key);
       rows.push([key, zh, en]);
     }

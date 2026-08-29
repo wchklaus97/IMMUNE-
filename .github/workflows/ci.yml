@@ -31,8 +31,10 @@ jobs:
         working-directory: ui/immune-research-network
         run: npm run build
 
-      - name: Verify complete research catalog localization
-        run: node tools/generate_catalog_localization.mjs --check
+      - name: Verify translation tables and complete research catalog localization
+        run: |
+          node tools/validate_translation_csv.mjs
+          node tools/generate_catalog_localization.mjs --check
 
       - name: Set up Godot 4.7.2 and export templates
         uses: chickensoft-games/setup-godot@v2

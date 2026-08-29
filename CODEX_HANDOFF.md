@@ -19,6 +19,11 @@ The latest tranche adds:
 - complete Traditional Chinese / English coverage for all 200 research nodes,
   six campaign names, and the mission/combat UI with a persisted runtime locale
   selector;
+- a player-facing mission desk with a confined, independently scaled six-family
+  3D jelly preview, visible selection states, readable badges, and responsive
+  1600x900 / 1280x720 layouts;
+- a completed English catalog editorial pass plus a two-table structural CSV
+  validator that runs before localization drift detection in CI;
 - a real-time MISSION-01 regression across all six families, including the
   corrected A-family hover-projectile trajectory and relay duty cycle;
 - a Meshy-7-aware, no-credit-by-default M-cell generation and GLB intake
@@ -57,6 +62,8 @@ The latest tranche adds:
   metadata, GLB validation, and explicit M-slot installation.
 - `tools/generate_catalog_localization.mjs` owns the deterministic 406-row
   research translation artifact and its CI drift contract.
+- `tools/validate_translation_csv.mjs` owns the shared game/research CSV shape,
+  duplicate, blank, placeholder-parity, and English-script checks.
 - `.github/workflows/ci.yml` owns Godot 4.7.2 import/smoke, catalog translation
   drift, bounded T/B first/final mission balance, all-family MISSION-01 balance,
   bilingual layout, exports, and three native launch checks.
@@ -172,6 +179,13 @@ python3 tools/meshy/validate_hero_glb.py \
   all 400 node name/description fields plus six campaign names resolve in
   English; Traditional Chinese fallback and a live locale switch pass; the
   1920×1080 research HUD passes in `zh_HK` and `en`.
+- Player-facing mission desk QA (2026-08-29): the preview is confined to an
+  owned SubViewport; six family scales, both locales, 1600x900 and 1280x720,
+  selection/locked states, 18 fixed/mobile-or-relay/boss gameplay frames, and
+  clean render-resource shutdown pass. Full English family names and player-copy
+  replace raw codes and internal pipeline language. The shared CSV validator
+  passes 2 files / 595 rows. Evidence and rationale live in
+  `docs/godot-prompter/specs/2026-08-29-player-facing-mission-desk-qa.md`.
 - Six-family runtime regression (2026-08-29): MISSION-01 passes for T/B/M/N/A/D
   at real 1x simulation speed with real hits, both applicable duties, and 12/12
   Core health. Focused N/D/A MISSION-06 runs and the unchanged T/B first/final
@@ -185,8 +199,8 @@ python3 tools/meshy/validate_hero_glb.py \
 - macOS: arm64+x86_64, strict code-signature verification, ad-hoc hardened
   runtime signature, bundle/version `com.wchklaus97.immune` / `0.4.0`, and native
   `RELEASE_SMOKE_OK platform=macOS nodes=200`.
-- Exported Web: Chromium research → mission → M selection → M combat →
-  Fixed/Mobile duty → pause/resume flow with real mouse and keyboard input;
+- Exported Web: Chromium research → mission → A selection → A combat →
+  Fixed/Relay duty → pause flow with real keyboard input;
   1600×900 and 1280×720 canvas fit, no document scroll, all eight requested
   resources returned 200, and the console reported 0 errors / 0 warnings.
 - M integration balance: MISSION-01 M completed in 22.367 s with core 12/12;
@@ -224,6 +238,7 @@ Generated local artifacts (ignored by Git):
 - `godot/immune/build/releases/IMMUNE-macOS.zip`
 - `godot/immune/build/releases/web/index.html`
 - `outputs/playtests/campaign-expansion-candidate-1-12run.json`
+- `outputs/player-qa-20260829/`
 
 ## Repeatable release commands
 
@@ -234,6 +249,7 @@ npm run build
 
 cd ../../
 node tools/generate_catalog_localization.mjs --check
+node tools/validate_translation_csv.mjs
 godot --headless --path godot/immune --import
 godot --headless --path godot/immune --import
 godot --headless --path godot/immune --script res://tools/smoke.gd
@@ -261,16 +277,13 @@ commercial release. Remaining work is:
 1. Keep the N/A/D Meshy manifests as optional comparisons only. Any paid task
    still needs a separate exact 5-credit approval; never batch paid retries after
    a failed task. The playable demo no longer depends on these generations.
-2. Give the complete English research catalog a native-speaker editorial pass
-   during human playtesting. Automated coverage proves completeness, locale
-   switching, and layout—not final prose taste.
-3. Treat the checked-in CI on Godot 4.7.2 as the final remote gate. Local proof is
+2. Treat the checked-in CI on Godot 4.7.2 as the final remote gate. Local proof is
    on 4.6.1 because that is the installed editor.
-4. Add a Developer ID Application identity, notarization credentials, privacy /
+3. Add a Developer ID Application identity, notarization credentials, privacy /
    storefront metadata, and store-specific packaging. The current macOS artifact
    is valid ad-hoc signed but cannot be publicly notarized with the credentials
    available on this machine.
-5. Capture a non-zero GPU timing result on a backend that exposes it and perform
+4. Capture a non-zero GPU timing result on a backend that exposes it and perform
    longer human playtests across all six families, not only the deterministic T/B
    balance baseline.
 

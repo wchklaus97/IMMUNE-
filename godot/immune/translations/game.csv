@@ -7,14 +7,16 @@ UI_RESUME,%s · 繼續,%s · Resume
 UI_RESTART_MISSION,重新開始任務,Restart mission
 UI_RETURN_MISSIONS,返回任務選擇,Return to mission select
 UI_MISSION_HEADING,免疫任務台,Immune Mission Desk
-UI_MISSION_SUBTITLE,選擇任務同細胞家族。六個家族都共用 wet-gel 材質同 duty 動畫管線。,Choose a mission and cell family. All six families share the wet-gel material and duty-animation pipeline.
-UI_FAMILY_HEADING,出擊細胞,Deploying cell
+UI_MISSION_SUBTITLE,選擇任務，再派出最適合應對威脅嘅細胞家族。,"Choose a mission, then deploy the cell family best suited to the threat."
+UI_FAMILY_HEADING,選擇出擊細胞,Choose a cell family
 UI_BACK_RESEARCH,%s · 返回研究網絡,%s · Return to research network
 UI_MISSION_LOCKED,尚未解鎖：先完成上一個免疫任務。,Locked: complete the previous immune mission first.
 UI_DIFFICULTY,難度 %d · %s · 防守 %d 隻 · 淨化 %.1f 秒,Difficulty %d · %s · Defeat %d · Cleanse %.1f sec
 UI_FAMILY_STATS,%s：%s  傷害 %d · 射程 %.1f · 移速 %.1f,%s: %s  Damage %d · Range %.1f · Speed %.1f
 UI_START_MISSION,%s · 以 %s 開始任務,%s · Start mission as %s
 UI_COMPLETE_TO_UNLOCK,完成上一任務後解鎖,Complete the previous mission to unlock
+UI_MISSION_BADGE_COMPLETE, · 已完成, · COMPLETE
+UI_MISSION_BADGE_LOCKED, · 鎖定, · LOCKED
 UI_IMMUNE_CORE,免疫核心,Immune Core
 UI_RETRY,重新挑戰,Retry
 UI_COMBAT_HUD,%s · %s · %s勤務,%s · %s · %s duty
