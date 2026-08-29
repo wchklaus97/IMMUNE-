@@ -1,4 +1,4 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://characters/character_root.gd" id="1"]
 
@@ -6,15 +6,26 @@
 radius = 0.5
 height = 1.0
 
+[sub_resource type="SphereShape3D" id="SphereShape_body"]
+radius = 0.56
+
 [node name="Character" type="CharacterBody3D"]
 script = ExtResource("1")
 family_id = &"M"
 character_id = &"CHAR-BASE-M"
-imported_model_path = "res://characters/base_m/CHAR-BASE-M-meshy-t2.glb"
-imported_face_overlay = true
+imported_model_path = "res://characters/base_m/reference_body.tscn"
+imported_face_overlay = false
+imported_replaces_identity = true
+imported_replaces_bubbles = true
+imported_replaces_fixed_kit = true
+imported_preserves_materials = true
 
 [node name="CoreMesh" type="MeshInstance3D" parent="."]
 mesh = SubResource("SphereMesh_core")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+position = Vector3(0, 0.56, 0)
+shape = SubResource("SphereShape_body")
 
 [node name="Face" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 0.4)

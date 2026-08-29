@@ -12,7 +12,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from validate_hero_glb import ValidationError, inspect_geometry, parse_glb, sha256
+from validate_hero_glb import ASSET_SLOTS, ValidationError, inspect_geometry, parse_glb, sha256
 
 
 class SmoothError(RuntimeError):
@@ -32,8 +32,9 @@ def read_metadata(project_dir: Path) -> tuple[Path, dict[str, Any]]:
         metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         raise SmoothError(f"invalid project metadata: {exc}") from exc
-    if metadata.get("asset_id") != "CHAR-BASE-M" or metadata.get("status") != "SUCCEEDED":
-        raise SmoothError("project is not a succeeded CHAR-BASE-M generation")
+    asset_id = str(metadata.get("asset_id", ""))
+    if asset_id not in ASSET_SLOTS or metadata.get("status") != "SUCCEEDED":
+        raise SmoothError("project is not a succeeded approved base-cell generation")
     if metadata.get("consumed_credits") != 5:
         raise SmoothError("project does not retain the exact 5-credit generation record")
     files = metadata.get("files")
@@ -42,6 +43,8 @@ def read_metadata(project_dir: Path) -> tuple[Path, dict[str, Any]]:
     source_name = str(files[0])
     if Path(source_name).name != source_name:
         raise SmoothError("downloaded GLB filename is unsafe")
+    if source_name != f"{asset_id}-meshy-t2.glb":
+        raise SmoothError("downloaded GLB filename does not match the asset slot")
     source = (project_dir / source_name).resolve()
     try:
         source.relative_to(project_dir)

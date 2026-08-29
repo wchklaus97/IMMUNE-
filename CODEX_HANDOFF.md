@@ -1,6 +1,6 @@
 # IMMUNE demo handoff
 
-Updated: 2026-08-28
+Updated: 2026-08-29
 
 ## Current milestone
 
@@ -70,16 +70,24 @@ T and B. The harness has both a 120-second simulated-game timeout and a
 faces, untextured GLB, aligned procedural ink face, hidden procedural limbs, and
 the `round_bubbles` wet-gel profile. T retains its imported authored membrane.
 
-`CHAR-BASE-M` is now the second approved Meshy T2 replacement. Task
+`CHAR-BASE-M` retains a rejected Meshy T2 candidate for provenance only. Task
 `01a0478d-eb9c-7bb1-9d52-0b220cb002a8` produced an untextured 8,832-triangle
 GLB. The downloaded file omitted vertex normals, so the workflow stopped before
-visual acceptance, preserved the immutable download, and created a zero-credit
-Assimp smooth-normal derivative. Geometry, bounds, and face count are unchanged.
+installation, preserved the immutable download, and created a zero-credit Assimp
+smooth-normal derivative. Geometry, bounds, and face count are unchanged.
 The installed derivative SHA-256 is
 `1eadda4a9c8dfccbd27c5471edf6e2079518d239832cc0dc64f3a46be95bcd4a`.
-M uses aligned ink eyes, its sculpted mouth cavity, hidden procedural base limbs,
-and the pale-lavender `macrophage_bubbles` profile. N/A/D remain polished
-procedural family bodies.
+On 2026-08-29 the user explicitly rejected that candidate's texture and overall
+quality, then accepted the zero-credit `fizzy` reference-match direction. The
+shipping M scene now instantiates
+`godot/immune/characters/base_m/reference_body.tscn`: a fused round authored body
+with embedded eyes and mouth, medium bubbles, microbubbles, fine inclusions, and a
+Compatibility-safe fresnel membrane. The adapter preserves those authored
+materials and suppresses only M's conflicting procedural face, limbs, identity,
+bubbles, and fixed kit; the existing mobile duty kit remains functional. New
+shader paths default off for every other family. The rejected GLB remains in the
+repository but is no longer the M runtime body and must not be used as the visual
+baseline for N/A/D. N/A/D remain procedural and their paid tasks are paused.
 
 Jelly performance was repeated on 2026-08-28 with ten B bodies, three synced
 300-frame trials at 1920×1080 on Apple M4 Pro Compatibility/Metal. Median CPU /
@@ -113,6 +121,9 @@ asset: both the immutable download and verified derivative are stored locally.
 python3 -m unittest tools/meshy/test_workflow.py
 python3 tools/meshy/run_m_cell_asset.py
 python3 tools/meshy/run_m_cell_asset.py --balance-only
+python3 tools/meshy/run_m_cell_asset.py --manifest tools/meshy/n_cell_request.json
+python3 tools/meshy/run_m_cell_asset.py --manifest tools/meshy/a_cell_request.json
+python3 tools/meshy/run_m_cell_asset.py --manifest tools/meshy/d_cell_request.json
 python3 tools/meshy/validate_hero_glb.py \
   --project-dir meshy_output/20260828_164806_char-base-m_01a0478d
 ```
@@ -139,6 +150,21 @@ python3 tools/meshy/validate_hero_glb.py \
 - Meshy: dry-run, balance-only request, four no-network safety tests, B validation,
   one approved 5-credit M generation, smooth-normal geometry invariant, M GLB
   validation, six-angle visual review, M6 gameplay review, and installation pass.
+- Visual correction pass (2026-08-29): reference/current gap review, six-angle
+  `clear` and `fizzy` look-dev renders, two clean Godot imports, release smoke,
+  1920x1080 overflow check, and six Meshy workflow safety tests. Ten-body M
+  harness results were baseline CPU/wall 0.722/1.572 ms and opt-in three-layer
+  core 0.623/1.354 ms in one 180-frame trial; GPU timing was unavailable (0 ms),
+  so this supports only "no measurable regression in this run." The transparent
+  screen-refraction experiment was rejected after Compatibility/Metal reported an
+  unavailable texture and was replaced with the stable fresnel-alpha shell.
+- Production M promotion (2026-08-29): accepted `fizzy` body wired into the real
+  M scene; six-angle and fixed/mobile/boss captures; two import passes; expanded
+  six-family smoke; 1920x1080 overflow; M1/M6 balance victories; 53/53 web tests;
+  four release exports; and exported macOS native smoke all pass locally.
+- CI macOS smoke logging no longer assumes Godot creates `--log-file`. The app's
+  stdout/stderr is captured with `tee`, so the successful release marker visible
+  in Actions is also guaranteed to exist in the file checked by `grep`.
 
 Generated local artifacts (ignored by Git):
 
@@ -180,8 +206,8 @@ complete. It is not a content-complete commercial release. Remaining work is:
    is approved; never batch paid retries after a failed task.
 2. Expand English localization from the complete mission/combat flow into the
    200-node authored research catalog; that source content remains zh-HK-first.
-3. Run the checked-in CI on Godot 4.7.2 after commit/push. Local proof is on
-   4.6.1 because that is the installed editor.
+3. Treat the checked-in CI on Godot 4.7.2 as the final remote gate. Local proof is
+   on 4.6.1 because that is the installed editor.
 4. Add a Developer ID Application identity, notarization credentials, privacy /
    storefront metadata, and store-specific packaging. The current macOS artifact
    is valid ad-hoc signed but cannot be publicly notarized with the credentials
@@ -190,5 +216,5 @@ complete. It is not a content-complete commercial release. Remaining work is:
    longer human playtests across all six families, not only the deterministic T/B
    balance baseline.
 
-These are explicit external/product gates, not hidden broken demo work. No commit,
-push, release upload, notarization, or storefront submission was performed.
+These are explicit external/product gates, not hidden broken demo work. No release
+upload, notarization, or storefront submission was performed.

@@ -22,9 +22,11 @@ static func apply(host: Node) -> void:
 	_ensure_collision(host)
 	_build_face(host, family)
 	_build_limbs(host, family, jelly)
-	_build_identity(host, family, jelly, accent)
-	_build_bubbles(host, jelly)
-	if base_kit and base_kit.get_child_count() == 0:
+	if not bool(host.get("imported_replaces_identity")):
+		_build_identity(host, family, jelly, accent)
+	if not bool(host.get("imported_replaces_bubbles")):
+		_build_bubbles(host, jelly)
+	if base_kit and base_kit.get_child_count() == 0 and not bool(host.get("imported_replaces_fixed_kit")):
 		_build_base(base_kit, family, jelly)
 	if family == "A":
 		if locomotion_kit:

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Cost-gated Meshy runner for IMMUNE's CHAR-BASE-M hero asset.
+"""Cost-gated Meshy runner for IMMUNE base-cell hero assets.
 
 Dry-run is the default and performs no network request. The only mutating mode
 requires both --execute and an exact --approve-credits value matching the
@@ -26,6 +26,24 @@ API_BASE = "https://api.meshy.ai"
 TERMINAL_STATUSES = {"SUCCEEDED", "FAILED", "CANCELED"}
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_MANIFEST = Path(__file__).with_name("m_cell_request.json")
+SUPPORTED_ASSETS = {
+    "CHAR-BASE-M": {
+        "source_image": "godot/immune/characters/concepts/base-cell-line-v2/CHAR-BASE-M.png",
+        "output_filename": "CHAR-BASE-M-meshy-t2.glb",
+    },
+    "CHAR-BASE-N": {
+        "source_image": "godot/immune/characters/concepts/base-cell-line-v2/CHAR-BASE-N.png",
+        "output_filename": "CHAR-BASE-N-meshy-t2.glb",
+    },
+    "CHAR-BASE-A": {
+        "source_image": "godot/immune/characters/concepts/base-cell-line-v2/CHAR-BASE-A.png",
+        "output_filename": "CHAR-BASE-A-meshy-t2.glb",
+    },
+    "CHAR-BASE-D": {
+        "source_image": "godot/immune/characters/concepts/base-cell-line-v2/CHAR-BASE-D.png",
+        "output_filename": "CHAR-BASE-D-meshy-t2.glb",
+    },
+}
 
 
 class WorkflowError(RuntimeError):
@@ -81,6 +99,15 @@ def validate_manifest(data: dict[str, Any]) -> Path:
     if missing:
         raise WorkflowError(f"manifest missing fields: {', '.join(missing)}")
 
+    asset_id = str(data.get("asset_id", ""))
+    asset_spec = SUPPORTED_ASSETS.get(asset_id)
+    if asset_spec is None:
+        raise WorkflowError(f"asset_id is not an approved base-cell slot: {asset_id!r}")
+    if data.get("source_image") != asset_spec["source_image"]:
+        raise WorkflowError(f"source_image does not match the locked {asset_id} reference")
+    if data.get("output_filename") != asset_spec["output_filename"]:
+        raise WorkflowError(f"output_filename does not match the stable {asset_id} slot")
+
     payload = data["request"]
     if not isinstance(payload, dict):
         raise WorkflowError("request must be an object")
@@ -119,6 +146,20 @@ def validate_manifest(data: dict[str, Any]) -> Path:
         raise WorkflowError("source image exceeds the 10 MiB local safety limit")
     if Path(data["output_filename"]).name != data["output_filename"]:
         raise WorkflowError("output_filename must not contain a directory")
+    acceptance = data.get("acceptance")
+    if not isinstance(acceptance, dict):
+        raise WorkflowError("acceptance must be an object")
+    if acceptance.get("required_format") != "glb":
+        raise WorkflowError("acceptance.required_format must remain glb")
+    max_faces = acceptance.get("max_face_count")
+    if not isinstance(max_faces, int) or not 100 <= max_faces <= 15_000:
+        raise WorkflowError("acceptance.max_face_count must be 100..15000")
+    minimum_bytes = acceptance.get("minimum_file_bytes")
+    if not isinstance(minimum_bytes, int) or minimum_bytes < 4096:
+        raise WorkflowError("acceptance.minimum_file_bytes must be at least 4096")
+    silhouette = acceptance.get("silhouette")
+    if not isinstance(silhouette, str) or len(silhouette.strip()) < 24:
+        raise WorkflowError("acceptance.silhouette must describe the locked identity")
     return source
 
 

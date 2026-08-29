@@ -223,7 +223,39 @@ uniform float bubble_depth : hint_range(0.0, 0.12) = 0.0;
 uniform float bubble_thinness : hint_range(0.0, 0.8) = 0.0;
 uniform float bubble_shell_shadow : hint_range(0.0, 0.6) = 0.0;
 uniform float bubble_emission : hint_range(0.0, 0.3) = 0.0;
+// A real air pocket catches a pale ring before its centre glows. Keeping this
+// separate from cap emission avoids the dark skin-pore read of a shadowed shell.
+uniform float bubble_shell_emission : hint_range(0.0, 0.5) = 0.0;
 uniform float bubble_seed : hint_range(0.0, 100.0) = 0.0;
+
+group_uniforms microbubbles;
+// Optional second frequency for the dense champagne-sized inclusions visible in
+// the locked jelly references. It is off by default so existing families and GPU
+// cost remain unchanged until a profile explicitly opts in.
+uniform bool microbubble_enabled = false;
+uniform float microbubble_scale : hint_range(8.0, 64.0) = 30.0;
+uniform float microbubble_density : hint_range(0.0, 1.0) = 0.65;
+uniform float microbubble_radius_min : hint_range(0.04, 0.35) = 0.10;
+uniform float microbubble_radius_max : hint_range(0.04, 0.40) = 0.24;
+uniform float microbubble_jitter : hint_range(0.0, 0.20) = 0.16;
+uniform float microbubble_softness : hint_range(0.01, 0.30) = 0.10;
+uniform float microbubble_depth : hint_range(0.0, 0.08) = 0.0;
+uniform float microbubble_thinness : hint_range(0.0, 0.6) = 0.0;
+uniform float microbubble_shell_shadow : hint_range(0.0, 0.4) = 0.0;
+uniform float microbubble_emission : hint_range(0.0, 0.4) = 0.0;
+uniform float microbubble_shell_emission : hint_range(0.0, 0.5) = 0.0;
+uniform float microbubble_seed : hint_range(0.0, 100.0) = 0.0;
+
+group_uniforms inclusions;
+// Fine irregular inclusions fill the visual gap between the two explicit bubble
+// radii. They are emission-only: no high-frequency normal means no sparkle crawl
+// when the character shrinks to gameplay size.
+uniform bool inclusion_enabled = false;
+uniform float inclusion_scale : hint_range(16.0, 240.0) = 140.0;
+uniform float inclusion_threshold : hint_range(0.3, 0.95) = 0.70;
+uniform float inclusion_softness : hint_range(0.01, 0.25) = 0.06;
+uniform float inclusion_emission : hint_range(0.0, 0.5) = 0.0;
+uniform float inclusion_seed : hint_range(0.0, 100.0) = 0.0;
 
 group_uniforms features;
 // The mesh's own baked basecolor. Only its darkness is used, never its hue.
@@ -320,11 +352,41 @@ vec3 bubble_hash3(vec3 p) {
 }
 
 
+// Smooth object-space value noise for sub-bubble inclusions. Eight hashes are
+// enough because this layer never drives normals or silhouettes.
+float inclusion_noise(vec3 p) {
+	vec3 cell = floor(p);
+	vec3 f = fract(p);
+	f = f * f * (3.0 - 2.0 * f);
+	float n000 = bubble_hash3(cell + vec3(0.0, 0.0, 0.0)).x;
+	float n100 = bubble_hash3(cell + vec3(1.0, 0.0, 0.0)).x;
+	float n010 = bubble_hash3(cell + vec3(0.0, 1.0, 0.0)).x;
+	float n110 = bubble_hash3(cell + vec3(1.0, 1.0, 0.0)).x;
+	float n001 = bubble_hash3(cell + vec3(0.0, 0.0, 1.0)).x;
+	float n101 = bubble_hash3(cell + vec3(1.0, 0.0, 1.0)).x;
+	float n011 = bubble_hash3(cell + vec3(0.0, 1.0, 1.0)).x;
+	float n111 = bubble_hash3(cell + vec3(1.0, 1.0, 1.0)).x;
+	float n00 = mix(n000, n100, f.x);
+	float n10 = mix(n010, n110, f.x);
+	float n01 = mix(n001, n101, f.x);
+	float n11 = mix(n011, n111, f.x);
+	return mix(mix(n00, n10, f.y), mix(n01, n11, f.y), f.z);
+}
+
+
 // Returns (spherical cap, shell). Sampling the eight centres around p is enough
 // because the profile bounds jitter and radius so a more distant cell cannot
 // intersect this point. This is substantially cheaper than 27-sample Worley and
 // makes the expensive path opt-in per family.
-vec2 bubble_volume(vec3 p) {
+vec2 bubble_volume_at(
+	vec3 p,
+	float density,
+	float radius_minimum,
+	float radius_maximum,
+	float jitter,
+	float softness,
+	float seed
+) {
 	vec3 base = floor(p - vec3(0.5));
 	float nearest = 1e4;
 	for (int z = 0; z <= 1; z++) {
@@ -332,22 +394,22 @@ vec2 bubble_volume(vec3 p) {
 			for (int x = 0; x <= 1; x++) {
 				vec3 cell = base + vec3(float(x), float(y), float(z));
 				vec3 rnd = bubble_hash3(cell + vec3(
-					bubble_seed,
-					bubble_seed * 1.37 + 7.0,
-					bubble_seed * 2.11 + 13.0));
+					seed,
+					seed * 1.37 + 7.0,
+					seed * 2.11 + 13.0));
 				float presence = fract(dot(rnd, vec3(0.73, 1.37, 2.17)));
-				if (presence <= bubble_density) {
-					vec3 centre = cell + vec3(0.5) + (rnd - vec3(0.5)) * (2.0 * bubble_jitter);
+				if (presence <= density) {
+					vec3 centre = cell + vec3(0.5) + (rnd - vec3(0.5)) * (2.0 * jitter);
 					float radius = mix(
-						min(bubble_radius_min, bubble_radius_max),
-						max(bubble_radius_min, bubble_radius_max),
+						min(radius_minimum, radius_maximum),
+						max(radius_minimum, radius_maximum),
 						rnd.y);
 					nearest = min(nearest, length(p - centre) / max(radius, 0.001));
 				}
 			}
 		}
 	}
-	float soft = max(bubble_softness, 0.001);
+	float soft = max(softness, 0.001);
 	float inside = 1.0 - smoothstep(1.0 - soft, 1.0 + soft, nearest);
 	float cap = sqrt(max(1.0 - min(nearest * nearest, 1.0), 0.0)) * inside;
 	float shell = 1.0 - smoothstep(soft, soft * 3.0, abs(nearest - 1.0));
@@ -498,7 +560,14 @@ void fragment() {
 	}
 	vec2 bubble = vec2(0.0);
 	if (bubble_enabled && bubble_depth > 0.001 && bubble_density > 0.001) {
-		bubble = bubble_volume(v_obj_pos * bubble_scale);
+		bubble = bubble_volume_at(
+			v_obj_pos * bubble_scale,
+			bubble_density,
+			bubble_radius_min,
+			bubble_radius_max,
+			bubble_jitter,
+			bubble_softness,
+			bubble_seed);
 		// A very shallow positive lens lets the existing coat lobes draw a soft
 		// crescent. A negative dent made the shell read as a dark skin pore.
 		n = bump_normal(
@@ -506,6 +575,22 @@ void fragment() {
 			VERTEX,
 			bubble.x,
 			bubble_depth * gel_mask / max(bubble_scale, 0.001));
+	}
+	vec2 microbubble = vec2(0.0);
+	if (microbubble_enabled && microbubble_depth > 0.001 && microbubble_density > 0.001) {
+		microbubble = bubble_volume_at(
+			v_obj_pos * microbubble_scale,
+			microbubble_density,
+			microbubble_radius_min,
+			microbubble_radius_max,
+			microbubble_jitter,
+			microbubble_softness,
+			microbubble_seed);
+		n = bump_normal(
+			n,
+			VERTEX,
+			microbubble.x,
+			microbubble_depth * gel_mask / max(microbubble_scale, 0.001));
 	}
 	NORMAL = n;
 
@@ -520,14 +605,24 @@ void fragment() {
 	// of its green and blue and reads deep saturated orange, a thin edge has
 	// absorbed almost nothing and stays hot. Both channels therefore move across a
 	// limb, which is the cue the flat clipped plateau used to destroy.
-	float local_thickness = clamp(1.0 - thin - bubble.x * bubble_thinness, 0.0, 1.0);
+	float local_thickness = clamp(
+		1.0 - thin
+		- bubble.x * bubble_thinness
+		- microbubble.x * microbubble_thinness,
+		0.0,
+		1.0);
 	vec3 through = gel_throughput(local_thickness);
 	vec3 body = body_color.rgb * albedo_gain * mix(vec3(1.0), through, body_absorb);
 	body = mix(body, body * (0.35 + 1.3 * lum), tex_tint_mix);
-	body *= 1.0 - bubble.y * bubble_shell_shadow * gel_mask;
+	body *= 1.0 - (
+		bubble.y * bubble_shell_shadow
+		+ microbubble.y * microbubble_shell_shadow) * gel_mask;
 	ALBEDO = mix(body, ink_color.rgb, ink);
 	METALLIC = 0.0;
-	float gel_roughness = mix(body_roughness, max(body_roughness * 0.72, 0.04), bubble.x);
+	float gel_roughness = mix(
+		body_roughness,
+		max(body_roughness * 0.72, 0.04),
+		max(bubble.x, microbubble.x));
 	ROUGHNESS = mix(gel_roughness, ink_roughness, ink);
 	SPECULAR = env_specular;
 
@@ -564,7 +659,22 @@ void fragment() {
 	// the body plateau is measured over. Limited on its own so a wide flooded band
 	// cannot read as an emissive stripe painted on the outline.
 	vec3 rim = rim_color.rgb * rim_energy * pow(fres, rim_power);
-	vec3 bubble_glow = transmit_color.rgb * bubble_emission * bubble.x * (0.25 + 0.75 * fres);
+	float inclusion = 0.0;
+	if (inclusion_enabled && inclusion_emission > 0.001) {
+		float inoise = inclusion_noise(
+			v_obj_pos * inclusion_scale
+			+ vec3(inclusion_seed, inclusion_seed * 1.31, inclusion_seed * 2.17));
+		// Widen the transition by the on-screen footprint. This turns the field into
+		// stable sub-pixel sparkle density instead of a shimmering binary pattern.
+		float aa = max(inclusion_softness, fwidth(inoise) * 0.85);
+		inclusion = smoothstep(inclusion_threshold - aa, inclusion_threshold + aa, inoise);
+	}
+	vec3 bubble_glow = transmit_color.rgb * (
+		bubble_emission * bubble.x
+		+ bubble_shell_emission * bubble.y
+		+ microbubble_emission * microbubble.x
+		+ microbubble_shell_emission * microbubble.y
+		+ inclusion_emission * inclusion) * (0.25 + 0.75 * fres);
 	EMISSION = (
 		peak_limit(inner + bubble_glow, interior_budget)
 		+ peak_limit(rim, rim_budget)) * gel_mask;

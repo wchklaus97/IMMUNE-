@@ -21,6 +21,10 @@ const _Look := preload("res://characters/family_look.gd")
 @export var imported_model_scale: Vector3 = Vector3.ONE
 @export var imported_face_overlay: bool = false
 @export var imported_replaces_limbs: bool = true
+@export var imported_replaces_identity: bool = false
+@export var imported_replaces_bubbles: bool = false
+@export var imported_replaces_fixed_kit: bool = false
+@export var imported_preserves_materials: bool = false
 
 var animation_player: AnimationPlayer
 var base_kit: Node3D
@@ -115,10 +119,10 @@ func _realize_imported_mesh() -> void:
 	var limbs := get_node_or_null("LimbKit") as Node3D
 	if limbs:
 		limbs.visible = not imported_replaces_limbs
-	# Family profiles are shared by imported bodies, procedural duty pieces,
-	# previews, combat, and tests. B's round-bubble profile therefore lives in
-	# gel_profiles.gd instead of being a one-off override hidden in this scene path.
-	_Look.apply_gel(real_mesh, String(family_id))
+	# Imported GLBs normally receive the family gel profile. Authored bodies may
+	# opt out when their material layering is itself part of the approved asset.
+	if not imported_preserves_materials:
+		_Look.apply_gel(real_mesh, String(family_id))
 
 
 func _process(delta: float) -> void:

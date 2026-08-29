@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate a Meshy GLB and optionally install CHAR-BASE-M into Godot.
+"""Validate a Meshy GLB and optionally install an approved base-cell hero.
 
 Validation is read-only by default. Installation requires --install and never
 overwrites a different existing asset unless --replace is also provided.
@@ -18,8 +18,12 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[2]
-M_TARGET = ROOT / "godot/immune/characters/base_m/CHAR-BASE-M-meshy-t2.glb"
-M_PROVENANCE = ROOT / "godot/immune/characters/base_m/ASSET_PROVENANCE.md"
+ASSET_SLOTS = {
+    "CHAR-BASE-M": {"family": "M", "directory": "base_m"},
+    "CHAR-BASE-N": {"family": "N", "directory": "base_n"},
+    "CHAR-BASE-A": {"family": "A", "directory": "base_a"},
+    "CHAR-BASE-D": {"family": "D", "directory": "base_d"},
+}
 GLB_JSON_CHUNK = 0x4E4F534A
 TRIANGLES_MODE = 4
 
@@ -56,12 +60,13 @@ def load_source(args: argparse.Namespace) -> tuple[Path, dict[str, Any] | None]:
         metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         raise ValidationError(f"invalid project metadata: {exc}") from exc
-    if metadata.get("asset_id") != "CHAR-BASE-M":
-        raise ValidationError("project metadata is not for CHAR-BASE-M")
+    asset_id = str(metadata.get("asset_id", ""))
+    if asset_id not in ASSET_SLOTS:
+        raise ValidationError(f"project metadata is not for an approved base-cell slot: {asset_id!r}")
     if metadata.get("status") != "SUCCEEDED":
         raise ValidationError("Meshy task did not finish with SUCCEEDED")
     cost = metadata.get("consumed_credits")
-    if not isinstance(cost, int) or cost > 5:
+    if cost != 5:
         raise ValidationError(f"unexpected or missing credit cost: {cost!r}")
     files = metadata.get("files")
     if not isinstance(files, list) or len(files) != 1:
@@ -69,6 +74,8 @@ def load_source(args: argparse.Namespace) -> tuple[Path, dict[str, Any] | None]:
     filename = str(files[0])
     if Path(filename).name != filename:
         raise ValidationError("metadata file name must not contain a directory")
+    if filename != f"{asset_id}-meshy-t2.glb":
+        raise ValidationError("metadata file name does not match its approved asset slot")
     downloaded = (project_dir / filename).resolve()
     try:
         downloaded.relative_to(project_dir)
@@ -211,18 +218,24 @@ def inspect_geometry(document: dict[str, Any]) -> dict[str, Any]:
 def install(path: Path, metadata: dict[str, Any] | None, replace: bool) -> None:
     if metadata is None:
         raise ValidationError("--install requires --project-dir with immutable task metadata")
-    M_TARGET.parent.mkdir(parents=True, exist_ok=True)
+    asset_id = str(metadata.get("asset_id", ""))
+    slot = ASSET_SLOTS.get(asset_id)
+    if slot is None:
+        raise ValidationError(f"cannot install unsupported asset slot: {asset_id!r}")
+    target = ROOT / f"godot/immune/characters/{slot['directory']}/{asset_id}-meshy-t2.glb"
+    provenance_path = target.parent / "ASSET_PROVENANCE.md"
+    target.parent.mkdir(parents=True, exist_ok=True)
     source_hash = sha256(path)
     identical = False
-    if M_TARGET.exists():
-        if sha256(M_TARGET) == source_hash:
+    if target.exists():
+        if sha256(target) == source_hash:
             identical = True
         elif not replace:
             raise ValidationError(
-                f"target already contains a different asset: {M_TARGET}; pass --replace explicitly"
+                f"target already contains a different asset: {target}; pass --replace explicitly"
             )
     if not identical:
-        shutil.copy2(path, M_TARGET)
+        shutil.copy2(path, target)
     task_id = metadata.get("task_id", "unknown")
     api_version = metadata.get("api_version", "unknown")
     postprocess = metadata.get("postprocess")
@@ -238,7 +251,7 @@ def install(path: Path, metadata: dict[str, Any] | None, replace: bool) -> None:
             f"- Downloaded SHA-256: `{postprocess.get('source_sha256', 'unknown')}`\n"
         )
     provenance = (
-        "# CHAR-BASE-M Meshy T2 asset provenance\n\n"
+        f"# {asset_id} Meshy T2 asset provenance\n\n"
         f"- Task ID: `{task_id}`\n"
         f"- API server version: `{api_version}`\n"
         "- Model: `model_type=smart-topology`, `ai_model=meshy-t2`\n"
@@ -247,11 +260,17 @@ def install(path: Path, metadata: dict[str, Any] | None, replace: bool) -> None:
         f"{postprocess_note}"
         f"- Installed SHA-256: `{source_hash}`\n"
         "- Material strategy: shared Godot wet-gel shader; Meshy texture disabled.\n"
-        "- Runtime slot: `characters/base_m/character.tscn` loads this GLB when present and keeps the procedural blockout as fallback.\n"
+        f"- Runtime slot: `characters/{slot['directory']}/character.tscn` loads this GLB when present and keeps the procedural blockout as fallback.\n"
     )
-    M_PROVENANCE.write_text(provenance, encoding="utf-8")
+    provenance_partial = provenance_path.with_suffix(".md.part")
+    try:
+        provenance_partial.write_text(provenance, encoding="utf-8")
+        provenance_partial.replace(provenance_path)
+    finally:
+        if provenance_partial.exists():
+            provenance_partial.unlink()
     action = "INSTALL_REFRESHED_PROVENANCE" if identical else "INSTALL_OK"
-    print(f"{action} target={M_TARGET.relative_to(ROOT)} sha256={source_hash}")
+    print(f"{action} target={target.relative_to(ROOT)} sha256={source_hash}")
 
 
 def main() -> int:

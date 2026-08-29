@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "asset_id": "CHAR-BASE-A",
+  "display_name": "Antibody construct base cell",
+  "source_image": "godot/immune/characters/concepts/base-cell-line-v2/CHAR-BASE-A.png",
+  "output_filename": "CHAR-BASE-A-meshy-t2.glb",
+  "endpoint": "/openapi/v1/image-to-3d",
+  "poll_endpoint": "/openapi/v1/image-to-3d",
+  "expected_credits": 5,
+  "request": {
+    "model_type": "smart-topology",
+    "ai_model": "meshy-t2",
+    "topology": "triangle",
+    "target_polycount": 8000,
+    "should_texture": false,
+    "enable_pbr": false,
+    "target_formats": ["glb"],
+    "auto_size": false,
+    "moderation": true
+  },
+  "acceptance": {
+    "max_face_count": 12000,
+    "required_format": "glb",
+    "minimum_file_bytes": 4096,
+    "material_strategy": "Replace imported materials with the shared Godot wet-gel shader; do not bake jelly lighting into a Meshy texture.",
+    "silhouette": "One floating amber-orange spherical body, two tiny side arms, two eyes and one round O mouth; no feet, no crown, no platform and no detached pieces."
+  }
+}

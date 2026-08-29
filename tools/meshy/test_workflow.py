@@ -75,6 +75,20 @@ class MeshyWorkflowSafetyTests(unittest.TestCase):
         self.assertTrue(source.is_file())
         self.assertEqual(manifest["expected_credits"], 5)
 
+    def test_all_pending_base_manifests_pass_no_network_preflight(self) -> None:
+        for filename in ("n_cell_request.json", "a_cell_request.json", "d_cell_request.json"):
+            with self.subTest(filename=filename):
+                manifest = runner.load_manifest(runner.DEFAULT_MANIFEST.with_name(filename))
+                source = runner.validate_manifest(manifest)
+                self.assertTrue(source.is_file())
+                self.assertEqual(manifest["expected_credits"], 5)
+
+    def test_manifest_cannot_swap_locked_reference_images(self) -> None:
+        manifest = runner.load_manifest(runner.DEFAULT_MANIFEST.with_name("n_cell_request.json"))
+        manifest["source_image"] = runner.SUPPORTED_ASSETS["CHAR-BASE-A"]["source_image"]
+        with self.assertRaises(runner.WorkflowError):
+            runner.validate_manifest(manifest)
+
     def test_jpeg_thumbnail_keeps_its_real_extension(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             project_dir = Path(directory)

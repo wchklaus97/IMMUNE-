@@ -53,7 +53,7 @@ jobs:
         run: |
           set -o pipefail
           godot --headless --path godot/immune --script res://tools/smoke.gd 2>&1 | tee godot-smoke.log
-          grep -F "SMOKE_OK missions=6 families=6 save=v2 audio=ready gamepad=ready signatures=T+B traits=enrage+regen meshy=B+M gel_bubbles=B+M" godot-smoke.log
+          grep -F "SMOKE_OK missions=6 families=6 save=v2 audio=ready gamepad=ready signatures=T+B traits=enrage+regen meshy=B reference_m=fizzy gel_bubbles=B+M" godot-smoke.log
           ! grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" godot-smoke.log
 
       - name: Run bounded campaign balance regression
@@ -148,7 +148,6 @@ jobs:
           unzip -q IMMUNE-macOS.zip -d macos
           chmod +x macos/IMMUNE.app/Contents/MacOS/IMMUNE
           log_path="$PWD/macos-release-smoke.log"
-          ./macos/IMMUNE.app/Contents/MacOS/IMMUNE --headless --audio-driver Dummy --log-file "$log_path" -- --release-smoke
-          cat "$log_path"
+          ./macos/IMMUNE.app/Contents/MacOS/IMMUNE --headless --audio-driver Dummy -- --release-smoke 2>&1 | tee "$log_path"
           grep -F "RELEASE_SMOKE_OK platform=macOS nodes=200" "$log_path"
           ! grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" "$log_path"

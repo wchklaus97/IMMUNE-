@@ -92,27 +92,59 @@ func _run() -> void:
 		elif str(unit.get("family_id")) == "M":
 			var m_real_mesh := unit.get_node_or_null("CoreMesh/RealMesh")
 			if m_real_mesh == null or unit.get("real_mesh") == null:
-				push_error("CHAR-BASE-M must realize its verified Meshy T2 body")
+				push_error("CHAR-BASE-M must realize its accepted reference body")
 				quit(1)
 				return
 			var m_face := unit.get_node_or_null("Face") as Node3D
-			var m_mouth := unit.get_node_or_null("Face/Mouth") as Node3D
 			var m_limbs := unit.get_node_or_null("LimbKit") as Node3D
-			if m_face == null or not m_face.visible or m_mouth == null or m_mouth.visible:
-				push_error("CHAR-BASE-M must keep overlay eyes but use the sculpted mouth cavity")
+			if m_face == null or m_face.visible:
+				push_error("CHAR-BASE-M accepted body must replace the procedural face")
 				quit(1)
 				return
 			if m_limbs == null or m_limbs.visible:
-				push_error("CHAR-BASE-M sculpt must replace procedural base limbs")
+				push_error("CHAR-BASE-M accepted body must replace procedural base limbs")
 				quit(1)
 				return
-			var m_runtime_gel := _find_wet_gel_material(m_real_mesh)
+			if unit.get_node_or_null("WeaponSocket").get_child_count() != 0:
+				push_error("CHAR-BASE-M accepted body must replace procedural identity props")
+				quit(1)
+				return
+			if unit.get_node_or_null("CoreMesh/Bubble0") != null:
+				push_error("CHAR-BASE-M accepted body must replace procedural bubble geometry")
+				quit(1)
+				return
+			var m_base := unit.get_node_or_null("DutyKits/BaseKit") as Node3D
+			if m_base == null or m_base.get_child_count() != 0:
+				push_error("CHAR-BASE-M fused feet must replace the procedural fixed kit")
+				quit(1)
+				return
+			var m_body := m_real_mesh.get_node_or_null("Body") as MeshInstance3D
+			var m_shell := m_real_mesh.get_node_or_null("BodyShell") as MeshInstance3D
+			if m_body == null or m_shell == null:
+				push_error("CHAR-BASE-M accepted body must expose Body and BodyShell")
+				quit(1)
+				return
+			for authored_path in ["EyeL", "EyeR", "MouthCavity"]:
+				if m_real_mesh.get_node_or_null(authored_path) == null:
+					push_error("CHAR-BASE-M accepted body missing %s" % authored_path)
+					quit(1)
+					return
+			var m_runtime_gel := m_body.material_override as ShaderMaterial
 			if m_runtime_gel == null or m_runtime_gel.get_shader_parameter("bubble_enabled") != true:
-				push_error("CHAR-BASE-M imported body must receive its macrophage-bubble profile")
+				push_error("CHAR-BASE-M accepted body must keep its authored bubble material")
 				quit(1)
 				return
-			if not is_zero_approx(float(m_runtime_gel.get_shader_parameter("dimple_depth"))):
-				push_error("CHAR-BASE-M must disable triplanar dimples on its low-poly sculpt")
+			if m_runtime_gel.get_shader_parameter("microbubble_enabled") != true or m_runtime_gel.get_shader_parameter("inclusion_enabled") != true:
+				push_error("CHAR-BASE-M fizzy profile must keep microbubbles and fine inclusions")
+				quit(1)
+				return
+			var m_shell_material := m_shell.material_override as ShaderMaterial
+			if m_shell_material == null or m_shell_material.shader == null or not m_shell_material.shader.resource_path.ends_with("jelly_shell.gdshader"):
+				push_error("CHAR-BASE-M accepted body must keep its authored clear membrane")
+				quit(1)
+				return
+			if not bool(unit.get("imported_preserves_materials")) or str(unit.get("imported_model_path")) != "res://characters/base_m/reference_body.tscn":
+				push_error("CHAR-BASE-M scene must lock the accepted fizzy production adapter")
 				quit(1)
 				return
 	var look := load("res://characters/family_look.gd")
@@ -156,6 +188,21 @@ func _run() -> void:
 					return
 				if not _all_geometry_shadows_disabled(b_loco):
 					push_error("CHAR-BASE-B mobile accessories must not cast oversized world shadows")
+					quit(1)
+					return
+			elif str(unit.get("family_id")) == "M":
+				var m_base := unit.get_node_or_null("DutyKits/BaseKit") as Node3D
+				var m_loco := unit.get_node_or_null("DutyKits/LocomotionKit") as Node3D
+				var m_body := unit.get_node_or_null("CoreMesh/RealMesh") as Node3D
+				var invalid_m_duty := m_body == null or not m_body.visible
+				invalid_m_duty = invalid_m_duty or m_base == null or m_base.visible
+				invalid_m_duty = invalid_m_duty or m_loco == null or not m_loco.visible
+				if invalid_m_duty:
+					push_error("CHAR-BASE-M duty swap must preserve the accepted body")
+					quit(1)
+					return
+				if not _all_geometry_shadows_disabled(m_loco):
+					push_error("CHAR-BASE-M mobile accessories must not cast oversized world shadows")
 					quit(1)
 					return
 	var research := load("res://ui/research/research_network.tscn") as PackedScene
@@ -576,7 +623,7 @@ func _run() -> void:
 		await process_frame
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(smoke_save))
 	research_state.call("seed_demo")
-	print("SMOKE_OK missions=6 families=6 save=v2 audio=ready gamepad=ready signatures=T+B traits=enrage+regen meshy=B+M gel_bubbles=B+M")
+	print("SMOKE_OK missions=6 families=6 save=v2 audio=ready gamepad=ready signatures=T+B traits=enrage+regen meshy=B reference_m=fizzy gel_bubbles=B+M")
 	var audio_director := root.get_node_or_null("AudioDirector")
 	if audio_director != null:
 		audio_director.call("stop_all")
