@@ -112,6 +112,14 @@ stress profile, not a real lower-end hardware benchmark.
 - Exported macOS: strict ad-hoc signature, arm64+x86_64, bundle/version/icon,
   and `RELEASE_SMOKE_OK platform=macOS nodes=200`: pass.
 - Exported Web baseline plus constrained-software research-to-pause flow: pass.
+- GitHub Actions run `33264998027` verifies code commit
+  `23f5bdc82c7f9eae0311d6959e532ed06da0b167` on Godot 4.7.2. The main
+  validation/export job passed in 10m34s; native Windows, macOS, and Ubuntu
+  artifact jobs passed in 18s, 21s, and 17s.
+- The exact CI artifact was packaged into a schema-v2 six-person Jelly V4
+  campaign with 14 artifacts, 43 checksums, four platform preflights, and a real
+  exported-Web rehearsal. Its artifact-set SHA-256 is
+  `6d4e94f6b9c0d3f416e3653181b533c3f0403c029da49a31c565c75ba0f7fc24`.
 
 The first macOS staging command was rejected before execution because its
 cleanup trap contained `rm -rf`. The workflow stopped, identified the safety
@@ -120,11 +128,9 @@ all binary checks. No failed generation or partial binary was promoted.
 
 ## Remaining gates
 
-- Godot 4.7.2 GitHub Actions validation of the V4 commit.
 - Human side-by-side approval of all six final bodies.
-- At least three complete adult reports from a provenance-locked V4 campaign;
-  six remain recommended. The existing V3 campaign is historical and must not
-  be used to claim V4 results.
+- At least three complete adult reports from the provenance-locked V4 campaign;
+  six remain recommended. No synthetic or facilitator rehearsal counts.
 - A real agreed lower-end Windows/Web hardware pass.
 - Developer ID signing, notarization, storefront metadata, public tag/release,
   and upload require explicit owner authorization and were not performed.

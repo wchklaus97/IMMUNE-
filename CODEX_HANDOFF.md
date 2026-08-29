@@ -72,6 +72,10 @@ The latest tranche adds:
   run `33262958960`, locking all six tester kits to code commit `2b077c5` with
   43 checksums and a verified exported-Web research-to-pause rehearsal. Current
   V4 source supersedes it, so it must not be used for new V4 reports.
+- a current portable Jelly V4 campaign sourced from successful Godot 4.7.2 run
+  `33264998027`, locking six tester kits to code commit `23f5bdc`, 14 artifacts,
+  43 checksums, four platform preflights, and a verified exported-Web
+  research-to-pause rehearsal.
 
 ## Playable loop
 
@@ -303,6 +307,18 @@ python3 tools/meshy/validate_hero_glb.py \
   exported-Web compatibility QA all pass locally. Full rationale and claim
   boundaries are in
   `docs/godot-prompter/specs/2026-08-30-jelly-membrane-v4.md`.
+- Jelly V4 remote and campaign gate (2026-08-30): GitHub Actions run
+  `33264998027` verifies commit
+  `23f5bdc82c7f9eae0311d6959e532ed06da0b167`; main Godot 4.7.2
+  validation/export passed in 10m34s and Windows/macOS/Ubuntu native artifacts
+  passed in 18s/21s/17s. The exact artifact was packaged as
+  `immune-v0.4.0-23f5bdc-run-33264998027-jelly-v4-portable-v1`. Repository and
+  bundled verifiers, all 43 independent checksums, and four platform preflights
+  pass. The copied Web build completed the full browser flow at 120.003/109.890
+  mean/p05 FPS on Metal and 13.165/11.962 on 4x-CPU SwiftShader; eight screenshots
+  passed visual review. This is distribution evidence, not a human result. Full
+  provenance is in
+  `docs/godot-prompter/specs/2026-08-30-jelly-v4-human-playtest-campaign.md`.
 
 - Verified facilitator station (2026-08-29): four new tests cover exact
   Web/Windows/Linux/macOS entry contracts, unknown participant/platform,
@@ -581,6 +597,8 @@ Generated local artifacts (ignored by Git):
 - `outputs/web-release-qa-ci-run-33259930365/`
 - `outputs/jelly-v3-lookdev/`
 - `outputs/jelly-v4-lookdev/`
+- `outputs/human-playtest-campaigns/immune-v0.4.0-23f5bdc-run-33264998027-jelly-v4-portable-v1/`
+- `outputs/jelly-v4-playtest-campaign-qa/`
 - `outputs/release-ci-33262958960-jelly-v3/`
 - `outputs/human-playtest-campaigns/immune-v0.4.0-2b077c5-run-33262958960-jelly-v3-portable-v1/`
 - `outputs/jelly-v3-playtest-campaign-qa/`
@@ -597,24 +615,24 @@ cd ../../
 npm ci --ignore-scripts
 npm run test:tools
 npm run validate:playtest-template
-gh run download 33262958960 \
-  -n immune-demo-2b077c57c82881cca2d33cb6c07abed4b944776a \
-  -D outputs/release-ci-33262958960-jelly-v3
+gh run download 33264998027 \
+  -n immune-demo-23f5bdc82c7f9eae0311d6959e532ed06da0b167 \
+  -D outputs/release-ci-33264998027-jelly-v4
 npm run create:playtest-campaign -- \
-  --artifacts=outputs/release-ci-33262958960-jelly-v3 \
-  --build-commit=2b077c57c82881cca2d33cb6c07abed4b944776a \
-  --source-run=33262958960 \
-  --source-artifact=immune-demo-2b077c57c82881cca2d33cb6c07abed4b944776a \
-  --out=outputs/human-playtest-campaigns/immune-v0.4.0-2b077c5-run-33262958960-jelly-v3-portable-v1
+  --artifacts=outputs/release-ci-33264998027-jelly-v4 \
+  --build-commit=23f5bdc82c7f9eae0311d6959e532ed06da0b167 \
+  --source-run=33264998027 \
+  --source-artifact=immune-demo-23f5bdc82c7f9eae0311d6959e532ed06da0b167 \
+  --out=outputs/human-playtest-campaigns/immune-v0.4.0-23f5bdc-run-33264998027-jelly-v4-portable-v1
 npm run create:playtest-campaign -- \
-  --verify=outputs/human-playtest-campaigns/immune-v0.4.0-2b077c5-run-33262958960-jelly-v3-portable-v1
-cd outputs/human-playtest-campaigns/immune-v0.4.0-2b077c5-run-33262958960-jelly-v3-portable-v1
+  --verify=outputs/human-playtest-campaigns/immune-v0.4.0-23f5bdc-run-33264998027-jelly-v4-portable-v1
+cd outputs/human-playtest-campaigns/immune-v0.4.0-23f5bdc-run-33264998027-jelly-v4-portable-v1
 node facilitator/run_human_playtest_session.mjs --campaign=. \
   --participant=tester-01 --platform=web --open
 cd ../../..
 npm run aggregate:playtests -- \
-  --dir=outputs/playtests/human/raw/2b077c5 \
-  --out=outputs/playtests/human/aggregate-2b077c5.json \
+  --dir=outputs/playtests/human/raw/23f5bdc \
+  --out=outputs/playtests/human/aggregate-23f5bdc.json \
   --minimum-participants=3 --require-minimum
 node tools/validate_release_contract.mjs
 node tools/generate_catalog_localization.mjs --check
@@ -668,9 +686,9 @@ commercial release. Remaining work is:
    remaining product-risk gates are longer human playtesting across all six
    families for final Jelly V4 art-direction approval,
    fun/readability/accessibility/control feel, and a repeat on an agreed real
-   lower-end Windows/Web machine. Do not use the verified `2b077c5` Jelly V3
-   campaign for V4 results; generate a new checksum-gated campaign only from a
-   successful V4 CI artifact, then use its facilitator station and campaign plan;
+   lower-end Windows/Web machine. Use the verified `23f5bdc` Jelly V4 campaign,
+   checksum-gated facilitator station, and checked-in campaign plan; the V3
+   campaign remains historical and must not be mixed into the V4 sample;
    deterministic automation, session preflight, and synthetic form fixtures
    cannot honestly prove those qualities.
 5. A future public tag must be an explicit owner-approved publishing action.
