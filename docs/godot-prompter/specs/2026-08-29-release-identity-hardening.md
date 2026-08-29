@@ -1,7 +1,7 @@
 # IMMUNE v0.4.0 release identity hardening
 
 Date: 2026-08-29
-Status: implemented and locally verified; publishing intentionally not performed
+Status: implemented and verified locally plus Godot 4.7.2 CI; publishing intentionally not performed
 
 ## Goal
 
@@ -106,6 +106,12 @@ only existing in text files:
   placed after Godot's `--` separator.
 - Web generated a 1024x1024 alpha icon and a 180x180 alpha Apple touch icon from
   the canonical project icon.
+
+GitHub Actions run `33253080682` then verified commit `a7db3bd` on Godot 4.7.2.
+The main validation/export job and all three downloaded-artifact native jobs
+(Linux, Windows, and macOS) completed successfully. This includes the Windows
+VersionInfo assertions and macOS signature, bundle, icon, universal-binary, and
+release-smoke assertions introduced by this tranche.
 
 ## Remaining external gates
 

@@ -223,6 +223,9 @@ python3 tools/meshy/validate_hero_glb.py \
   arm64+x86_64, and exported 200-node smoke pass. Web generates 1024 and 180 px
   alpha icons, and `.gdignore` leaves no release `.import` sidecars. Full evidence
   is in `docs/godot-prompter/specs/2026-08-29-release-identity-hardening.md`.
+  GitHub Actions run `33253080682` verifies commit `a7db3bd` on Godot 4.7.2:
+  `validate-and-export` plus Linux, Windows, and macOS native artifact jobs all
+  pass, including the new Windows VersionInfo and macOS bundle/icon checks.
 - Six-family Fizzy convergence (2026-08-29): fresh six-angle baseline review,
   RED-to-GREEN profile/runtime contracts, final complete mission-desk framing at
   1600x900 and 1280x720, T/B Compatibility comparisons, and a current B
