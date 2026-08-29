@@ -1,9 +1,14 @@
 OVERFLOW_CHECK_START
 HUD_SIZE (1920.0, 1080.0) WINDOW (0, 0) MAP_WAIT
-RESOURCE_SUB 一度原質 15 · 融合核心 2 · 生物質 40 visible_lines=1/1 size=(275.0, 20.0)
-MAP_SIZE (1920.0, 1080.0) CLIP true
-LABELS_cover count=7 免疫核心, T 細胞, B 細胞, 巨噬細胞, NK 細胞, 抗體構造體, 樹突細胞
+MAP_zh_HK SIZE (1920.0, 1080.0) CLIP true
+RESOURCE_SUB_zh_HK 一度原質 15 · 融合核心 2 · 生物質 40 visible_lines=1/1 size=(275.0, 20.0)
+LABELS_zh_HK_cover count=7 免疫核心, T 細胞, B 細胞, 巨噬細胞, NK 細胞, 抗體構造體, 樹突細胞
 NODES_cover drawn=32 pairish=15
-LABELS_zoom-1.2 count=8 免疫核心, T 細胞, B 細胞, 巨噬細胞, NK 細胞, 抗體構造體, 樹突細胞, T 細胞固定炮台專精
+LABELS_zh_HK_zoom-1.2 count=7 免疫核心, T 細胞, B 細胞, 巨噬細胞, NK 細胞, 抗體構造體, 樹突細胞
+MAP_en SIZE (1920.0, 1080.0) CLIP true
+RESOURCE_SUB_en Protomass 15 · Fusion Cores 2 · Biomass 40 visible_lines=1/1 size=(325.0, 20.0)
+LABELS_en_cover count=7 Immune Core, T Cell, B Cell, Macrophage, NK Cell, Antibody Construct, Dendritic Cell
+NODES_cover drawn=32 pairish=15
+LABELS_en_zoom-1.2 count=7 Immune Core, T Cell, B Cell, Macrophage, NK Cell, Antibody Construct, Dendritic Cell
 SCREENSHOT_SKIPPED headless
-OVERFLOW_CHECK_OK viewport=1920x1080 cover_labels=core+6bases no_pair_stack clip=pass
+OVERFLOW_CHECK_OK viewport=1920x1080 locales=zh_HK+en cover_labels=core+6bases no_pair_stack clip=pass

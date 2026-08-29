@@ -28,19 +28,39 @@ var _research_btn: Button
 var _track_btn: Button
 var _toast: Label
 var _progress_label: Label
+var _locale_applied := ""
 
 const STAT_LABEL := {
-	"attackSpeed": "全體攻速",
-	"moveSpeed": "全體移速",
-	"cooldown": "技能冷卻縮短",
-	"coreRegen": "核心修復",
-	"unitRegen": "單位再生",
-	"biomassYield": "生物質回收",
-	"critChance": "暴擊率",
-	"weaknessAmp": "弱點放大",
-	"armorShred": "腐蝕破甲",
-	"enemySlow": "敵人緩速",
-	"pathSlow": "路線減速",
+	"attackSpeed": "RESEARCH_STAT_ATTACK_SPEED",
+	"moveSpeed": "RESEARCH_STAT_MOVE_SPEED",
+	"cooldown": "RESEARCH_STAT_COOLDOWN",
+	"coreRegen": "RESEARCH_STAT_CORE_REGEN",
+	"unitRegen": "RESEARCH_STAT_UNIT_REGEN",
+	"biomassYield": "RESEARCH_STAT_BIOMASS_YIELD",
+	"critChance": "RESEARCH_STAT_CRIT_CHANCE",
+	"weaknessAmp": "RESEARCH_STAT_WEAKNESS_AMP",
+	"armorShred": "RESEARCH_STAT_ARMOR_SHRED",
+	"enemySlow": "RESEARCH_STAT_ENEMY_SLOW",
+	"pathSlow": "RESEARCH_STAT_PATH_SLOW",
+}
+
+const DOMAIN_LABEL := {
+	"DEF": "RESEARCH_DOMAIN_DEF",
+	"EXP": "RESEARCH_DOMAIN_EXP",
+	"WAR": "RESEARCH_DOMAIN_WAR",
+	"MOB": "RESEARCH_DOMAIN_MOB",
+	"FUS": "RESEARCH_DOMAIN_FUS",
+	"SUR": "RESEARCH_DOMAIN_SUR",
+}
+
+const STATUS_LABEL := {
+	"標記": "RESEARCH_CHEMISTRY_MARK",
+	"抗體": "RESEARCH_CHEMISTRY_ANTIBODY",
+	"腐蝕": "RESEARCH_CHEMISTRY_CORROSION",
+	"緩速": "RESEARCH_CHEMISTRY_SLOW",
+	"感染": "RESEARCH_CHEMISTRY_INFECTION",
+	"鏈鎖": "RESEARCH_CHEMISTRY_CHAIN",
+	"暴擊": "RESEARCH_CHEMISTRY_CRITICAL",
 }
 
 
@@ -48,20 +68,37 @@ func _ready() -> void:
 	clip_contents = true
 	set_anchors_preset(PRESET_FULL_RECT)
 	set_anchors_and_offsets_preset(PRESET_FULL_RECT)
+	_reset_ui()
+	_build()
+	_locale_applied = TranslationServer.get_locale()
+	if not Engine.is_editor_hint():
+		ResearchState.state_changed.connect(_refresh)
+		ResearchState.node_completed.connect(_on_node_completed)
+		SettingsState.settings_changed.connect(_on_settings_changed)
+	_refresh()
+	call_deferred("_home")
+	if OS.get_cmdline_user_args().has("--release-smoke"):
+		call_deferred("_run_release_smoke")
+
+
+func _reset_ui() -> void:
 	while get_child_count() > 0:
 		var stale_child := get_child(0)
 		remove_child(stale_child)
 		stale_child.queue_free()
 	_family_bars.clear()
+	_resource_rows.clear()
+
+
+func _on_settings_changed() -> void:
+	var next_locale := TranslationServer.get_locale()
+	if next_locale == _locale_applied:
+		return
+	_locale_applied = next_locale
+	_reset_ui()
 	_build()
-	if not Engine.is_editor_hint():
-		ResearchState.state_changed.connect(_refresh)
-		ResearchState.node_completed.connect(_on_node_completed)
-		_map.node_clicked.connect(_on_node_clicked)
 	_refresh()
 	call_deferred("_home")
-	if OS.get_cmdline_user_args().has("--release-smoke"):
-		call_deferred("_run_release_smoke")
 
 
 func _run_release_smoke() -> void:
@@ -108,7 +145,7 @@ func _on_node_clicked(id: StringName) -> void:
 
 func _on_node_completed(id: StringName) -> void:
 	VfxLibrary.play_research(id, _map)
-	_flash("研究完成，永久進度已更新。")
+	_flash(tr("RESEARCH_UI_COMPLETE_TOAST"))
 	_punch_resources()
 
 
@@ -125,7 +162,7 @@ func _try_research() -> void:
 	if ResearchState.complete_node(id):
 		return
 	var runtime := ResearchState.derive_state(id)
-	_flash(str(runtime.get("eligibility", "not_ready")))
+	_flash(ResearchState.eligibility_label(runtime, Catalog.get_node_def(id)))
 	_punch_detail()
 
 
@@ -159,9 +196,9 @@ func _flash(text: String) -> void:
 func _refresh() -> void:
 	_progress_label.text = "%d/200" % ResearchState.completed_node_ids.size()
 	var chapter := ResearchState.unlocked_campaign_level
-	var chapter_name := Catalog.campaign_level_name(chapter)
+	var chapter_name := Catalog.localized_campaign_level_name(chapter)
 	if _campaign_chip:
-		_campaign_chip.text = "關卡 %s %s" % [chapter, chapter_name]
+		_campaign_chip.text = tr("RESEARCH_UI_CAMPAIGN_CHIP") % [chapter, chapter_name]
 	_refresh_resources()
 	var selected := Catalog.get_node_def(ResearchState.selected_node_id)
 	var selected_families: Array = selected.get("familyIds", []) if not selected.is_empty() else []
@@ -201,7 +238,7 @@ func _refresh_resources() -> void:
 		else:
 			value.add_theme_color_override("font_color", _Tokens.CYAN)
 	if _resource_sub:
-		_resource_sub.text = "一度原質 %d · 融合核心 %d · 生物質 %d" % [
+		_resource_sub.text = tr("RESEARCH_UI_RESOURCE_SUMMARY") % [
 			int(ResearchState.resources.get("protomass", 0)),
 			int(ResearchState.resources.get("fusionCore", 0)),
 			int(ResearchState.resources.get("biomass", 0)),
@@ -213,7 +250,7 @@ func _refresh_detail() -> void:
 	var node := Catalog.get_node_def(id)
 	var runtime := ResearchState.derive_state(id)
 	if node.is_empty():
-		_detail_title.text = "選擇一個研究節點"
+		_detail_title.text = tr("RESEARCH_UI_SELECT_NODE")
 		_detail_body.text = ""
 		if _detail_meta:
 			_detail_meta.text = ""
@@ -223,8 +260,8 @@ func _refresh_detail() -> void:
 			_detail_cost.text = ""
 		return
 	var hidden := str(runtime.get("visibility")) == "hidden"
-	_detail_title.text = "未知研究" if hidden else str(node.get("name", id))
-	_detail_body.text = "此研究尚未被發現。" if hidden else str(node.get("description", ""))
+	_detail_title.text = tr("RESEARCH_UI_UNKNOWN_NAME") if hidden else Catalog.localized_node_name(node)
+	_detail_body.text = tr("RESEARCH_UI_UNKNOWN_DESCRIPTION") if hidden else Catalog.localized_node_description(node)
 	if _detail_meta:
 		_detail_meta.text = "" if hidden else _format_meta(node)
 	if _detail_effects:
@@ -232,35 +269,21 @@ func _refresh_detail() -> void:
 	if _detail_cost:
 		_detail_cost.text = "" if hidden else _format_cost_line(node)
 	var eligibility := str(runtime.get("eligibility", ""))
-	var status: String = eligibility
-	match eligibility:
-		"completed":
-			status = "已完成"
-		"ready":
-			status = "可研究"
-		"missing_prerequisite":
-			status = "缺少前置"
-		"missing_condition":
-			status = ResearchState._unmet_condition_label(node)
-		"missing_resource":
-			status = "資源不足"
-		"hidden":
-			status = "未發現"
-	_detail_status.text = status
+	_detail_status.text = ResearchState.eligibility_label(runtime, node)
 	_research_btn.disabled = eligibility != "ready"
-	_track_btn.text = "取消追蹤" if bool(runtime.get("tracked", false)) else "追蹤"
+	_track_btn.text = tr("RESEARCH_UI_UNTRACK") if bool(runtime.get("tracked", false)) else tr("RESEARCH_UI_TRACK")
 
 
 func _format_meta(node: Dictionary) -> String:
 	var bits: PackedStringArray = []
 	if str(node.get("route", "")) != "":
-		bits.append("研究樹 %s" % str(node.get("route")))
+		bits.append(tr("RESEARCH_UI_TREE") % str(node.get("route")))
 	var gate := _campaign_min(node)
 	if gate != "":
-		var name := Catalog.campaign_level_name(gate)
-		bits.append("需解鎖 %s %s" % [gate, name])
+		var name := Catalog.localized_campaign_level_name(gate)
+		bits.append(tr("RESEARCH_UI_REQUIRES_UNLOCK") % [gate, name])
 	elif str(node.get("levelLink", "")) != "":
-		bits.append("關卡 %s" % str(node.get("levelLink")))
+		bits.append(tr("RESEARCH_UI_MISSION") % str(node.get("levelLink")))
 	return " · ".join(bits)
 
 
@@ -288,48 +311,57 @@ func _format_effect(op: Dictionary) -> String:
 	var kind := str(op.get("op", ""))
 	if kind == "grant_global_stat":
 		var stat := str(op.get("stat", ""))
-		var label := str(STAT_LABEL.get(stat, stat))
+		var label_key := str(STAT_LABEL.get(stat, ""))
+		var label := tr(label_key) if label_key != "" else stat
 		var amount := float(op.get("amount", 0.0))
 		var shown := "%d" % int(amount) if absf(amount) >= 1.0 else "%d%%" % int(round(absf(amount) * 100.0))
 		var sign := "−" if amount < 0.0 else "+"
 		var duty := ""
 		if str(op.get("duty", "")) == "fixed":
-			duty = "（固定）"
+			duty = tr("RESEARCH_EFFECT_DUTY_FIXED")
 		elif str(op.get("duty", "")) == "mobile":
-			duty = "（移動）"
+			duty = tr("RESEARCH_EFFECT_DUTY_MOBILE")
 		return "%s%s %s%s" % [label, duty, sign, shown]
 	if kind == "grant_universal":
-		return "解鎖核心亞層：%s" % str(op.get("layer", op.get("domain", "")))
+		var domain := str(op.get("domain", ""))
+		var domain_key := str(DOMAIN_LABEL.get(domain, ""))
+		var domain_label := tr(domain_key) if domain_key != "" else str(op.get("layer", domain))
+		return tr("RESEARCH_EFFECT_UNLOCK_CORE_LAYER") % domain_label
 	if kind == "grant_status_chemistry":
-		return "強化狀態化學：%s" % str(op.get("status", ""))
+		var status := str(op.get("status", ""))
+		var status_key := str(STATUS_LABEL.get(status, ""))
+		return tr("RESEARCH_EFFECT_STRENGTHEN_STATUS") % (tr(status_key) if status_key != "" else status)
 	if kind == "grant_mobility":
-		return "授予移動勤務"
+		return tr("RESEARCH_EFFECT_GRANT_MOBILE_DUTY")
 	if kind == "grant_relay_qualification":
-		return "授予固定中繼勤務"
+		return tr("RESEARCH_EFFECT_GRANT_FIXED_RELAY_DUTY")
 	if kind == "grant_fixed_turret":
-		return "授予固定炮台勤務"
+		return tr("RESEARCH_EFFECT_GRANT_FIXED_TURRET_DUTY")
 	if kind == "grant_character_usage":
-		return "解鎖部署資格"
+		return tr("RESEARCH_EFFECT_UNLOCK_DEPLOYMENT")
 	return ""
 
 
 func _format_cost_line(node: Dictionary) -> String:
 	var costs := ResearchState.cost_table(node)
 	if costs.is_empty():
-		return "成本：免費"
+		return tr("RESEARCH_COST_FREE")
 	var bits: PackedStringArray = []
 	for key in costs.keys():
 		var need := int(costs[key])
 		var have := int(ResearchState.resources.get(key, 0))
-		var label := str(_Tokens.RESOURCE_LABEL.get(key, key))
+		var resource_key := str(_Tokens.RESOURCE_LABEL.get(key, ""))
+		var label := tr(resource_key) if resource_key != "" else str(key)
 		bits.append("%s %d／%d" % [label, need, have])
-	return "成本：%s" % " · ".join(bits)
+	return tr("RESEARCH_COST_PREFIX") % " · ".join(bits)
 
 
 func _build() -> void:
 	_map = _ResearchMap.new()
 	_map.set_anchors_and_offsets_preset(PRESET_FULL_RECT)
 	_map.clip_contents = true
+	if not Engine.is_editor_hint():
+		_map.node_clicked.connect(_on_node_clicked)
 	add_child(_map)
 
 	var title := _make_title_bar()
@@ -395,7 +427,7 @@ func _make_title_bar() -> Control:
 	brand.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	wrap.add_child(brand)
 	var subtitle := Label.new()
-	subtitle.text = "永久研究網絡"
+	subtitle.text = tr("RESEARCH_UI_SUBTITLE")
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	subtitle.add_theme_font_size_override("font_size", 22)
 	subtitle.add_theme_color_override("font_color", _Tokens.CYAN)
@@ -453,7 +485,7 @@ func _make_family_card(family: String) -> Control:
 	names.size_flags_horizontal = SIZE_EXPAND_FILL
 	row.add_child(names)
 	var title := Label.new()
-	title.text = str(_Look.DISPLAY_NAME.get(family, family))
+	title.text = tr(str(_Look.DISPLAY_NAME.get(family, family)))
 	title.clip_text = true
 	title.size_flags_horizontal = SIZE_EXPAND_FILL
 	title.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -461,7 +493,7 @@ func _make_family_card(family: String) -> Control:
 	title.add_theme_color_override("font_color", _Tokens.family_color(family))
 	names.add_child(title)
 	var blurb := Label.new()
-	blurb.text = str(_Tokens.FAMILY_ROLE.get(family, ""))
+	blurb.text = tr(str(_Tokens.FAMILY_ROLE.get(family, "")))
 	blurb.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	blurb.max_lines_visible = 2
 	blurb.clip_text = true
@@ -513,9 +545,9 @@ func _make_bottom_hud() -> Control:
 	var cam := VBoxContainer.new()
 	cam.add_theme_constant_override("separation", 6)
 	bar.add_child(cam)
-	_add_cam_btn(cam, "顯示全圖", func() -> void: _map.cover_view())
-	_add_cam_btn(cam, "返回核心", func() -> void: _map.focus_id(&"CORE-IMMUNE", 0.48))
-	_add_cam_btn(cam, "開始免疫任務", _enter_combat)
+	_add_cam_btn(cam, tr("RESEARCH_UI_VIEW_ALL"), func() -> void: _map.cover_view())
+	_add_cam_btn(cam, tr("RESEARCH_UI_RETURN_CORE"), func() -> void: _map.focus_id(&"CORE-IMMUNE", 0.48))
+	_add_cam_btn(cam, tr("RESEARCH_UI_START_MISSION"), _enter_combat)
 	return bar
 
 
@@ -524,7 +556,7 @@ func _enter_combat() -> void:
 		return
 	var err := get_tree().change_scene_to_file("res://ui/mission_select/mission_select.tscn")
 	if err != OK:
-		_flash("戰鬥切片場景無法載入。")
+		_flash(tr("RESEARCH_UI_SCENE_ERROR"))
 
 
 func _add_cam_btn(parent: Control, text: String, cb: Callable) -> void:
@@ -556,7 +588,8 @@ func _make_resource_well() -> Control:
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 8)
 		var cap := Label.new()
-		cap.text = str(_Tokens.RESOURCE_LABEL.get(key, key))
+		var resource_key := str(_Tokens.RESOURCE_LABEL.get(key, ""))
+		cap.text = tr(resource_key) if resource_key != "" else str(key)
 		cap.size_flags_horizontal = SIZE_EXPAND_FILL
 		cap.add_theme_font_size_override("font_size", 12)
 		cap.add_theme_color_override("font_color", _Tokens.MUTED)
@@ -635,11 +668,11 @@ func _make_detail() -> Control:
 	var actions := HBoxContainer.new()
 	col.add_child(actions)
 	_track_btn = Button.new()
-	_track_btn.text = "追蹤"
+	_track_btn.text = tr("RESEARCH_UI_TRACK")
 	_track_btn.pressed.connect(func() -> void: ResearchState.toggle_track(ResearchState.selected_node_id))
 	actions.add_child(_track_btn)
 	_research_btn = Button.new()
-	_research_btn.text = "研究"
+	_research_btn.text = tr("RESEARCH_UI_RESEARCH")
 	_research_btn.pressed.connect(_try_research)
 	actions.add_child(_research_btn)
 	return panel

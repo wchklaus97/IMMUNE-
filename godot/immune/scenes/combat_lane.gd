@@ -226,7 +226,8 @@ func _move_player() -> void:
 func _update_playtest_autopilot() -> void:
 	if not playtest_autopilot or _player == null:
 		return
-	var desired_duty: StringName = &"mobile" if current_phase == Phase.EXPEDITION else &"fixed"
+	var expedition_duty: StringName = &"relay" if _family_profile.family_id == &"A" else &"mobile"
+	var desired_duty: StringName = expedition_duty if current_phase == Phase.EXPEDITION else &"fixed"
 	if _player.duty != desired_duty:
 		_player.transform_duty(desired_duty)
 		if _telemetry != null:
@@ -254,13 +255,13 @@ func _try_fire(delta: float) -> void:
 		return
 	var from := _muzzle()
 	var aim := target.global_position - from
-	aim.y = 0.0
-	if aim.length() > _family_profile.fire_range:
+	var horizontal_aim := Vector3(aim.x, 0.0, aim.z)
+	if horizontal_aim.length() > _family_profile.fire_range:
 		return
 	var base_cd := _family_profile.fixed_fire_cooldown if _player.duty == &"fixed" else _family_profile.mobile_fire_cooldown
 	var speed := 1.0 + ResearchState.global_stat("attackSpeed", _player.duty)
 	_fire_cd = base_cd / maxf(speed, 0.25)
-	_player.look_at(_player.global_position + Vector3(aim.x, 0.0, aim.z), Vector3.UP, true)
+	_player.look_at(_player.global_position + horizontal_aim, Vector3.UP, true)
 	_player.fire_skill(StringName("SKILL-%s-ACTIVE" % String(_family_profile.family_id)))
 	var bolt: _Bolt = _Bolt.new()
 	bolt.configure(
@@ -274,6 +275,9 @@ func _try_fire(delta: float) -> void:
 	)
 	add_child(bolt)
 	bolt.global_position = from
+	# Keep range and body facing on the ground plane, but let the projectile
+	# descend from elevated/hovering muzzles into the target collision centre.
+	# Flattening this vector made CHAR-BASE-A fire above every pathogen.
 	bolt.velocity = aim.normalized() * _Bolt.SPEED
 	if _telemetry != null:
 		_telemetry.record_shot()

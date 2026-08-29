@@ -22,6 +22,46 @@ func _run() -> void:
 		push_error("zh_HK translation contract is not active")
 		quit(1)
 		return
+	var catalog_contract := root.get_node_or_null("Catalog")
+	if catalog_contract == null or int(catalog_contract.call("node_count")) != 200:
+		push_error("Catalog localization contract requires all 200 nodes")
+		quit(1)
+		return
+	TranslationServer.set_locale("en")
+	var localized_fields := 0
+	for node in catalog_contract.call("all_nodes"):
+		if not node is Dictionary:
+			push_error("Catalog localization encountered a non-dictionary node")
+			quit(1)
+			return
+		for field in ["name", "description"]:
+			var key: StringName = catalog_contract.call("node_text_key", StringName(str(node.get("id", ""))), field)
+			var translated := TranslationServer.translate(key)
+			if translated.is_empty() or translated == String(key):
+				push_error("Missing English catalog translation %s" % String(key))
+				quit(1)
+				return
+			localized_fields += 1
+		if str(catalog_contract.call("localized_node_name", node)) != TranslationServer.translate(catalog_contract.call("node_text_key", StringName(str(node.get("id", ""))), "name")):
+			push_error("Catalog localized name accessor drifted for %s" % str(node.get("id", "")))
+			quit(1)
+			return
+	for chapter in ["L01", "L02", "L03", "L04", "L05", "L06"]:
+		var campaign_key := StringName("RESEARCH_CAMPAIGN_%s_NAME" % chapter)
+		if TranslationServer.translate(campaign_key) == String(campaign_key):
+			push_error("Missing campaign catalog translation %s" % chapter)
+			quit(1)
+			return
+	if localized_fields != 400 or str(catalog_contract.call("localized_campaign_level_name", "L01")) != "Mucosal Entry":
+		push_error("Catalog localization coverage is incomplete")
+		quit(1)
+		return
+	TranslationServer.set_locale("zh_HK")
+	var core_node: Dictionary = catalog_contract.call("get_node_def", &"CORE-IMMUNE")
+	if str(catalog_contract.call("localized_node_name", core_node)) != "免疫核心":
+		push_error("zh_HK catalog localization did not restore the source name")
+		quit(1)
+		return
 	var packed := load("res://scenes/kit_lock_preview.tscn") as PackedScene
 	if packed == null:
 		push_error("kit_lock_preview.tscn missing")
@@ -242,7 +282,8 @@ func _run() -> void:
 		push_error("research_network.tscn missing")
 		quit(1)
 		return
-	root.add_child(research.instantiate())
+	var research_instance := research.instantiate() as Control
+	root.add_child(research_instance)
 	var catalog := root.get_node_or_null("Catalog")
 	var research_state := root.get_node_or_null("ResearchState")
 	if catalog == null or research_state == null:
@@ -258,6 +299,25 @@ func _run() -> void:
 		push_error("Demo seed missing CORE-IMMUNE")
 		quit(1)
 		return
+	research_state.call("select_node", &"CORE-IMMUNE")
+	await process_frame
+	TranslationServer.set_locale("en")
+	research_instance.call("_on_settings_changed")
+	await process_frame
+	await process_frame
+	var detail_title := research_instance.get("_detail_title") as Label
+	var campaign_chip := research_instance.get("_campaign_chip") as Label
+	if detail_title == null or detail_title.text != "Immune Core":
+		push_error("Live locale switch did not refresh the selected research node")
+		quit(1)
+		return
+	if campaign_chip == null or not campaign_chip.text.contains("Mission L02") or not campaign_chip.text.contains("Bloodstream Corridor"):
+		push_error("Live locale switch did not refresh research campaign metadata")
+		quit(1)
+		return
+	TranslationServer.set_locale("zh_HK")
+	research_instance.call("_on_settings_changed")
+	await process_frame
 	for bus_name in ["Master", "Music", "SFX", "UI"]:
 		if AudioServer.get_bus_index(bus_name) < 0:
 			push_error("Missing audio bus %s" % bus_name)

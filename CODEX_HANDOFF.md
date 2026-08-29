@@ -16,8 +16,11 @@ The latest tranche adds:
   MISSION-06's combined systemic threat;
 - T focused execution below 30% health and B antibody mark stacking;
 - deterministic combat telemetry plus a real-scene balance matrix;
-- Traditional Chinese / English mission and combat UI with a persisted runtime
-  locale selector;
+- complete Traditional Chinese / English coverage for all 200 research nodes,
+  six campaign names, and the mission/combat UI with a persisted runtime locale
+  selector;
+- a real-time MISSION-01 regression across all six families, including the
+  corrected A-family hover-projectile trajectory and relay duty cycle;
 - a Meshy-7-aware, no-credit-by-default M-cell generation and GLB intake
   pipeline;
 - zero-credit source-authored Fizzy production bodies for N, A, and D, with
@@ -52,8 +55,11 @@ The latest tranche adds:
   production silhouette, family material profiles, face, membrane, and D crown.
 - `tools/meshy/` owns the reviewed paid-generation gate, no-network tests, task
   metadata, GLB validation, and explicit M-slot installation.
-- `.github/workflows/ci.yml` owns Godot 4.7.2 import/smoke, bounded first/final
-  mission balance, layout, exports, and three native launch checks.
+- `tools/generate_catalog_localization.mjs` owns the deterministic 406-row
+  research translation artifact and its CI drift contract.
+- `.github/workflows/ci.yml` owns Godot 4.7.2 import/smoke, catalog translation
+  drift, bounded T/B first/final mission balance, all-family MISSION-01 balance,
+  bilingual layout, exports, and three native launch checks.
 
 ## Balance candidate 1
 
@@ -67,6 +73,22 @@ in `docs/godot-prompter/specs/2026-08-28-immune-campaign-expansion-results.md`.
 CI intentionally runs a smaller four-run sentinel: MISSION-01 and MISSION-06 for
 T and B. The harness has both a 120-second simulated-game timeout and a
 150-second wall timeout per run.
+
+The matrix now has a second real-time CI sentinel for MISSION-01 across T, B, M,
+N, A, and D. All six pass with real projectile hits and 12/12 Core health; the
+durations are 21.833, 20.033, 20.833, 20.533, 22.400, and 20.200 seconds
+respectively. This expansion found an A-only defect: the hovering WeaponSocket's
+projectile vector had been flattened, so all shots passed above enemy collision
+centres. Range/facing remains horizontal while projectile velocity now uses the
+full 3D target vector. The playtest autopilot and matrix also treat A's expedition
+duty as `relay`, not `mobile`.
+
+After the trajectory fix, A initially missed the final MISSION-06 health margin.
+Matching its fixed cooldown to the existing 0.58-second relay cooldown produced
+clean victories at 22.400 seconds for MISSION-01 and 95.467 seconds for
+MISSION-06, both with 12/12 Core health. N and D MISSION-06 also pass at 87.150
+and 87.767 seconds. An attempted 8x simulation was rejected because accelerated
+physics distorted collisions and autopilot timing; balance evidence remains 1x.
 
 ## Jelly and hero assets
 
@@ -146,6 +168,14 @@ python3 tools/meshy/validate_hero_glb.py \
 
 - Godot 4.6.1: two import passes, six-mission smoke, bilingual translation
   contract, 1920×1080 overflow check, and the four-run CI balance sentinel pass.
+- Research localization (2026-08-29): deterministic 406-row generator check;
+  all 400 node name/description fields plus six campaign names resolve in
+  English; Traditional Chinese fallback and a live locale switch pass; the
+  1920×1080 research HUD passes in `zh_HK` and `en`.
+- Six-family runtime regression (2026-08-29): MISSION-01 passes for T/B/M/N/A/D
+  at real 1x simulation speed with real hits, both applicable duties, and 12/12
+  Core health. Focused N/D/A MISSION-06 runs and the unchanged T/B first/final
+  sentinel also pass after the A trajectory and relay corrections.
 - Campaign candidate: full six-mission × T/B 12-run matrix passes.
 - Web research app: 53/53 Node tests pass and the production single-file build
   succeeds.
@@ -203,10 +233,14 @@ npm test
 npm run build
 
 cd ../../
+node tools/generate_catalog_localization.mjs --check
 godot --headless --path godot/immune --import
 godot --headless --path godot/immune --import
 godot --headless --path godot/immune --script res://tools/smoke.gd
 godot --headless --path godot/immune --script res://tools/check_overflow.gd
+godot --headless --path godot/immune --script res://tools/balance_matrix.gd -- \
+  --out=user://six-family-mission-01.json --missions=MISSION-01 \
+  --families=T,B,M,N,A,D --trials=1
 godot --headless --path godot/immune --script res://tools/balance_matrix.gd -- \
   --out=outputs/playtests/campaign-expansion-candidate-1.json --trials=1
 godot --headless --path godot/immune --export-release "Windows Desktop" build/releases/IMMUNE-windows.exe
@@ -227,8 +261,9 @@ commercial release. Remaining work is:
 1. Keep the N/A/D Meshy manifests as optional comparisons only. Any paid task
    still needs a separate exact 5-credit approval; never batch paid retries after
    a failed task. The playable demo no longer depends on these generations.
-2. Expand English localization from the complete mission/combat flow into the
-   200-node authored research catalog; that source content remains zh-HK-first.
+2. Give the complete English research catalog a native-speaker editorial pass
+   during human playtesting. Automated coverage proves completeness, locale
+   switching, and layout—not final prose taste.
 3. Treat the checked-in CI on Godot 4.7.2 as the final remote gate. Local proof is
    on 4.6.1 because that is the installed editor.
 4. Add a Developer ID Application identity, notarization credentials, privacy /

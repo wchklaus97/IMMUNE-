@@ -358,7 +358,7 @@ func _draw_hover_tip() -> void:
 		return
 	var runtime := ResearchState.derive_state(_hover_id)
 	var hidden := str(runtime.get("visibility")) == "hidden"
-	var title := "未知研究" if hidden else str(node.get("name", _hover_id))
+	var title := tr("RESEARCH_UI_UNKNOWN_NAME") if hidden else Catalog.localized_node_name(node)
 	var status := _hover_status_text(runtime, node)
 	var pos := world_to_local_pos(_layout_pos(layout))
 	var font := ThemeDB.fallback_font
@@ -377,21 +377,7 @@ func _draw_hover_tip() -> void:
 
 
 func _hover_status_text(runtime: Dictionary, node: Dictionary) -> String:
-	match str(runtime.get("eligibility", "")):
-		"completed":
-			return "已完成"
-		"ready":
-			return "可研究"
-		"missing_resource":
-			return "資源不足"
-		"missing_prerequisite":
-			return "缺少前置"
-		"missing_condition":
-			return ResearchState._unmet_condition_label(node)
-		"hidden":
-			return "未發現"
-		_:
-			return "鎖定"
+	return ResearchState.eligibility_label(runtime, node)
 
 
 func _draw_labels() -> void:
@@ -411,9 +397,7 @@ func _draw_labels() -> void:
 		if not _should_show_label(kind, portrait, id):
 			continue
 		var pos := world_to_local_pos(_layout_pos(layout))
-		var title := str(node.get("name", id))
-		if kind == "core":
-			title = "免疫核心"
+		var title := Catalog.localized_node_name(node)
 		var font := ThemeDB.fallback_font
 		var size_px := 22 if kind == "core" else 16
 		var radius := _node_radius(node) * zoom

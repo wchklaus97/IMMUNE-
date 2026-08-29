@@ -39,6 +39,30 @@ func get_node_def(id: StringName) -> Dictionary:
 	return {}
 
 
+func node_text_key(id: StringName, field: String) -> StringName:
+	var normalized := String(id).to_upper()
+	for separator in ["-", ".", "/", " "]:
+		normalized = normalized.replace(separator, "_")
+	return StringName("RESEARCH_%s_%s" % [normalized, field.to_upper()])
+
+
+func localized_node_name(node: Dictionary) -> String:
+	return _localized_node_field(node, "name")
+
+
+func localized_node_description(node: Dictionary) -> String:
+	return _localized_node_field(node, "description")
+
+
+func _localized_node_field(node: Dictionary, field: String) -> String:
+	if node.is_empty():
+		return ""
+	var fallback := str(node.get(field, node.get("id", "") if field == "name" else ""))
+	var key := node_text_key(StringName(str(node.get("id", ""))), field)
+	var translated := TranslationServer.translate(key)
+	return fallback if translated == String(key) or translated.is_empty() else translated
+
+
 func family_ladder_progress(family: String) -> Vector2i:
 	var done := 0
 	var total := 0
@@ -157,3 +181,10 @@ func campaign_level_name(id: String) -> String:
 		if row is Array and (row as Array).size() >= 2 and str((row as Array)[0]) == id:
 			return str((row as Array)[1])
 	return ""
+
+
+func localized_campaign_level_name(id: String) -> String:
+	var fallback := campaign_level_name(id)
+	var key := StringName("RESEARCH_CAMPAIGN_%s_NAME" % id.to_upper())
+	var translated := TranslationServer.translate(key)
+	return fallback if translated == String(key) or translated.is_empty() else translated

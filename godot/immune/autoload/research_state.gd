@@ -448,10 +448,28 @@ func _unmet_condition_label(node: Dictionary) -> String:
 			continue
 		var ctype := str(condition.get("type", ""))
 		if ctype == "campaign_level":
-			return "需解鎖關卡 %s" % str(condition.get("min", ""))
+			return TranslationServer.translate(&"RESEARCH_STATUS_REQUIRES_MISSION") % str(condition.get("min", ""))
 		if ctype == "discovery_flag" or ctype == "discoveryFlag":
-			return "需遠征發現"
-	return "缺少條件"
+			return TranslationServer.translate(&"RESEARCH_STATUS_REQUIRES_DISCOVERY")
+	return TranslationServer.translate(&"RESEARCH_STATUS_MISSING_CONDITION")
+
+
+func eligibility_label(runtime: Dictionary, node: Dictionary) -> String:
+	match str(runtime.get("eligibility", "")):
+		"completed":
+			return TranslationServer.translate(&"RESEARCH_STATUS_COMPLETED")
+		"ready":
+			return TranslationServer.translate(&"RESEARCH_STATUS_READY")
+		"missing_resource":
+			return TranslationServer.translate(&"RESEARCH_STATUS_MISSING_RESOURCE")
+		"missing_prerequisite":
+			return TranslationServer.translate(&"RESEARCH_STATUS_MISSING_PREREQUISITE")
+		"missing_condition":
+			return _unmet_condition_label(node)
+		"hidden":
+			return TranslationServer.translate(&"RESEARCH_STATUS_HIDDEN")
+		_:
+			return TranslationServer.translate(&"RESEARCH_STATUS_LOCKED")
 
 
 func _reveal_rule_met(node: Dictionary) -> bool:

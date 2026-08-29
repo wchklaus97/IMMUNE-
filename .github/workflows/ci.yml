@@ -31,6 +31,9 @@ jobs:
         working-directory: ui/immune-research-network
         run: npm run build
 
+      - name: Verify complete research catalog localization
+        run: node tools/generate_catalog_localization.mjs --check
+
       - name: Set up Godot 4.7.2 and export templates
         uses: chickensoft-games/setup-godot@v2
         with:
@@ -62,6 +65,13 @@ jobs:
           timeout 7m godot --headless --path godot/immune --script res://tools/balance_matrix.gd -- --out=user://ci-balance.json --missions=MISSION-01,MISSION-06 --families=T,B --trials=1 2>&1 | tee godot-balance.log
           grep -F "BALANCE_MATRIX_OK runs=4" godot-balance.log
           ! grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" godot-balance.log
+
+      - name: Run six-family gameplay regression
+        run: |
+          set -o pipefail
+          timeout 8m godot --headless --path godot/immune --script res://tools/balance_matrix.gd -- --out=user://ci-six-family.json --missions=MISSION-01 --families=T,B,M,N,A,D --trials=1 2>&1 | tee godot-six-family.log
+          grep -F "BALANCE_MATRIX_OK runs=6" godot-six-family.log
+          ! grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" godot-six-family.log
 
       - name: Check research HUD layout
         run: |

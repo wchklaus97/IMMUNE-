@@ -24,12 +24,12 @@ const FAMILY_BLURB := {
 }
 
 const FAMILY_ROLE := {
-	"T": "精準追擊、連擊",
-	"B": "抗體生產核心",
-	"M": "吞噬、推擠、救援",
-	"N": "高速截擊精英",
-	"A": "浮游追蹤彈群",
-	"D": "偵察感染區",
+	"T": "RESEARCH_FAMILY_T_ROLE",
+	"B": "RESEARCH_FAMILY_B_ROLE",
+	"M": "RESEARCH_FAMILY_M_ROLE",
+	"N": "RESEARCH_FAMILY_N_ROLE",
+	"A": "RESEARCH_FAMILY_A_ROLE",
+	"D": "RESEARCH_FAMILY_D_ROLE",
 }
 
 const FAMILY_SYMBOL := {
@@ -42,10 +42,10 @@ const FAMILY_SYMBOL := {
 }
 
 const RESOURCE_LABEL := {
-	"antigen": "抗原樣本",
-	"protomass": "一度原質",
-	"fusionCore": "融合核心",
-	"biomass": "生物質",
+	"antigen": "RESEARCH_RESOURCE_ANTIGEN",
+	"protomass": "RESEARCH_RESOURCE_PROTOMASS",
+	"fusionCore": "RESEARCH_RESOURCE_FUSION_CORE",
+	"biomass": "RESEARCH_RESOURCE_BIOMASS",
 }
 
 

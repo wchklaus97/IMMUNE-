@@ -3,25 +3,15 @@ extends SceneTree
 ## Layout + label overflow check for the research HUD. Exit 1 on failure.
 
 
-const FORBIDDEN_COVER_LABELS: PackedStringArray = [
-	"精準抗體",
-	"精準抗體｜強化協同",
-	"精準抗體｜基礎相性",
-	"精準抗體｜傳承特質協議",
-	"免疫網絡",
-	"免疫網絡｜強化協同",
-	"免疫網絡｜基礎相性",
-]
+const FORBIDDEN_COVER_LABELS := {
+	"zh_HK": ["精準抗體", "精準抗體｜強化協同", "精準抗體｜基礎相性", "精準抗體｜傳承特質協議", "免疫網絡", "免疫網絡｜強化協同", "免疫網絡｜基礎相性"],
+	"en": ["Precision Antibody", "Precision Antibody | Enhanced Synergy", "Precision Antibody | Base Affinity", "Precision Antibody | Legacy Trait Protocol", "Immune Network", "Immune Network | Enhanced Synergy", "Immune Network | Base Affinity"],
+}
 
-const EXPECTED_COVER_LABELS: PackedStringArray = [
-	"免疫核心",
-	"T 細胞",
-	"B 細胞",
-	"巨噬細胞",
-	"NK 細胞",
-	"抗體構造體",
-	"樹突細胞",
-]
+const EXPECTED_COVER_LABELS := {
+	"zh_HK": ["免疫核心", "T 細胞", "B 細胞", "巨噬細胞", "NK 細胞", "抗體構造體", "樹突細胞"],
+	"en": ["Immune Core", "T Cell", "B Cell", "Macrophage", "NK Cell", "Antibody Construct", "Dendritic Cell"],
+}
 
 var _log: PackedStringArray = []
 
@@ -49,6 +39,7 @@ func _log_line(text: String) -> void:
 func _run() -> void:
 	_log_line("OVERFLOW_CHECK_START")
 	DisplayServer.window_set_size(Vector2i(1920, 1080))
+	TranslationServer.set_locale("zh_HK")
 	var packed := load("res://ui/research/research_network.tscn") as PackedScene
 	if packed == null:
 		_finish(["research_network.tscn missing"], false)
@@ -63,26 +54,36 @@ func _run() -> void:
 	_log_line("HUD_SIZE %s WINDOW %s MAP_WAIT" % [hud.size, DisplayServer.window_get_size()])
 
 	var failures: PackedStringArray = []
-	failures.append_array(_check_control_tree(hud, Rect2(Vector2.ZERO, Vector2(1920, 1080))))
-	failures.append_array(_check_resource_text(hud))
-	var map := _find_map(hud)
-	if map == null:
-		_finish(["research map missing"], false)
-		return
-	_log_line("MAP_SIZE %s CLIP %s" % [map.size, map.clip_contents])
-	map.call("cover_view")
-	await process_frame
-	failures.append_array(_check_map_labels(map, "cover"))
-	failures.append_array(_check_map_nodes(map, "cover"))
-	failures.append_array(_check_drawn_inside_map(map))
+	var map: Control
+	for locale in ["zh_HK", "en"]:
+		TranslationServer.set_locale(locale)
+		hud.call("_on_settings_changed")
+		await process_frame
+		await process_frame
+		map = _find_map(hud)
+		if map == null:
+			_finish(["research map missing for %s" % locale], false)
+			return
+		_log_line("MAP_%s SIZE %s CLIP %s" % [locale, map.size, map.clip_contents])
+		failures.append_array(_check_control_tree(hud, Rect2(Vector2.ZERO, Vector2(1920, 1080))))
+		failures.append_array(_check_resource_text(hud, locale))
+		map.call("cover_view")
+		await process_frame
+		failures.append_array(_check_map_labels(map, "cover", locale))
+		failures.append_array(_check_map_nodes(map, "cover"))
+		failures.append_array(_check_drawn_inside_map(map))
 
-	map.set("zoom", 1.2)
-	map.queue_redraw()
-	await process_frame
-	failures.append_array(_check_map_labels(map, "zoom-1.2"))
+		map.set("zoom", 1.2)
+		map.queue_redraw()
+		await process_frame
+		failures.append_array(_check_map_labels(map, "zoom-1.2", locale))
 
-	map.call("cover_view")
+		map.call("cover_view")
+		await process_frame
+	TranslationServer.set_locale("zh_HK")
+	hud.call("_on_settings_changed")
 	await process_frame
+	map = _find_map(hud)
 	if DisplayServer.get_name() != "headless":
 		RenderingServer.force_draw()
 		await process_frame
@@ -106,7 +107,7 @@ func _finish(failures: PackedStringArray, ok: bool) -> void:
 	var report := PackedStringArray()
 	report.append_array(_log)
 	if ok:
-		report.append("OVERFLOW_CHECK_OK viewport=1920x1080 cover_labels=core+6bases no_pair_stack clip=pass")
+		report.append("OVERFLOW_CHECK_OK viewport=1920x1080 locales=zh_HK+en cover_labels=core+6bases no_pair_stack clip=pass")
 	else:
 		for line in failures:
 			report.append("FAIL %s" % line)
@@ -122,21 +123,24 @@ func _finish(failures: PackedStringArray, ok: bool) -> void:
 	quit(0 if ok else 1)
 
 
-func _check_resource_text(node: Node) -> PackedStringArray:
+func _check_resource_text(node: Node, locale: String) -> PackedStringArray:
 	var failures: PackedStringArray = []
+	var protomass := "一度原質" if locale == "zh_HK" else "Protomass"
+	var fusion := "融合核心" if locale == "zh_HK" else "Fusion Cores"
+	var biomass := "生物質" if locale == "zh_HK" else "Biomass"
 	if node is Label:
 		var label := node as Label
 		var text := label.text
-		if text.contains("一度原質") and text.contains("融合核心"):
-			_log_line("RESOURCE_SUB %s visible_lines=%d/%d size=%s" % [text.replace("\n", " | "), label.get_visible_line_count(), label.get_line_count(), label.size])
-			if not text.contains("生物質"):
+		if text.contains(protomass) and text.contains(fusion):
+			_log_line("RESOURCE_SUB_%s %s visible_lines=%d/%d size=%s" % [locale, text.replace("\n", " | "), label.get_visible_line_count(), label.get_line_count(), label.size])
+			if not text.contains(biomass):
 				failures.append("resource_sub missing values %s" % text)
 			if label.get_visible_line_count() < label.get_line_count():
 				failures.append("resource_sub clipped lines %d/%d" % [label.get_visible_line_count(), label.get_line_count()])
 			if text.contains("…") or text.contains("..."):
 				failures.append("resource_sub ellipsis %s" % text)
 	for child in node.get_children():
-		failures.append_array(_check_resource_text(child))
+		failures.append_array(_check_resource_text(child, locale))
 	return failures
 
 
@@ -183,9 +187,12 @@ func _check_control_tree(node: Node, viewport: Rect2) -> PackedStringArray:
 	return failures
 
 
-func _check_map_labels(map: Control, phase: String) -> PackedStringArray:
+func _check_map_labels(map: Control, phase: String, locale: String) -> PackedStringArray:
 	var failures: PackedStringArray = []
 	var labels: PackedStringArray = []
+	var catalog := root.get_node_or_null("Catalog")
+	var forbidden: PackedStringArray = FORBIDDEN_COVER_LABELS[locale]
+	var expected_labels: PackedStringArray = EXPECTED_COVER_LABELS[locale]
 	var layout: Dictionary = map.get("_layout")
 	for node in _catalog_nodes():
 		if not node is Dictionary:
@@ -202,11 +209,9 @@ func _check_map_labels(map: Control, phase: String) -> PackedStringArray:
 			continue
 		if not bool(map.call("_should_show_label", kind, portrait, id)):
 			continue
-		var title := str(node.get("name", id))
-		if kind == "core":
-			title = "免疫核心"
+		var title := str(catalog.call("localized_node_name", node))
 		labels.append(title)
-		if phase == "cover" and FORBIDDEN_COVER_LABELS.has(title):
+		if phase == "cover" and forbidden.has(title):
 			failures.append("%s forbidden_label %s id=%s" % [phase, title, String(id)])
 		var pos: Vector2 = map.call("world_to_local_pos", map.call("_layout_pos", entry))
 		var radius := 32.0 * float(map.get("zoom"))
@@ -214,16 +219,16 @@ func _check_map_labels(map: Control, phase: String) -> PackedStringArray:
 		var map_rect := Rect2(Vector2.ZERO, map.size).grow(24.0)
 		if phase == "cover" and not map_rect.intersects(label_rect):
 			failures.append("%s label_outside_map %s rect=%s map=%s" % [phase, title, label_rect, map.size])
-	_log_line("LABELS_%s count=%d %s" % [phase, labels.size(), ", ".join(labels)])
+	_log_line("LABELS_%s_%s count=%d %s" % [locale, phase, labels.size(), ", ".join(labels)])
 	if phase == "cover":
-		for expected in EXPECTED_COVER_LABELS:
+		for expected in expected_labels:
 			if not labels.has(expected):
 				failures.append("cover missing_label %s" % expected)
-		if labels.size() > EXPECTED_COVER_LABELS.size():
+		if labels.size() > expected_labels.size():
 			failures.append("cover extra_labels count=%d %s" % [labels.size(), ", ".join(labels)])
 	elif phase == "zoom-1.2":
 		for title in labels:
-			if FORBIDDEN_COVER_LABELS.has(title):
+			if forbidden.has(title):
 				failures.append("%s stacked_pair_label %s" % [phase, title])
 	return failures
 

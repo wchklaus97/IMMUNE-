@@ -1,0 +1,19 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://b3c8kgl5rb4fs"
+
+[deps]
+
+files=["res://translations/research_catalog.zh_HK.translation", "res://translations/research_catalog.en.translation"]
+
+source_file="res://translations/research_catalog.csv"
+dest_files=["res://translations/research_catalog.zh_HK.translation", "res://translations/research_catalog.en.translation"]
+
+[params]
+
+compress=1
+delimiter=0
+unescape_keys=false
+unescape_translations=true

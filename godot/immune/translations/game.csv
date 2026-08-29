@@ -116,3 +116,73 @@ L06 · 系統崩解,L06 · 系統崩解,L06 · Systemic Collapse
 生物膜菌王,生物膜菌王,Biofilm Regent
 高毒性融合體,高毒性融合體,Virulent Fusion
 系統吞噬者,系統吞噬者,Systemic Devourer
+RESEARCH_UI_SUBTITLE,永久研究網絡,Permanent Research Network
+RESEARCH_UI_COMPLETE_TOAST,研究完成，永久進度已更新。,Research complete. Permanent progress updated.
+RESEARCH_UI_CAMPAIGN_CHIP,關卡 %s · %s,Mission %s · %s
+RESEARCH_UI_RESOURCE_SUMMARY,一度原質 %d · 融合核心 %d · 生物質 %d,Protomass %d · Fusion Cores %d · Biomass %d
+RESEARCH_UI_SELECT_NODE,選擇一個研究節點,Select a research node
+RESEARCH_UI_UNKNOWN_NAME,未知研究,Unknown Research
+RESEARCH_UI_UNKNOWN_DESCRIPTION,此研究尚未被發現。,This research has not been discovered.
+RESEARCH_STATUS_COMPLETED,已完成,Completed
+RESEARCH_STATUS_READY,可研究,Ready to research
+RESEARCH_STATUS_MISSING_PREREQUISITE,缺少前置,Missing prerequisite
+RESEARCH_STATUS_MISSING_RESOURCE,資源不足,Insufficient resources
+RESEARCH_STATUS_HIDDEN,未發現,Undiscovered
+RESEARCH_STATUS_LOCKED,鎖定,Locked
+RESEARCH_STATUS_REQUIRES_MISSION,需解鎖關卡 %s,Unlock mission %s
+RESEARCH_STATUS_REQUIRES_DISCOVERY,需遠征發現,Requires expedition discovery
+RESEARCH_STATUS_MISSING_CONDITION,缺少條件,Missing condition
+RESEARCH_UI_TRACK,追蹤,Track
+RESEARCH_UI_UNTRACK,取消追蹤,Untrack
+RESEARCH_UI_TREE,研究樹 %s,Research route %s
+RESEARCH_UI_REQUIRES_UNLOCK,需解鎖 %s · %s,Unlock %s · %s
+RESEARCH_UI_MISSION,關卡 %s,Mission %s
+RESEARCH_STAT_ATTACK_SPEED,全體攻速,Global attack speed
+RESEARCH_STAT_MOVE_SPEED,全體移速,Global movement speed
+RESEARCH_STAT_COOLDOWN,技能冷卻縮短,Skill cooldown reduction
+RESEARCH_STAT_CORE_REGEN,核心修復,Core repair
+RESEARCH_STAT_UNIT_REGEN,單位再生,Unit regeneration
+RESEARCH_STAT_BIOMASS_YIELD,生物質回收,Biomass recovery
+RESEARCH_STAT_CRIT_CHANCE,暴擊率,Critical chance
+RESEARCH_STAT_WEAKNESS_AMP,弱點放大,Weakness amplification
+RESEARCH_STAT_ARMOR_SHRED,腐蝕破甲,Corrosive armor shred
+RESEARCH_STAT_ENEMY_SLOW,敵人緩速,Enemy slow
+RESEARCH_STAT_PATH_SLOW,路線減速,Route slow
+RESEARCH_EFFECT_DUTY_FIXED,（固定）, (fixed)
+RESEARCH_EFFECT_DUTY_MOBILE,（移動）, (mobile)
+RESEARCH_EFFECT_UNLOCK_CORE_LAYER,解鎖核心亞層：%s,Unlock Core sub-layer: %s
+RESEARCH_EFFECT_STRENGTHEN_STATUS,強化狀態化學：%s,Strengthen Status Chemistry: %s
+RESEARCH_EFFECT_GRANT_MOBILE_DUTY,授予移動勤務,Grant mobile duty
+RESEARCH_EFFECT_GRANT_FIXED_RELAY_DUTY,授予固定中繼勤務,Grant fixed relay duty
+RESEARCH_EFFECT_GRANT_FIXED_TURRET_DUTY,授予固定炮台勤務,Grant fixed turret duty
+RESEARCH_EFFECT_UNLOCK_DEPLOYMENT,解鎖部署資格,Unlock deployment clearance
+RESEARCH_COST_FREE,成本：免費,Cost: Free
+RESEARCH_COST_PREFIX,成本：%s,Cost: %s
+RESEARCH_UI_VIEW_ALL,顯示全圖,View full network
+RESEARCH_UI_RETURN_CORE,返回核心,Return to Core
+RESEARCH_UI_START_MISSION,開始免疫任務,Start immune mission
+RESEARCH_UI_SCENE_ERROR,戰鬥切片場景無法載入。,Unable to load the combat slice.
+RESEARCH_UI_RESEARCH,研究,Research
+RESEARCH_RESOURCE_ANTIGEN,抗原樣本,Antigen Samples
+RESEARCH_RESOURCE_PROTOMASS,一度原質,Protomass
+RESEARCH_RESOURCE_FUSION_CORE,融合核心,Fusion Cores
+RESEARCH_RESOURCE_BIOMASS,生物質,Biomass
+RESEARCH_FAMILY_T_ROLE,精準追擊、連擊,Precision pursuit and combos
+RESEARCH_FAMILY_B_ROLE,抗體生產核心,Antibody production core
+RESEARCH_FAMILY_M_ROLE,吞噬、推擠、救援,Phagocytosis push and rescue
+RESEARCH_FAMILY_N_ROLE,高速截擊精英,High-speed interception elite
+RESEARCH_FAMILY_A_ROLE,浮游追蹤彈群,Hovering homing swarm
+RESEARCH_FAMILY_D_ROLE,偵察感染區,Infection-zone reconnaissance
+RESEARCH_DOMAIN_DEF,防守工程,Defense Engineering
+RESEARCH_DOMAIN_EXP,遠征探索,Expedition Exploration
+RESEARCH_DOMAIN_WAR,全面戰爭,Total War
+RESEARCH_DOMAIN_MOB,細胞機動,Cell Mobility
+RESEARCH_DOMAIN_FUS,融合工程,Fusion Engineering
+RESEARCH_DOMAIN_SUR,生存修復,Survival Repair
+RESEARCH_CHEMISTRY_MARK,標記,Mark
+RESEARCH_CHEMISTRY_ANTIBODY,抗體,Antibody
+RESEARCH_CHEMISTRY_CORROSION,腐蝕,Corrosion
+RESEARCH_CHEMISTRY_SLOW,緩速,Slow
+RESEARCH_CHEMISTRY_INFECTION,感染,Infection
+RESEARCH_CHEMISTRY_CHAIN,鏈鎖,Chain
+RESEARCH_CHEMISTRY_CRITICAL,暴擊,Critical

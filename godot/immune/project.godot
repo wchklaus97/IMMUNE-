@@ -41,7 +41,7 @@ theme/custom_font="res://fonts/NotoSansHK-VF.ttf"
 
 [internationalization]
 
-locale/translations=PackedStringArray("res://translations/game.zh_HK.translation", "res://translations/game.en.translation")
+locale/translations=PackedStringArray("res://translations/game.zh_HK.translation", "res://translations/game.en.translation", "res://translations/research_catalog.zh_HK.translation", "res://translations/research_catalog.en.translation")
 
 [input]
 

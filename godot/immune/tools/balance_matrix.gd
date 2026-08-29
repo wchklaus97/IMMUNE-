@@ -143,10 +143,11 @@ func _validate_matrix(mission_ids: Array[StringName], family_ids: Array[StringNa
 		var core_max_hp: int = int(run.get("core_max_hp", 0))
 		if core_hp <= 0 or core_hp > core_max_hp:
 			_fail("%s produced invalid surviving core HP %d/%d" % [label, core_hp, core_max_hp])
-		if float(run.get("duty_seconds", {}).get("mobile", 0.0)) <= 0.0:
-			_fail("%s did not exercise mobile duty" % label)
+		var movement_duty := "relay" if StringName(run.get("family_id", "")) == &"A" else "mobile"
+		if float(run.get("duty_seconds", {}).get(movement_duty, 0.0)) <= 0.0:
+			_fail("%s did not exercise %s duty" % [label, movement_duty])
 		if int(run.get("duty_switches", 0)) < 2:
-			_fail("%s did not return from mobile to fixed duty" % label)
+			_fail("%s did not return from %s to fixed duty" % [label, movement_duty])
 	_validate_duration_ladder(mission_ids, family_ids)
 
 
