@@ -111,7 +111,7 @@ jobs:
 
       - name: Exercise exported Web demo under baseline and constrained profiles
         timeout-minutes: 5
-        run: npm run test:web-release -- --artifacts=godot/immune/build/releases/web --out=outputs/ci-web-release-qa --duration-ms=4000
+        run: npm run test:web-release -- --artifacts=godot/immune/build/releases/web --out=outputs/ci-web-release-qa --duration-ms=4000 --gate-mode=compatibility-only
 
       - name: Upload Web release QA evidence
         if: always()

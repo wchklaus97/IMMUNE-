@@ -103,7 +103,11 @@ npm run test:web-release -- \
 
 Web 匯出另外會以真實 Chrome 鍵盤輸入跑研究網絡 → 任務台 → B / MISSION-01
 → mobile duty → 暫停流程，並比較 baseline 同 4× CPU + SwiftShader stress
-profile。呢個證據只代表 compatibility stress，唔係真實低階硬件 benchmark；
+profile。baseline 只表示冇強制 renderer；hosted CI 仍可能用 SwiftShader。
+本機預設係 `local-performance-sentinel` 嚴格 FPS/long-frame gate；GitHub CI
+顯式用 `--gate-mode=compatibility-only`，只驗證完整互動、資源、畫面 fit、
+error contract 同兩秒 frame watchdog。兩種報告都保留所有 cadence 數字；
+呢個證據只代表 compatibility stress，唔係真實低階硬件 benchmark；
 完整門檻、失敗證據同六家族匿名真人 playtest template 見
 `docs/godot-prompter/specs/2026-08-29-constrained-web-and-human-playtest.md`。
 

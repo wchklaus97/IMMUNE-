@@ -11,6 +11,8 @@ const ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)), "..");
 const DEFAULT_ARTIFACT_ROOT = resolve(ROOT, "godot/immune/build/releases/web");
 const DEFAULT_OUTPUT_ROOT = resolve(ROOT, "outputs/web-release-qa");
 const EVIDENCE_CLASS = "compatibility-stress-not-hardware-benchmark";
+const DEFAULT_GATE_MODE = "local-performance-sentinel";
+const GATE_MODES = new Set([DEFAULT_GATE_MODE, "compatibility-only"]);
 const REQUIRED_RESOURCES = ["index.html", "index.js", "index.pck", "index.wasm"];
 const PROFILE_DEFINITIONS = {
   baseline: {
@@ -48,7 +50,7 @@ function nearestRank(values, percentile) {
 }
 
 export function summarizeFrameIntervals(rawIntervals) {
-  const intervals = rawIntervals.filter((value) => Number.isFinite(value) && value > 0 && value <= 1_000);
+  const intervals = rawIntervals.filter((value) => Number.isFinite(value) && value > 0);
   const duration = intervals.reduce((sum, value) => sum + value, 0);
   const fps = intervals.map((value) => 1_000 / value);
   const longFrameCount = intervals.filter((value) => value > 50).length;
@@ -90,10 +92,19 @@ function eventIndex(events, name, predicate = () => true) {
   return events.findIndex((event) => event?.event === name && predicate(event));
 }
 
+function unexpectedBrowserWarnings(profile) {
+  if (!Array.isArray(profile.console?.warnings)) return ["warnings collection missing"];
+  return profile.console.warnings.filter((warning) => !(
+    profile.renderer?.software === true
+    && /GL Driver Message .*GPU stall due to ReadPixels(?: \(this message will no longer repeat\))?$/u.test(warning)
+  ));
+}
+
 export function validateWebQaReport(report, { expectedProfileIds = ["baseline", "constrained-software"] } = {}) {
   const errors = [];
-  expect(errors, report?.schema_version === 1, "schema_version: expected 1");
+  expect(errors, report?.schema_version === 2, "schema_version: expected 2");
   expect(errors, report?.evidence_class === EVIDENCE_CLASS, `evidence_class: expected ${EVIDENCE_CLASS}`);
+  expect(errors, GATE_MODES.has(report?.gate_mode), `gate_mode: expected one of ${[...GATE_MODES].join(", ")}`);
   expect(errors, /^\d+\.\d+\.\d+$/u.test(report?.build?.version ?? ""), "build.version: expected numeric SemVer");
   expect(errors, Array.isArray(report?.profiles), "profiles: expected an array");
   const profiles = Array.isArray(report?.profiles) ? report.profiles : [];
@@ -132,18 +143,24 @@ export function validateWebQaReport(report, { expectedProfileIds = ["baseline", 
     expect(errors, Array.isArray(profile.console?.errors) && profile.console.errors.length === 0, `${id}: console errors present`);
     expect(errors, Array.isArray(profile.console?.page_errors) && profile.console.page_errors.length === 0, `${id}: page errors present`);
     expect(errors, Array.isArray(profile.console?.request_failures) && profile.console.request_failures.length === 0, `${id}: request failures present`);
-    if (id === "baseline") {
-      expect(errors, Array.isArray(profile.console?.warnings) && profile.console.warnings.length === 0, `${id}: browser warnings present`);
-    }
+    expect(errors, unexpectedBrowserWarnings(profile).length === 0, `${id}: unexpected browser warnings present`);
     expect(errors, Array.isArray(profile.screenshots) && profile.screenshots.length >= 4, `${id}: expected four visual states`);
     expect(errors, profile.renderer?.webgl_version?.includes("WebGL"), `${id}: WebGL context unavailable`);
-    expect(errors, profile.frames?.sample_count >= (id === "constrained-software" ? 30 : 60), `${id}: insufficient frame samples`);
-    expect(errors, profile.frames?.mean_fps >= (id === "constrained-software" ? 5 : 20), `${id}: frame heartbeat below compatibility floor`);
-    expect(errors, profile.frames?.p05_fps >= (id === "constrained-software" ? 2 : 10), `${id}: p05 frame heartbeat below compatibility floor`);
-    if (id === "baseline") {
-      expect(errors, profile.frames?.long_frame_ratio <= 0.25, `${id}: excessive long-frame ratio`);
-    } else {
-      expect(errors, profile.frames?.compatibility_stall_ratio <= 0.1, `${id}: excessive compatibility-stall ratio`);
+    if (report?.gate_mode === "compatibility-only") {
+      expect(errors, profile.frames?.sample_count >= 3, `${id}: insufficient compatibility frame samples`);
+      expect(errors, profile.frames?.duration_ms >= 2_000, `${id}: compatibility frame sample shorter than 2000 ms`);
+      expect(errors, profile.frames?.mean_fps >= 0.5, `${id}: compatibility frame heartbeat below 0.5 FPS`);
+      expect(errors, profile.frames?.p05_fps >= 0.4, `${id}: compatibility p05 frame heartbeat below 0.4 FPS`);
+      expect(errors, profile.frames?.max_frame_ms <= 2_000, `${id}: compatibility frame watchdog exceeded 2000 ms`);
+    } else if (report?.gate_mode === DEFAULT_GATE_MODE) {
+      expect(errors, profile.frames?.sample_count >= (id === "constrained-software" ? 30 : 60), `${id}: insufficient frame samples`);
+      expect(errors, profile.frames?.mean_fps >= (id === "constrained-software" ? 5 : 20), `${id}: frame heartbeat below compatibility floor`);
+      expect(errors, profile.frames?.p05_fps >= (id === "constrained-software" ? 2 : 10), `${id}: p05 frame heartbeat below compatibility floor`);
+      if (id === "baseline") {
+        expect(errors, profile.frames?.long_frame_ratio <= 0.25, `${id}: excessive long-frame ratio`);
+      } else {
+        expect(errors, profile.frames?.compatibility_stall_ratio <= 0.1, `${id}: excessive compatibility-stall ratio`);
+      }
     }
     if (id === "constrained-software") {
       expect(errors, profile.cpu_throttle_rate === 4, `${id}: expected 4x CPU throttling`);
@@ -305,7 +322,7 @@ async function capture(page, outputRoot, profileId, state) {
   return relative(ROOT, target);
 }
 
-async function runProfile({ chromium, profile, url, outputRoot, durationMs }) {
+async function runProfile({ chromium, profile, url, outputRoot, durationMs, gateMode }) {
   const browser = await launchBrowser(chromium, profile);
   const errors = [];
   const warnings = [];
@@ -432,7 +449,8 @@ async function runProfile({ chromium, profile, url, outputRoot, durationMs }) {
       }).catch((evaluationError) => ({ evaluation_error: String(evaluationError) }));
     }
     const diagnostic = {
-      schema_version: 1,
+      schema_version: 2,
+      gate_mode: gateMode,
       profile: profile.id,
       phase,
       error: error instanceof Error ? error.stack ?? error.message : String(error),
@@ -462,14 +480,16 @@ async function projectVersion() {
   return match[1];
 }
 
-export async function runWebReleaseQa({ artifactRoot, outputRoot, profileIds, durationMs }) {
+export async function runWebReleaseQa({ artifactRoot, outputRoot, profileIds, durationMs, gateMode = DEFAULT_GATE_MODE }) {
+  if (!GATE_MODES.has(gateMode)) throw new Error(`Unknown Web QA gate mode: ${gateMode}`);
   await ensureArtifactSet(artifactRoot);
   await mkdir(outputRoot, { recursive: true });
   const { chromium } = await import("playwright-core");
   const server = await startArtifactServer(artifactRoot);
   const report = {
-    schema_version: 1,
+    schema_version: 2,
     evidence_class: EVIDENCE_CLASS,
+    gate_mode: gateMode,
     generated_at: new Date().toISOString(),
     build: { version: await projectVersion(), artifact_root: relative(ROOT, artifactRoot) },
     profiles: [],
@@ -478,7 +498,7 @@ export async function runWebReleaseQa({ artifactRoot, outputRoot, profileIds, du
     for (const id of profileIds) {
       const profile = PROFILE_DEFINITIONS[id];
       if (!profile) throw new Error(`Unknown Web QA profile: ${id}`);
-      const result = await runProfile({ chromium, profile, url: server.url, outputRoot, durationMs });
+      const result = await runProfile({ chromium, profile, url: server.url, outputRoot, durationMs, gateMode });
       report.profiles.push(result);
       await writeFile(resolve(outputRoot, "report.partial.json"), `${JSON.stringify(report, null, 2)}\n`);
       console.log(`WEB_QA_PROFILE_OK id=${id} renderer=${JSON.stringify(result.renderer.unmasked_renderer)} mean_fps=${result.frames.mean_fps} p05_fps=${result.frames.p05_fps}`);
@@ -506,8 +526,9 @@ async function main() {
   const outputRoot = resolve(argument("out", DEFAULT_OUTPUT_ROOT));
   const profileIds = argument("profiles", "baseline,constrained-software").split(",").filter(Boolean);
   const durationMs = Math.max(2_000, Number(argument("duration-ms", "6000")) || 6_000);
-  const { report, reportPath } = await runWebReleaseQa({ artifactRoot, outputRoot, profileIds, durationMs });
-  console.log(`WEB_RELEASE_QA_OK profiles=${report.profiles.length} evidence=${report.evidence_class} report=${reportPath}`);
+  const gateMode = argument("gate-mode", DEFAULT_GATE_MODE);
+  const { report, reportPath } = await runWebReleaseQa({ artifactRoot, outputRoot, profileIds, durationMs, gateMode });
+  console.log(`WEB_RELEASE_QA_OK profiles=${report.profiles.length} gate_mode=${report.gate_mode} evidence=${report.evidence_class} report=${reportPath}`);
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {

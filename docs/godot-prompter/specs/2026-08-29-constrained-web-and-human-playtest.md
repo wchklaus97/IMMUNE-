@@ -10,6 +10,8 @@ browser evidence is deliberately labelled
 `compatibility-stress-not-hardware-benchmark`. It proves that the shipped HTML,
 JavaScript, PCK, and WASM load; a real browser can drive the playable loop; and
 the loop retains a bounded frame heartbeat under an artificial stress profile.
+The host-default profile does not imply a hardware GPU: hosted CI may choose
+SwiftShader even when the runner does not explicitly force a software renderer.
 
 It does not prove subjective fun, readability, accessibility, control feel, or
 performance on a particular Windows laptop, integrated GPU, mobile browser, or
@@ -37,14 +39,28 @@ request errors, four screenshots per profile, and the expected eight events.
 
 Profiles:
 
-- `baseline`: 1600x900, native renderer, no CPU throttling;
+- `baseline`: 1600x900, host-default renderer, no CPU throttling;
 - `constrained-software`: 1280x720, 4x DevTools CPU throttling, forced
   SwiftShader with renderer proof.
 
-The baseline gate uses 50 ms long frames. The constrained profile is a
-compatibility heartbeat, not a smoothness claim: it records the same 50 ms
-metric but gates on frames above 250 ms (`compatibility_stall_ratio`) so its
-5 FPS floor and stall definition are internally consistent.
+Report schema v2 records one of two explicit gate modes:
+
+- `local-performance-sentinel` is the default. Baseline requires at least 60
+  samples, 20 mean / 10 p05 FPS, and no more than 25% frames above 50 ms.
+  Constrained software requires at least 30 samples, 5 mean / 2 p05 FPS, and no
+  more than 10% frames above 250 ms.
+- `compatibility-only` is used by hosted CI because its host-default renderer is
+  not guaranteed to expose a hardware GPU. It still requires all resources,
+  events, screenshots, WebGL, fit, and error contracts, plus at least three
+  samples spanning two seconds, 0.5 mean / 0.4 p05 FPS, and no individual frame
+  above the two-second watchdog. It makes no smoothness or hardware-performance
+  claim.
+
+Both modes preserve all measured 50 ms and 250 ms counts and ratios. Frame
+intervals above one second are no longer discarded. The only permitted browser
+warning is Chromium's exact `GPU stall due to ReadPixels` diagnostic when the
+reported renderer is independently identified as software; any other warning
+fails both modes.
 
 ## Failure analysis and workflow corrections
 
@@ -70,15 +86,31 @@ allowed 200 ms frames while a 50 ms long-frame ratio still failed them. The
 contract was corrected to retain/report long frames and gate constrained stalls
 above 250 ms. No measured data is suppressed.
 
+The first remote run (`33254857282`) exposed a second environment/claim defect.
+GitHub's Ubuntu host-default profile and the explicitly constrained profile both
+reported ANGLE Vulkan SwiftShader. They completed the entire interaction flow,
+returned all required resources with HTTP 200, fit both canvases, and produced
+all eight valid screenshots, but the four-second samples ran at only 1.220 and
+1.385 mean FPS. Applying the hardware-backed local thresholds to that
+virtualized software renderer incorrectly failed otherwise complete
+compatibility evidence.
+
+The workflow was stopped and the uploaded failure artifact was inspected before
+changing code. The correction is an explicit CLI gate mode, not automatic
+environment detection or silently lowered thresholds. The downloaded report
+passes `compatibility-only` and still fails `local-performance-sentinel`; RED
+tests lock both outcomes. The 0.87-second worst remote frame remains visible in
+the report and below the two-second liveness watchdog.
+
 ## Local evidence
 
-The final six-second run produced eight visually reviewed screenshots and this
-result:
+The final renderer-aware six-second local sentinel produced eight visually
+reviewed screenshots and this result:
 
 | Profile | Renderer | Mean FPS | p05 FPS | p95 frame | >250 ms stalls |
 | --- | --- | ---: | ---: | ---: | ---: |
-| baseline | ANGLE Metal / Apple M4 Pro | 120.000 | 111.111 | 9.0 ms | 0/720 |
-| constrained-software | ANGLE Vulkan / SwiftShader, 4x CPU | 14.460 | 13.210 | 75.7 ms | 0/87 |
+| baseline | ANGLE Metal / Apple M4 Pro | 119.998 | 103.093 | 9.7 ms | 0/720 |
+| constrained-software | ANGLE Vulkan / SwiftShader, 4x CPU | 14.751 | 13.123 | 76.2 ms | 0/89 |
 
 Both profiles recorded all eight ordered events, exact viewport/canvas fit, no
 document scroll, four required resources at HTTP 200, no console errors, no page
@@ -118,6 +150,13 @@ npm run test:web-release -- \
   --artifacts=godot/immune/build/releases/web \
   --out=outputs/web-release-qa \
   --duration-ms=6000
+
+# Hosted software-rendered CI compatibility evidence; not a performance claim.
+npm run test:web-release -- \
+  --artifacts=godot/immune/build/releases/web \
+  --out=outputs/ci-web-release-qa \
+  --duration-ms=4000 \
+  --gate-mode=compatibility-only
 ```
 
 ## Next safe work

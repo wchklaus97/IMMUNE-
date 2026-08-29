@@ -41,9 +41,10 @@ The latest tranche adds:
 - a release identity/artifact contract with a canonical jelly-core icon,
   Windows PE metadata, macOS bundle verification, safe tag/version matching,
   generated-output import isolation, and native CI evidence; and
-- a real exported-Web research-to-combat browser gate with baseline and
-  4x-CPU/SwiftShader compatibility-stress profiles, failure diagnostics, eight
-  screenshots, and an anonymous six-family human-playtest intake contract.
+- a real exported-Web research-to-combat browser gate with host-default and
+  4x-CPU/SwiftShader profiles, explicit local-performance versus hosted-CI
+  compatibility gate modes, failure diagnostics, eight screenshots, and an
+  anonymous six-family human-playtest intake contract.
 
 ## Playable loop
 
@@ -82,7 +83,8 @@ The latest tranche adds:
   coherence, credential-path rejection, and four-platform artifact structure.
 - `tools/web_release_qa.mjs` owns exported-Web HTTP serving, real keyboard flow,
   ordered opt-in QA events, canvas/resource/console contracts, baseline and
-  constrained-software cadence evidence, screenshots, and failure diagnostics.
+  constrained-software cadence evidence, renderer-aware warning classification,
+  explicit gate modes, screenshots, and failure diagnostics.
 - `tools/validate_human_playtest.mjs` owns the anonymous six-family report shape;
   `docs/playtesting/six-family-playtest-template.json` is its blank local-only
   intake form and contains no fabricated participant results.
@@ -225,7 +227,7 @@ python3 tools/meshy/validate_hero_glb.py \
 
 ## Verification completed
 
-- Exported-Web compatibility stress and playtest intake (2026-08-29): 13/13
+- Exported-Web compatibility stress and playtest intake (2026-08-29): 15/15
   local tool tests, anonymous six-family template validation, fresh Web export,
   and real Chrome research → mission desk → B/MISSION-01 → mobile duty → pause
   flow pass at 1600x900 baseline and 1280x720 4x-CPU/SwiftShader. Baseline
@@ -239,6 +241,18 @@ python3 tools/meshy/validate_hero_glb.py \
   classification, and a consistent 250 ms constrained-stall gate were added
   after two diagnosed RED runs. Full evidence and claim boundary are in
   `docs/godot-prompter/specs/2026-08-29-constrained-web-and-human-playtest.md`.
+- Renderer-aware Web gate correction (2026-08-29): remote run `33254857282`
+  proved that GitHub Ubuntu supplied SwiftShader for both the unforced baseline
+  and forced-software profiles. The complete browser loop, resources, fit, and
+  eight screenshots passed, but 1.220 / 1.385 mean FPS correctly could not meet
+  the local hardware-backed sentinel. Report schema v2 now makes the contract
+  explicit: local runs retain the original strict FPS/long-frame gates, while
+  CI uses `compatibility-only` with all functional/error contracts and a
+  two-second maximum-frame watchdog. The uploaded report passes the latter and
+  still fails the former; frames above one second are no longer filtered out.
+  Fresh local strict and CI-mode browser runs pass at 119.998 / 14.751 and
+  120.051 / 14.706 mean FPS respectively. Remote verification of this correction
+  is pending the next pushed workflow run.
 - Release identity hardening (2026-08-29): contract tests went RED on the absent
   icon/Windows metadata and GREEN after the project/preset update; actionlint,
   four fresh exports, and the complete artifact contract pass. Windows PE
@@ -389,6 +403,10 @@ node tools/validate_release_contract.mjs --artifacts=godot/immune/build/releases
 npm run test:web-release -- \
   --artifacts=godot/immune/build/releases/web \
   --out=outputs/web-release-qa --duration-ms=6000
+npm run test:web-release -- \
+  --artifacts=godot/immune/build/releases/web \
+  --out=outputs/ci-web-release-qa --duration-ms=4000 \
+  --gate-mode=compatibility-only
 ```
 
 Run exports sequentially. Parallel Godot exporters race on the shared
