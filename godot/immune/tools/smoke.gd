@@ -625,8 +625,17 @@ func _run() -> void:
 	telemetry.enter_phase("expedition")
 	telemetry.record_duty_switch()
 	telemetry.tick(0.25, &"mobile")
+	# Advance zero-delta frames to the steady-state sampling boundary without
+	# changing the phase/duty timing assertions below.
+	for _frame in 118:
+		telemetry.tick(0.0, &"mobile")
+	telemetry.sample_performance_now()
 	telemetry.finish(true)
 	var telemetry_snapshot: Dictionary = telemetry.snapshot()
+	if int(telemetry_snapshot.get("schema_version", 0)) != 2:
+		push_error("Playtest telemetry must expose the v2 performance contract")
+		quit(1)
+		return
 	if not bool(telemetry_snapshot.get("victory", false)):
 		push_error("Playtest telemetry must preserve the victory result")
 		quit(1)
@@ -643,6 +652,30 @@ func _run() -> void:
 		push_error("Playtest telemetry must preserve initial core HP")
 		quit(1)
 		return
+	var telemetry_performance := telemetry_snapshot.get("performance", {}) as Dictionary
+	if int(telemetry_performance.get("startup", {}).get("sample_count", 0)) < 1:
+		push_error("Playtest telemetry must preserve cold-start performance samples")
+		quit(1)
+		return
+	if int(telemetry_performance.get("sample_count", 0)) < 1:
+		push_error("Playtest telemetry must collect at least one opt-in performance sample")
+		quit(1)
+		return
+	for metric in [
+		"p05_fps",
+		"mean_process_ms",
+		"max_process_ms",
+		"mean_physics_process_ms",
+		"max_physics_process_ms",
+		"max_draw_calls",
+		"max_render_objects",
+		"max_static_memory_mb",
+		"max_object_count",
+	]:
+		if not telemetry_performance.has(metric) or float(telemetry_performance[metric]) < 0.0:
+			push_error("Playtest telemetry performance metric is missing or invalid: %s" % metric)
+			quit(1)
+			return
 	if not str(combat.call("phase_name")).contains("核心防守"):
 		push_error("Combat should start in Core Defense")
 		quit(1)

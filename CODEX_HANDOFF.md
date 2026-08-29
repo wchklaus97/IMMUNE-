@@ -32,6 +32,8 @@ The latest tranche adds:
   fixed/mobile/relay integration;
 - a balance-neutral biological combat arena, phase-readable cleanse zone,
   styled mission/vitals/action HUD, and a Compatibility-safe A RelayDish; and
+- a fail-fast 36-run headed campaign soak with telemetry v2 plus a reproducible
+  Instruments Metal-trace analyzer; and
 - four-platform v0.4.0 release artifacts.
 
 ## Playable loop
@@ -147,6 +149,18 @@ gel with bubbles off, and 0.963 / 4.306 ms for gel with bubbles on. The GPU time
 again remained zero; the supported conclusion is no measurable M bubble
 regression, not that the gel path is faster.
 
+The built-in viewport GPU timer was also zero on Forward Mobile and Forward+
+Metal. A 2026-08-29 Xcode `Metal System Trace` pass finally provided real GPU
+frame spans for ten B bodies on Apple M4 Pro Forward+. Across matched 370-frame
+post-warm-up samples, StandardMaterial3D measured 4.805 ms mean / 7.632 ms p95;
+wet gel measured 5.645 ms mean / 7.986 ms p95. The gel delta is +0.840 ms mean
+(17.5%) and +0.354 ms p95 (4.6%). The longer 1,164-frame gel sample measured
+6.464 ms mean / 8.093 ms p95 / 13.087 ms max. The Standard capture target hit
+the 12-second Instruments limit after 430 observed frames, so only its 370
+complete post-warm-up frames are used and the comparison is not generalized to
+Compatibility/Web/other GPUs. Full methodology is in
+`docs/godot-prompter/specs/2026-08-29-all-family-soak-and-metal-gpu.md`.
+
 ## Meshy state and cost boundary
 
 Official Meshy API docs and the 2026-08-28 changelog were reviewed. The latest
@@ -199,6 +213,19 @@ python3 tools/meshy/validate_hero_glb.py \
   input passes at 1600x900 and 1280x720 with exact canvas fit, no scroll, and
   zero console errors/warnings. Details live in
   `docs/godot-prompter/specs/2026-08-29-combat-presentation-polish.md`.
+- All-family headed soak (2026-08-29): 36/36 real-time Compatibility runs across
+  all six missions and T/B/M/N/A/D pass with 2,048.902 simulated seconds,
+  2,043.823 wall seconds, maximum 1.007 wall/game ratio, minimum Core 6/12,
+  99.1% mean projectile accuracy, minimum steady p05 111 FPS, maximum 348 draw
+  calls, and zero timeouts/failures. Every family preserves the strict
+  M1<M2<M3<M4<M5<M6 duration ladder. Reports checkpoint after every run and soak
+  mode stops on the first run-level contract failure. Mission/family filters are
+  validated before loading, so a typo cannot silently fall back to MISSION-01.
+- Metal GPU evidence (2026-08-29): `gel_perf.gd` no longer calls `force_sync()`
+  from a `frame_post_draw` continuation (which stalled Forward+), explicitly
+  reports unavailable zero-only built-in timers, and writes JSON. A checked-in
+  streaming analyzer resolves Instruments refs, filters exact Godot PID, avoids
+  double-counting overlapping GPU events, and passes its Node overlap test.
 - Six-family runtime regression (2026-08-29): MISSION-01 passes for T/B/M/N/A/D
   at real 1x simulation speed with real hits, both applicable duties, and 12/12
   Core health. Focused N/D/A MISSION-06 runs and the unchanged T/B first/final
@@ -251,6 +278,8 @@ Generated local artifacts (ignored by Git):
 - `godot/immune/build/releases/IMMUNE-macOS.zip`
 - `godot/immune/build/releases/web/index.html`
 - `outputs/playtests/campaign-expansion-candidate-1-12run.json`
+- `outputs/playtests/all-family-campaign-soak-20260829.json`
+- `outputs/playtests/metal-traces/`
 - `outputs/player-qa-20260829/`
 - `outputs/combat-polish-20260829/`
 
@@ -262,6 +291,7 @@ npm test
 npm run build
 
 cd ../../
+node --test tools/analyze_metal_gpu_trace.test.mjs
 node tools/generate_catalog_localization.mjs --check
 node tools/validate_translation_csv.mjs
 godot --headless --path godot/immune --import
@@ -273,6 +303,9 @@ godot --headless --path godot/immune --script res://tools/balance_matrix.gd -- \
   --families=T,B,M,N,A,D --trials=1
 godot --headless --path godot/immune --script res://tools/balance_matrix.gd -- \
   --out=outputs/playtests/campaign-expansion-candidate-1.json --trials=1
+godot --path godot/immune --rendering-method gl_compatibility \
+  --script res://tools/balance_matrix.gd -- \
+  --soak --out=/absolute/path/all-family-campaign-soak.json
 godot --headless --path godot/immune --export-release "Windows Desktop" build/releases/IMMUNE-windows.exe
 godot --headless --path godot/immune --export-release "Linux/X11" build/releases/IMMUNE-linux.x86_64
 godot --headless --path godot/immune --export-release "macOS" build/releases/IMMUNE-macOS.zip
@@ -297,9 +330,10 @@ commercial release. Remaining work is:
    storefront metadata, and store-specific packaging. The current macOS artifact
    is valid ad-hoc signed but cannot be publicly notarized with the credentials
    available on this machine.
-4. Capture a non-zero GPU timing result on a backend that exposes it and perform
-   longer human playtests across all six families, not only the deterministic T/B
-   balance baseline.
+4. Non-zero GPU timing and a 34-minute automated all-family campaign soak are now
+   complete. The remaining product-risk gate is longer human playtesting across
+   all six families for fun, readability, accessibility, and control feel; the
+   deterministic autopilot cannot honestly prove those qualities.
 
 These are explicit external/product gates, not hidden broken demo work. No release
 upload, notarization, or storefront submission was performed.

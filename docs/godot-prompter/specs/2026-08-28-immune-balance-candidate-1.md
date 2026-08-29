@@ -13,7 +13,13 @@ Telemetry is opt-in, held in memory, and never uploaded. A snapshot records:
 - mission, family, build tag, platform, renderer, and Godot version;
 - victory/end state, total time, phase time, and fixed/mobile duty time;
 - shots, hits, accuracy, damage, kills, boss kills, and duty switches;
-- core health/damage and mean/max frame time.
+- core health/damage and simulation mean/max frame delta.
+
+Telemetry schema v2 (2026-08-29) additionally records cold-start and
+steady-state FPS/process observations, draw calls, rendered objects, static
+memory, and object count. The complete all-family soak and Metal GPU methodology
+is documented in
+`2026-08-29-all-family-soak-and-metal-gpu.md`.
 
 Normal player sessions do not write telemetry files. The headless balance harness owns local JSON report output.
 

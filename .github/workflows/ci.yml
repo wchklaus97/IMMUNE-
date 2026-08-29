@@ -23,6 +23,9 @@ jobs:
         with:
           node-version: 22
 
+      - name: Test local Metal trace analyzer
+        run: node --test tools/analyze_metal_gpu_trace.test.mjs
+
       - name: Test research-network web UI
         working-directory: ui/immune-research-network
         run: npm test

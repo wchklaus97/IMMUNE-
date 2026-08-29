@@ -3,7 +3,9 @@ extends RefCounted
 
 ## Runtime-only combat metrics. Nothing is uploaded and normal play does not write files.
 
-const SCHEMA_VERSION: int = 1
+const SCHEMA_VERSION: int = 2
+const PERFORMANCE_SAMPLE_INTERVAL_SECONDS: float = 1.0
+const PERFORMANCE_WARMUP_FRAMES: int = 120
 
 var _mission_id: String = ""
 var _family_id: String = ""
@@ -27,6 +29,24 @@ var _duty_switches: int = 0
 var _frame_count: int = 0
 var _frame_delta_total: float = 0.0
 var _max_frame_delta: float = 0.0
+var _next_performance_sample_seconds: float = 0.0
+var _startup_performance_sample_count: int = 0
+var _startup_min_fps: float = INF
+var _startup_max_process_ms: float = 0.0
+var _startup_max_physics_process_ms: float = 0.0
+var _performance_sample_count: int = 0
+var _fps_sample_count: int = 0
+var _fps_total: float = 0.0
+var _min_fps: float = INF
+var _fps_samples: Array[float] = []
+var _process_ms_total: float = 0.0
+var _max_process_ms: float = 0.0
+var _physics_process_ms_total: float = 0.0
+var _max_physics_process_ms: float = 0.0
+var _max_draw_calls: int = 0
+var _max_render_objects: int = 0
+var _max_static_memory_mb: float = 0.0
+var _max_object_count: int = 0
 var _victory: bool = false
 var _ended: bool = false
 
@@ -45,6 +65,9 @@ func tick(delta: float, duty: StringName) -> void:
 	_frame_count += 1
 	_frame_delta_total += safe_delta
 	_max_frame_delta = maxf(_max_frame_delta, safe_delta)
+	if _elapsed_seconds >= _next_performance_sample_seconds:
+		_next_performance_sample_seconds += PERFORMANCE_SAMPLE_INTERVAL_SECONDS
+		_sample_performance_for_current_frame()
 	var duty_key: String = String(duty)
 	if not _duty_seconds.has(duty_key):
 		_duty_seconds[duty_key] = 0.0
@@ -113,6 +136,7 @@ func snapshot() -> Dictionary:
 		"family_id": _family_id,
 		"build_tag": _build_tag,
 		"platform": OS.get_name(),
+		"display_server": DisplayServer.get_name(),
 		"renderer": RenderingServer.get_current_rendering_driver_name(),
 		"godot_version": String(Engine.get_version_info().get("string", "unknown")),
 		"victory": _victory,
@@ -134,6 +158,114 @@ func snapshot() -> Dictionary:
 		"frame_count": _frame_count,
 		"mean_frame_ms": snappedf(mean_frame_ms, 0.001),
 		"max_frame_ms": snappedf(_max_frame_delta * 1000.0, 0.001),
+		"performance": _performance_snapshot(),
+	}
+
+
+func _sample_performance() -> void:
+	_performance_sample_count += 1
+	var fps := float(Performance.get_monitor(Performance.TIME_FPS))
+	if fps > 0.0:
+		_fps_sample_count += 1
+		_fps_total += fps
+		_min_fps = minf(_min_fps, fps)
+		_fps_samples.append(fps)
+	var process_ms := float(Performance.get_monitor(Performance.TIME_PROCESS)) * 1000.0
+	var physics_process_ms := (
+		float(Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS)) * 1000.0
+	)
+	_process_ms_total += maxf(process_ms, 0.0)
+	_max_process_ms = maxf(_max_process_ms, process_ms)
+	_physics_process_ms_total += maxf(physics_process_ms, 0.0)
+	_max_physics_process_ms = maxf(_max_physics_process_ms, physics_process_ms)
+	_max_draw_calls = maxi(
+		_max_draw_calls,
+		int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))
+	)
+	_max_render_objects = maxi(
+		_max_render_objects,
+		int(Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME))
+	)
+	_max_static_memory_mb = maxf(
+		_max_static_memory_mb,
+		float(Performance.get_monitor(Performance.MEMORY_STATIC)) / 1_048_576.0
+	)
+	_max_object_count = maxi(
+		_max_object_count,
+		int(Performance.get_monitor(Performance.OBJECT_COUNT))
+	)
+
+
+func sample_performance_now() -> void:
+	## Explicit probe for focused tests/tools. Normal runtime sampling is paced to
+	## one query per simulated second because Godot may hold monitor values that long.
+	_sample_performance()
+
+
+func _sample_performance_for_current_frame() -> void:
+	if _frame_count <= PERFORMANCE_WARMUP_FRAMES:
+		_sample_startup_performance()
+	if _frame_count >= PERFORMANCE_WARMUP_FRAMES:
+		_sample_performance()
+
+
+func _sample_startup_performance() -> void:
+	_startup_performance_sample_count += 1
+	var fps := float(Performance.get_monitor(Performance.TIME_FPS))
+	if fps > 0.0:
+		_startup_min_fps = minf(_startup_min_fps, fps)
+	_startup_max_process_ms = maxf(
+		_startup_max_process_ms,
+		float(Performance.get_monitor(Performance.TIME_PROCESS)) * 1000.0
+	)
+	_startup_max_physics_process_ms = maxf(
+		_startup_max_physics_process_ms,
+		float(Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS)) * 1000.0
+	)
+
+
+func _performance_snapshot() -> Dictionary:
+	var mean_fps: float = 0.0
+	var min_fps: float = 0.0
+	var p05_fps: float = 0.0
+	if _fps_sample_count > 0:
+		mean_fps = _fps_total / float(_fps_sample_count)
+		min_fps = _min_fps
+		var sorted_fps := _fps_samples.duplicate()
+		sorted_fps.sort()
+		p05_fps = sorted_fps[mini(int(float(sorted_fps.size() - 1) * 0.05), sorted_fps.size() - 1)]
+	var mean_process_ms: float = 0.0
+	var mean_physics_process_ms: float = 0.0
+	if _performance_sample_count > 0:
+		mean_process_ms = _process_ms_total / float(_performance_sample_count)
+		mean_physics_process_ms = (
+			_physics_process_ms_total / float(_performance_sample_count)
+		)
+	return {
+		"warmup_frames": PERFORMANCE_WARMUP_FRAMES,
+		"startup": {
+			"sample_count": _startup_performance_sample_count,
+			"min_fps": snappedf(
+				_startup_min_fps if _startup_min_fps < INF else 0.0, 0.001
+			),
+			"max_process_ms": snappedf(_startup_max_process_ms, 0.001),
+			"max_physics_process_ms": snappedf(
+				_startup_max_physics_process_ms, 0.001
+			),
+		},
+		"sample_count": _performance_sample_count,
+		"fps_sample_count": _fps_sample_count,
+		"mean_fps": snappedf(mean_fps, 0.001),
+		"min_fps": snappedf(min_fps, 0.001),
+		"p05_fps": snappedf(p05_fps, 0.001),
+		"mean_process_ms": snappedf(mean_process_ms, 0.001),
+		"max_process_ms": snappedf(_max_process_ms, 0.001),
+		"mean_physics_process_ms": snappedf(mean_physics_process_ms, 0.001),
+		"max_physics_process_ms": snappedf(_max_physics_process_ms, 0.001),
+		"max_draw_calls": _max_draw_calls,
+		"max_render_objects": _max_render_objects,
+		"max_static_memory_mb": snappedf(_max_static_memory_mb, 0.001),
+		"max_object_count": _max_object_count,
 	}
 
 

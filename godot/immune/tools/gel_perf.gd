@@ -39,6 +39,7 @@ var _frames := 240
 var _mode := "gel"
 var _family := "T"
 var _force_sync := false
+var _out_path := ""
 var _opts := {}
 
 
@@ -52,6 +53,7 @@ func _ready() -> void:
 	_mode = String(args.get("material", "gel"))
 	_family = String(args.get("family", "T")).to_upper()
 	_force_sync = String(args.get("sync", "false")).to_lower() == "true"
+	_out_path = String(args.get("out", ""))
 	if not MESH_CANDIDATES.has(_family):
 		push_error("gel_perf.gd: unsupported family %s" % _family)
 		get_tree().quit(2)
@@ -72,7 +74,9 @@ func _ready() -> void:
 	if not _spawn():
 		get_tree().quit(3)
 		return
-	await _measure()
+	if not await _measure():
+		get_tree().quit(4)
+		return
 	get_tree().quit(0)
 
 
@@ -156,9 +160,14 @@ func _spawn() -> bool:
 	return true
 
 
-func _measure() -> void:
+func _measure() -> bool:
 	var vp := get_viewport().get_viewport_rid()
 	RenderingServer.viewport_set_measure_render_time(vp, true)
+	# Calling force_sync() from the frame_post_draw continuation can stall the
+	# Forward+ Metal backend indefinitely. A requested sync is therefore a single
+	# pre-measure drain, before any signal await, rather than one sync per frame.
+	if _force_sync:
+		RenderingServer.force_sync()
 	for _i in WARMUP_FRAMES:
 		await RenderingServer.frame_post_draw
 	var gpu_samples: Array[float] = []
@@ -167,32 +176,101 @@ func _measure() -> void:
 	for _i in _frames:
 		var frame_start := Time.get_ticks_usec()
 		await RenderingServer.frame_post_draw
-		if _force_sync:
-			RenderingServer.force_sync()
 		gpu_samples.append(RenderingServer.viewport_get_measured_render_time_gpu(vp))
 		cpu_samples.append(RenderingServer.viewport_get_measured_render_time_cpu(vp))
 		wall_samples.append(float(Time.get_ticks_usec() - frame_start) / 1000.0)
+	var gpu_summary := _summary(gpu_samples)
+	var cpu_summary := _summary(cpu_samples)
+	var wall_summary := _summary(wall_samples)
+	var gpu_timer_available := float(gpu_summary.get("max_ms", 0.0)) > 0.0
+	var report := {
+		"schema_version": 1,
+		"godot_version": String(Engine.get_version_info().get("string", "unknown")),
+		"platform": OS.get_name(),
+		"display_server": DisplayServer.get_name(),
+		"renderer": RenderingServer.get_current_rendering_driver_name(),
+		"family": _family,
+		"material": _mode,
+		"count": _count,
+		"viewport": {
+			"width": int(get_viewport().get_visible_rect().size.x),
+			"height": int(get_viewport().get_visible_rect().size.y),
+		},
+		"frames": _frames,
+		"warmup_frames": WARMUP_FRAMES,
+		"sync_mode": "pre_measure_drain" if _force_sync else "none",
+		"gpu_timer_available": gpu_timer_available,
+		"gpu_timer_note": (
+			"measured"
+			if gpu_timer_available
+			else "backend returned zero for every viewport GPU timing sample"
+		),
+		"gpu": gpu_summary,
+		"cpu": cpu_summary,
+		"wall": wall_summary,
+		"options": _opts,
+	}
 	print("GEL_PERF family=%s mode=%s count=%d viewport=%s sync=%s gpu=%s cpu=%s wall=%s opts=%s" % [
 		_family,
 		_mode,
 		_count,
 		str(get_viewport().get_visible_rect().size),
 		_force_sync,
-		_summary(gpu_samples),
-		_summary(cpu_samples),
-		_summary(wall_samples),
+		_summary_text(gpu_summary),
+		_summary_text(cpu_summary),
+		_summary_text(wall_summary),
 		_opts,
 	])
+	print("GEL_PERF_GPU_TIMER available=%s renderer=%s display=%s" % [
+		str(gpu_timer_available),
+		report["renderer"],
+		report["display_server"],
+	])
+	if not _out_path.is_empty() and not _write_report(report):
+		return false
+	return true
 
 
-func _summary(samples: Array[float]) -> String:
-	samples.sort()
+func _summary(samples: Array[float]) -> Dictionary:
+	var sorted_samples := samples.duplicate()
+	sorted_samples.sort()
 	var total := 0.0
-	for sample in samples:
+	for sample in sorted_samples:
 		total += sample
-	var mean := total / float(samples.size())
-	var p95 := samples[mini(int(float(samples.size()) * 0.95), samples.size() - 1)]
-	return "mean_ms=%.3f,p95_ms=%.3f,max_ms=%.3f" % [mean, p95, samples[-1]]
+	var mean := total / float(sorted_samples.size())
+	var p95: float = float(sorted_samples[
+		mini(int(float(sorted_samples.size()) * 0.95), sorted_samples.size() - 1)
+	])
+	return {
+		"mean_ms": snappedf(mean, 0.001),
+		"p95_ms": snappedf(p95, 0.001),
+		"max_ms": snappedf(float(sorted_samples[-1]), 0.001),
+	}
+
+
+func _summary_text(summary: Dictionary) -> String:
+	return "mean_ms=%.3f,p95_ms=%.3f,max_ms=%.3f" % [
+		float(summary.get("mean_ms", 0.0)),
+		float(summary.get("p95_ms", 0.0)),
+		float(summary.get("max_ms", 0.0)),
+	]
+
+
+func _write_report(report: Dictionary) -> bool:
+	var path := _out_path
+	if path.begins_with("user://") or path.begins_with("res://"):
+		path = ProjectSettings.globalize_path(path)
+	var parent_dir := path.get_base_dir()
+	if not parent_dir.is_empty():
+		DirAccess.make_dir_recursive_absolute(parent_dir)
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	if file == null:
+		push_error("gel_perf.gd: cannot write %s" % path)
+		return false
+	file.store_string(JSON.stringify(report, "\t", false))
+	file.close()
+	print("GEL_PERF_REPORT %s" % path)
+	return true
 
 
 func _mesh_instances(node: Node) -> Array[MeshInstance3D]:

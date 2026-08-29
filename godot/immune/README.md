@@ -25,8 +25,15 @@ Compatibility renderer 下，細小 mobile duty accessories 會停用 shadow cas
 godot --path godot/immune --resolution 1920x1080 res://tools/gameplay_shot.tscn -- \
   --out=/absolute/output/path --family=B --mission=MISSION-01 --tag=B-v2
 godot --path godot/immune --resolution 1920x1080 res://tools/gel_perf.tscn -- \
-  --family=B --material=gel --count=10 --frames=300 --sync=true
+  --family=B --material=gel --count=10 --frames=300 --sync=true \
+  --out=/absolute/output/path/gel-perf.json
 ```
+
+`--sync=true` 只會喺量度前 drain 一次 render queue；唔會再由
+`frame_post_draw` callback 每 frame `force_sync()`，避免 Forward+／Metal
+stall。Apple Metal 如內建 viewport GPU timer 全部回傳零，請用 Instruments
+`Metal System Trace` 再以 `tools/analyze_metal_gpu_trace.mjs` 分析；完整命令同
+限制見 `docs/godot-prompter/specs/2026-08-29-all-family-soak-and-metal-gpu.md`。
 
 ```powershell
 winget install --id GodotEngine.GodotEngine --version 4.7.2
@@ -39,6 +46,16 @@ godot --headless --path godot/immune --script res://tools/smoke.gd
 ```bash
 godot --headless --path godot/immune --script res://tools/balance_matrix.gd -- \
   --out=outputs/playtests/campaign-expansion-candidate-1.json --trials=2
+```
+
+Release 前嘅全家族 headed soak 會逐局 checkpoint、首個 contract failure 即停，
+並驗證六關時間階梯、總實時長度、p05 FPS 同 wall/game ratio。本機約需 34 分鐘，
+所以唔放入 30 分鐘 CI job：
+
+```bash
+godot --path godot/immune --rendering-method gl_compatibility \
+  --script res://tools/balance_matrix.gd -- \
+  --soak --out=/absolute/output/path/all-family-campaign-soak.json
 ```
 
 調校時不要提高 `--time-scale`；加速 physics 可能令細 projectile tunnelling，只適合診斷流程，唔適合作 balance 證據。
