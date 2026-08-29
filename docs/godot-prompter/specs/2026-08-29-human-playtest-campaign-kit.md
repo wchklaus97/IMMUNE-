@@ -116,6 +116,10 @@ Three failures were treated as workflow findings rather than bypassed:
 Generated kits, downloads, screenshots, raw reports, and aggregates remain
 ignored under `outputs/`.
 
+The follow-on distribution tranche packages the exact successful CI binaries,
+all six kits, and SHA-256 inventory into one atomic verified campaign. See
+`docs/godot-prompter/specs/2026-08-29-playtest-distribution-bundle.md`.
+
 ## Remote verification
 
 GitHub Actions run `33257048004` verifies commit `81a3cbe` on Godot 4.7.2.
@@ -139,17 +143,24 @@ performance.
 ## Repeatable commands
 
 ```sh
+npm run create:playtest-campaign -- \
+  --artifacts=outputs/release-ci-33257048004 \
+  --build-commit=81a3cbe1a5ba60227bbe0d8c873c55d07871b729 \
+  --source-run=33257048004 \
+  --source-artifact=immune-demo-81a3cbe1a5ba60227bbe0d8c873c55d07871b729 \
+  --out=outputs/human-playtest-campaigns/immune-v0.4.0-81a3cbe-run-33257048004
+
 npm run create:playtest-kit -- \
   --participant=tester-01 \
-  --build-commit=5021665c73862f9aa8a2e7adf514c86841f4c4e5 \
-  --out=outputs/human-playtest-kits/tester-01-build-5021665
+  --build-commit=81a3cbe1a5ba60227bbe0d8c873c55d07871b729 \
+  --out=outputs/human-playtest-kits/tester-01-build-81a3cbe
 
 node tools/validate_human_playtest.mjs \
-  outputs/playtests/human/raw/5021665/tester-01-six-family-playtest-complete.json
+  outputs/playtests/human/raw/81a3cbe/tester-01-six-family-playtest-complete.json
 
 npm run aggregate:playtests -- \
-  --dir=outputs/playtests/human/raw/5021665 \
-  --out=outputs/playtests/human/aggregate-5021665.json \
+  --dir=outputs/playtests/human/raw/81a3cbe \
+  --out=outputs/playtests/human/aggregate-81a3cbe.json \
   --minimum-participants=3 \
   --require-minimum
 ```

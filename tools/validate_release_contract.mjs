@@ -9,12 +9,16 @@ const PROJECT_RELATIVE = "godot/immune/project.godot";
 const PRESETS_RELATIVE = "godot/immune/export_presets.cfg";
 const EXPECTED_EXPORTS = [
   ["IMMUNE-windows.exe", 1_000_000],
+  ["IMMUNE-windows.pck", 1_000_000],
   ["IMMUNE-linux.x86_64", 1_000_000],
+  ["IMMUNE-linux.pck", 1_000_000],
   ["IMMUNE-macOS.zip", 1_000_000],
   ["web/index.html", 1_000],
   ["web/index.js", 10_000],
   ["web/index.pck", 1_000_000],
   ["web/index.wasm", 1_000_000],
+  ["web/index.audio.worklet.js", 1_000],
+  ["web/index.audio.position.worklet.js", 1_000],
 ];
 
 export function parseConfig(source, file = "config") {

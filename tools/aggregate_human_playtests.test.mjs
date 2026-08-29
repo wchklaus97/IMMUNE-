@@ -108,6 +108,8 @@ test("keeps the checked-in campaign plan aligned with the runtime contract", asy
   assert.equal(plan.session_design.family_order, "deterministic-cyclic-rotation");
   assert.ok(plan.required_report_contracts.includes("same-build-version-and-commit"));
   assert.ok(plan.required_report_contracts.includes("no-identifying-fields-or-email-values"));
+  assert.ok(plan.distribution_contracts.includes("complete-four-platform-artifact-allowlist"));
+  assert.ok(plan.distribution_contracts.includes("no-unchecksummed-distribution-files"));
 });
 
 test("CLI accepts a positional completed report and writes a provisional aggregate", async (context) => {

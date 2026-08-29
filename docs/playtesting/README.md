@@ -34,16 +34,53 @@ The six numeric tester codes `tester-01` through `tester-06` start on a
 different family. Continue with `tester-07` only after the first rotation is
 assigned.
 
-## Prepare a kit
+## Prepare the verified six-person campaign
 
-Use the commit that produced the artifact, not the current documentation HEAD.
-For the remotely verified v0.4.0 artifact in Actions run `33255697919`:
+The recommended path packages the exact successful CI artifact once, plus six
+counterbalanced participant kits. For commit `81a3cbe` from Actions run
+`33257048004`:
+
+```sh
+gh run download 33257048004 \
+  -n immune-demo-81a3cbe1a5ba60227bbe0d8c873c55d07871b729 \
+  -D outputs/release-ci-33257048004
+
+npm run create:playtest-campaign -- \
+  --artifacts=outputs/release-ci-33257048004 \
+  --build-commit=81a3cbe1a5ba60227bbe0d8c873c55d07871b729 \
+  --source-run=33257048004 \
+  --source-artifact=immune-demo-81a3cbe1a5ba60227bbe0d8c873c55d07871b729 \
+  --out=outputs/human-playtest-campaigns/immune-v0.4.0-81a3cbe-run-33257048004
+
+npm run create:playtest-campaign -- \
+  --verify=outputs/human-playtest-campaigns/immune-v0.4.0-81a3cbe-run-33257048004
+```
+
+The generated bundle contains:
+
+- `artifacts/`: the exact Windows, Linux, macOS, and complete Web builds;
+- `participants/tester-01` through `tester-06`: one assigned offline kit each;
+- `campaign-manifest.json`: CI source, full commit, 14-file artifact inventory,
+  participant order, sizes, and SHA-256 values;
+- `SHA256SUMS`: all 14 artifact and 24 participant-kit file checksums; and
+- `README.md`: facilitator distribution instructions.
+
+The generator requires the Windows and Linux `.pck` sidecars and both Web audio
+worklets, rejects unexpected files, verifies the completed copy, writes through
+a temporary sibling directory, and refuses to overwrite an existing campaign.
+The verifier also rejects altered manifests, path traversal, checksum drift,
+and any unchecksummed debug/private file added later.
+
+## Prepare one kit only
+
+Use this fallback only when a complete campaign bundle is not needed. Always use
+the commit that produced the artifact, not the current documentation HEAD:
 
 ```sh
 npm run create:playtest-kit -- \
   --participant=tester-01 \
-  --build-commit=5021665c73862f9aa8a2e7adf514c86841f4c4e5 \
-  --out=outputs/human-playtest-kits/tester-01-build-5021665
+  --build-commit=81a3cbe1a5ba60227bbe0d8c873c55d07871b729 \
+  --out=outputs/human-playtest-kits/tester-01-build-81a3cbe
 ```
 
 The output contains:
@@ -58,16 +95,20 @@ not destroyed accidentally.
 
 ## Run one session
 
-1. Give the participant one exact game artifact and their assigned kit.
-2. Confirm that the artifact matches the manifest commit.
-3. Ask the participant not to enter names or contact details.
-4. Let the participant play each family in the assigned order.
-5. Explain only the normal controls. Avoid coaching family strategy after play
+1. Verify the campaign bundle immediately before distribution.
+2. Give the participant one exact platform build and only their assigned kit.
+3. Keep the Windows/Linux executable beside its matching `.pck`; serve the
+   complete Web folder over local HTTP.
+4. Confirm that the artifact, campaign manifest, and kit use the same full
+   commit.
+5. Ask the participant not to enter names or contact details.
+6. Let the participant play each family in the assigned order.
+7. Explain only the normal controls. Avoid coaching family strategy after play
    begins.
-6. Ask the participant to try the duty switch where available.
-7. Use Download draft before any break.
-8. Use Export completed report after all six sessions.
-9. Store the downloaded JSON under
+8. Ask the participant to try the duty switch where available.
+9. Use Download draft before any break.
+10. Use Export completed report after all six sessions.
+11. Store the downloaded JSON under
    `outputs/playtests/human/raw/<build-commit>/`.
 
 ## Validate reports
@@ -76,7 +117,7 @@ Validate every completed file separately:
 
 ```sh
 node tools/validate_human_playtest.mjs \
-  outputs/playtests/human/raw/5021665/tester-01-six-family-playtest-complete.json
+  outputs/playtests/human/raw/81a3cbe/tester-01-six-family-playtest-complete.json
 ```
 
 The validator rejects incomplete sessions, placeholders, unknown families,
@@ -87,8 +128,8 @@ hidden in free text.
 
 ```sh
 npm run aggregate:playtests -- \
-  --dir=outputs/playtests/human/raw/5021665 \
-  --out=outputs/playtests/human/aggregate-5021665.json \
+  --dir=outputs/playtests/human/raw/81a3cbe \
+  --out=outputs/playtests/human/aggregate-81a3cbe.json \
   --minimum-participants=3 \
   --require-minimum
 ```

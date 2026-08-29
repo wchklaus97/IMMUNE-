@@ -20,6 +20,15 @@
     "shared-MISSION-01",
     "no-identifying-fields-or-email-values"
   ],
+  "distribution_contracts": [
+    "exact-full-build-commit",
+    "successful-actions-run-and-artifact-name",
+    "complete-four-platform-artifact-allowlist",
+    "sha256-for-every-artifact-and-kit-file",
+    "one-full-six-family-order-rotation",
+    "atomic-output-and-no-overwrite",
+    "no-unchecksummed-distribution-files"
+  ],
   "facilitator_coverage_targets": [
     "both-zh_HK-and-en",
     "real-Windows-integrated-GPU",

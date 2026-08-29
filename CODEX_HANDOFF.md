@@ -47,7 +47,10 @@ The latest tranche adds:
   anonymous six-family human-playtest intake contract; and
 - a provenance-locked, counterbalanced offline human-playtest kit with a
   bilingual accessible form, strict PII validation, and a numeric-only campaign
-  aggregator that cannot silently mix builds or duplicate participants.
+  aggregator that cannot silently mix builds or duplicate participants; and
+- an atomic six-participant distribution bundle sourced from the successful CI
+  release artifact, with complete runtime sidecars, per-file SHA-256, exact
+  allowlists, tamper verification, and no-overwrite protection.
 
 ## Playable loop
 
@@ -83,7 +86,8 @@ The latest tranche adds:
 - `tools/validate_translation_csv.mjs` owns the shared game/research CSV shape,
   duplicate, blank, placeholder-parity, and English-script checks.
 - `tools/validate_release_contract.mjs` owns project/preset identity, tag/version
-  coherence, credential-path rejection, and four-platform artifact structure.
+  coherence, credential-path rejection, and complete four-platform artifact
+  structure, including Windows/Linux PCK sidecars and Web audio worklets.
 - `tools/web_release_qa.mjs` owns exported-Web HTTP serving, real keyboard flow,
   ordered opt-in QA events, canvas/resource/console contracts, baseline and
   constrained-software cadence evidence, renderer-aware warning classification,
@@ -91,6 +95,10 @@ The latest tranche adds:
 - `tools/create_human_playtest_kit.mjs` owns exact-build participant-kit
   generation, deterministic six-family order rotation, offline bilingual form,
   and overwrite refusal.
+- `tools/create_human_playtest_campaign.mjs` owns successful-CI source
+  provenance, exact 14-file release allowlisting, atomic artifact copying, six
+  counterbalanced kits, SHA-256 inventory, distribution verification, and
+  rejection of unchecksummed or path-traversing additions.
 - `tools/validate_human_playtest.mjs` owns the anonymous six-family report shape
   and PII rejection; `docs/playtesting/six-family-playtest-template.json` is its
   blank local-only contract and contains no fabricated participant results.
@@ -236,6 +244,22 @@ python3 tools/meshy/validate_hero_glb.py \
 
 ## Verification completed
 
+- Provenance-locked playtest distribution (2026-08-29): the successful
+  `81a3cbe` artifact from run `33257048004` was downloaded and passed the
+  strengthened release contract with exactly 14 allowlisted files. An atomic
+  six-participant campaign was generated with 38 valid `SHA256SUMS` entries and
+  artifact-set digest
+  `9ce6eac3db3da6dc4ffd81c23eb1af59d59906dab2860560df1a5de419da9f8c`;
+  Linux executable permissions survived the copy and an intentional second
+  create exited 1 without overwrite. Campaign/tamper tests pass 5/5 and the full
+  root suite passes 30/30. The real tester-01 form passed a 390x844 Chrome audit
+  with the full commit, TBMNAD order, no overflow/unlabelled fields, one
+  same-origin request, and no console errors. The copied Web artifact passed the
+  complete local flow at 119.753 / 103.093 mean/p05 FPS on Metal and 15.219 /
+  13.624 under 4x CPU plus SwiftShader. A QA-output contamination found during
+  review was moved outside the bundle; exact-root tests now reject any future
+  unchecksummed debug/private file. Full evidence is in
+  `docs/godot-prompter/specs/2026-08-29-playtest-distribution-bundle.md`.
 - Offline human-playtest campaign kit (2026-08-29): 25/25 root tool tests pass,
   including deterministic/counterbalanced kit generation, overwrite refusal,
   free-text email and identity-field rejection, aggregate privacy, mixed-build
@@ -405,6 +429,9 @@ Generated local artifacts (ignored by Git):
 - `outputs/release-hardening-20260829/`
 - `outputs/web-release-qa-final-20260829/`
 - `outputs/human-playtest-kits/`
+- `outputs/human-playtest-campaigns/immune-v0.4.0-81a3cbe-run-33257048004/`
+- `outputs/release-ci-33257048004/`
+- `outputs/playtest-campaign-web-qa-81a3cbe/`
 - `outputs/playtests/human/`
 
 ## Repeatable release commands
@@ -418,13 +445,20 @@ cd ../../
 npm ci --ignore-scripts
 npm run test:tools
 npm run validate:playtest-template
-npm run create:playtest-kit -- \
-  --participant=tester-01 \
-  --build-commit=5021665c73862f9aa8a2e7adf514c86841f4c4e5 \
-  --out=outputs/human-playtest-kits/tester-01-build-5021665
+gh run download 33257048004 \
+  -n immune-demo-81a3cbe1a5ba60227bbe0d8c873c55d07871b729 \
+  -D outputs/release-ci-33257048004
+npm run create:playtest-campaign -- \
+  --artifacts=outputs/release-ci-33257048004 \
+  --build-commit=81a3cbe1a5ba60227bbe0d8c873c55d07871b729 \
+  --source-run=33257048004 \
+  --source-artifact=immune-demo-81a3cbe1a5ba60227bbe0d8c873c55d07871b729 \
+  --out=outputs/human-playtest-campaigns/immune-v0.4.0-81a3cbe-run-33257048004
+npm run create:playtest-campaign -- \
+  --verify=outputs/human-playtest-campaigns/immune-v0.4.0-81a3cbe-run-33257048004
 npm run aggregate:playtests -- \
-  --dir=outputs/playtests/human/raw/5021665 \
-  --out=outputs/playtests/human/aggregate-5021665.json \
+  --dir=outputs/playtests/human/raw/81a3cbe \
+  --out=outputs/playtests/human/aggregate-81a3cbe.json \
   --minimum-participants=3 --require-minimum
 node tools/validate_release_contract.mjs
 node tools/generate_catalog_localization.mjs --check
@@ -477,9 +511,9 @@ commercial release. Remaining work is:
    exported-Web 4x-CPU/SwiftShader compatibility stress are complete. The
    remaining product-risk gates are longer human playtesting across all six
    families for fun/readability/accessibility/control feel and a repeat on an
-   agreed real lower-end Windows/Web machine. Use the checked-in campaign plan
-   and generated offline kits; deterministic automation and synthetic form
-   fixtures cannot honestly prove those qualities.
+   agreed real lower-end Windows/Web machine. Use the verified 81a3cbe campaign
+   bundle and checked-in campaign plan; deterministic automation and synthetic
+   form fixtures cannot honestly prove those qualities.
 5. A future public tag must be an explicit owner-approved publishing action.
    Run `node tools/validate_release_contract.mjs --tag=v0.4.0` first; no tag,
    GitHub Release, upload, notarization, or storefront submission was performed.
