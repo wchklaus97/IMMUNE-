@@ -251,8 +251,14 @@ python3 tools/meshy/validate_hero_glb.py \
   two-second maximum-frame watchdog. The uploaded report passes the latter and
   still fails the former; frames above one second are no longer filtered out.
   Fresh local strict and CI-mode browser runs pass at 119.998 / 14.751 and
-  120.051 / 14.706 mean FPS respectively. Remote verification of this correction
-  is pending the next pushed workflow run.
+  120.051 / 14.706 mean FPS respectively. GitHub Actions run `33255697919`
+  verifies commit `5021665`: `validate-and-export` and Linux, Windows, and macOS
+  native release-smoke jobs all pass. Its downloaded schema-v2 report records
+  `compatibility-only`, all eight ordered events, four resource 200s, exact fit,
+  no effective errors, and eight visually reviewed screenshots. Hosted
+  SwiftShader measured 1.154 / 1.319 mean FPS with 916.6 / 783.4 ms maximum
+  frames, safely below the explicit two-second liveness watchdog; all raw slow
+  cadence ratios remain reported and no hardware-performance claim is made.
 - Release identity hardening (2026-08-29): contract tests went RED on the absent
   icon/Windows metadata and GREEN after the project/preset update; actionlint,
   four fresh exports, and the complete artifact contract pass. Windows PE

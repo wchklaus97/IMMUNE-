@@ -122,6 +122,29 @@ Generated local evidence is under
 uploads `outputs/ci-web-release-qa` for every run, including partial/failure
 evidence via `if: always()`.
 
+## Remote evidence
+
+GitHub Actions run `33255697919` verifies commit `5021665` on Godot 4.7.2.
+`validate-and-export` passed in 11m34s, including the renderer-aware exported-Web
+gate and both evidence/release artifact uploads; subsequent Linux, Windows, and
+macOS native release-smoke jobs all passed.
+
+The downloaded schema-v2 Web report explicitly records
+`gate_mode=compatibility-only`. Both profiles used ANGLE Vulkan SwiftShader:
+
+| Profile | CPU rate | Mean FPS | p05 FPS | Maximum frame |
+| --- | ---: | ---: | ---: | ---: |
+| baseline / host-default | 1x | 1.154 | 1.091 | 916.6 ms |
+| constrained-software | 4x | 1.319 | 1.276 | 783.4 ms |
+
+The small difference between the two virtualized profiles is treated as runner
+noise, not evidence that throttling improves performance. Both completed all
+eight ordered events, loaded the exact four resources with HTTP 200, fit their
+canvases without scroll, stayed below the two-second frame watchdog, and had no
+console errors, page errors, or effective request failures. All eight uploaded
+screenshots were visually reviewed. The raw 100% ratios above 50 and 250 ms
+remain in the report; this result is a compatibility/liveness proof only.
+
 ## Anonymous human playtest contract
 
 `docs/playtesting/six-family-playtest-template.json` contains one MISSION-01
