@@ -5,7 +5,7 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const require = createRequire(import.meta.url);
-const { chromium } = require("../work/node_modules/playwright-core/index.js");
+const { chromium } = require("../node_modules/playwright-core/index.js");
 const sharp = require("../work/node_modules/sharp");
 
 const ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)), "..");

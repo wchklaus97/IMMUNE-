@@ -103,6 +103,11 @@ func _ready() -> void:
 	SettingsState.settings_changed.connect(_on_settings_changed)
 	AudioDirector.play_music()
 	_set_phase(Phase.CORE_DEFENSE)
+	WebQaBridge.publish(&"combat_ready", {
+		"mission": String(mission_data.id),
+		"family": String(_family_profile.family_id),
+		"duty": String(_player.duty),
+	})
 	if show_onboarding and not SettingsState.onboarding_seen:
 		_show_onboarding()
 
@@ -178,6 +183,10 @@ func _toggle_duty() -> void:
 		_set_status(tr("STATUS_DUTY_FIXED"))
 	AudioDirector.play_sfx(&"duty")
 	_refresh_hud()
+	WebQaBridge.publish(&"duty_changed", {
+		"family": String(_family_profile.family_id),
+		"duty": String(_player.duty),
+	})
 
 
 func _show_intel_or_research() -> void:

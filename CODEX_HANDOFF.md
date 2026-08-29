@@ -40,7 +40,10 @@ The latest tranche adds:
 - four-platform v0.4.0 release artifacts; and
 - a release identity/artifact contract with a canonical jelly-core icon,
   Windows PE metadata, macOS bundle verification, safe tag/version matching,
-  generated-output import isolation, and native CI evidence.
+  generated-output import isolation, and native CI evidence; and
+- a real exported-Web research-to-combat browser gate with baseline and
+  4x-CPU/SwiftShader compatibility-stress profiles, failure diagnostics, eight
+  screenshots, and an anonymous six-family human-playtest intake contract.
 
 ## Playable loop
 
@@ -77,12 +80,19 @@ The latest tranche adds:
   duplicate, blank, placeholder-parity, and English-script checks.
 - `tools/validate_release_contract.mjs` owns project/preset identity, tag/version
   coherence, credential-path rejection, and four-platform artifact structure.
+- `tools/web_release_qa.mjs` owns exported-Web HTTP serving, real keyboard flow,
+  ordered opt-in QA events, canvas/resource/console contracts, baseline and
+  constrained-software cadence evidence, screenshots, and failure diagnostics.
+- `tools/validate_human_playtest.mjs` owns the anonymous six-family report shape;
+  `docs/playtesting/six-family-playtest-template.json` is its blank local-only
+  intake form and contains no fabricated participant results.
 - `godot/immune/build/.gdignore` prevents generated release/capture output from
   re-entering Godot's source import pipeline.
 - `.github/workflows/ci.yml` owns Godot 4.7.2 import/smoke, catalog translation
   drift, release identity/tag validation, bounded T/B first/final mission
   balance, all-family MISSION-01 balance, bilingual layout, exports, artifact
-  validation, and three native launch/metadata checks.
+  validation, exported-Web compatibility stress/evidence upload, and three
+  native launch/metadata checks.
 
 ## Balance candidate 1
 
@@ -215,6 +225,20 @@ python3 tools/meshy/validate_hero_glb.py \
 
 ## Verification completed
 
+- Exported-Web compatibility stress and playtest intake (2026-08-29): 13/13
+  local tool tests, anonymous six-family template validation, fresh Web export,
+  and real Chrome research → mission desk → B/MISSION-01 → mobile duty → pause
+  flow pass at 1600x900 baseline and 1280x720 4x-CPU/SwiftShader. Baseline
+  measured 120.000 mean / 111.111 p05 FPS; constrained software measured 14.460
+  mean / 13.210 p05 FPS with zero frames above 250 ms. Both produced all eight
+  ordered events, exact canvas fit, four resource 200s, no effective request,
+  page, or console errors, and four visually reviewed screenshots. The raw
+  constrained 50 ms long-frame ratio remains reported at 100%; the evidence is
+  explicitly compatibility stress, not a lower-end hardware benchmark. Failure
+  phase logs, JSON/PNG snapshots, benign superseded preload cancellation
+  classification, and a consistent 250 ms constrained-stall gate were added
+  after two diagnosed RED runs. Full evidence and claim boundary are in
+  `docs/godot-prompter/specs/2026-08-29-constrained-web-and-human-playtest.md`.
 - Release identity hardening (2026-08-29): contract tests went RED on the absent
   icon/Windows metadata and GREEN after the project/preset update; actionlint,
   four fresh exports, and the complete artifact contract pass. Windows PE
@@ -329,6 +353,7 @@ Generated local artifacts (ignored by Git):
 - `outputs/player-qa-20260829/`
 - `outputs/combat-polish-20260829/`
 - `outputs/release-hardening-20260829/`
+- `outputs/web-release-qa-final-20260829/`
 
 ## Repeatable release commands
 
@@ -338,8 +363,9 @@ npm test
 npm run build
 
 cd ../../
-node --test tools/analyze_metal_gpu_trace.test.mjs
-node --test tools/validate_release_contract.test.mjs
+npm ci --ignore-scripts
+npm run test:tools
+npm run validate:playtest-template
 node tools/validate_release_contract.mjs
 node tools/generate_catalog_localization.mjs --check
 node tools/validate_translation_csv.mjs
@@ -360,6 +386,9 @@ godot --headless --path godot/immune --export-release "Linux/X11" build/releases
 godot --headless --path godot/immune --export-release "macOS" build/releases/IMMUNE-macOS.zip
 godot --headless --path godot/immune --export-release "Web" build/releases/web/index.html
 node tools/validate_release_contract.mjs --artifacts=godot/immune/build/releases
+npm run test:web-release -- \
+  --artifacts=godot/immune/build/releases/web \
+  --out=outputs/web-release-qa --duration-ms=6000
 ```
 
 Run exports sequentially. Parallel Godot exporters race on the shared
@@ -380,10 +409,12 @@ commercial release. Remaining work is:
    storefront metadata, and store-specific packaging. The current macOS artifact
    is valid ad-hoc signed but cannot be publicly notarized with the credentials
    available on this machine.
-4. Non-zero GPU timing and a 34-minute automated all-family campaign soak are now
-   complete. The remaining product-risk gate is longer human playtesting across
-   all six families for fun, readability, accessibility, and control feel; the
-   deterministic autopilot cannot honestly prove those qualities.
+4. Non-zero GPU timing, a 34-minute automated all-family campaign soak, and an
+   exported-Web 4x-CPU/SwiftShader compatibility stress are complete. The
+   remaining product-risk gates are longer human playtesting across all six
+   families for fun/readability/accessibility/control feel and a repeat on an
+   agreed real lower-end Windows/Web machine. Use the checked-in anonymous
+   template; deterministic automation cannot honestly prove those qualities.
 5. A future public tag must be an explicit owner-approved publishing action.
    Run `node tools/validate_release_contract.mjs --tag=v0.4.0` first; no tag,
    GitHub Release, upload, notarization, or storefront submission was performed.

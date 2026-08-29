@@ -47,6 +47,10 @@ func _ready() -> void:
 	_build_ui()
 	_refresh()
 	AudioDirector.play_music()
+	WebQaBridge.publish(&"mission_select_ready", {
+		"mission": String(_missions[_mission_index].id) if not _missions.is_empty() else "",
+		"family": FAMILIES[_family_index],
+	})
 
 
 func _exit_tree() -> void:
@@ -241,6 +245,7 @@ func _select_family(index: int) -> void:
 	_family_index = clampi(index, 0, FAMILIES.size() - 1)
 	AudioDirector.play_sfx(&"ui", 1.0 + float(_family_index) * 0.03)
 	_refresh()
+	WebQaBridge.publish(&"family_selected", {"family": FAMILIES[_family_index]})
 
 
 func _refresh() -> void:

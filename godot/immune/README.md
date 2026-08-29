@@ -91,9 +91,21 @@ godot --headless --path godot/immune --export-release "Linux/X11" build/releases
 godot --headless --path godot/immune --export-release "macOS" build/releases/IMMUNE-macOS.zip
 godot --headless --path godot/immune --export-release "Web" build/releases/web/index.html
 node tools/validate_release_contract.mjs --artifacts=godot/immune/build/releases
+npm ci --ignore-scripts
+npm run test:tools
+npm run validate:playtest-template
+npm run test:web-release -- \
+  --artifacts=godot/immune/build/releases/web \
+  --out=outputs/web-release-qa --duration-ms=6000
 ```
 
 匯出需要安裝 Godot 4.7.2 export templates，四個 exporter 必須順序執行。`build/.gdignore` 會阻止 Godot 將生成成品重新當作 source asset import。GitHub Actions 會自動執行 release identity/tag contract、web tests/build、Godot smoke、首尾關 T/B 平衡回歸、HUD overflow check、四平台匯出、artifact contract，以及 Linux／Windows／macOS 原生成品啟動與 metadata 測試。完整決策同 binary evidence 見 `docs/godot-prompter/specs/2026-08-29-release-identity-hardening.md`。
+
+Web 匯出另外會以真實 Chrome 鍵盤輸入跑研究網絡 → 任務台 → B / MISSION-01
+→ mobile duty → 暫停流程，並比較 baseline 同 4× CPU + SwiftShader stress
+profile。呢個證據只代表 compatibility stress，唔係真實低階硬件 benchmark；
+完整門檻、失敗證據同六家族匿名真人 playtest template 見
+`docs/godot-prompter/specs/2026-08-29-constrained-web-and-human-playtest.md`。
 
 準備正式 tag 時先做精確版本 preflight；呢個命令唔會建立 tag 或發佈：
 

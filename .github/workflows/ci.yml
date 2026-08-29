@@ -23,8 +23,13 @@ jobs:
         with:
           node-version: 22
 
-      - name: Test local Metal trace analyzer
-        run: node --test tools/analyze_metal_gpu_trace.test.mjs
+      - name: Install local QA dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Test local release tools and playtest template
+        run: |
+          npm run test:tools
+          npm run validate:playtest-template
 
       - name: Test research-network web UI
         working-directory: ui/immune-research-network
@@ -41,7 +46,6 @@ jobs:
 
       - name: Validate release identity contract
         run: |
-          node --test tools/validate_release_contract.test.mjs
           if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
             node tools/validate_release_contract.mjs --tag="$GITHUB_REF_NAME"
           else
@@ -104,6 +108,19 @@ jobs:
           godot --headless --path godot/immune --export-release "Web" build/releases/web/index.html 2>&1 | tee godot-export-web.log
           if grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" godot-export-windows.log godot-export-linux.log godot-export-macos.log godot-export-web.log; then exit 1; fi
           node tools/validate_release_contract.mjs --artifacts=godot/immune/build/releases
+
+      - name: Exercise exported Web demo under baseline and constrained profiles
+        timeout-minutes: 5
+        run: npm run test:web-release -- --artifacts=godot/immune/build/releases/web --out=outputs/ci-web-release-qa --duration-ms=4000
+
+      - name: Upload Web release QA evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: immune-web-release-qa-${{ github.sha }}
+          path: outputs/ci-web-release-qa
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Upload release artifacts
         uses: actions/upload-artifact@v7

@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { pathToFileURL } from "node:url";
 
 const require = createRequire(import.meta.url);
-const { chromium } = require("../work/node_modules/playwright-core/index.js");
+const { chromium } = require("../node_modules/playwright-core/index.js");
 
 const ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)), "..");
 const OUT = resolve(ROOT, "tools", "screenshots");

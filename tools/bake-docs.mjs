@@ -4,7 +4,7 @@ import { basename, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const require = createRequire(import.meta.url);
-const { chromium } = require("../work/node_modules/playwright-core/index.js");
+const { chromium } = require("../node_modules/playwright-core/index.js");
 const sharp = require("../work/node_modules/sharp");
 const { PDFDocument } = require("../work/node_modules/pdf-lib/dist/pdf-lib.js");
 

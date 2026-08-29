@@ -28,6 +28,7 @@ ResearchState="*res://autoload/research_state.gd"
 SettingsState="*res://autoload/settings_state.gd"
 AudioDirector="*res://autoload/audio_director.gd"
 VfxLibrary="*res://autoload/vfx_library.gd"
+WebQaBridge="*res://autoload/web_qa_bridge.gd"
 
 [display]
 

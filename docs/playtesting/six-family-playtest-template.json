@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "status": "template",
+  "privacy": "anonymous-local-only",
+  "build": {
+    "version": "0.4.0",
+    "commit": "TO_FILL"
+  },
+  "tester": {
+    "participant_code": "",
+    "age_18_or_over": null,
+    "platform": "",
+    "device": "",
+    "gpu": "",
+    "input": "",
+    "locale": ""
+  },
+  "sessions": [
+    {
+      "family": "T",
+      "mission": "MISSION-01",
+      "completion": "not_started",
+      "minutes": 0,
+      "duty_switch_used": false,
+      "ratings": { "controls": 0, "combat_readability": 0, "family_role_clarity": 0, "jelly_visual_clarity": 0, "game_feel": 0 },
+      "strongest_moment": "",
+      "biggest_confusion": "",
+      "visual_notes": "",
+      "control_notes": "",
+      "bugs": []
+    },
+    {
+      "family": "B",
+      "mission": "MISSION-01",
+      "completion": "not_started",
+      "minutes": 0,
+      "duty_switch_used": false,
+      "ratings": { "controls": 0, "combat_readability": 0, "family_role_clarity": 0, "jelly_visual_clarity": 0, "game_feel": 0 },
+      "strongest_moment": "",
+      "biggest_confusion": "",
+      "visual_notes": "",
+      "control_notes": "",
+      "bugs": []
+    },
+    {
+      "family": "M",
+      "mission": "MISSION-01",
+      "completion": "not_started",
+      "minutes": 0,
+      "duty_switch_used": false,
+      "ratings": { "controls": 0, "combat_readability": 0, "family_role_clarity": 0, "jelly_visual_clarity": 0, "game_feel": 0 },
+      "strongest_moment": "",
+      "biggest_confusion": "",
+      "visual_notes": "",
+      "control_notes": "",
+      "bugs": []
+    },
+    {
+      "family": "N",
+      "mission": "MISSION-01",
+      "completion": "not_started",
+      "minutes": 0,
+      "duty_switch_used": false,
+      "ratings": { "controls": 0, "combat_readability": 0, "family_role_clarity": 0, "jelly_visual_clarity": 0, "game_feel": 0 },
+      "strongest_moment": "",
+      "biggest_confusion": "",
+      "visual_notes": "",
+      "control_notes": "",
+      "bugs": []
+    },
+    {
+      "family": "A",
+      "mission": "MISSION-01",
+      "completion": "not_started",
+      "minutes": 0,
+      "duty_switch_used": false,
+      "ratings": { "controls": 0, "combat_readability": 0, "family_role_clarity": 0, "jelly_visual_clarity": 0, "game_feel": 0 },
+      "strongest_moment": "",
+      "biggest_confusion": "",
+      "visual_notes": "",
+      "control_notes": "",
+      "bugs": []
+    },
+    {
+      "family": "D",
+      "mission": "MISSION-01",
+      "completion": "not_started",
+      "minutes": 0,
+      "duty_switch_used": false,
+      "ratings": { "controls": 0, "combat_readability": 0, "family_role_clarity": 0, "jelly_visual_clarity": 0, "game_feel": 0 },
+      "strongest_moment": "",
+      "biggest_confusion": "",
+      "visual_notes": "",
+      "control_notes": "",
+      "bugs": []
+    }
+  ],
+  "summary": {
+    "most_distinct_family": "",
+    "least_distinct_family": "",
+    "replay_intent_1_to_5": 0,
+    "top_priority_change": ""
+  }
+}

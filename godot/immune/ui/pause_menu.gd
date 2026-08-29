@@ -35,6 +35,7 @@ func set_open(open: bool) -> void:
 	if open and _resume_button:
 		_resume_button.grab_focus()
 	_refresh_prompts(SettingsState.is_using_gamepad)
+	WebQaBridge.publish(&"pause_changed", {"open": open})
 
 
 func _build_ui() -> void:

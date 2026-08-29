@@ -77,6 +77,7 @@ func _ready() -> void:
 		SettingsState.settings_changed.connect(_on_settings_changed)
 	_refresh()
 	call_deferred("_home")
+	WebQaBridge.publish(&"research_ready", {"nodes": Catalog.node_count()})
 	if OS.get_cmdline_user_args().has("--release-smoke"):
 		call_deferred("_run_release_smoke")
 

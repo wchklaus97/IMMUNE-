@@ -4,10 +4,16 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "test:tools": "node --test tools/*.test.mjs",
+    "test:web-release": "node tools/web_release_qa.mjs",
+    "validate:playtest-template": "node tools/validate_human_playtest.mjs docs/playtesting/six-family-playtest-template.json --allow-incomplete",
     "serve": "node tools/serve.mjs",
     "capture": "node tools/capture-ux.mjs",
     "capture:cover": "node tools/capture-cover.mjs",
     "docs": "node tools/capture-ux.mjs && node tools/bake-docs.mjs",
     "docs:posters": "node tools/bake-docs.mjs"
+  },
+  "devDependencies": {
+    "playwright-core": "1.62.1"
   }
 }
