@@ -109,6 +109,21 @@ This remains a local compatibility sentinel, not a lower-end hardware result.
 - Raw release download, generated campaigns, participant data, and browser
   evidence remain ignored under `outputs/`.
 
+Remote verification for functional commit `dd8a960` completed in GitHub Actions
+run `33258313619`: the main validation/export job passed in 11m35s, followed by
+Linux, Windows, and macOS native release smoke jobs in 14s, 19s, and 22s.
+
+The downloaded schema-v2 hosted-Web report is explicitly
+`compatibility-stress-not-hardware-benchmark` with a `compatibility-only` gate.
+Both profiles used ANGLE Vulkan SwiftShader. Baseline recorded 1.210 mean / 1.132
+p05 FPS and an 883.3ms maximum frame; the 4x-CPU profile recorded 1.385 mean /
+1.333 p05 FPS and a 750ms maximum frame. Each profile emitted all eight ordered
+readiness/interaction events, loaded all four required resources with HTTP 200,
+and had zero console errors, page errors, or effective request failures. All
+eight research, mission-selection, combat, and pause screenshots were visually
+reviewed: the expected state was present, the canvas fit the viewport, no UI was
+clipped, and the highlighted jelly character remained visible in both profiles.
+
 ## Next safe work
 
 Verify the bundle immediately before copying it to a facilitator device, then

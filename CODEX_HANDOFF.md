@@ -260,6 +260,16 @@ python3 tools/meshy/validate_hero_glb.py \
   review was moved outside the bundle; exact-root tests now reject any future
   unchecksummed debug/private file. Full evidence is in
   `docs/godot-prompter/specs/2026-08-29-playtest-distribution-bundle.md`.
+  Functional commit `dd8a960` then passed GitHub Actions run `33258313619`:
+  main validation/export in 11m35s and Linux/Windows/macOS native smoke in
+  14s/19s/22s. Its downloaded hosted-Web report is schema v2 and explicitly
+  compatibility-only; SwiftShader baseline measured 1.210/1.132 mean/p05 FPS
+  with 883.3ms maximum frame, while the 4x-CPU profile measured 1.385/1.333 with
+  750ms maximum. Both profiles completed eight ordered events and four required
+  HTTP-200 resources with zero console/page/effective-request errors. All eight
+  screenshots were visually reviewed and retained the expected research,
+  mission-selection jelly preview, combat, and pause states without clipping or
+  blank output. These figures are not a real low-end hardware benchmark.
 - Offline human-playtest campaign kit (2026-08-29): 25/25 root tool tests pass,
   including deterministic/counterbalanced kit generation, overwrite refusal,
   free-text email and identity-field rejection, aggregate privacy, mixed-build
@@ -432,6 +442,7 @@ Generated local artifacts (ignored by Git):
 - `outputs/human-playtest-campaigns/immune-v0.4.0-81a3cbe-run-33257048004/`
 - `outputs/release-ci-33257048004/`
 - `outputs/playtest-campaign-web-qa-81a3cbe/`
+- `outputs/ci-web-release-qa-downloaded-33258313619/`
 - `outputs/playtests/human/`
 
 ## Repeatable release commands
