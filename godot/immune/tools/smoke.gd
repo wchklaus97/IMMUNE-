@@ -2,12 +2,50 @@ extends SceneTree
 
 ## Headless check: six base scenes load and A has no walk kit.
 
+const _LightContract := preload("res://characters/gel/light_contract.gd")
+const JELLY_DIRECT_LIGHT_LIMIT := 3
+const JELLY_SHADOWED_DIRECT_LIGHT_LIMIT := 1
+const JELLY_DIRECT_LIGHT_RIG_SOURCES := [
+	"res://tools/shot.gd",
+	"res://tools/gel_perf.gd",
+	"res://tools/crit4_probe.gd",
+]
+const JELLY_PROBE_ALLOWED_ARGS: Array[String] = [
+	"jelly-light-probe", "out", "share", "save-path",
+]
+const REGULAR_SMOKE_ALLOWED_ARGS: Array[String] = ["save-path"]
+const JELLY_PROBE_SHARE_MIN := 0.09
+const JELLY_PROBE_SHARE_MAX := 0.105
+const QA_STARTUP_FAILURE_EXIT_CODE := 74
+
+var _jelly_probe_args := {}
+
 
 func _init() -> void:
 	call_deferred("_run")
 
 
 func _run() -> void:
+	# A SceneTree main script can receive its first deferred callback before
+	# project autoloads have completed _ready().  Give ResearchState exactly one
+	# frame to publish a startup-fatal result before this harness does any work.
+	await process_frame
+	if _abort_for_qa_startup_failure():
+		return
+	if _jelly_probe_requested():
+		if not _parse_jelly_probe_args():
+			quit(2)
+			return
+		await _run_jelly_light_probe()
+		return
+	if not _parse_regular_smoke_args():
+		quit(2)
+		return
+	var jelly_rig_error := _jelly_direct_light_rig_error()
+	if not jelly_rig_error.is_empty():
+		push_error(jelly_rig_error)
+		quit(1)
+		return
 	if not TranslationServer.get_loaded_locales().has("en") or not TranslationServer.get_loaded_locales().has("zh_HK"):
 		push_error("Expected English and zh_HK translations to be registered")
 		quit(1)
@@ -71,8 +109,14 @@ func _run() -> void:
 		push_error("kit_lock_preview.tscn missing")
 		quit(1)
 		return
-	root.add_child(packed.instantiate())
+	var kit_preview := packed.instantiate()
+	root.add_child(kit_preview)
 	await create_timer(0.15).timeout
+	var kit_light_error := _jelly_runtime_light_error("kit preview", root)
+	if not kit_light_error.is_empty():
+		push_error(kit_light_error)
+		quit(1)
+		return
 	var units: Array[Node] = get_nodes_in_group("immune_character")
 	if units.size() < 6:
 		push_error("Expected 6 immune_character nodes, got %d" % units.size())
@@ -117,8 +161,18 @@ func _run() -> void:
 				push_error("CHAR-BASE-T runtime body must receive its Fizzy bubble profile")
 				quit(1)
 				return
-			if t_runtime_gel.get_shader_parameter("microbubble_enabled") != true or t_runtime_gel.get_shader_parameter("inclusion_enabled") != true:
-				push_error("CHAR-BASE-T Fizzy runtime profile must keep microbubbles and inclusions")
+			if t_runtime_gel.get_shader_parameter("authored_height_enabled") != true:
+				push_error("CHAR-BASE-T V5.1 runtime profile must keep the mipmapped authored height")
+				quit(1)
+				return
+			var t_runtime_surface_error := _gel_surface_noise_error(t_runtime_gel)
+			if not t_runtime_surface_error.is_empty():
+				push_error("CHAR-BASE-T runtime %s" % t_runtime_surface_error)
+				quit(1)
+				return
+			var t_runtime_membrane_error := _gel_membrane_error(t_runtime_gel)
+			if not t_runtime_membrane_error.is_empty():
+				push_error("CHAR-BASE-T runtime %s" % t_runtime_membrane_error)
 				quit(1)
 				return
 		if str(unit.get("family_id")) == "B":
@@ -143,8 +197,18 @@ func _run() -> void:
 				push_error("CHAR-BASE-B imported body must receive its round-bubble runtime profile")
 				quit(1)
 				return
-			if b_runtime_gel.get_shader_parameter("microbubble_enabled") != true or b_runtime_gel.get_shader_parameter("inclusion_enabled") != true:
-				push_error("CHAR-BASE-B Fizzy runtime profile must keep microbubbles and inclusions")
+			if b_runtime_gel.get_shader_parameter("authored_height_enabled") != true:
+				push_error("CHAR-BASE-B V5.1 runtime profile must keep the mipmapped authored height")
+				quit(1)
+				return
+			var b_runtime_surface_error := _gel_surface_noise_error(b_runtime_gel)
+			if not b_runtime_surface_error.is_empty():
+				push_error("CHAR-BASE-B runtime %s" % b_runtime_surface_error)
+				quit(1)
+				return
+			var b_runtime_membrane_error := _gel_membrane_error(b_runtime_gel)
+			if not b_runtime_membrane_error.is_empty():
+				push_error("CHAR-BASE-B runtime %s" % b_runtime_membrane_error)
 				quit(1)
 				return
 		elif str(unit.get("family_id")) == "M":
@@ -182,6 +246,13 @@ func _run() -> void:
 				push_error("CHAR-BASE-M accepted body must expose Body and BodyShell")
 				quit(1)
 				return
+			var m_mesh_error := _shared_authored_sphere_error(
+				m_body, m_shell, "CHAR-BASE-M body and membrane"
+			)
+			if not m_mesh_error.is_empty():
+				push_error(m_mesh_error)
+				quit(1)
+				return
 			for authored_path in ["EyeL", "EyeR", "MouthCavity"]:
 				if m_real_mesh.get_node_or_null(authored_path) == null:
 					push_error("CHAR-BASE-M accepted body missing %s" % authored_path)
@@ -192,8 +263,8 @@ func _run() -> void:
 				push_error("CHAR-BASE-M accepted body must keep its authored bubble material")
 				quit(1)
 				return
-			if m_runtime_gel.get_shader_parameter("microbubble_enabled") != true or m_runtime_gel.get_shader_parameter("inclusion_enabled") != true:
-				push_error("CHAR-BASE-M fizzy profile must keep microbubbles and fine inclusions")
+			if m_runtime_gel.get_shader_parameter("authored_height_enabled") != true:
+				push_error("CHAR-BASE-M V5.1 profile must keep the mipmapped authored height")
 				quit(1)
 				return
 			var m_noise_error := _gel_surface_noise_error(m_runtime_gel)
@@ -204,6 +275,11 @@ func _run() -> void:
 			var m_shell_material := m_shell.material_override as ShaderMaterial
 			if m_shell_material == null or m_shell_material.shader == null or not m_shell_material.shader.resource_path.ends_with("jelly_shell.gdshader"):
 				push_error("CHAR-BASE-M accepted body must keep its authored clear membrane")
+				quit(1)
+				return
+			var m_shell_error := _gel_shell_energy_error(m_shell_material)
+			if not m_shell_error.is_empty():
+				push_error("CHAR-BASE-M %s" % m_shell_error)
 				quit(1)
 				return
 			if not bool(unit.get("imported_preserves_materials")) or str(unit.get("imported_model_path")) != "res://characters/base_m/reference_body.tscn":
@@ -319,6 +395,11 @@ func _run() -> void:
 					push_error("CHAR-BASE-A RelayRing must use the Compatibility-safe relay material")
 					quit(1)
 					return
+	# Do not leave the two-light lineup stage alive while later combat and mission
+	# scenes use the same main viewport. A subtree-only audit would miss those
+	# sibling lights and silently test an unsupported four-light composite.
+	kit_preview.queue_free()
+	await process_frame
 	var research := load("res://ui/research/research_network.tscn") as PackedScene
 	if research == null:
 		push_error("research_network.tscn missing")
@@ -330,6 +411,29 @@ func _run() -> void:
 	var research_state := root.get_node_or_null("ResearchState")
 	if catalog == null or research_state == null:
 		push_error("Autoloads Catalog/ResearchState missing")
+		quit(1)
+		return
+	var requested_save_path := ""
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--save-path="):
+			requested_save_path = arg.trim_prefix("--save-path=")
+			break
+	if not research_state.has_method("active_save_path"):
+		push_error("ResearchState must expose the active smoke save path")
+		quit(1)
+		return
+	var active_smoke_save_path := str(research_state.call("active_save_path"))
+	if active_smoke_save_path == "user://immune_demo_save.json":
+		push_error("Smoke must never use the real player save path")
+		quit(1)
+		return
+	if not requested_save_path.is_empty():
+		if active_smoke_save_path != requested_save_path:
+			push_error("ResearchState did not activate the requested isolated save path")
+			quit(1)
+			return
+	if not FileAccess.file_exists(active_smoke_save_path):
+		push_error("ResearchState did not initialize the isolated smoke save")
 		quit(1)
 		return
 	research_state.call("seed_demo")
@@ -500,6 +604,11 @@ func _run() -> void:
 	combat.set("persist_rewards", false)
 	root.add_child(combat)
 	await create_timer(0.2).timeout
+	var combat_light_error := _jelly_runtime_light_error("combat lane", root)
+	if not combat_light_error.is_empty():
+		push_error(combat_light_error)
+		quit(1)
+		return
 	var t_units := 0
 	for unit in combat.get_children():
 		if str(unit.get("character_id")) == "CHAR-BASE-T":
@@ -589,8 +698,8 @@ func _run() -> void:
 		push_error("T Fizzy profile must disable directional legacy dimples")
 		quit(1)
 		return
-	if gel_material.get_shader_parameter("bubble_enabled") != true or gel_material.get_shader_parameter("microbubble_enabled") != true or gel_material.get_shader_parameter("inclusion_enabled") != true:
-		push_error("T Fizzy profile must enable bubbles, microbubbles, and fine inclusions")
+	if gel_material.get_shader_parameter("bubble_enabled") != true or gel_material.get_shader_parameter("authored_height_enabled") != true:
+		push_error("T Fizzy profile must retain its family profile and V5.1 authored height")
 		quit(1)
 		return
 	var t_membrane_error := _gel_membrane_error(gel_material)
@@ -616,8 +725,8 @@ func _run() -> void:
 		push_error("B Jelly V2 profile must disable directional legacy dimples")
 		quit(1)
 		return
-	if b_gel_material.get_shader_parameter("microbubble_enabled") != true or b_gel_material.get_shader_parameter("inclusion_enabled") != true:
-		push_error("B Fizzy profile must enable microbubbles and fine inclusions")
+	if b_gel_material.get_shader_parameter("authored_height_enabled") != true:
+		push_error("B Fizzy profile must enable the V5.1 authored height")
 		quit(1)
 		return
 	var b_membrane_error := _gel_membrane_error(b_gel_material)
@@ -761,7 +870,10 @@ func _run() -> void:
 		push_error("Victory discovery flag missing")
 		quit(1)
 		return
-	var smoke_save := "user://immune_demo_smoke.json"
+	var active_save_path := str(research_state.call("active_save_path"))
+	var smoke_save := active_save_path.get_base_dir().path_join(
+		"%s.smoke-roundtrip.json" % active_save_path.get_file().get_basename()
+	)
 	if int(research_state.call("save_game", smoke_save)) != OK:
 		push_error("Smoke save write failed")
 		quit(1)
@@ -810,6 +922,11 @@ func _run() -> void:
 		mission_runtime.set("show_onboarding", false)
 		root.add_child(mission_runtime)
 		await create_timer(0.08).timeout
+		var mission_light_error := _jelly_runtime_light_error("mission runtime", root)
+		if not mission_light_error.is_empty():
+			push_error(mission_light_error)
+			quit(1)
+			return
 		if mission_runtime.call("mission_id") != mission.id or mission_runtime.call("player_family") != StringName(family_ids[i]):
 			push_error("Mission/family runtime selection mismatch for %s/%s" % [mission.id, family_ids[i]])
 			quit(1)
@@ -871,6 +988,11 @@ func _run() -> void:
 		push_error("Mission desk must confine the cell preview to its own SubViewport")
 		quit(1)
 		return
+	var preview_light_error := _jelly_runtime_light_error("mission preview", root)
+	if not preview_light_error.is_empty():
+		push_error(preview_light_error)
+		quit(1)
+		return
 	var preview_camera := preview_stage.get_node_or_null("CellPreviewCamera") as Camera3D
 	if preview_camera == null or preview_camera.fov > 30.0 or preview_camera.position.z > 3.8:
 		push_error("Mission desk must use the close hero-preview camera")
@@ -909,6 +1031,8 @@ func _run() -> void:
 	await process_frame
 	TranslationServer.set_locale("zh_HK")
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(smoke_save))
+	if requested_save_path.is_empty():
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(active_save_path))
 	research_state.call("seed_demo")
 	print("SMOKE_OK missions=6 families=6 save=v2 audio=ready gamepad=ready signatures=T+B traits=enrage+regen meshy=B authored_jelly=M+N+A+D gel_fizzy=T+B+M+N+A+D")
 	var audio_director := root.get_node_or_null("AudioDirector")
@@ -918,6 +1042,508 @@ func _run() -> void:
 		if child.name not in [&"Catalog", &"ResearchState", &"SettingsState", &"AudioDirector", &"VfxLibrary"]:
 			child.queue_free()
 	call_deferred("_finish_success")
+
+
+func _run_jelly_light_probe() -> void:
+	var rig_error := _jelly_direct_light_rig_error()
+	if not rig_error.is_empty():
+		push_error(rig_error)
+		quit(1)
+		return
+	var out_dir := String(_jelly_probe_args.get("out", ""))
+	if not out_dir.is_empty():
+		out_dir = _validated_jelly_probe_out_dir(out_dir)
+		if out_dir.is_empty():
+			quit(2)
+			return
+		var directory_error := DirAccess.make_dir_recursive_absolute(out_dir)
+		if directory_error != OK and not DirAccess.dir_exists_absolute(out_dir):
+			push_error("Jelly light probe cannot create %s (%d)" % [out_dir, directory_error])
+			quit(1)
+			return
+		# Recheck after creation so an existing linked final component cannot become
+		# a write target merely because make_dir_recursive_absolute returned OK.
+		if _jelly_probe_path_crosses_link(out_dir, _jelly_probe_trusted_root(out_dir)):
+			push_error("Jelly light probe --out became unsafe or crosses a symbolic link")
+			quit(2)
+			return
+
+	# Black/ambient-free on purpose: this probe measures the final direct-light
+	# composite, without environment energy masking a pass-topology regression.
+	var stage := Node3D.new()
+	stage.name = "JellyLightProbe"
+	root.add_child(stage)
+	var world_environment := WorldEnvironment.new()
+	var environment := Environment.new()
+	environment.background_mode = Environment.BG_COLOR
+	environment.background_color = Color(0.002, 0.002, 0.003)
+	environment.ambient_light_source = Environment.AMBIENT_SOURCE_DISABLED
+	environment.tonemap_mode = Environment.TONE_MAPPER_ACES
+	environment.tonemap_white = 3.0
+	environment.glow_enabled = false
+	world_environment.environment = environment
+	stage.add_child(world_environment)
+
+	var family_look := load("res://characters/family_look.gd")
+	var gel := family_look.call("gel_material", "T", {
+		&"membrane_enabled": false,
+		&"use_feature_tex": false,
+	}) as ShaderMaterial
+	if gel == null:
+		push_error("Jelly light probe could not build the production T gel material")
+		quit(1)
+		return
+	if _jelly_probe_args.has("share"):
+		gel.set_shader_parameter(&"direct_light_budget_share", float(_jelly_probe_args["share"]))
+	var sphere := SphereMesh.new()
+	sphere.radius = 0.82
+	sphere.height = 1.64
+	sphere.radial_segments = 64
+	sphere.rings = 32
+	var body := MeshInstance3D.new()
+	body.mesh = sphere
+	body.material_override = gel
+	stage.add_child(body)
+
+	var camera := Camera3D.new()
+	camera.current = true
+	camera.fov = 28.0
+	camera.position = Vector3(0.0, 0.0, 4.0)
+	stage.add_child(camera)
+	camera.look_at(Vector3.ZERO, Vector3.UP)
+
+	var production_light_specs := [
+		{
+			"name": "ProductionKey",
+			"rotation": Vector3(-38.0, 34.0, 0.0),
+			"color": Color(1.0, 0.97, 0.92),
+			"energy": 2.1,
+			"shadowed": true,
+		},
+		{
+			"name": "ProductionFill",
+			"rotation": Vector3(-12.0, -62.0, 0.0),
+			"color": Color(0.55, 0.72, 1.0),
+			"energy": 0.55,
+			"shadowed": false,
+		},
+		{
+			"name": "ProductionRim",
+			"rotation": Vector3(-8.0, 168.0, 0.0),
+			"color": Color(0.70, 0.86, 1.0),
+			"energy": 1.4,
+			"shadowed": false,
+		},
+	]
+	var lights: Array[DirectionalLight3D] = []
+	for light_spec in production_light_specs:
+		var light := DirectionalLight3D.new()
+		light.name = StringName(str(light_spec["name"]))
+		light.rotation_degrees = light_spec["rotation"]
+		light.light_color = light_spec["color"]
+		light.light_energy = light_spec["energy"]
+		light.shadow_enabled = light_spec["shadowed"]
+		light.visible = false
+		stage.add_child(light)
+		lights.append(light)
+	# Prove unsupported light classes and shadow topology fail closed before the
+	# first render. Production/lookdev uses one shadowed key plus fill and rim.
+	var forbidden_lights: Array[Light3D] = [OmniLight3D.new(), SpotLight3D.new()]
+	for forbidden_light in forbidden_lights:
+		var forbidden_class := forbidden_light.get_class()
+		forbidden_light.name = "Rejected%s" % forbidden_class
+		stage.add_child(forbidden_light)
+		var rejected_class_error := _jelly_runtime_light_error(
+			"invalid %s probe" % forbidden_class, root
+		)
+		stage.remove_child(forbidden_light)
+		forbidden_light.free()
+		if (
+			rejected_class_error.is_empty()
+			or not rejected_class_error.contains(forbidden_class)
+			or not rejected_class_error.contains("DirectionalLight3D only")
+		):
+			push_error("Jelly light probe did not clearly reject %s" % forbidden_class)
+			quit(1)
+			return
+	lights[1].shadow_enabled = true
+	var rejected_shadow_error := _jelly_runtime_light_error("invalid two-shadow-key probe", root)
+	lights[1].shadow_enabled = false
+	if rejected_shadow_error.is_empty() or not rejected_shadow_error.contains("supported maximum is 1"):
+		push_error("Jelly light probe did not reject a second shadow-casting direct light")
+		quit(1)
+		return
+	var probe_light_error := _jelly_runtime_light_error("light probe", root)
+	if not probe_light_error.is_empty():
+		push_error(probe_light_error)
+		quit(1)
+		return
+
+	# Base-pass emission must improve readability without turning the material into
+	# a self-lit lantern. No direct lights is therefore a first-class gate, not an
+	# implied side effect of the one-light result.
+	for _frame in 8:
+		await RenderingServer.frame_post_draw
+	var zero_image: Image = root.get_texture().get_image()
+	# Logical viewport and texture metadata can be content-scaled on Retina. The
+	# readback buffer follows the OS window pixels controlled by --resolution.
+	var expected_image_size := DisplayServer.window_get_size()
+	if not _jelly_probe_image_valid(zero_image, expected_image_size, "zero-light"):
+		quit(1)
+		return
+	var zero_sample := _jelly_probe_metrics(zero_image)
+	zero_sample["lights"] = 0
+	if not out_dir.is_empty():
+		var zero_save_error := _save_jelly_probe_png(
+			zero_image,
+			out_dir.path_join("jelly-production-0.png"),
+			expected_image_size
+		)
+		if zero_save_error != OK:
+			push_error("Jelly light probe could not save zero-light evidence (%d)" % zero_save_error)
+			quit(1)
+			return
+	print("JELLY_LIGHT_PROBE share=%.4f lights=0 pixels=%d median_luma=%.4f p95_peak=%.4f clip_dom=%.2f%%" % [
+		float(gel.get_shader_parameter("direct_light_budget_share")),
+		int(zero_sample["pixels"]),
+		float(zero_sample["median_luma"]),
+		float(zero_sample["p95_peak"]),
+		float(zero_sample["clip_fraction"]) * 100.0,
+	])
+
+	var metrics: Array[Dictionary] = []
+	for light_count in range(1, JELLY_DIRECT_LIGHT_LIMIT + 1):
+		for light_index in lights.size():
+			lights[light_index].visible = light_index < light_count
+		for _frame in 8:
+			await RenderingServer.frame_post_draw
+		var image: Image = root.get_texture().get_image()
+		if not _jelly_probe_image_valid(
+			image, expected_image_size, "%d-light" % light_count
+		):
+			quit(1)
+			return
+		var sample := _jelly_probe_metrics(image)
+		sample["lights"] = light_count
+		metrics.append(sample)
+		if not out_dir.is_empty():
+			var save_error := _save_jelly_probe_png(
+				image,
+				out_dir.path_join("jelly-production-%d.png" % light_count),
+				expected_image_size
+			)
+			if save_error != OK:
+				push_error("Jelly light probe could not save %d-light evidence (%d)" % [light_count, save_error])
+				quit(1)
+				return
+		print("JELLY_LIGHT_PROBE share=%.4f lights=%d pixels=%d median_luma=%.4f p95_peak=%.4f clip_dom=%.2f%%" % [
+			float(gel.get_shader_parameter("direct_light_budget_share")),
+			light_count,
+			int(sample["pixels"]),
+			float(sample["median_luma"]),
+			float(sample["p95_peak"]),
+			float(sample["clip_fraction"]) * 100.0,
+		])
+	var semantics_error := _gel_light_semantics_error(gel)
+	var final_sample: Dictionary = metrics[-1]
+	var one_sample: Dictionary = metrics[0]
+	var monotonic := (
+		float(metrics[1]["median_luma"]) > float(one_sample["median_luma"]) * 1.05
+		and float(final_sample["median_luma"]) > float(metrics[1]["median_luma"]) * 1.02
+	)
+	var composite_error := ""
+	if int(zero_sample["pixels"]) <= 0:
+		composite_error = "zero-light probe did not render the gel subject"
+	elif float(zero_sample["median_luma"]) > 0.15:
+		composite_error = "zero-light base fill exceeded the 0.15 luminance ceiling"
+	elif float(zero_sample["clip_fraction"]) > 0.0:
+		composite_error = "zero-light base fill produced hot pixels"
+	elif metrics.any(func(sample: Dictionary) -> bool: return float(sample["clip_fraction"]) > 0.05):
+		composite_error = "production progressive lights exceeded the 5%% subject clipping ceiling"
+	elif not monotonic:
+		composite_error = "production progressive passes did not contribute monotonically"
+	elif float(one_sample["median_luma"]) < 0.15:
+		composite_error = "one-light composite fell below the readable gel midtone"
+	elif float(final_sample["median_luma"]) < 0.24:
+		composite_error = "three-light composite fell below the readable gel midtone"
+	if not semantics_error.is_empty() or not composite_error.is_empty():
+		push_error("JELLY_LIGHT_PROBE_FAIL %s%s" % [
+			semantics_error,
+			("; " if not semantics_error.is_empty() and not composite_error.is_empty() else "")
+				+ composite_error,
+		])
+		quit(1)
+		return
+	print("JELLY_LIGHT_PROBE_OK topology=0+1-shadowed-key+2-unshadowed-fills direct_limit=%d shadowed_limit=%d rejected=OmniLight3D+SpotLight3D+2-shadowed identity_albedo=true" % [
+		JELLY_DIRECT_LIGHT_LIMIT,
+		JELLY_SHADOWED_DIRECT_LIGHT_LIMIT,
+	])
+	quit(0)
+
+
+func _jelly_probe_requested() -> bool:
+	for arg in OS.get_cmdline_user_args():
+		if arg == "--jelly-light-probe" or arg.begins_with("--jelly-light-probe="):
+			return true
+	return false
+
+
+func _parse_regular_smoke_args() -> bool:
+	var seen := {}
+	for arg in OS.get_cmdline_user_args():
+		if not arg.begins_with("--"):
+			push_error("Smoke received unexpected positional argument '%s'" % arg)
+			return false
+		var pair := arg.trim_prefix("--").split("=", true, 1)
+		var key := String(pair[0])
+		if key not in REGULAR_SMOKE_ALLOWED_ARGS:
+			push_error("Smoke received unknown option --%s" % key)
+			return false
+		if seen.has(key):
+			push_error("Smoke received duplicate option --%s" % key)
+			return false
+		if pair.size() != 2 or String(pair[1]).is_empty():
+			push_error("Smoke --%s requires a non-empty value" % key)
+			return false
+		seen[key] = true
+	return true
+
+
+func _parse_jelly_probe_args() -> bool:
+	_jelly_probe_args.clear()
+	for arg in OS.get_cmdline_user_args():
+		if not arg.begins_with("--"):
+			push_error("Jelly light probe received unexpected positional argument '%s'" % arg)
+			return false
+		var pair := arg.trim_prefix("--").split("=", true, 1)
+		var key := String(pair[0])
+		if key not in JELLY_PROBE_ALLOWED_ARGS:
+			push_error("Jelly light probe received unknown option --%s" % key)
+			return false
+		if _jelly_probe_args.has(key):
+			push_error("Jelly light probe received duplicate option --%s" % key)
+			return false
+		if key == "jelly-light-probe":
+			if pair.size() != 1:
+				push_error("Jelly light probe flag does not take a value")
+				return false
+			_jelly_probe_args[key] = true
+			continue
+		if pair.size() != 2 or String(pair[1]).is_empty():
+			push_error("Jelly light probe --%s requires a non-empty value" % key)
+			return false
+		_jelly_probe_args[key] = pair[1]
+	if not _jelly_probe_args.has("jelly-light-probe"):
+		push_error("Jelly light probe mode requires --jelly-light-probe")
+		return false
+	if _jelly_probe_args.has("share"):
+		var parsed_share := _parse_jelly_probe_share(String(_jelly_probe_args["share"]))
+		if not bool(parsed_share.get("ok", false)):
+			return false
+		_jelly_probe_args["share"] = float(parsed_share["value"])
+	return true
+
+
+func _parse_jelly_probe_share(raw_value: String) -> Dictionary:
+	var trimmed := raw_value.strip_edges()
+	if trimmed.is_empty() or not trimmed.is_valid_float():
+		push_error("Jelly light probe --share requires a finite number")
+		return {"ok": false}
+	var value := float(trimmed)
+	if not is_finite(value):
+		push_error("Jelly light probe --share requires a finite number")
+		return {"ok": false}
+	if value < JELLY_PROBE_SHARE_MIN or value > JELLY_PROBE_SHARE_MAX:
+		push_error(
+			"Jelly light probe --share must be between %.3f and %.3f"
+			% [JELLY_PROBE_SHARE_MIN, JELLY_PROBE_SHARE_MAX]
+		)
+		return {"ok": false}
+	return {"ok": true, "value": value}
+
+
+func _validated_jelly_probe_out_dir(raw_path: String) -> String:
+	var absolute_path := raw_path
+	if absolute_path.begins_with("res://") or absolute_path.begins_with("user://"):
+		absolute_path = ProjectSettings.globalize_path(absolute_path)
+	if not absolute_path.is_absolute_path():
+		push_error("Jelly light probe --out must be an absolute path")
+		return ""
+	absolute_path = absolute_path.replace("\\", "/").simplify_path().trim_suffix("/")
+	var project_source_root := ProjectSettings.globalize_path("res://").replace("\\", "/").simplify_path().trim_suffix("/")
+	if _jelly_probe_path_is_within(absolute_path, project_source_root):
+		push_error("Jelly light probe --out cannot write into res:// source")
+		return ""
+	var trusted_root := _jelly_probe_trusted_root(absolute_path)
+	if trusted_root.is_empty():
+		push_error(
+			"Jelly light probe --out must be inside the system temp or repository outputs directory"
+		)
+		return ""
+	if (
+		_jelly_probe_path_compare_value(absolute_path)
+		== _jelly_probe_path_compare_value(trusted_root)
+		or _jelly_probe_path_crosses_link(absolute_path, trusted_root)
+	):
+		push_error("Jelly light probe --out is unsafe or crosses a symbolic link")
+		return ""
+	if FileAccess.file_exists(absolute_path):
+		push_error("Jelly light probe --out names a file")
+		return ""
+	return absolute_path
+
+
+func _jelly_probe_trusted_root(path: String) -> String:
+	var temp_root := OS.get_temp_dir().replace("\\", "/").simplify_path().trim_suffix("/")
+	var outputs_root := _jelly_probe_repository_outputs_root()
+	if _jelly_probe_path_is_within(path, temp_root):
+		return temp_root
+	if _jelly_probe_path_is_within(path, outputs_root):
+		return outputs_root
+	return ""
+
+
+func _jelly_probe_repository_outputs_root() -> String:
+	var project_root := ProjectSettings.globalize_path("res://").replace("\\", "/").simplify_path()
+	return project_root.get_base_dir().get_base_dir().path_join("outputs").simplify_path()
+
+
+func _jelly_probe_path_is_within(path: String, root_path: String) -> bool:
+	var normalized_path := path.replace("\\", "/").simplify_path().trim_suffix("/")
+	var normalized_root := root_path.replace("\\", "/").simplify_path().trim_suffix("/")
+	var comparable_path := _jelly_probe_path_compare_value(normalized_path)
+	var comparable_root := _jelly_probe_path_compare_value(normalized_root)
+	return comparable_path == comparable_root or comparable_path.begins_with(comparable_root + "/")
+
+
+func _jelly_probe_path_compare_value(path: String) -> String:
+	return path.to_lower() if OS.get_name() in ["Windows", "macOS"] else path
+
+
+func _jelly_probe_path_crosses_link(path: String, trusted_root: String) -> bool:
+	if trusted_root.is_empty():
+		return true
+	var relative := path.substr(trusted_root.length()).trim_prefix("/")
+	var cursor := trusted_root
+	for component: String in relative.split("/", false):
+		var directory := DirAccess.open(cursor)
+		if directory == null:
+			return false
+		if directory.is_link(component):
+			return true
+		cursor = cursor.path_join(component)
+	return false
+
+
+func _jelly_probe_image_valid(image: Image, expected_size: Vector2i, label: String) -> bool:
+	if image == null or image.is_empty():
+		push_error("Jelly light probe %s viewport returned no image" % label)
+		return false
+	if expected_size.x <= 0 or expected_size.y <= 0 or image.get_size() != expected_size:
+		push_error(
+			"Jelly light probe %s image has size %s, expected %s"
+			% [label, image.get_size(), expected_size]
+		)
+		return false
+	return true
+
+
+func _save_jelly_probe_png(image: Image, path: String, expected_size: Vector2i) -> Error:
+	if not _jelly_probe_image_valid(image, expected_size, path.get_file()):
+		return ERR_FILE_CORRUPT
+	var path_error := _jelly_probe_output_file_error(path)
+	if not path_error.is_empty():
+		push_error(path_error)
+		return ERR_FILE_CANT_WRITE
+	var save_error := image.save_png(path)
+	if save_error != OK:
+		return save_error
+	# Recheck before trusting/reopening the result. This also fails closed if a
+	# concurrent process replaced the evidence filename with a link during save.
+	path_error = _jelly_probe_output_file_error(path)
+	if not path_error.is_empty():
+		push_error(path_error)
+		return ERR_FILE_CANT_WRITE
+	var reopened := Image.load_from_file(path)
+	if not _jelly_probe_image_valid(reopened, expected_size, path.get_file()):
+		push_error("Jelly light probe saved PNG cannot be reopened at expected size: %s" % path)
+		return ERR_FILE_CORRUPT
+	return OK
+
+
+func _jelly_probe_output_file_error(path: String) -> String:
+	var normalized_path := path.replace("\\", "/").simplify_path()
+	var trusted_root := _jelly_probe_trusted_root(normalized_path)
+	if trusted_root.is_empty():
+		return "Jelly light probe evidence path escaped its trusted output roots: %s" % path
+	if _jelly_probe_path_crosses_link(normalized_path, trusted_root):
+		return "Jelly light probe evidence path crosses a symbolic link: %s" % path
+	if DirAccess.dir_exists_absolute(normalized_path):
+		return "Jelly light probe evidence path names a directory: %s" % path
+	return ""
+
+
+func _abort_for_qa_startup_failure() -> bool:
+	var research_state := root.get_node_or_null("ResearchState")
+	if research_state == null or not research_state.has_method("qa_startup_failed"):
+		return false
+	if not bool(research_state.call("qa_startup_failed")):
+		return false
+	var exit_code := QA_STARTUP_FAILURE_EXIT_CODE
+	if research_state.has_method("qa_startup_failure_exit_code"):
+		exit_code = int(research_state.call("qa_startup_failure_exit_code"))
+	quit(exit_code)
+	return true
+
+
+func _jelly_probe_metrics(image: Image) -> Dictionary:
+	var peaks: Array[float] = []
+	var lumas: Array[float] = []
+	var clipped := 0
+	for y in image.get_height():
+		for x in image.get_width():
+			var color := image.get_pixel(x, y)
+			var peak := maxf(color.r, maxf(color.g, color.b))
+			var luma := 0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b
+			if luma <= 0.025:
+				continue
+			peaks.append(peak)
+			lumas.append(luma)
+			if peak >= (250.0 / 255.0):
+				clipped += 1
+	if peaks.is_empty():
+		return {
+			"pixels": 0,
+			"median_luma": 0.0,
+			"p95_peak": 0.0,
+			"clip_fraction": 1.0,
+		}
+	peaks.sort()
+	lumas.sort()
+	return {
+		"pixels": peaks.size(),
+		"median_luma": lumas[lumas.size() / 2],
+		"p95_peak": peaks[mini(int(float(peaks.size()) * 0.95), peaks.size() - 1)],
+		"clip_fraction": float(clipped) / float(peaks.size()),
+	}
+
+
+func _jelly_direct_light_rig_error() -> String:
+	if JELLY_DIRECT_LIGHT_LIMIT != 3 or _LightContract.MAX_DIRECT_LIGHTS != 3:
+		return "Jelly Compatibility calibration requires an immutable three-light maximum"
+	if JELLY_SHADOWED_DIRECT_LIGHT_LIMIT != 1 or _LightContract.MAX_SHADOWED_DIRECT_LIGHTS != 1:
+		return "Jelly Compatibility calibration requires exactly one shadow-casting direct-light maximum"
+	for source_path in JELLY_DIRECT_LIGHT_RIG_SOURCES:
+		if not FileAccess.file_exists(source_path):
+			return "Jelly direct-light audit cannot read %s" % source_path
+		var source := FileAccess.get_file_as_string(source_path)
+		if not source.contains("_LightContract.error("):
+			return "Jelly lookdev rig %s must execute the shared runtime light audit" % source_path
+	return ""
+
+
+func _jelly_runtime_light_error(label: String, node: Node) -> String:
+	return _LightContract.error(node, label)
 
 
 func _finish_success() -> void:
@@ -943,6 +1569,9 @@ func _gel_membrane_error(gel: ShaderMaterial) -> String:
 		return "must attach a clear membrane next pass"
 	if not membrane.shader.resource_path.ends_with("jelly_shell.gdshader"):
 		return "must use the Compatibility-safe clear membrane shader"
+	var energy_error := _gel_shell_energy_error(membrane)
+	if not energy_error.is_empty():
+		return energy_error
 	if float(membrane.get_shader_parameter("shell_thickness")) <= 0.0:
 		return "membrane must expand beyond the wet-gel core"
 	if float(membrane.get_shader_parameter("face_alpha")) > 0.03:
@@ -950,40 +1579,174 @@ func _gel_membrane_error(gel: ShaderMaterial) -> String:
 	return ""
 
 
+func _gel_shell_energy_error(shell: ShaderMaterial) -> String:
+	for required_parameter in [
+		"shell_energy_scale",
+		"shell_diffuse_strength",
+		"shell_specular_level",
+		"shell_emission_limit",
+		"shell_alpha_limit",
+	]:
+		if shell.get_shader_parameter(required_parameter) == null:
+			return "clear membrane must expose the V5 energy bounds"
+	var shell_energy := float(shell.get_shader_parameter("shell_energy_scale"))
+	var shell_diffuse := float(shell.get_shader_parameter("shell_diffuse_strength"))
+	var shell_specular := float(shell.get_shader_parameter("shell_specular_level"))
+	var shell_emission := float(shell.get_shader_parameter("shell_emission_limit"))
+	var shell_alpha := float(shell.get_shader_parameter("shell_alpha_limit"))
+	if shell_energy < 0.36 or shell_energy > 0.40:
+		return "clear membrane edge energy must stay in the accepted V5 window"
+	if shell_diffuse < 0.20 or shell_diffuse > 0.24:
+		return "clear membrane diffuse tint must stay in the accepted V5 window"
+	if shell_specular < 0.36 or shell_specular > 0.40:
+		return "clear membrane specular must stay in the accepted V5 window"
+	if shell_emission < 0.015 or shell_emission > 0.025:
+		return "clear membrane emission must stay in the accepted V5 anti-neon window"
+	if shell_alpha < 0.22 or shell_alpha > 0.26:
+		return "clear membrane alpha must stay in the accepted V5 boundary window"
+	return ""
+
+
 func _gel_surface_noise_error(gel: ShaderMaterial) -> String:
-	var inclusion_depth := float(gel.get_shader_parameter("inclusion_depth"))
-	if inclusion_depth <= 0.0:
-		return "must keep a subtle smooth 3D wet-skin microtexture"
-	if inclusion_depth > 0.02:
-		return "wet-skin microtexture exceeds the anti-rubber depth limit"
-	var membrane_cell_scale := float(gel.get_shader_parameter("microbubble_scale"))
-	if membrane_cell_scale < 44.0 or membrane_cell_scale > 52.0:
-		return "rounded membrane cells must remain visible at gameplay distance"
-	var membrane_cell_density := float(gel.get_shader_parameter("microbubble_density"))
-	if membrane_cell_density < 0.999:
-		return "rounded membrane cells must cover the complete wet surface"
-	var membrane_cell_depth := float(gel.get_shader_parameter("microbubble_depth"))
-	if membrane_cell_depth < 0.028 or membrane_cell_depth > 0.042:
-		return "rounded membrane-cell depth is outside the stable wet-skin range"
-	var membrane_cell_radius_min := float(gel.get_shader_parameter("microbubble_radius_min"))
-	var membrane_cell_radius := float(gel.get_shader_parameter("microbubble_radius_max"))
-	var membrane_cell_jitter := float(gel.get_shader_parameter("microbubble_jitter"))
-	if membrane_cell_radius_min < 0.70 or membrane_cell_radius < 0.78:
-		return "rounded membrane cells are too small for continuous surface coverage"
-	if membrane_cell_jitter < 0.10 or membrane_cell_jitter > 0.16:
-		return "rounded membrane-cell jitter must break up the visible lattice without becoming unstable"
-	if membrane_cell_radius_min - membrane_cell_jitter < 0.56:
-		return "rounded membrane-cell jitter opens visible gaps in the wet surface"
-	if membrane_cell_radius + membrane_cell_jitter >= 0.96:
-		return "rounded membrane cells exceed the eight-sample lattice safety bound"
-	if float(gel.get_shader_parameter("microbubble_thinness")) > 0.02:
-		return "rounded membrane cells must shape highlights rather than paint thickness spots"
-	if float(gel.get_shader_parameter("bubble_shell_emission")) > 0.12:
-		return "large-bubble rings exceed the quiet interior limit"
-	if float(gel.get_shader_parameter("microbubble_shell_emission")) > 0.08:
-		return "microbubble rings exceed the quiet interior limit"
-	if float(gel.get_shader_parameter("inclusion_emission")) > 0.06:
-		return "fine inclusions exceed the quiet interior limit"
+	var light_semantics_error := _gel_light_semantics_error(gel)
+	if not light_semantics_error.is_empty():
+		return light_semantics_error
+	for required_parameter in [
+		"body_exposure_scale",
+		"core_glow",
+		"interior_budget",
+		"thin_budget_scale",
+		"thickness_contrast",
+		"thickness_power",
+		"membrane_depth_cap",
+		"membrane_grazing_floor",
+		"membrane_grazing_power",
+		"membrane_irregularity",
+		"wet_spec_breakup",
+		"coat_tint",
+		"detail_emission_scale",
+		"authored_height_tex",
+		"authored_height_enabled",
+		"authored_height_scale",
+		"authored_height_depth",
+		"authored_height_blend",
+		"authored_height_lod_bias",
+	]:
+		if gel.get_shader_parameter(required_parameter) == null:
+			return "must expose the V5 body response controls"
+	var body_exposure_value: Variant = gel.get_shader_parameter("body_exposure_scale")
+	var body_exposure_scale := float(body_exposure_value)
+	if body_exposure_scale < 0.72 or body_exposure_scale > 0.90:
+		return "V5 body exposure must preserve midtone and deep-core separation"
+	var core_glow := float(gel.get_shader_parameter("core_glow"))
+	if core_glow < 0.33 or core_glow > 0.37:
+		return "V5 base-pass volume fill must stay inside the measured core/ribbon window"
+	var interior_budget := float(gel.get_shader_parameter("interior_budget"))
+	if interior_budget < 0.48 or interior_budget > 0.52:
+		return "V5 interior budget must remain below the zero-light readability ceiling"
+	var thin_budget_scale := float(gel.get_shader_parameter("thin_budget_scale"))
+	if thin_budget_scale < 0.65 or thin_budget_scale > 0.82:
+		return "V5 thin-part ceiling is outside the non-neon transmission range"
+	var thickness_contrast := float(gel.get_shader_parameter("thickness_contrast"))
+	if thickness_contrast < 0.04 or thickness_contrast > 0.14:
+		return "V5 macro thickness contrast is outside the restrained gel range"
+	var thickness_power := float(gel.get_shader_parameter("thickness_power"))
+	if thickness_power < 0.80 or thickness_power > 1.60:
+		return "V5 macro thickness power is outside the coherent body-gradient range"
+	var membrane_depth_cap := float(gel.get_shader_parameter("membrane_depth_cap"))
+	if membrane_depth_cap < 0.008 or membrane_depth_cap > 0.018:
+		return "V5 membrane depth cap must prevent crystalline full-body quilting"
+	var membrane_grazing_floor := float(gel.get_shader_parameter("membrane_grazing_floor"))
+	if membrane_grazing_floor < 0.04 or membrane_grazing_floor > 0.18:
+		return "V5 membrane variation must concentrate at grazing angles"
+	var membrane_grazing_power := float(gel.get_shader_parameter("membrane_grazing_power"))
+	if membrane_grazing_power < 0.90 or membrane_grazing_power > 2.00:
+		return "V5 membrane grazing power must keep face-on interiors smooth"
+	var membrane_irregularity := float(gel.get_shader_parameter("membrane_irregularity"))
+	if membrane_irregularity < 0.55:
+		return "V5 membrane cells must use organic amplitude breakup"
+	var wet_spec_breakup := float(gel.get_shader_parameter("wet_spec_breakup"))
+	if wet_spec_breakup < 0.15 or wet_spec_breakup > 0.45:
+		return "V5 wet specular breakup is outside the restrained range"
+	var coat_tint := float(gel.get_shader_parameter("coat_tint"))
+	if coat_tint < 0.08 or coat_tint > 0.30:
+		return "V5 tight wet highlight must stay restrained and family-tinted"
+	if float(gel.get_shader_parameter("detail_emission_scale")) > 0.35:
+		return "V5 detail emission exceeds the non-neon ceiling"
+	if gel.get_shader_parameter("authored_height_enabled") != true:
+		return "V5.1 must enable its mipmapped authored height"
+	var authored_height := gel.get_shader_parameter("authored_height_tex") as Texture2D
+	if authored_height == null:
+		return "V5.1 authored height texture is missing"
+	if authored_height.resource_path != "res://characters/gel/jelly_micro_height.png":
+		return "V5.1 authored height must use the reproducible production resource"
+	if authored_height.get_width() != 512 or authored_height.get_height() != 512:
+		return "V5.1 authored height must remain 512x512"
+	var authored_image := authored_height.get_image()
+	if authored_image == null or not authored_image.has_mipmaps():
+		return "V5.1 authored height import must generate mipmaps"
+	var authored_scale := float(gel.get_shader_parameter("authored_height_scale"))
+	if authored_scale < 0.40 or authored_scale > 0.50:
+		return "V5.1 authored height scale is outside the enlarged-pebble window"
+	var authored_depth := float(gel.get_shader_parameter("authored_height_depth"))
+	if authored_depth < 0.0030 or authored_depth > 0.0060:
+		return "V5.1 authored height depth is outside the restrained wet-skin window"
+	var authored_blend := float(gel.get_shader_parameter("authored_height_blend"))
+	if authored_blend < 1.5 or authored_blend > 2.5:
+		return "V5.1 triplanar blend is outside the seam-safe window"
+	var authored_lod_bias := float(gel.get_shader_parameter("authored_height_lod_bias"))
+	if authored_lod_bias < 0.25 or authored_lod_bias > 0.55:
+		return "V5.1 height mip bias is outside the motion-stable window"
+	if gel.get_shader_parameter("microbubble_enabled") == true:
+		return "V5.1 must not re-enable the rejected spherical microbubble normal path"
+	if gel.get_shader_parameter("inclusion_enabled") == true:
+		return "V5.1 must not re-enable the rejected procedural island path"
+	for retired_parameter in [
+		"bubble_depth",
+		"bubble_emission",
+		"bubble_shell_emission",
+		"microbubble_depth",
+		"microbubble_emission",
+		"microbubble_shell_emission",
+		"inclusion_depth",
+		"inclusion_emission",
+	]:
+		if not is_zero_approx(float(gel.get_shader_parameter(retired_parameter))):
+			return "V5.1 retired circular/island detail must remain disabled"
+	return ""
+
+
+func _gel_light_semantics_error(gel: ShaderMaterial) -> String:
+	if gel == null or gel.shader == null:
+		return "must expose the wet-gel shader for the V5 light contract"
+	if gel.get_shader_parameter("direct_light_budget_share") == null:
+		return "must expose the per-light V5 composite-energy share"
+	var shader_source := gel.shader.code
+	if shader_source.contains("DIFFUSE_LIGHT = peak_limit("):
+		return "must not treat DIFFUSE_LIGHT as a cross-pass running total"
+	if shader_source.contains("ALBEDO * front"):
+		return "must not multiply direct body colour before Godot applies ALBEDO"
+	if not shader_source.contains("ALBEDO = vec3(1.0)"):
+		return "must use identity engine ALBEDO with the ambient-disabled custom light"
+	if not shader_source.contains("ambient_light_disabled"):
+		return "identity engine ALBEDO requires the custom gel path to disable ambient light"
+	if not shader_source.contains("v_surface_color * front"):
+		return "custom gel diffuse must preserve the authored body and ink colour explicitly"
+	if not shader_source.contains("DIFFUSE_LIGHT += peak_limit("):
+		return "must add one independently bounded contribution per direct light"
+	if not shader_source.contains("authored_height_triplanar"):
+		return "V5.1 must project its authored height independently of mesh UVs"
+	if not shader_source.contains("authored_height_depth * authored_grazing"):
+		return "V5.1 authored relief must stay concentrated at grazing angles"
+	if not shader_source.contains("filter_linear_mipmap_anisotropic") or not shader_source.contains("repeat_enable"):
+		return "V5.1 authored height sampler must be repeatable and mip-filtered"
+	if shader_source.count("textureGrad(\n\t\tauthored_height_tex") != 3:
+		return "V5.1 triplanar height must use three explicitly filtered plane samples"
+	if shader_source.contains("textureLod(authored_height_tex"):
+		return "V5.1 authored height must not pin a fixed mip level"
+	var direct_light_budget_share := float(gel.get_shader_parameter("direct_light_budget_share"))
+	if direct_light_budget_share < 0.09 or direct_light_budget_share > 0.105:
+		return "per-light V5 energy share must stay inside the measured Compatibility window"
 	return ""
 
 
@@ -1006,20 +1769,28 @@ func _authored_jelly_error(unit: Node, family: String) -> String:
 	var shell := real_mesh.get_node_or_null("BodyShell") as MeshInstance3D
 	if body == null or shell == null:
 		return "CHAR-BASE-%s authored body must expose Body and BodyShell" % family
+	var mesh_error := _shared_authored_sphere_error(
+		body, shell, "CHAR-BASE-%s body and membrane" % family
+	)
+	if not mesh_error.is_empty():
+		return mesh_error
 	for authored_path in ["EyeL", "EyeR", "MouthCavity"]:
 		if real_mesh.get_node_or_null(authored_path) == null:
 			return "CHAR-BASE-%s authored body missing %s" % [family, authored_path]
 	var runtime_gel := body.material_override as ShaderMaterial
 	if runtime_gel == null or runtime_gel.get_shader_parameter("bubble_enabled") != true:
 		return "CHAR-BASE-%s authored body must keep its Fizzy bubble material" % family
-	if runtime_gel.get_shader_parameter("microbubble_enabled") != true or runtime_gel.get_shader_parameter("inclusion_enabled") != true:
-		return "CHAR-BASE-%s authored Fizzy profile must keep microbubbles and inclusions" % family
+	if runtime_gel.get_shader_parameter("authored_height_enabled") != true:
+		return "CHAR-BASE-%s authored V5.1 profile must keep the mipmapped height" % family
 	var noise_error := _gel_surface_noise_error(runtime_gel)
 	if not noise_error.is_empty():
 		return "CHAR-BASE-%s %s" % [family, noise_error]
 	var shell_material := shell.material_override as ShaderMaterial
 	if shell_material == null or shell_material.shader == null or not shell_material.shader.resource_path.ends_with("jelly_shell.gdshader"):
 		return "CHAR-BASE-%s authored body must keep its clear membrane" % family
+	var shell_error := _gel_shell_energy_error(shell_material)
+	if not shell_error.is_empty():
+		return "CHAR-BASE-%s %s" % [family, shell_error]
 	var expected_path := "res://characters/base_%s/reference_body.tscn" % family.to_lower()
 	if not bool(unit.get("imported_preserves_materials")) or str(unit.get("imported_model_path")) != expected_path:
 		return "CHAR-BASE-%s scene must lock its authored production adapter" % family
@@ -1040,6 +1811,27 @@ func _authored_jelly_error(unit: Node, family: String) -> String:
 		for crown_index in 5:
 			if real_mesh.get_node_or_null("Crown%d" % crown_index) == null:
 				return "CHAR-BASE-D authored body must preserve all five crown lobes"
+	return ""
+
+
+func _shared_authored_sphere_error(
+	body: MeshInstance3D, shell: MeshInstance3D, label: String
+) -> String:
+	if body.mesh == null or shell.mesh == null or body.mesh != shell.mesh:
+		return "%s must share one cached mesh resource" % label
+	if body.mesh is not SphereMesh:
+		return "%s cached mesh must be SphereMesh" % label
+	var sphere := body.mesh as SphereMesh
+	if sphere.radial_segments != 96:
+		return "%s cached SphereMesh must use radial_segments=96" % label
+	if sphere.rings != 48:
+		return "%s cached SphereMesh must use rings=48" % label
+	if not is_equal_approx(sphere.radius, 0.5):
+		return "%s cached SphereMesh must use radius=0.5" % label
+	if not is_equal_approx(sphere.height, 1.0):
+		return "%s cached SphereMesh must use height=1.0" % label
+	if sphere.resource_name != "SharedSphere-96x48":
+		return "%s cached SphereMesh must be named SharedSphere-96x48" % label
 	return ""
 
 

@@ -7,6 +7,8 @@ extends Node3D
 ## body be compared through tools/shot.tscn with `--variant=clear|fizzy|gummy`.
 
 const _Gel := preload("res://characters/gel/gel_look.gd")
+const _GelProfiles := preload("res://characters/gel/gel_profiles.gd")
+const _PrimitiveMeshes := preload("res://characters/primitive_mesh_cache.gd")
 const _SHELL_SHADER := preload("res://characters/gel/jelly_shell.gdshader")
 
 @export_enum("clear", "fizzy", "gummy") var material_variant := "fizzy"
@@ -195,7 +197,10 @@ const VARIANTS := {
 
 func _ready() -> void:
 	var variant := _variant()
-	var gel := _Gel.make_material(Color(0.62, 0.28, 0.92), VARIANTS[variant])
+	var material_options: Dictionary = VARIANTS[variant]
+	if variant == "fizzy":
+		material_options = _GelProfiles.with_v5_surface(material_options)
+	var gel := _Gel.make_material(Color(0.62, 0.28, 0.92), material_options)
 	if gel == null:
 		push_error("m_reference_match.gd: failed to create gel material")
 		return
@@ -227,6 +232,7 @@ func _build_body(gel: Material, shell: Material) -> void:
 func _make_shell(variant: String) -> ShaderMaterial:
 	var shell := ShaderMaterial.new()
 	shell.shader = _SHELL_SHADER
+	_Gel.apply_v5_shell_bounds(shell)
 	shell.set_shader_parameter(&"shell_color", Color(0.90, 0.74, 1.0, 1.0))
 	shell.set_shader_parameter(&"face_alpha", 0.008 if variant != "gummy" else 0.004)
 	shell.set_shader_parameter(&"edge_alpha", 0.48 if variant == "clear" else (0.46 if variant == "fizzy" else 0.38))
@@ -262,14 +268,9 @@ func _add_face_ring(
 	outer_radius: float,
 	gel: Material
 ) -> void:
-	var ring_mesh := TorusMesh.new()
-	ring_mesh.inner_radius = inner_radius
-	ring_mesh.outer_radius = outer_radius
-	ring_mesh.rings = 48
-	ring_mesh.ring_segments = 24
 	var ring := MeshInstance3D.new()
 	ring.name = name_
-	ring.mesh = ring_mesh
+	ring.mesh = _PrimitiveMeshes.torus(inner_radius, outer_radius, 48, 24)
 	ring.position = pos
 	ring.rotation_degrees.x = 90.0
 	ring.material_override = gel.duplicate()
@@ -302,14 +303,9 @@ func _add_sphere(
 	radial_segments: int,
 	rings: int
 ) -> void:
-	var mesh := SphereMesh.new()
-	mesh.radius = 0.5
-	mesh.height = 1.0
-	mesh.radial_segments = radial_segments
-	mesh.rings = rings
 	var instance := MeshInstance3D.new()
 	instance.name = name_
-	instance.mesh = mesh
+	instance.mesh = _PrimitiveMeshes.sphere(radial_segments, rings)
 	instance.position = pos
 	instance.scale = scale_
 	instance.material_override = material

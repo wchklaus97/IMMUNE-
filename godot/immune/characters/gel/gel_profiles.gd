@@ -22,6 +22,75 @@ const BASE: Dictionary = {
 	&"bubble_seed": 0.0,
 }
 
+# Jelly V5 surface controls are merged into every family after legacy/profile
+# values and before explicit call-site overrides. M/N/A/D production builders
+# call with_v5_surface() as well, so their locally-authored colour/silhouette
+# dictionaries cannot accidentally retain the V4 crystalline membrane response.
+const V5_SURFACE: Dictionary = {
+	&"body_exposure_scale": 0.82,
+	&"direct_light_budget_share": 0.10,
+	# Compatibility adds EMISSION only in the base colour pass for this opaque
+	# material, so this bounded hue-preserving fill is not multiplied by shadowed
+	# additive lights. This slight V5.1 lift restores the reference's readable core;
+	# the zero-light probe below guards it from becoming a self-lit lantern.
+	&"core_glow": 0.35,
+	&"interior_budget": 0.50,
+	&"thin_budget_scale": 0.74,
+	&"thickness_contrast": 0.06,
+	&"thickness_power": 1.15,
+	&"thin_bias": 2.7,
+	&"glow_power": 2.0,
+	&"curv_low": 18.0,
+	&"curv_high": 48.0,
+	&"thin_curvature": 0.06,
+	&"transmit_strength": 0.85,
+	&"thin_glow": 0.28,
+	&"rim_energy": 0.055,
+	&"rim_budget": 0.035,
+	&"coat_roughness": 0.060,
+	&"coat_strength": 1.20,
+	&"spec_energy": 0.16,
+	&"membrane_depth_cap": 0.014,
+	&"membrane_grazing_floor": 0.10,
+	&"membrane_grazing_power": 1.35,
+	&"membrane_irregularity": 0.72,
+	&"wet_spec_breakup": 0.28,
+	&"coat_tint": 0.16,
+	&"detail_emission_scale": 0.08,
+	# V5.1 replaces the procedural sphere/island normals with one deterministic,
+	# mipmapped height source. The former fields produced circular stamps, closed
+	# contour rings, and half-degree yaw shimmer in the rejected look-dev sweep.
+	&"authored_height_enabled": true,
+	# The CC0 orange-peel control is deliberately enlarged and shallow. Combined
+	# with grazing weighting in the shader, it keeps the face-on core calm while
+	# retaining compact wet pebbles on turning edges and thin limbs.
+	&"authored_height_scale": 0.45,
+	&"authored_height_depth": 0.0040,
+	&"authored_height_blend": 2.0,
+	&"authored_height_lod_bias": 0.35,
+	&"bubble_depth": 0.0,
+	&"bubble_emission": 0.0,
+	&"bubble_shell_emission": 0.0,
+	&"microbubble_enabled": false,
+	&"microbubble_scale": 42.0,
+	&"microbubble_density": 0.68,
+	&"microbubble_radius_min": 0.18,
+	&"microbubble_radius_max": 0.48,
+	&"microbubble_jitter": 0.18,
+	&"microbubble_softness": 0.10,
+	&"microbubble_depth": 0.0,
+	&"microbubble_thinness": 0.0,
+	&"microbubble_shell_shadow": 0.0,
+	&"microbubble_emission": 0.0,
+	&"microbubble_shell_emission": 0.0,
+	&"inclusion_enabled": false,
+	&"inclusion_scale": 64.0,
+	&"inclusion_depth": 0.0,
+	&"inclusion_threshold": 0.74,
+	&"inclusion_softness": 0.060,
+	&"inclusion_emission": 0.0,
+}
+
 # The production Fizzy language already approved on M/N/A/D: a smooth clear
 # coat, softened absorption, three readable interior scales, and no directional
 # triplanar dimples. T and B still keep their own sculpt, face texture, colour,
@@ -66,33 +135,36 @@ const FIZZY: Dictionary = {
 	&"bubble_emission": 0.006,
 	&"bubble_shell_emission": 0.085,
 	&"microbubble_enabled": true,
-	&"microbubble_scale": 48.0,
-	&"microbubble_density": 1.0,
-	&"microbubble_radius_min": 0.72,
-	&"microbubble_radius_max": 0.80,
-	&"microbubble_jitter": 0.14,
+	# V5 no longer asks the sphere lattice to tile the complete surface. A
+	# sparser radius range supplies irregular grazing dimples; the shared shader
+	# caps and noise-modulates their effective depth for distance stability.
+	&"microbubble_scale": 42.0,
+	&"microbubble_density": 0.68,
+	&"microbubble_radius_min": 0.18,
+	&"microbubble_radius_max": 0.48,
+	&"microbubble_jitter": 0.18,
 	&"microbubble_softness": 0.10,
-	&"microbubble_depth": 0.035,
+	&"microbubble_depth": 0.012,
 	&"microbubble_thinness": 0.0,
 	&"microbubble_shell_shadow": 0.0,
 	&"microbubble_emission": 0.0,
 	&"microbubble_shell_emission": 0.0,
 	&"inclusion_enabled": true,
-	&"inclusion_scale": 72.0,
-	&"inclusion_depth": 0.005,
-	&"inclusion_threshold": 0.76,
-	&"inclusion_softness": 0.050,
-	&"inclusion_emission": 0.035,
+	&"inclusion_scale": 64.0,
+	&"inclusion_depth": 0.004,
+	&"inclusion_threshold": 0.74,
+	&"inclusion_softness": 0.060,
+	&"inclusion_emission": 0.018,
 }
 
 const FAMILY: Dictionary = {
 	# T keeps its authored face and finer bubbles so the aggressive sculpt remains
 	# distinct without retaining the old rubber-like dimple normal field.
 	"T": {
-		# The generic warm-hue pre-rotation was fitted before the Fizzy lighting
-		# stack existed and now lands yellow under ACES. This authored amber input
-		# renders as the saturated orange core in CHAR-BASE-T-3d-alt.png.
-		&"body_color": Color(1.0, 0.753, 0.0, 1.0),
+		# Identity engine ALBEDO removes the old accidental second colour multiply.
+		# A deeper amber input now restores the reference's orange core without
+		# hiding another albedo multiplication inside the custom light function.
+		&"body_color": Color(1.0, 0.28, 0.0, 1.0),
 		&"bubble_scale": 8.5,
 		&"bubble_density": 0.44,
 		&"bubble_radius_min": 0.13,
@@ -164,8 +236,17 @@ static func options(family: String, overrides: Dictionary = {}) -> Dictionary:
 	var family_values: Dictionary = FAMILY.get(family, {})
 	for key in family_values:
 		merged[key] = family_values[key]
+	for key in V5_SURFACE:
+		merged[key] = V5_SURFACE[key]
 	for key in overrides:
 		merged[key] = overrides[key]
+	return merged
+
+
+static func with_v5_surface(values: Dictionary) -> Dictionary:
+	var merged := values.duplicate(true)
+	for key in V5_SURFACE:
+		merged[key] = V5_SURFACE[key]
 	return merged
 
 

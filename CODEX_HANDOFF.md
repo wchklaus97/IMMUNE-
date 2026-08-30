@@ -2,13 +2,136 @@
 
 Updated: 2026-08-30
 
+## V5.1 current handoff — supersedes the V4 status below
+
+V5.1 was developed from `d40b23a63e6553025238acf0e34573eac6160878`.
+Use `git rev-parse HEAD` after the local handoff commit as its exact committed
+source identity. The working editor and every final runtime/capture/export check in this
+tranche use Godot `4.7.2.stable.official.ed1daf0bf` with Compatibility rendering.
+
+### What changed
+
+- The shipping six-family `fizzy` surface now uses a deterministic 512x512 RGB
+  CC0 orange-peel micro-height map in object-space triplanar projection with
+  mipmaps. Production scale/depth are `0.45`/`0.004`; rejected procedural rings,
+  connected wrinkles, quilt rows, microbubble relief, and inclusion relief are
+  disabled rather than stacked underneath it.
+- `wet_gel.gdshader` carries the body colour outside engine `ALBEDO`, bounds each
+  direct-light contribution independently, and uses the height signal for shallow
+  grazing relief plus coherent wet-coat breakup. `jelly_shell.gdshader` is an
+  energy-bounded dielectric clear pass.
+- `ImmuneGelLightContract` accepts `DirectionalLight3D` only. Debug scene audits
+  and headed QA probes enforce no more than three directional lights and one
+  shadow-casting directional light per viewport, reporting rejected Omni/Spot
+  lights by class and node path. Shipping scenes statically own the accepted one
+  shadowed key plus up to two unshadowed fills topology; this is not described as
+  a release-build runtime rejection layer.
+- Combat now has a 336x252 own-world hero portrait without changing the live
+  player scale, camera, or collision. It synchronizes duty, disables rendering
+  and frees the character when hidden, and recreates it after a valid resize.
+- M/N/A/D live and portrait characters reuse constructed-once cached sphere,
+  capsule, and torus meshes which their callers treat as read-only. The body and
+  membrane retain independent materials but no longer duplicate the same 96x48
+  vertex buffers.
+- Aspect `<= 0.8` gets a 2.25x tall-HUD theme/spacing pass. The locked target is
+  720x1280; 360/390 px narrow phones and safe-area insets remain future work.
+- `ResearchState` resolves debug `--save-path=` before initial load/seed. Every
+  `res://tools/*.gd` or `.tscn` QA entry automatically reserves a unique
+  process/run-specific temporary save unless it receives a valid explicit debug
+  override. Malformed existing saves are preserved byte-for-byte; QA exits `74`
+  instead of overwriting them, while normal gameplay falls back to an in-memory
+  demo seed.
+- `gameplay_shot.gd`, `crit4_probe.gd`, `gel_perf.gd`, and `shot.gd` validate
+  their supported arguments and fail closed on invalid selections, non-finite
+  values, directory/write/reopen failures, or inapplicable height overrides.
+
+### Source and license lock
+
+- Generator: `build/generate_jelly_height.py`
+- Asset: `godot/immune/characters/gel/jelly_micro_height.png`
+- License/provenance: `godot/immune/characters/gel/jelly_micro_height.LICENSE.md`
+- ProcTexture CC0 pack SHA-256:
+  `a95fa0d0acfe71054d8f2ea8993887e39ce4be7190fb9bf1d354088cac6815c0`
+- Source height SHA-256:
+  `c1b1a860dec8e404588d9aaba1417140148218553b8af9a90fb09293f5f4ae87`
+- Checked-in PNG SHA-256:
+  `25ba40fcb8a6d800fc1ffe4747a4dadad95593fc8d8f3299aed5eef7888fc9a6`
+- V5.1 submitted no Meshy task, made no paid API retry, and consumed zero credits.
+
+### Final local evidence
+
+- Both explicit-save and no-argument smoke pass. The real save stayed identical
+  by SHA-256, size, mtime, and ctime; evidence is in
+  `outputs/v5.1-final-validation-472/real-save.before.txt` and `.after.txt`.
+- The progressive headed light probe reports median luma `0.0509`, `0.1574`,
+  `0.2331`, `0.2703` for zero through three production-matched directional
+  lights, with `0.52%` dominant clipping at the accepted three-light topology.
+  It proves Omni, Spot, and a second shadow-casting directional light are all
+  rejected before rendering.
+- Six views for each of T/B/M/N/A/D (36 PNGs) and a five-frame T yaw sequence
+  pass automated visual-critic review under `outputs/v5.1-final-validation-472/family-shots/` and
+  `yaw/`.
+- Landscape T/B/M/N/A/D and tall T gameplay produce 21 correctly sized PNGs.
+  All landscape reports pass 5/5 lifecycle states, tall passes 3/3, every sample
+  has no HUD overlap, and portrait visibility/free/recreate contracts pass. The
+  hash-bound aggregate is `gameplay/final-source-locked-audit.json`.
+- Six zh_HK mission-select captures pass exact family/mission identity, nonblank,
+  write, and reopen checks; the accepted combined log is
+  `logs/final-source-locked-mission-select.log`.
+- An uncontended ten-B-body, 300-frame, 1920x1080 sentinel measures V5.1 gel at
+  `1.140/1.496 ms` CPU mean/p95 and `2.788/4.596 ms` wall mean/p95 versus
+  StandardMaterial3D at `1.036/1.358 ms` and `2.817/4.587 ms`. Gel-minus-control
+  is `+10.04%` CPU mean and `-1.03%` wall mean. The viewport GPU timer is
+  unavailable, the small wall difference is scheduler-sensitive, this is one
+  local CPU/wall run, and StandardMaterial3D is not called V4.
+- A real-scene MISSION-01 autopilot regression passes T/B/M/N/A/D 6/6 with a
+  surviving `12/12` core, real projectile hits, and each mobile/relay duty path.
+- The freshly exported Godot 4.7.2 Web build passes the complete browser flow.
+  Baseline Metal is `119.841/103.093` mean/p05 FPS; 4x CPU + SwiftShader is
+  `11.284/7.937`. Both have exact canvas fit, no scroll, no effective resource
+  failure, and no console/page error. Expected SwiftShader ReadPixels warnings
+  and superseded aborted preloads remain classified separately in the report.
+- The final source-locked rerun passes root tools 36/36, Web UI tests 53/53 and
+  production build, deterministic texture-byte lock, Godot import, both smoke
+  modes, research-HUD overflow, light probe, 36 family views, five yaw frames,
+  six mission captures, all gameplay reports/captures, six-family balance, perf,
+  fresh Web export, and browser QA. The import retains longstanding non-fatal
+  Unicode/NUL warnings but has no script/parse/compile/error failure. Playtest
+  template, translation (595 rows), catalog (200 nodes/406 rows), release
+  identity, and `git diff --check` also pass.
+
+Evidence workspace root: `outputs/v5.1-final-validation-472/`.
+`accepted-manifest.json` enumerates the source-locked accepted files and hashes;
+unlisted intermediate, partial, source-aligned, rerun, and negative artifacts are
+diagnostic only. The final Web build lives under ignored
+`godot/immune/build/releases/v5.1-final-validation-472/web/`; generated exports
+must never be committed.
+
+Save/report publication uses validated temporary files, backup-backed
+replacement, exact-byte/schema/current-identity verification, and schema-aware
+orphan recovery. It is recoverable for ordinary same-filesystem failures; it is
+not a power-loss durability or hostile same-user TOCTOU guarantee.
+
+### Honest external gates
+
+- No V5.1 Windows, Linux, or macOS native artifact exists locally because only
+  the exact Godot 4.7.2 Web template could be installed within available disk.
+- No V5.1 four-platform portable campaign exists. The latest campaign below is
+  V4 and must not be used to collect or label V5.1 results.
+- The exact matched V4 performance launch was denied by two permission-review
+  timeouts. No matched V4 delta is claimed.
+- Six-family human art/readability/control testing and a real agreed lower-end
+  machine remain required. Browser automation and SwiftShader do not prove them.
+- Push, remote CI, tag, GitHub Release, notarization, and storefront publication
+  require separate owner approval and have not been performed.
+
 ## Current milestone
 
 IMMUNE v0.4.0 is a playable six-mission vertical slice. The permanent 200-node
 research network leads to a sequential mission desk, six playable base-cell
 families, and a three-phase combat loop: Core Defense, Front-line Cleanse, and
-Boss Total War. The local validation editor is Godot 4.6.1; the project and CI
-target remain Godot 4.7.2 stable.
+Boss Total War. The local validation editor, project, and CI target are Godot
+4.7.2 stable.
 
 The latest tranche adds:
 
@@ -104,11 +227,18 @@ The latest tranche adds:
   hero-body adapter. Missing optional GLBs always retain the procedural fallback.
 - `godot/immune/characters/authored_jelly_body.gd` owns the reusable N/A/D
   production silhouette, family material profiles, face, membrane, and D crown.
+- `godot/immune/characters/primitive_mesh_cache.gd` owns constructed-once shared
+  high-density primitive meshes; authored live and portrait callers treat them
+  as read-only.
 - `godot/immune/characters/gel/gel_look.gd`, `gel_profiles.gd`,
   `wet_gel.gdshader`, and `jelly_shell.gdshader` own the shared opaque-core,
-  Compatibility-safe membrane, spectral thickness, bubble, inclusion, and
-  rounded wet-skin response. T/B use a next pass; M/N/A/D keep authored shell
-  geometry.
+  Compatibility-safe membrane, spectral thickness, legacy optional bubbles,
+  CC0 triplanar micro-height, and rounded wet-skin response. T/B use a next
+  pass; M/N/A/D keep authored shell geometry. `light_contract.gd` owns the
+  per-viewport direct/shadowed-light caps.
+- `build/generate_jelly_height.py` owns the checksum-pinned, deterministic
+  conversion from the licensed source height channel to the packed RGB runtime
+  data texture. It must fail before writing if provenance or metrics drift.
 - `tools/meshy/` owns the reviewed paid-generation gate, no-network tests, task
   metadata, GLB validation, and explicit M-slot installation.
 - `tools/generate_catalog_localization.mjs` owns the deterministic 406-row
@@ -639,7 +769,9 @@ node tools/generate_catalog_localization.mjs --check
 node tools/validate_translation_csv.mjs
 godot --headless --path godot/immune --import
 godot --headless --path godot/immune --import
-godot --headless --path godot/immune --script res://tools/smoke.gd
+smoke_dir="$(mktemp -d)"
+godot --headless --path godot/immune --script res://tools/smoke.gd -- \
+  --save-path="$smoke_dir/state.json"
 godot --headless --path godot/immune --script res://tools/check_overflow.gd
 godot --headless --path godot/immune --script res://tools/balance_matrix.gd -- \
   --out=user://six-family-mission-01.json --missions=MISSION-01 \
@@ -648,7 +780,7 @@ godot --headless --path godot/immune --script res://tools/balance_matrix.gd -- \
   --out=outputs/playtests/campaign-expansion-candidate-1.json --trials=1
 godot --path godot/immune --rendering-method gl_compatibility \
   --script res://tools/balance_matrix.gd -- \
-  --soak --out=/absolute/path/all-family-campaign-soak.json
+  --soak --out=outputs/playtests/all-family-campaign-soak.json
 godot --headless --path godot/immune --export-release "Windows Desktop" build/releases/IMMUNE-windows.exe
 godot --headless --path godot/immune --export-release "Linux/X11" build/releases/IMMUNE-linux.x86_64
 godot --headless --path godot/immune --export-release "macOS" build/releases/IMMUNE-macOS.zip
@@ -668,32 +800,37 @@ Run exports sequentially. Parallel Godot exporters race on the shared
 
 ## Honest status and next development tranche
 
-The six-mission vertical slice, all six base-cell playable bodies, and local
-cross-platform release pipeline are complete. It is not a content-complete
+The six-mission vertical slice, all six base-cell playable bodies, V5.1 jelly
+surface, portrait lifecycle, 720x1280 HUD target, local smoke/capture gates, and
+fresh exported-Web browser gate are complete. It is not a content-complete
 commercial release. Remaining work is:
 
 1. Keep the N/A/D Meshy manifests as optional comparisons only. Any paid task
    still needs a separate exact 5-credit approval; never batch paid retries after
-   a failed task. The playable demo no longer depends on these generations.
-2. Treat the checked-in CI on Godot 4.7.2 as the final remote gate. Local proof is
-   on 4.6.1 because that is the installed editor.
-3. Add a Developer ID Application identity, notarization credentials, privacy /
-   storefront metadata, and store-specific packaging. The current macOS artifact
-   is valid ad-hoc signed but cannot be publicly notarized with the credentials
-   available on this machine.
-4. Non-zero GPU timing, a 34-minute automated all-family campaign soak, and an
-   exported-Web 4x-CPU/SwiftShader compatibility stress are complete. The
-   remaining product-risk gates are longer human playtesting across all six
-   families for final Jelly V4 art-direction approval,
-   fun/readability/accessibility/control feel, and a repeat on an agreed real
-   lower-end Windows/Web machine. Use the verified `23f5bdc` Jelly V4 campaign,
-   checksum-gated facilitator station, and checked-in campaign plan; the V3
-   campaign remains historical and must not be mixed into the V4 sample;
-   deterministic automation, session preflight, and synthetic form fixtures
-   cannot honestly prove those qualities.
-5. A future public tag must be an explicit owner-approved publishing action.
-   Run `node tools/validate_release_contract.mjs --tag=v0.4.0` first; no tag,
-   GitHub Release, upload, notarization, or storefront submission was performed.
+   a failed task. V5.1 made no Meshy call and the playable demo does not depend on
+   further generation.
+2. Push the owner-approved V5.1 commit and let checked-in Godot 4.7.2 CI produce
+   Windows, Linux, macOS, and Web artifacts. Local V5.1 has only the exact 4.7.2
+   Web template, so the older V4 native artifacts cannot be relabelled or mixed.
+3. Only after that remote artifact is green, create a new checksum-locked V5.1
+   portable campaign. The existing `23f5bdc` campaign is V4 historical evidence,
+   not a V5.1 distribution.
+4. Run real six-family human playtesting for the final material direction,
+   fun/readability/accessibility/control feel, then repeat on an agreed lower-end
+   Windows/Web machine. SwiftShader and deterministic capture evidence do not
+   prove either human judgement or real-hardware performance.
+5. If exact V4/V5 cost comparison is required, approve launching the
+   checksum-identified V4 worktree and run the same 10-body/300-frame harness.
+   The current standard-material sentinel is green but is not a historical V4
+   measurement.
+6. Add a stacked 360/390 px phone layout and display safe-area insets before
+   claiming narrow-phone/notch support. The current portrait and HUD lock covers
+   landscape plus 720x1280.
+7. Add a Developer ID Application identity, notarization credentials, privacy /
+   storefront metadata, and store-specific packaging before public distribution.
+8. A future push/tag/release remains an explicit owner-approved publishing
+   action. Run `node tools/validate_release_contract.mjs --tag=v0.4.0` first; no
+   push, tag, GitHub Release, upload, notarization, or storefront submission was
+   performed in the V5.1 local tranche.
 
-These are explicit external/product gates, not hidden broken demo work. No release
-upload, notarization, or storefront submission was performed.
+These are explicit external/product gates, not hidden broken demo work.

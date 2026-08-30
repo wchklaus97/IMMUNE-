@@ -1,6 +1,6 @@
 # IMMUNE playable demo
 
-目標引擎：**Godot 4.7.2 stable（Standard / GDScript）**。專案使用 GL Compatibility，Windows、Linux 同 Web 共用同一套 wet-gel shader。
+目標引擎：**Godot 4.7.2 stable（GDScript / GL Compatibility）**。Windows、Linux、macOS 同 Web 共用同一套 wet-gel shader。
 
 **12 張六基礎 3D 概念已鎖。** 不要重畫。融合／Apex 3D 先不動。  
 鎖：`docs/vfx/3d-style-lock.md`  
@@ -15,26 +15,45 @@
 
 六基礎塊模仍在 `scenes/kit_lock_preview.tscn`。空白鍵切駐守／移動；A 切中繼。
 
-## Jelly Material V3
+## Jelly Material V5.1
 
-六個 family 保留各自顏色、輪廓同五官，同時使用 UV-free object-space
-圓膜細胞、柔和 inclusions、深色核心、透光邊緣同 clear wet surface。T/B
-使用 Compatibility-safe expanded next pass；M/N/A/D 保留獨立 authored shell，
-所以唔會重疊兩層膜。T 已移除舊 directional-dimple rubber 感並校正成參考圖嘅
-飽和橙色；B 保留 Meshy sculpt，但唔再用稀疏發光水滴圈。N 保留青檸色雙腳同
-扁嘴；A 保留琥珀色無腳 hover／Relay；D 保留深橙色雙腳同五瓣 crown。
-完整 Jelly V3 視覺、RED/GREEN 合約、效能同失敗分析見
-`docs/godot-prompter/specs/2026-08-30-jelly-membrane-v3.md`；底層 shader
-fallback 仍見 `docs/vfx/jelly-material-v2.md`。
+六個 family 保留各自顏色、輪廓、五官同 duty kit。Production 表面改用一張
+checksum-pinned CC0 orange-peel height data texture，以 UV-free object-space
+triplanar + mipmap 做淺層濕潤啫喱紋理；舊 procedural circles、quilt rows、
+wrinkles、microbubble 同 inclusion relief 唔會再疊加。T/B 使用
+Compatibility-safe expanded next pass；M/N/A/D 保留獨立 authored shell，避免
+重疊兩層膜。源檔、hash、license 同 deterministic 生成器分別喺
+`characters/gel/jelly_micro_height.LICENSE.md` 同
+`build/generate_jelly_height.py`。
+
+V5.1 lighting calibration 同 QA contract 只覆蓋 `DirectionalLight3D`：每個
+viewport 最多三盞，而且只准一盞開 shadow。Debug scene assertion 同 headed QA
+probe 會拒絕 Omni、Spot 同第二盞 shadowed directional light，而 release scene
+由靜態 topology ownership 同測試鎖定。
+Gameplay 角色 scale、camera 同 collision 不變，左下 own-world portrait 只喺 HUD
+有空間時建立；隱藏時會 free 角色並停用 SubViewport 更新。M/N/A/D live 同
+portrait 會共用 constructed-once high-density primitive mesh（caller 當 read-only），材料仍然逐 instance
+獨立。720x1280 tall mode 會放大 HUD，但唔顯示 portrait。
+
+所有 `res://tools/*.gd`／`.tscn` QA 入口都會喺 autoload 階段自動預留獨立暫存
+save；合法 debug `--save-path=` 仍可明確覆寫。壞 save 會原封不動保留，QA 以
+exit `74` 停止，唔會將玩家真實進度當測試 fixture 覆寫。
+
+完整 V5.1 texture provenance、shader／lighting 合約、六族＋直向 gameplay、
+save isolation、效能同 Web evidence 見
+`docs/godot-prompter/specs/2026-08-30-jelly-v5-material-polish.md`；歷史 V3/V4
+決策同底層 V2 fallback 保留喺原有文件。
 
 Compatibility renderer 下，細小 mobile duty accessories 會停用 shadow casting，避免 custom gel shadow pass 造成 screen-sized wedge；角色主體仍保留正常陰影。
 
 ```bash
-godot --path godot/immune --resolution 1920x1080 res://tools/gameplay_shot.tscn -- \
-  --out=/absolute/output/path --family=B --mission=MISSION-01 --tag=B-v2
+capture_root="$PWD/outputs/v5.1-repro-472"
+godot --path godot/immune --resolution 1280x720 res://tools/gameplay_shot.tscn -- \
+  --out="$capture_root/gameplay" --family=B --mission=MISSION-01 --tag=B-v51 \
+  --portrait-expected=visible
 godot --path godot/immune --resolution 1920x1080 res://tools/gel_perf.tscn -- \
   --family=B --material=gel --count=10 --frames=300 --sync=true \
-  --out=/absolute/output/path/gel-perf.json
+  --out="$capture_root/perf/B-gel.json"
 ```
 
 `--sync=true` 只會喺量度前 drain 一次 render queue；唔會再由
@@ -46,7 +65,9 @@ stall。Apple Metal 如內建 viewport GPU timer 全部回傳零，請用 Instru
 ```powershell
 winget install --id GodotEngine.GodotEngine --version 4.7.2
 godot --path godot/immune
-godot --headless --path godot/immune --script res://tools/smoke.gd
+$smokeDir = Join-Path ([System.IO.Path]::GetTempPath()) ("immune-smoke-" + [guid]::NewGuid())
+New-Item -ItemType Directory -Path $smokeDir | Out-Null
+godot --headless --path godot/immune --script res://tools/smoke.gd -- "--save-path=$smokeDir/state.json"
 ```
 
 本機平衡矩陣使用真實任務場景、physics、projectile 同 FSM；預設 1× 實時 simulation，輸出只留喺指定本機 JSON，唔會上傳 telemetry：
@@ -63,7 +84,7 @@ Release 前嘅全家族 headed soak 會逐局 checkpoint、首個 contract failu
 ```bash
 godot --path godot/immune --rendering-method gl_compatibility \
   --script res://tools/balance_matrix.gd -- \
-  --soak --out=/absolute/output/path/all-family-campaign-soak.json
+  --soak --out=outputs/playtests/all-family-campaign-soak.json
 ```
 
 調校時不要提高 `--time-scale`；加速 physics 可能令細 projectile tunnelling，只適合診斷流程，唔適合作 balance 證據。
@@ -92,7 +113,8 @@ mkdir -p godot/immune/build/releases/web
 node --test tools/validate_release_contract.test.mjs
 node tools/validate_release_contract.mjs
 godot --headless --path godot/immune --import
-godot --headless --path godot/immune --script res://tools/smoke.gd
+smoke_dir="$(mktemp -d)"
+godot --headless --path godot/immune --script res://tools/smoke.gd -- --save-path="$smoke_dir/state.json"
 godot --headless --path godot/immune --script res://tools/check_overflow.gd
 godot --headless --path godot/immune --export-release "Windows Desktop" build/releases/IMMUNE-windows.exe
 godot --headless --path godot/immune --export-release "Linux/X11" build/releases/IMMUNE-linux.x86_64
@@ -120,7 +142,7 @@ error contract 同兩秒 frame watchdog。兩種報告都保留所有 cadence �
 `docs/godot-prompter/specs/2026-08-29-constrained-web-and-human-playtest.md`。
 
 真人測試唔再靠人手配對 binary 同 template。以下命令會由成功 CI artifact
-原子建立一個包含四平台成品、14-file SHA-256 inventory 同六個輪換次序雙語 kit
+建立一個包含四平台成品、14-file SHA-256 inventory 同六個輪換次序雙語 kit
 嘅 campaign；派發前可以重新驗證，任何多餘 debug/private file 都會 fail：
 
 ```bash

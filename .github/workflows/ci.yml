@@ -73,7 +73,8 @@ jobs:
       - name: Run Godot release smoke
         run: |
           set -o pipefail
-          godot --headless --path godot/immune --script res://tools/smoke.gd 2>&1 | tee godot-smoke.log
+          smoke_dir="$(mktemp -d)"
+          godot --headless --path godot/immune --script res://tools/smoke.gd -- --save-path="$smoke_dir/state.json" 2>&1 | tee godot-smoke.log
           grep -F "SMOKE_OK missions=6 families=6 save=v2 audio=ready gamepad=ready signatures=T+B traits=enrage+regen meshy=B authored_jelly=M+N+A+D gel_fizzy=T+B+M+N+A+D" godot-smoke.log
           if grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" godot-smoke.log; then exit 1; fi
 

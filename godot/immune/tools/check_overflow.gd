@@ -27,6 +27,14 @@ func _is_revealed(id: StringName) -> bool:
 
 
 func _init() -> void:
+	var research_state := root.get_node_or_null("ResearchState")
+	if research_state != null and research_state.has_method("qa_startup_failed"):
+		if bool(research_state.call("qa_startup_failed")):
+			var exit_code := 74
+			if research_state.has_method("qa_startup_failure_exit_code"):
+				exit_code = int(research_state.call("qa_startup_failure_exit_code"))
+			quit(exit_code)
+			return
 	call_deferred("_run")
 
 
@@ -37,6 +45,14 @@ func _log_line(text: String) -> void:
 
 
 func _run() -> void:
+	var research_state := root.get_node_or_null("ResearchState")
+	if research_state != null and research_state.has_method("qa_startup_failed"):
+		if bool(research_state.call("qa_startup_failed")):
+			var exit_code := 74
+			if research_state.has_method("qa_startup_failure_exit_code"):
+				exit_code = int(research_state.call("qa_startup_failure_exit_code"))
+			quit(exit_code)
+			return
 	_log_line("OVERFLOW_CHECK_START")
 	DisplayServer.window_set_size(Vector2i(1920, 1080))
 	TranslationServer.set_locale("zh_HK")
@@ -91,7 +107,7 @@ func _run() -> void:
 		if tex != null:
 			var img: Image = tex.get_image()
 			if img != null:
-				var out := ProjectSettings.globalize_path("res://tools/overflow_check.png")
+				var out := _artifact_path("overflow_check.png")
 				var err: Error = img.save_png(out)
 				if err != OK:
 					_log_line("WARN screenshot_save %s" % error_string(err))
@@ -111,7 +127,7 @@ func _finish(failures: PackedStringArray, ok: bool) -> void:
 	else:
 		for line in failures:
 			report.append("FAIL %s" % line)
-	var path := ProjectSettings.globalize_path("res://tools/overflow_check.txt")
+	var path := _artifact_path("overflow_check.txt")
 	var file := FileAccess.open(path, FileAccess.WRITE)
 	if file != null:
 		for line in report:
@@ -121,6 +137,22 @@ func _finish(failures: PackedStringArray, ok: bool) -> void:
 	for line in report:
 		printerr(line)
 	quit(0 if ok else 1)
+
+
+func _artifact_path(file_name: String) -> String:
+	# QA save isolation already owns a unique per-run directory. Keep screenshots
+	# and reports beside that isolated save so a routine check cannot dirty tracked
+	# source files under res://tools.
+	var directory := OS.get_temp_dir().path_join("immune-overflow")
+	var research_state := root.get_node_or_null("ResearchState")
+	if research_state != null and research_state.has_method("active_save_path"):
+		var save_path := str(research_state.call("active_save_path"))
+		if not save_path.is_empty():
+			directory = ProjectSettings.globalize_path(save_path).get_base_dir()
+	var directory_error := DirAccess.make_dir_recursive_absolute(directory)
+	if directory_error != OK:
+		printerr("OVERFLOW_ARTIFACT_DIR_ERROR %s %s" % [directory, error_string(directory_error)])
+	return directory.path_join(file_name)
 
 
 func _check_resource_text(node: Node, locale: String) -> PackedStringArray:

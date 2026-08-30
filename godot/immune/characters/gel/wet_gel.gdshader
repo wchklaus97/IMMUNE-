@@ -25,9 +25,9 @@ render_mode depth_draw_opaque, cull_back, ambient_light_disabled;
 // basecolor texture, not from geometry. Everything gel-flavoured is multiplied by
 // (1 - ink) so those features stay flat, dark and glossy.
 //
-// Cellular dimples are procedural: object-space triplanar Voronoi driving a
-// derivative-based normal perturbation. No extra triangles, no tangent or UV
-// dependency, so a replacement mesh needs no re-authoring.
+// V5.1 skin relief comes from a deterministic, tileable, band-limited height
+// texture sampled in object-space triplanar projection. Mipmaps keep it stable at
+// gameplay distance; the projection needs neither UVs nor mesh re-authoring.
 
 group_uniforms colour;
 // Body albedo. Derived from ImmuneFamilyLook.JELLY with its saturation pushed up:
@@ -265,6 +265,59 @@ uniform float inclusion_softness : hint_range(0.01, 0.25) = 0.06;
 uniform float inclusion_emission : hint_range(0.0, 0.5) = 0.0;
 uniform float inclusion_seed : hint_range(0.0, 100.0) = 0.0;
 
+group_uniforms authored_height;
+// A CC0 orange-peel data texture, prepared by build/generate_jelly_height.py.
+// RGB stores decorrelated tileable projections; the default-white fallback is
+// flat if the resource contract is ever broken.
+uniform sampler2D authored_height_tex : filter_linear_mipmap_anisotropic, repeat_enable, hint_default_white;
+uniform bool authored_height_enabled = false;
+// The source carries fine shallow pores. A repeat below one enlarges them toward
+// the reference's pebble scale; grazing weighting below keeps the face-on core calm.
+uniform float authored_height_scale : hint_range(0.20, 2.0) = 0.75;
+uniform float authored_height_depth : hint_range(0.0, 0.030) = 0.012;
+uniform float authored_height_blend : hint_range(1.0, 4.0) = 2.0;
+// Positive bias intentionally selects a slightly coarser mip. It trades tiny
+// close-up sparkle for stable detail during half-degree turns and minification.
+uniform float authored_height_lod_bias : hint_range(0.0, 1.25) = 0.35;
+
+group_uniforms v5_readability;
+// Pulls direct body light below the ACES shoulder. V4 sat close to 1.0 linear
+// over most of the body, so the display transform compressed the core and middle
+// into the same neon value. This scale applies to every light contribution and
+// its hue-preserving ceiling; it is not an opaque paint layer.
+uniform float body_exposure_scale : hint_range(0.5, 1.0) = 0.82;
+// Godot Compatibility may render each shadowed light in an additive pass whose
+// DIFFUSE_LIGHT accumulator starts at zero. Budgeting a running total in light()
+// therefore cannot bound the final framebuffer. Every supported IMMUNE/lookdev
+// viewport has at most three directional lights (enforced by smoke). Compatibility's
+// additive path blends each pass after its display response, so the measured safe
+// share is deliberately below a linear one-third split; the 1/2/3-shadow probe
+// guards both the composite ceiling and the one-light readability floor.
+uniform float direct_light_budget_share : hint_range(0.02, 0.5) = 0.10;
+// The shortest optical paths should be brighter than the core, but not allowed
+// to sit on a separate neon ceiling. v_hot blends toward this scale only in the
+// thin ribbon, leaving the measured core exposure unchanged.
+uniform float thin_budget_scale : hint_range(0.5, 1.0) = 0.74;
+// A small neutral Beer-Lambert-like loss across the macro thickness estimate.
+// Spectral extinction still owns the family hue; this term only restores the
+// broad value ramp between a deep core and a thin, luminous edge.
+uniform float thickness_contrast : hint_range(0.0, 0.5) = 0.06;
+uniform float thickness_power : hint_range(0.25, 4.0) = 1.15;
+// V4's dense lattice asked a 0.035 normal depth to cover the whole body. Cap it
+// before applying a grazing mask, then vary its amplitude with the already-paid
+// inclusion noise. The cells survive in wet highlights without quilting the face.
+uniform float membrane_depth_cap : hint_range(0.0, 0.05) = 0.014;
+uniform float membrane_grazing_floor : hint_range(0.0, 1.0) = 0.10;
+uniform float membrane_grazing_power : hint_range(0.25, 6.0) = 1.35;
+uniform float membrane_irregularity : hint_range(0.0, 1.0) = 0.72;
+// Low-amplitude spatial breakup of the tight coat. The same anti-aliased noise
+// controls both this and the membrane normal, keeping the two cues coherent.
+uniform float wet_spec_breakup : hint_range(0.0, 1.0) = 0.28;
+uniform float coat_tint : hint_range(0.0, 0.5) = 0.16;
+// Air pockets remain primarily refractive/normal cues. This global multiplier
+// stops legacy per-profile emission values stacking into neon interiors.
+uniform float detail_emission_scale : hint_range(0.0, 1.0) = 0.08;
+
 group_uniforms features;
 // The mesh's own baked basecolor. Only its darkness is used, never its hue.
 uniform sampler2D feature_tex : source_color, filter_linear_mipmap, hint_default_white;
@@ -283,9 +336,14 @@ varying vec3 v_obj_normal;
 // fragment -> light handoff
 varying float v_ink;
 varying vec3 v_filter;
+// The engine multiplies custom DIFFUSE_LIGHT by ALBEDO after light(). Keep its
+// input white and carry the authored body/ink colour explicitly to avoid applying
+// the albedo twice in Godot's GLES3 base and additive paths.
+varying vec3 v_surface_color;
 // One path length, one throughput. The glow envelope stays separate as a scalar.
 varying vec3 v_through;
 varying float v_hot;
+varying float v_wet_variation;
 
 
 // Absorption filter for anything that travelled inside the body. Max-normalised
@@ -498,6 +556,32 @@ float cell_triplanar(vec3 p, vec3 n) {
 }
 
 
+// Soft triplanar blending avoids UV seams and the cracked borders of the retired
+// Voronoi path. Each plane uses the same periodic texture with decorrelated offsets;
+// implicit texture derivatives select mip levels during motion and minification.
+float authored_height_triplanar(vec3 obj_pos, vec3 obj_normal) {
+	vec3 p = membrane_cell_frame(
+		obj_pos * authored_height_scale
+		+ vec3(inclusion_seed * 0.017, inclusion_seed * 0.029, inclusion_seed * 0.043));
+	vec3 n = normalize(membrane_cell_frame(obj_normal));
+	vec3 w = pow(abs(n), vec3(authored_height_blend));
+	w /= max(w.x + w.y + w.z, 1e-4);
+	vec3 dx = dFdx(p) * exp2(authored_height_lod_bias);
+	vec3 dy = dFdy(p) * exp2(authored_height_lod_bias);
+	float hx = textureGrad(
+		authored_height_tex, p.zy + vec2(0.173, 0.619), dx.zy, dy.zy).r;
+	float hy = textureGrad(
+		authored_height_tex, p.xz + vec2(0.487, 0.241), dx.xz, dy.xz).g;
+	float hz = textureGrad(
+		authored_height_tex, p.xy + vec2(0.731, 0.853), dx.xy, dy.xy).b;
+	float height = hx * w.x + hy * w.y + hz * w.z;
+	float variance_gain = min(
+		inversesqrt(max(dot(w, w), 0.3333)),
+		1.35);
+	return 0.5 + (height - 0.5) * variance_gain;
+}
+
+
 // Mikkelsen surface-gradient bump: perturbs a normal from a scalar height using
 // screen-space derivatives, so it needs no tangent or binormal from the mesh.
 vec3 bump_normal(vec3 n, vec3 view_pos, float height, float strength) {
@@ -559,6 +643,7 @@ void fragment() {
 
 	// --- thinness, measured before dimples so creases do not read as limbs ---
 	vec3 base_n = normalize(NORMAL);
+	float base_fres = clamp(1.0 - abs(dot(base_n, VIEW)), 0.0, 1.0);
 	float px = max(length(dFdx(VERTEX)), 1e-5);
 	float py = max(length(dFdy(VERTEX)), 1e-5);
 	// Signed, not magnitude. Light escapes through thin CONVEX protrusions -- a limb
@@ -572,8 +657,49 @@ void fragment() {
 		+ dot(dFdy(base_n), dFdy(VERTEX)) / (py * py);
 	float thin_c = smoothstep(curv_low, max(curv_high, curv_low + 0.01), conv);
 
+	// One smooth 3D field drives both membrane-amplitude and coat breakup. It
+	// was already sampled for inclusions in V4; reusing it adds no texture fetch
+	// and no second noise evaluation on production Fizzy profiles. At a coarse
+	// pixel footprint it converges toward 0.5, preventing gameplay-distance shimmer.
+	vec3 inclusion_coord = v_obj_pos * inclusion_scale
+		+ vec3(inclusion_seed, inclusion_seed * 1.31, inclusion_seed * 2.17);
+	float coord_footprint = max(
+		length(dFdx(inclusion_coord)),
+		length(dFdy(inclusion_coord)));
+	float inoise = 0.5;
+	float organic = 0.5;
+	if (inclusion_enabled || (microbubble_enabled && membrane_irregularity > 0.001)) {
+		inoise = inclusion_noise(inclusion_coord);
+		// Position derivatives describe how much of the 3D field a pixel covers even
+		// where the sampled noise happens to be locally flat. Noise-value fwidth did
+		// not, so a flat sample could suddenly regain detail as the camera moved.
+		float retained_detail = 1.0 - smoothstep(0.20, 0.90, coord_footprint);
+		organic = 0.5 + (inoise - 0.5) * retained_detail;
+	}
+	float organic_shape = smoothstep(0.16, 0.84, organic);
+
 	// --- cellular dimples + volumetric round bubbles ----------------------
 	vec3 n = base_n;
+	float authored_height_signal = 0.5;
+	if (authored_height_enabled && authored_height_depth > 0.0001) {
+		authored_height_signal = authored_height_triplanar(
+			v_obj_pos,
+			normalize(v_obj_normal));
+		// The reference stays calm through the face-on core and reveals its
+		// orange-peel relief where the wet coat turns toward grazing light. Applying
+		// the established membrane falloff here prevents an all-over rind or clay
+		// emboss while retaining readable edge texture.
+		float authored_grazing = mix(
+			membrane_grazing_floor,
+			1.0,
+			pow(base_fres, membrane_grazing_power));
+		n = bump_normal(
+			n,
+			VERTEX,
+			authored_height_signal,
+			authored_height_depth * authored_grazing * gel_mask
+				/ max(authored_height_scale, 0.001));
+	}
 	if (dimple_depth > 0.001) {
 		float height = cell_triplanar(v_obj_pos * dimple_scale, normalize(v_obj_normal));
 		float strength = dimple_depth * gel_mask / max(dimple_scale, 0.001);
@@ -607,26 +733,41 @@ void fragment() {
 			microbubble_jitter,
 			microbubble_softness,
 			microbubble_seed);
+		float grazing = mix(
+			membrane_grazing_floor,
+			1.0,
+			pow(base_fres, membrane_grazing_power));
+		float irregular = mix(
+			1.0,
+			mix(0.24, 1.0, organic_shape),
+			membrane_irregularity);
+		float membrane_depth = min(microbubble_depth, membrane_depth_cap)
+			* grazing * irregular;
 		n = bump_normal(
 			n,
 			VERTEX,
 			microbubble.x,
-			microbubble_depth * gel_mask / max(microbubble_scale, 0.001));
+			membrane_depth * gel_mask / max(microbubble_scale, 0.001));
 	}
 	float inclusion = 0.0;
 	if (inclusion_enabled && (inclusion_depth > 0.001 || inclusion_emission > 0.001)) {
-		float inoise = inclusion_noise(
-			v_obj_pos * inclusion_scale
-			+ vec3(inclusion_seed, inclusion_seed * 1.31, inclusion_seed * 2.17));
 		// Widen the transition by the on-screen footprint. This turns the field into
 		// stable sub-pixel sparkle density instead of a shimmering binary pattern.
-		float aa = max(inclusion_softness, fwidth(inoise) * 0.85);
+		float aa = max(inclusion_softness, coord_footprint * 0.16);
 		inclusion = smoothstep(inclusion_threshold - aa, inclusion_threshold + aa, inoise);
 		if (inclusion_depth > 0.001) {
+			// Perturb only the anti-aliased high-value islands. Using raw broad
+			// value noise made a low-frequency waxy swell; this monotonic residual
+			// produces isolated irregular wet domes without another noise sample.
+			float island_residual = clamp(
+				(inoise - (inclusion_threshold - aa)) / max(2.0 * aa, 0.001),
+				0.0,
+				1.0);
+			float island_height = inclusion * island_residual;
 			n = bump_normal(
 				n,
 				VERTEX,
-				inoise,
+				island_height,
 				inclusion_depth * gel_mask / max(inclusion_scale, 0.001));
 		}
 	}
@@ -651,16 +792,20 @@ void fragment() {
 		1.0);
 	vec3 through = gel_throughput(local_thickness);
 	vec3 body = body_color.rgb * albedo_gain * mix(vec3(1.0), through, body_absorb);
+	float macro_thickness = pow(local_thickness, max(thickness_power, 0.001));
+	body *= 1.0 - clamp(thickness_contrast, 0.0, 0.95) * macro_thickness;
 	body = mix(body, body * (0.35 + 1.3 * lum), tex_tint_mix);
 	body *= 1.0 - (
 		bubble.y * bubble_shell_shadow
 		+ microbubble.y * microbubble_shell_shadow) * gel_mask;
-	ALBEDO = mix(body, ink_color.rgb, ink);
+	v_surface_color = mix(body, ink_color.rgb, ink);
+	ALBEDO = vec3(1.0);
 	METALLIC = 0.0;
 	float gel_roughness = mix(
 		body_roughness,
 		max(body_roughness * 0.72, 0.04),
 		max(bubble.x, microbubble.x));
+	gel_roughness = clamp(gel_roughness, 0.04, 1.0);
 	ROUGHNESS = mix(gel_roughness, ink_roughness, ink);
 	SPECULAR = env_specular;
 
@@ -702,7 +847,8 @@ void fragment() {
 		+ bubble_shell_emission * bubble.y
 		+ microbubble_emission * microbubble.x
 		+ microbubble_shell_emission * microbubble.y
-		+ inclusion_emission * inclusion) * (0.25 + 0.75 * fres);
+		+ inclusion_emission * inclusion) * (0.25 + 0.75 * fres)
+		* detail_emission_scale;
 	EMISSION = (
 		peak_limit(inner + bubble_glow, interior_budget)
 		+ peak_limit(rim, rim_budget)) * gel_mask;
@@ -711,15 +857,18 @@ void fragment() {
 	v_hot = hot;
 	v_filter = filt;
 	v_through = through;
+	v_wet_variation = authored_height_enabled
+		? clamp(authored_height_signal, 0.0, 1.0)
+		: organic_shape;
 }
 
 
 void light() {
 	float gel_mask = 1.0 - v_ink;
 	vec3 lc = LIGHT_COLOR * ATTENUATION;
-	// ALBEDO's own near-zero complement channel already keeps the direct diffuse
-	// saturated. This filter is for the interior paths, which do not go through
-	// ALBEDO and would otherwise carry the lamp's colour straight out of the body.
+	// v_surface_color's near-zero complement channel keeps the direct diffuse
+	// saturated. Engine ALBEDO is identity because Godot multiplies it after this
+	// function; the filter remains for interior paths that need spectral absorption.
 	vec3 filt = mix(vec3(1.0), v_filter, gel_mask);
 
 	// Wrapped diffuse: the band past the terminator is handed to deep_color, so
@@ -729,7 +878,7 @@ void light() {
 	float w = clamp(light_wrap, 0.0, 0.95);
 	float wrapped = clamp((ndl + w) / (1.0 + w), 0.0, 1.0);
 	float bleed = max(wrapped - front, 0.0);
-	vec3 body_lit = (ALBEDO * front + deep_color.rgb * filt * bleed * sss_amount * gel_mask) * lc / PI;
+	vec3 body_lit = (v_surface_color * front + deep_color.rgb * filt * bleed * sss_amount * gel_mask) * lc / PI;
 
 	// Light that escaped the gel near a thin part. `v_through` carries its colour, so
 	// a short path emerges near the lamp's own warm white and only a long path comes
@@ -744,33 +893,32 @@ void light() {
 	float t = pow(clamp(dot(VIEW, -tl), 0.0, 1.0), transmit_power);
 	vec3 xmit = xmit_col * t * transmit_strength * v_hot * gel_mask * LIGHT_COLOR / PI;
 
-	// ONE ceiling over the RUNNING TOTAL, and both of those words are load-bearing.
-	//
-	// Over the total, because ceilinged separately each term stayed in budget while
-	// their sum stacked straight through the clip point -- so every attempt to make thin
-	// parts hot pinned the dominant channel at 255, which is what forced the previous
-	// round to solve it by dimming instead. Summing first inverts that: the dominant
-	// channel is already at the ceiling and physically cannot rise, so adding near-white
-	// interior light raises the peak, the limiter scales the colour back to the same
-	// ceiling, and what changes is the RATIO -- green and blue come up while red holds
-	// the plateau. That is the reference's behaviour exactly (red flat at 0.98 while
-	// green swings 0.29-0.57), and it means the interior drive can be as hot as the look
-	// needs without ever being able to clip the body.
-	//
-	// Running, because light() is called once per lamp. Bounding each call left the
-	// three-lamp stage free to reach three times the budget wherever two lamps overlap,
-	// which is what spread the plateau instead of concentrating it: 24% of the body sat
-	// above the clip point while the median sat below it. Reading the accumulator and
-	// bounding the sum makes the ceiling a property of the body, not of one lamp.
-	DIFFUSE_LIGHT = peak_limit(DIFFUSE_LIGHT + body_lit + glow + xmit, body_budget);
+	// Bound this light's complete body/interior contribution independently. On GLES3,
+	// shadowed directional lights may be separate additive draws with a freshly-zeroed
+	// DIFFUSE_LIGHT, while unshadowed lights may share one base pass. `+=` works in both
+	// topologies and never assumes the accumulator survives another light or draw.
+	float local_exposure_scale = body_exposure_scale
+		* mix(1.0, thin_budget_scale, v_hot);
+	vec3 scaled_body_light = (body_lit + glow + xmit) * local_exposure_scale;
+	DIFFUSE_LIGHT += peak_limit(
+		scaled_body_light,
+		body_budget * local_exposure_scale * direct_light_budget_share);
 
 	// Two lobes so highlights are small and sharp but still sit on a smooth body.
 	// The coat is NOT masked by ink: the eyes are wet too, and their tight bright
 	// highlight is what keeps them reading as glossy black rather than as holes.
 	float broad = spec_lobe(NORMAL, VIEW, LIGHT, max(ROUGHNESS, 0.02));
-	float coat = spec_lobe(NORMAL, VIEW, LIGHT, coat_roughness) * coat_strength;
+	float local_coat_roughness = coat_roughness * mix(1.16, 0.88, v_wet_variation);
+	float coat = spec_lobe(NORMAL, VIEW, LIGHT, local_coat_roughness) * coat_strength;
+	coat *= mix(
+		1.0 - wet_spec_breakup,
+		1.0 + wet_spec_breakup * 0.35,
+		v_wet_variation);
 	vec3 h = normalize(VIEW + LIGHT);
 	float f = spec_f0 + (1.0 - spec_f0) * pow(1.0 - max(dot(h, VIEW), 0.0), 5.0);
 	vec3 broad_tint = mix(vec3(1.0), filt, spec_tint);
-	SPECULAR_LIGHT += (broad * broad_tint + vec3(coat)) * f * spec_energy * lc;
+	vec3 coat_hue = transmit_color.rgb
+		/ max(max(transmit_color.r, transmit_color.g), max(transmit_color.b, 1e-4));
+	vec3 coat_color = mix(vec3(1.0), coat_hue, coat_tint);
+	SPECULAR_LIGHT += (broad * broad_tint + coat * coat_color) * f * spec_energy * lc;
 }

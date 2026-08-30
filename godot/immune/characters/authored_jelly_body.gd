@@ -5,10 +5,12 @@ extends Node3D
 ## These forms are assembled from high-resolution primitives at runtime so the
 ## silhouettes stay editable in source control and never depend on a paid asset
 ## generation call. Each family keeps its locked concept identity while sharing
-## the approved Fizzy material language: wet coloured core, round bubbles, fine
-## inclusions, and a compatibility-safe clear outer membrane.
+## the approved Fizzy material language: wet coloured core, shallow CC0
+## micro-height variation, and a compatibility-safe clear outer membrane.
 
 const _Gel := preload("res://characters/gel/gel_look.gd")
+const _GelProfiles := preload("res://characters/gel/gel_profiles.gd")
+const _PrimitiveMeshes := preload("res://characters/primitive_mesh_cache.gd")
 const _SHELL_SHADER := preload("res://characters/gel/jelly_shell.gdshader")
 
 @export_enum("N", "A", "D") var family_id := "N"
@@ -113,6 +115,7 @@ func _ready() -> void:
 	for key in profile:
 		if key != &"jelly" and key != &"shell_color" and key != &"cavity_color":
 			options[key] = profile[key]
+	options = _GelProfiles.with_v5_surface(options)
 	var gel := _Gel.make_material(profile[&"jelly"], options)
 	if gel == null:
 		push_error("authored_jelly_body.gd: failed to create %s gel material" % family_id)
@@ -126,6 +129,7 @@ func _ready() -> void:
 func _make_shell(shell_color: Color) -> ShaderMaterial:
 	var shell := ShaderMaterial.new()
 	shell.shader = _SHELL_SHADER
+	_Gel.apply_v5_shell_bounds(shell)
 	shell.set_shader_parameter(&"shell_color", shell_color)
 	shell.set_shader_parameter(&"face_alpha", 0.008)
 	shell.set_shader_parameter(&"edge_alpha", 0.46)
@@ -200,14 +204,9 @@ func _build_face(gel: Material, cavity_color: Color) -> void:
 
 
 func _add_face_ring(name_: String, pos: Vector3, inner_radius: float, outer_radius: float, gel: Material) -> void:
-	var ring_mesh := TorusMesh.new()
-	ring_mesh.inner_radius = inner_radius
-	ring_mesh.outer_radius = outer_radius
-	ring_mesh.rings = 48
-	ring_mesh.ring_segments = 24
 	var ring := MeshInstance3D.new()
 	ring.name = name_
-	ring.mesh = ring_mesh
+	ring.mesh = _PrimitiveMeshes.torus(inner_radius, outer_radius, 48, 24)
 	ring.position = pos
 	ring.rotation_degrees.x = 90.0
 	ring.material_override = gel.duplicate()
@@ -224,14 +223,9 @@ func _add_capsule(
 	rotation_: Vector3,
 	material: Material
 ) -> void:
-	var mesh := CapsuleMesh.new()
-	mesh.radius = radius
-	mesh.height = height
-	mesh.radial_segments = 48
-	mesh.rings = 12
 	var instance := MeshInstance3D.new()
 	instance.name = name_
-	instance.mesh = mesh
+	instance.mesh = _PrimitiveMeshes.capsule(radius, height, 48, 12)
 	instance.position = pos
 	instance.rotation_degrees = rotation_
 	instance.scale = scale_
@@ -253,14 +247,9 @@ func _add_sphere(
 	radial_segments: int,
 	rings: int
 ) -> void:
-	var mesh := SphereMesh.new()
-	mesh.radius = 0.5
-	mesh.height = 1.0
-	mesh.radial_segments = radial_segments
-	mesh.rings = rings
 	var instance := MeshInstance3D.new()
 	instance.name = name_
-	instance.mesh = mesh
+	instance.mesh = _PrimitiveMeshes.sphere(radial_segments, rings)
 	instance.position = pos
 	instance.scale = scale_
 	instance.material_override = material

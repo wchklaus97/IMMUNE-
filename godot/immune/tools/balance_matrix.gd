@@ -15,6 +15,24 @@ const SOAK_MIN_GAME_SECONDS: float = 1800.0
 const SOAK_MAX_MEAN_PROCESS_MS: float = 0.0
 const SOAK_MAX_WALL_TO_GAME_RATIO: float = 1.25
 const SOAK_MIN_FPS: float = 30.0
+const MAX_TRIALS: int = 100
+const MAX_TIME_SCALE: float = 8.0
+const MAX_THRESHOLD_VALUE: float = 86400.0
+const REPORT_TEMP_ATTEMPTS: int = 32
+const FLAG_OPTIONS: PackedStringArray = ["soak", "stop-on-failure"]
+const VALUE_OPTIONS: PackedStringArray = [
+	"out",
+	"trials",
+	"time-scale",
+	"missions",
+	"families",
+	"min-total-game-seconds",
+	"max-mean-process-ms",
+	"max-mean-physics-ms",
+	"max-wall-to-game-ratio",
+	"min-fps",
+	"save-path",
+]
 
 var _out_path: String = DEFAULT_OUT
 var _trials: int = DEFAULT_TRIALS
@@ -32,16 +50,24 @@ var _max_mean_process_ms: float = 0.0
 var _max_mean_physics_ms: float = 0.0
 var _max_wall_to_game_ratio: float = 0.0
 var _min_fps: float = 0.0
+var _report_write_failed := false
 
 
 func _init() -> void:
-	_parse_args()
+	var research_state := root.get_node_or_null("ResearchState")
+	if _quit_for_qa_startup_failure(research_state):
+		return
+	if not _parse_args():
+		quit(2)
+		return
 	call_deferred("_run")
 
 
 func _run() -> void:
-	Engine.time_scale = _time_scale
 	var research_state: Node = root.get_node_or_null("ResearchState")
+	if _quit_for_qa_startup_failure(research_state):
+		return
+	Engine.time_scale = _time_scale
 	var settings_state: Node = root.get_node_or_null("SettingsState")
 	if research_state == null or settings_state == null:
 		_fail("Autoloads ResearchState/SettingsState are missing")
@@ -299,85 +325,703 @@ func _finish() -> void:
 		quit(1)
 
 
-func _parse_args() -> void:
-	for arg: String in OS.get_cmdline_user_args():
-		if arg == "--soak":
-			_soak_mode = true
-			_stop_on_failure = true
-			_family_filter = ALL_FAMILIES.duplicate()
-			_trials = 1
-			_build_tag = SOAK_BUILD_TAG
-			_min_total_game_seconds = SOAK_MIN_GAME_SECONDS
-			_max_mean_process_ms = SOAK_MAX_MEAN_PROCESS_MS
-			_max_wall_to_game_ratio = SOAK_MAX_WALL_TO_GAME_RATIO
-			_min_fps = SOAK_MIN_FPS
-		elif arg == "--stop-on-failure":
-			_stop_on_failure = true
-		elif arg.begins_with("--out="):
-			_out_path = arg.trim_prefix("--out=")
-		elif arg.begins_with("--trials="):
-			_trials = maxi(int(arg.trim_prefix("--trials=")), 1)
-		elif arg.begins_with("--time-scale="):
-			_time_scale = clampf(float(arg.trim_prefix("--time-scale=")), 1.0, 8.0)
-		elif arg.begins_with("--missions="):
-			_mission_filter = _parse_names(arg.trim_prefix("--missions="))
-		elif arg.begins_with("--families="):
-			_family_filter = _parse_names(arg.trim_prefix("--families="))
-		elif arg.begins_with("--min-total-game-seconds="):
-			_min_total_game_seconds = maxf(
-				float(arg.trim_prefix("--min-total-game-seconds=")), 0.0
-			)
-		elif arg.begins_with("--max-mean-process-ms="):
-			_max_mean_process_ms = maxf(float(arg.trim_prefix("--max-mean-process-ms=")), 0.0)
-		elif arg.begins_with("--max-mean-physics-ms="):
-			_max_mean_physics_ms = maxf(float(arg.trim_prefix("--max-mean-physics-ms=")), 0.0)
-		elif arg.begins_with("--max-wall-to-game-ratio="):
-			_max_wall_to_game_ratio = maxf(
-				float(arg.trim_prefix("--max-wall-to-game-ratio=")), 0.0
-			)
-		elif arg.begins_with("--min-fps="):
-			_min_fps = maxf(float(arg.trim_prefix("--min-fps=")), 0.0)
+func _parse_args() -> bool:
+	var seen := {}
+	var values := {}
+	var flags := {}
+	for raw_arg: String in OS.get_cmdline_user_args():
+		var arg := raw_arg.strip_edges()
+		if not arg.begins_with("--") or arg == "--":
+			return _arg_error("positional or malformed argument is not allowed: %s" % raw_arg)
+		var body := arg.trim_prefix("--")
+		var equals_index := body.find("=")
+		var key := body if equals_index < 0 else body.substr(0, equals_index)
+		if key.is_empty():
+			return _arg_error("empty option name")
+		if seen.has(key):
+			return _arg_error("duplicate option --%s" % key)
+		seen[key] = true
+		if equals_index < 0:
+			if key not in FLAG_OPTIONS:
+				if key in VALUE_OPTIONS:
+					return _arg_error("--%s requires =<value>" % key)
+				return _arg_error("unknown option --%s" % key)
+			flags[key] = true
+			continue
+		if key not in VALUE_OPTIONS:
+			if key in FLAG_OPTIONS:
+				return _arg_error("--%s is a flag and does not accept a value" % key)
+			return _arg_error("unknown option --%s" % key)
+		var value := body.substr(equals_index + 1).strip_edges()
+		if value.is_empty():
+			return _arg_error("--%s cannot be empty" % key)
+		values[key] = value
+
+	if flags.has("soak"):
+		_soak_mode = true
+		_stop_on_failure = true
+		_family_filter = ALL_FAMILIES.duplicate()
+		_trials = 1
+		_build_tag = SOAK_BUILD_TAG
+		_min_total_game_seconds = SOAK_MIN_GAME_SECONDS
+		_max_mean_process_ms = SOAK_MAX_MEAN_PROCESS_MS
+		_max_wall_to_game_ratio = SOAK_MAX_WALL_TO_GAME_RATIO
+		_min_fps = SOAK_MIN_FPS
+	if flags.has("stop-on-failure"):
+		_stop_on_failure = true
+
+	if values.has("out"):
+		_out_path = String(values["out"])
+	if not _validate_out_path():
+		return false
+
+	if values.has("trials"):
+		var trials_result := _parse_strict_int("trials", String(values["trials"]), 1, MAX_TRIALS)
+		if not bool(trials_result.get("ok", false)):
+			return false
+		_trials = int(trials_result["value"])
+	if values.has("time-scale"):
+		var scale_result := _parse_finite_range(
+			"time-scale", String(values["time-scale"]), 1.0, MAX_TIME_SCALE
+		)
+		if not bool(scale_result.get("ok", false)):
+			return false
+		_time_scale = float(scale_result["value"])
+
+	var mission_ids: Array[StringName] = _Content.mission_ids()
+	if values.has("missions"):
+		var missions_result := _parse_filter(
+			"missions", String(values["missions"]), mission_ids
+		)
+		if not bool(missions_result.get("ok", false)):
+			return false
+		_mission_filter = missions_result["value"] as Array[StringName]
+	if values.has("families"):
+		var families_result := _parse_filter(
+			"families", String(values["families"]), ALL_FAMILIES
+		)
+		if not bool(families_result.get("ok", false)):
+			return false
+		_family_filter = families_result["value"] as Array[StringName]
+
+	var threshold_targets := {
+		"min-total-game-seconds": "_min_total_game_seconds",
+		"max-mean-process-ms": "_max_mean_process_ms",
+		"max-mean-physics-ms": "_max_mean_physics_ms",
+		"max-wall-to-game-ratio": "_max_wall_to_game_ratio",
+		"min-fps": "_min_fps",
+	}
+	for option: String in threshold_targets:
+		if not values.has(option):
+			continue
+		var result := _parse_finite_range(
+			option, String(values[option]), 0.0, MAX_THRESHOLD_VALUE
+		)
+		if not bool(result.get("ok", false)):
+			return false
+		set(StringName(threshold_targets[option]), float(result["value"]))
+
+	if _soak_mode:
+		if values.has("trials") and _trials != 1:
+			return _arg_error("--soak requires --trials=1")
+		if values.has("time-scale") and not is_equal_approx(_time_scale, 1.0):
+			return _arg_error("--soak requires --time-scale=1")
+		if values.has("missions") and _mission_filter != mission_ids:
+			return _arg_error("--soak must include every mission in campaign order")
+		if values.has("families") and _family_filter != ALL_FAMILIES:
+			return _arg_error("--soak must include every family in canonical order")
+
+	var selected_mission_count := mission_ids.size() if _mission_filter.is_empty() else _mission_filter.size()
+	var expected_run_count := selected_mission_count * _family_filter.size() * _trials
+	if expected_run_count <= 0:
+		return _arg_error("selected matrix has zero expected runs")
+	return true
 
 
-func _parse_names(csv: String) -> Array[StringName]:
+func _parse_filter(
+	option: String, csv: String, allowed_values: Array[StringName]
+) -> Dictionary:
 	var result: Array[StringName] = []
-	for value: String in csv.split(",", false):
-		var normalized: String = value.strip_edges()
-		if not normalized.is_empty():
-			result.append(StringName(normalized))
-	return result
+	for raw_value: String in csv.split(",", true):
+		var normalized := raw_value.strip_edges()
+		if normalized.is_empty():
+			_arg_error("--%s contains an empty value" % option)
+			return {"ok": false}
+		var name := StringName(normalized)
+		if name not in allowed_values:
+			_arg_error("--%s contains unknown value %s" % [option, normalized])
+			return {"ok": false}
+		if name in result:
+			_arg_error("--%s contains duplicate value %s" % [option, normalized])
+			return {"ok": false}
+		result.append(name)
+	if result.is_empty():
+		_arg_error("--%s must select at least one value" % option)
+		return {"ok": false}
+	return {"ok": true, "value": result}
+
+
+func _parse_strict_int(option: String, raw_value: String, minimum: int, maximum: int) -> Dictionary:
+	var value_text := raw_value.strip_edges()
+	if not value_text.is_valid_int():
+		_arg_error("--%s requires an integer" % option)
+		return {"ok": false}
+	var value := int(value_text)
+	if value < minimum or value > maximum:
+		_arg_error("--%s must be in range %d..%d" % [option, minimum, maximum])
+		return {"ok": false}
+	return {"ok": true, "value": value}
+
+
+func _parse_finite_range(
+	option: String, raw_value: String, minimum: float, maximum: float
+) -> Dictionary:
+	var value_text := raw_value.strip_edges()
+	if not value_text.is_valid_float():
+		_arg_error("--%s requires a finite number" % option)
+		return {"ok": false}
+	var value := float(value_text)
+	if not is_finite(value):
+		_arg_error("--%s requires a finite number" % option)
+		return {"ok": false}
+	if value < minimum or value > maximum:
+		_arg_error("--%s must be in range %.3f..%.3f" % [option, minimum, maximum])
+		return {"ok": false}
+	return {"ok": true, "value": value}
+
+
+func _arg_error(message: String) -> bool:
+	push_error("balance_matrix: %s" % message)
+	return false
 
 
 func _globalized_out_path() -> String:
-	if _out_path.begins_with("user://") or _out_path.begins_with("res://"):
+	if _out_path.begins_with("user://"):
 		return ProjectSettings.globalize_path(_out_path)
-	return _out_path
+	var normalized := _out_path.replace("\\", "/")
+	if normalized.is_absolute_path():
+		return normalized.simplify_path()
+	return _repository_outputs_root().path_join(normalized.trim_prefix("outputs/")).simplify_path()
 
 
-func _write_report(complete: bool) -> void:
+func _validate_out_path() -> bool:
+	var normalized := _out_path.strip_edges().replace("\\", "/")
+	if normalized.is_empty() or normalized.contains("\u0000"):
+		return _arg_error("--out must name a JSON file")
+	if normalized.ends_with("/") or normalized.get_extension().to_lower() != "json":
+		return _arg_error("--out must name a .json file")
+	if normalized.contains("/../") or normalized.ends_with("/.."):
+		return _arg_error("--out traversal is not allowed")
+	if normalized.begins_with("res://"):
+		return _arg_error("--out cannot write below res://")
+
+	var absolute_path := ""
+	var allowed_root := ""
+	if normalized.begins_with("user://"):
+		allowed_root = ProjectSettings.globalize_path("user://").replace("\\", "/").simplify_path()
+		absolute_path = ProjectSettings.globalize_path(normalized).replace("\\", "/").simplify_path()
+	elif normalized.is_absolute_path():
+		absolute_path = normalized.simplify_path()
+		var temp_root := OS.get_temp_dir().replace("\\", "/").simplify_path()
+		var outputs_root := _repository_outputs_root()
+		if _path_is_within(absolute_path, temp_root):
+			allowed_root = temp_root
+		elif _path_is_within(absolute_path, outputs_root):
+			allowed_root = outputs_root
+		else:
+			return _arg_error(
+				"absolute --out must be below the OS temporary directory or repository outputs/"
+			)
+	elif normalized.begins_with("outputs/"):
+		allowed_root = _repository_outputs_root()
+		absolute_path = allowed_root.path_join(normalized.trim_prefix("outputs/")).simplify_path()
+	else:
+		return _arg_error("relative --out must begin with outputs/")
+
+	if (
+		not _path_is_within(absolute_path, allowed_root)
+		or _same_filesystem_path(absolute_path, allowed_root)
+	):
+		return _arg_error("--out escaped its allowed output root")
+	if DirAccess.dir_exists_absolute(absolute_path):
+		return _arg_error("--out names a directory")
+	if _path_crosses_link(absolute_path, allowed_root):
+		return _arg_error("--out crosses a symbolic link")
+
+	var player_save := ProjectSettings.globalize_path(
+		"user://immune_demo_save.json"
+	).replace("\\", "/").simplify_path()
+	if _same_filesystem_path(absolute_path, player_save):
+		return _arg_error("--out must not name or alias the player save")
+	var research_state := root.get_node_or_null("ResearchState")
+	if research_state != null and research_state.has_method("active_save_path"):
+		var active_save := ProjectSettings.globalize_path(
+			str(research_state.call("active_save_path"))
+		).replace("\\", "/").simplify_path()
+		if _same_filesystem_path(absolute_path, active_save):
+			return _arg_error("--out must not name the active save")
+	return true
+
+
+func _repository_outputs_root() -> String:
+	var godot_project_root := ProjectSettings.globalize_path("res://").replace("\\", "/").simplify_path()
+	return godot_project_root.get_base_dir().get_base_dir().path_join("outputs").simplify_path()
+
+
+func _path_is_within(path: String, root_path: String) -> bool:
+	var normalized_path := _filesystem_compare_path(path)
+	var normalized_root := _filesystem_compare_path(root_path)
+	return normalized_path == normalized_root or normalized_path.begins_with(normalized_root + "/")
+
+
+func _same_filesystem_path(left: String, right: String) -> bool:
+	return _filesystem_compare_path(left) == _filesystem_compare_path(right)
+
+
+func _filesystem_compare_path(path: String) -> String:
+	var normalized := path.replace("\\", "/").simplify_path().trim_suffix("/")
+	return normalized.to_lower() if OS.get_name() in ["Windows", "macOS"] else normalized
+
+
+func _path_crosses_link(path: String, trusted_root: String) -> bool:
+	var normalized_path := path.replace("\\", "/").simplify_path()
+	var normalized_root := trusted_root.replace("\\", "/").simplify_path().trim_suffix("/")
+	if not _path_is_within(normalized_path, normalized_root):
+		return true
+	# Once containment is proven with the platform's case rule, lengths remain
+	# identical even if a Windows caller used different path casing.
+	var relative := normalized_path.substr(normalized_root.length()).trim_prefix("/")
+	var cursor := normalized_root
+	for component: String in relative.split("/", false):
+		var directory := DirAccess.open(cursor)
+		if directory == null:
+			return false
+		if directory.is_link(component):
+			return true
+		cursor = cursor.path_join(component)
+	return false
+
+
+func _write_report(complete: bool) -> bool:
+	if _report_write_failed:
+		return false
 	var absolute_path: String = _globalized_out_path()
 	var parent_dir: String = absolute_path.get_base_dir()
-	if not parent_dir.is_empty():
-		DirAccess.make_dir_recursive_absolute(parent_dir)
-	var file := FileAccess.open(absolute_path, FileAccess.WRITE)
+	if parent_dir.is_empty():
+		return _report_error("Report path has no parent directory: %s" % absolute_path)
+	var directory_error := DirAccess.make_dir_recursive_absolute(parent_dir)
+	if directory_error != OK and not DirAccess.dir_exists_absolute(parent_dir):
+		return _report_error(
+			"Could not create report directory %s (%s)"
+			% [parent_dir, error_string(directory_error)]
+		)
+	if not _validate_out_path():
+		return _report_error("Report path became unsafe before write: %s" % absolute_path)
+	var recovery_error := _recover_orphaned_report_backup(absolute_path)
+	if recovery_error != OK:
+		return _report_error(
+			"Could not recover interrupted report transaction for %s (%s)"
+			% [absolute_path, error_string(recovery_error)]
+		)
+
+	var identity := _report_identity(complete)
+	var temporary_path := _reserve_report_temp_path(absolute_path)
+	if temporary_path.is_empty():
+		return _report_error("Could not reserve transactional report beside %s" % absolute_path)
+	var file := FileAccess.open(temporary_path, FileAccess.WRITE)
 	if file == null:
-		_fail("Could not write report %s" % absolute_path)
-		return
+		return _report_error(
+			"Could not open transactional report %s (%s)"
+			% [temporary_path, error_string(FileAccess.get_open_error())]
+		)
 	var report := {
 		"schema_version": 2,
-		"build_tag": _build_tag,
-		"mode": "soak" if _soak_mode else "balance",
-		"complete": complete,
-		"aborted": _aborted,
-		"run_count": _runs.size(),
+		"build_tag": identity["build_tag"],
+		"mode": identity["mode"],
+		"missions": identity["missions"],
+		"families": identity["families"],
+		"trials": identity["trials"],
+		"expected_run_count": identity["expected_run_count"],
+		"complete": identity["complete"],
+		"aborted": identity["aborted"],
+		"ok": identity["ok"],
+		"run_count": identity["run_count"],
 		"trials_per_pair": _trials,
 		"simulation_time_scale": _time_scale,
 		"summary": _summary(),
 		"failures": _failures,
 		"runs": _runs,
 	}
-	file.store_string(JSON.stringify(report, "\t", false))
+	var encoded := JSON.stringify(report, "\t", false)
+	if encoded.is_empty():
+		file.close()
+		DirAccess.remove_absolute(temporary_path)
+		return _report_error("JSON encoder returned an empty balance report")
+	file.store_string(encoded)
+	file.flush()
+	var write_error := file.get_error()
 	file.close()
+	if write_error != OK:
+		DirAccess.remove_absolute(temporary_path)
+		return _report_error(
+			"Could not flush report %s (%s)" % [temporary_path, error_string(write_error)]
+		)
+	if not _verify_report_file(temporary_path, encoded, identity):
+		DirAccess.remove_absolute(temporary_path)
+		return _report_error(
+			"Transactional report failed payload/schema verification: %s" % temporary_path
+		)
+	if not _validate_out_path():
+		DirAccess.remove_absolute(temporary_path)
+		return _report_error("Report path became unsafe before rename: %s" % absolute_path)
+	return _transactionally_publish_report(
+		temporary_path, absolute_path, encoded, identity
+	)
+
+
+func _report_identity(complete: bool) -> Dictionary:
+	var missions: Array[String] = []
+	var selected_missions: Array[StringName] = (
+		_Content.mission_ids() if _mission_filter.is_empty() else _mission_filter
+	)
+	for mission_id: StringName in selected_missions:
+		missions.append(String(mission_id))
+	var families: Array[String] = []
+	for family_id: StringName in _family_filter:
+		families.append(String(family_id))
+	var expected_run_count := missions.size() * families.size() * _trials
+	return {
+		"build_tag": _build_tag,
+		"mode": "soak" if _soak_mode else "balance",
+		"missions": missions,
+		"families": families,
+		"trials": _trials,
+		"expected_run_count": expected_run_count,
+		"complete": complete,
+		"aborted": _aborted,
+		"ok": (
+			complete
+			and not _aborted
+			and _failures.is_empty()
+			and _runs.size() == expected_run_count
+		),
+		"run_count": _runs.size(),
+	}
+
+
+func _reserve_report_temp_path(absolute_path: String) -> String:
+	return _reserve_report_sibling(absolute_path, "tmp")
+
+
+func _reserve_report_sibling(absolute_path: String, kind: String) -> String:
+	var parent_dir := absolute_path.get_base_dir()
+	var file_name := absolute_path.get_file()
+	var nonce := "%d-%d-%d-%s" % [
+		OS.get_process_id(),
+		int(Time.get_unix_time_from_system() * 1000000.0),
+		Time.get_ticks_usec(),
+		Crypto.new().generate_random_bytes(12).hex_encode(),
+	]
+	for attempt: int in REPORT_TEMP_ATTEMPTS:
+		var candidate := parent_dir.path_join(
+			".%s.%s-%s-%02d" % [file_name, kind, nonce, attempt]
+		)
+		if not FileAccess.file_exists(candidate) and not DirAccess.dir_exists_absolute(candidate):
+			return candidate
+	return ""
+
+
+func _transactionally_publish_report(
+	temporary_path: String,
+	absolute_path: String,
+	expected_text: String,
+	expected_identity: Dictionary
+) -> bool:
+	# Godot's Windows rename removes an existing destination first. Move the old
+	# report to a unique sibling, publish, verify, and only then remove the backup.
+	# This is transactional replacement rather than a cross-platform atomic claim.
+	var backup_path := ""
+	if DirAccess.dir_exists_absolute(absolute_path):
+		DirAccess.remove_absolute(temporary_path)
+		return _report_error("Report target is a directory: %s" % absolute_path)
+	if FileAccess.file_exists(absolute_path):
+		if _final_component_is_link(absolute_path):
+			DirAccess.remove_absolute(temporary_path)
+			return _report_error("Report target became a symbolic link: %s" % absolute_path)
+		backup_path = _reserve_report_sibling(absolute_path, "backup")
+		if backup_path.is_empty():
+			DirAccess.remove_absolute(temporary_path)
+			return _report_error("Could not reserve report backup beside %s" % absolute_path)
+		var preserve_error := DirAccess.rename_absolute(absolute_path, backup_path)
+		if preserve_error != OK:
+			DirAccess.remove_absolute(temporary_path)
+			return _report_error(
+				"Could not preserve previous report %s (%s)"
+				% [absolute_path, error_string(preserve_error)]
+			)
+	var publish_error := DirAccess.rename_absolute(temporary_path, absolute_path)
+	if publish_error != OK:
+		_restore_report_backup(absolute_path, backup_path)
+		if FileAccess.file_exists(temporary_path):
+			DirAccess.remove_absolute(temporary_path)
+		return _report_error(
+			"Transactional report publish failed for %s (%s); previous report remains recoverable"
+			% [absolute_path, error_string(publish_error)]
+		)
+	if not _verify_report_file(absolute_path, expected_text, expected_identity):
+		_restore_report_backup(absolute_path, backup_path)
+		return _report_error(
+			"Published report failed verification; previous report remains recoverable: %s"
+			% absolute_path
+		)
+	if not backup_path.is_empty() and FileAccess.file_exists(backup_path):
+		var cleanup_error := DirAccess.remove_absolute(backup_path)
+		if cleanup_error != OK:
+			push_warning("Verified report published; backup cleanup failed: %s" % backup_path)
+	_cleanup_report_backups(absolute_path)
+	return true
+
+
+func _restore_report_backup(absolute_path: String, backup_path: String) -> void:
+	if backup_path.is_empty() or not FileAccess.file_exists(backup_path):
+		return
+	var displaced_path := ""
+	if FileAccess.file_exists(absolute_path):
+		displaced_path = _reserve_report_sibling(absolute_path, "failed")
+		if displaced_path.is_empty():
+			push_error("Previous report remains recoverable at %s" % backup_path)
+			return
+		if DirAccess.rename_absolute(absolute_path, displaced_path) != OK:
+			push_error("Previous report remains recoverable at %s" % backup_path)
+			return
+	elif DirAccess.dir_exists_absolute(absolute_path):
+		push_error("Previous report remains recoverable at %s" % backup_path)
+		return
+	var restore_error := DirAccess.rename_absolute(backup_path, absolute_path)
+	if restore_error != OK:
+		push_error(
+			"Report restore failed; previous report remains at %s (%s)"
+			% [backup_path, error_string(restore_error)]
+		)
+		return
+	print("BALANCE_REPORT_TRANSACTION_RESTORED %s" % absolute_path)
+	if not displaced_path.is_empty() and FileAccess.file_exists(displaced_path):
+		DirAccess.remove_absolute(displaced_path)
+
+
+func _recover_orphaned_report_backup(absolute_path: String) -> Error:
+	if FileAccess.file_exists(absolute_path):
+		return OK
+	if DirAccess.dir_exists_absolute(absolute_path):
+		return ERR_INVALID_PARAMETER
+	var parent_path := absolute_path.get_base_dir()
+	var directory := DirAccess.open(parent_path)
+	if directory == null:
+		return OK
+	directory.include_hidden = true
+	var prefix := ".%s.backup-" % absolute_path.get_file()
+	var backups: Array[String] = []
+	directory.list_dir_begin()
+	var entry := directory.get_next()
+	while not entry.is_empty():
+		if _filesystem_compare_path(entry).begins_with(_filesystem_compare_path(prefix)):
+			if directory.current_is_dir() or directory.is_link(entry):
+				directory.list_dir_end()
+				return ERR_INVALID_PARAMETER
+			var candidate := parent_path.path_join(entry)
+			if _verify_report_file(candidate):
+				backups.append(candidate)
+		entry = directory.get_next()
+	directory.list_dir_end()
+	if backups.is_empty():
+		return OK
+	backups.sort_custom(func(left: String, right: String) -> bool:
+		return FileAccess.get_modified_time(left) > FileAccess.get_modified_time(right)
+	)
+	var backup_path := backups[0]
+	var recovery_error := DirAccess.rename_absolute(backup_path, absolute_path)
+	if recovery_error != OK:
+		return recovery_error
+	if not _verify_report_file(absolute_path):
+		return ERR_FILE_CORRUPT
+	print("BALANCE_REPORT_TRANSACTION_RECOVERED path=%s backup=%s" % [absolute_path, backup_path])
+	return OK
+
+
+func _final_component_is_link(absolute_path: String) -> bool:
+	var parent := DirAccess.open(absolute_path.get_base_dir())
+	return parent != null and parent.is_link(absolute_path.get_file())
+
+
+func _cleanup_report_backups(absolute_path: String) -> void:
+	var directory := DirAccess.open(absolute_path.get_base_dir())
+	if directory == null:
+		return
+	directory.include_hidden = true
+	var prefix := ".%s.backup-" % absolute_path.get_file()
+	directory.list_dir_begin()
+	var entry := directory.get_next()
+	while not entry.is_empty():
+		if (
+			_filesystem_compare_path(entry).begins_with(_filesystem_compare_path(prefix))
+			and not directory.current_is_dir()
+			and not directory.is_link(entry)
+		):
+			DirAccess.remove_absolute(absolute_path.get_base_dir().path_join(entry))
+		entry = directory.get_next()
+	directory.list_dir_end()
+
+
+func _verify_report_file(
+	path: String, expected_text: String = "", expected_identity: Dictionary = {}
+) -> bool:
+	var file := FileAccess.open(path, FileAccess.READ)
+	if file == null or file.get_length() <= 0:
+		return false
+	var text := file.get_as_text()
+	file.close()
+	if text.strip_edges().is_empty():
+		return false
+	if not expected_text.is_empty() and text != expected_text:
+		return false
+	var parsed: Variant = JSON.parse_string(text)
+	if not parsed is Dictionary:
+		return false
+	return _report_schema_error(parsed as Dictionary, expected_identity).is_empty()
+
+
+func _report_schema_error(report: Dictionary, expected_identity: Dictionary = {}) -> String:
+	var required_fields: PackedStringArray = [
+		"schema_version", "build_tag", "mode", "missions", "families", "trials",
+		"expected_run_count", "complete", "aborted", "ok", "run_count",
+		"trials_per_pair", "simulation_time_scale", "summary", "failures", "runs",
+	]
+	for field: String in required_fields:
+		if not report.has(field):
+			return "missing required report field %s" % field
+	if not _json_integer_equals(report["schema_version"], 2):
+		return "schema_version must equal 2"
+	if not report["build_tag"] is String or String(report["build_tag"]).is_empty():
+		return "build_tag must be a non-empty string"
+	if report["mode"] is not String or String(report["mode"]) not in ["balance", "soak"]:
+		return "mode must be balance or soak"
+	if report["complete"] is not bool or report["aborted"] is not bool or report["ok"] is not bool:
+		return "complete, aborted, and ok must be booleans"
+	if report["summary"] is not Dictionary:
+		return "summary must be a dictionary"
+	if report["failures"] is not Array or report["runs"] is not Array:
+		return "failures and runs must be arrays"
+	for failure: Variant in report["failures"] as Array:
+		if failure is not String:
+			return "every failure must be a string"
+
+	var missions_error := _report_string_list_error(
+		report["missions"], "missions", _Content.mission_ids()
+	)
+	if not missions_error.is_empty():
+		return missions_error
+	var families_error := _report_string_list_error(
+		report["families"], "families", ALL_FAMILIES
+	)
+	if not families_error.is_empty():
+		return families_error
+	var missions := report["missions"] as Array
+	var families := report["families"] as Array
+	if not _json_integer_in_range(report["trials"], 1, MAX_TRIALS):
+		return "trials must be a bounded integer"
+	var trials := int(report["trials"])
+	if not _json_integer_equals(report["trials_per_pair"], trials):
+		return "trials_per_pair must equal trials"
+	var expected_run_count := missions.size() * families.size() * trials
+	if not _json_integer_equals(report["expected_run_count"], expected_run_count):
+		return "expected_run_count does not match requested matrix"
+	var runs := report["runs"] as Array
+	if not _json_integer_equals(report["run_count"], runs.size()):
+		return "run_count does not match runs size"
+	if runs.size() > expected_run_count:
+		return "run_count exceeds requested matrix"
+	if bool(report["complete"]) and not bool(report["aborted"]) and runs.size() != expected_run_count:
+		return "complete report does not contain the requested matrix"
+	var expected_ok := (
+		bool(report["complete"])
+		and not bool(report["aborted"])
+		and (report["failures"] as Array).is_empty()
+		and runs.size() == expected_run_count
+	)
+	if bool(report["ok"]) != expected_ok:
+		return "ok does not match report completion/failures/counts"
+	var scale: Variant = report["simulation_time_scale"]
+	if typeof(scale) not in [TYPE_INT, TYPE_FLOAT] or not is_finite(float(scale)):
+		return "simulation_time_scale must be finite"
+
+	var seen_runs := {}
+	for raw_run: Variant in runs:
+		if raw_run is not Dictionary:
+			return "every run must be a dictionary"
+		var run := raw_run as Dictionary
+		for field: String in ["mission_id", "family_id", "trial", "build_tag"]:
+			if not run.has(field):
+				return "run is missing %s" % field
+		var mission_id := str(run["mission_id"])
+		var family_id := str(run["family_id"])
+		if mission_id not in missions or family_id not in families:
+			return "run escaped requested mission/family matrix"
+		if not _json_integer_in_range(run["trial"], 1, trials):
+			return "run trial is outside requested range"
+		if str(run["build_tag"]) != str(report["build_tag"]):
+			return "run build_tag does not match report build_tag"
+		var run_key := "%s|%s|%d" % [mission_id, family_id, int(run["trial"])]
+		if seen_runs.has(run_key):
+			return "duplicate run identity %s" % run_key
+		seen_runs[run_key] = true
+
+	if not expected_identity.is_empty():
+		for field: String in [
+			"build_tag", "mode", "missions", "families", "trials",
+			"expected_run_count", "complete", "aborted", "ok", "run_count",
+		]:
+			if not expected_identity.has(field) or report[field] != expected_identity[field]:
+				return "report identity mismatch at %s" % field
+	return ""
+
+
+func _report_string_list_error(
+	raw_values: Variant, field: String, allowed_values: Array[StringName]
+) -> String:
+	if raw_values is not Array or (raw_values as Array).is_empty():
+		return "%s must be a non-empty array" % field
+	var seen := {}
+	for raw_value: Variant in raw_values as Array:
+		if raw_value is not String:
+			return "%s values must be strings" % field
+		var value := String(raw_value)
+		if StringName(value) not in allowed_values:
+			return "%s contains unknown value %s" % [field, value]
+		if seen.has(value):
+			return "%s contains duplicate value %s" % [field, value]
+		seen[value] = true
+	return ""
+
+
+func _json_integer_equals(raw_value: Variant, expected: int) -> bool:
+	return (
+		typeof(raw_value) in [TYPE_INT, TYPE_FLOAT]
+		and is_finite(float(raw_value))
+		and float(raw_value) == float(expected)
+	)
+
+
+func _json_integer_in_range(raw_value: Variant, minimum: int, maximum: int) -> bool:
+	if typeof(raw_value) not in [TYPE_INT, TYPE_FLOAT] or not is_finite(float(raw_value)):
+		return false
+	var value := float(raw_value)
+	return value == floorf(value) and value >= float(minimum) and value <= float(maximum)
+
+
+func _report_error(message: String) -> bool:
+	_report_write_failed = true
+	_fail(message)
+	return false
 
 
 func _summary() -> Dictionary:
@@ -464,3 +1108,15 @@ func _summary() -> Dictionary:
 
 func _fail(message: String) -> void:
 	_failures.append(message)
+
+
+func _quit_for_qa_startup_failure(research_state: Node) -> bool:
+	if research_state == null or not research_state.has_method("qa_startup_failed"):
+		return false
+	if not bool(research_state.call("qa_startup_failed")):
+		return false
+	var exit_code := 74
+	if research_state.has_method("qa_startup_failure_exit_code"):
+		exit_code = int(research_state.call("qa_startup_failure_exit_code"))
+	quit(exit_code)
+	return true

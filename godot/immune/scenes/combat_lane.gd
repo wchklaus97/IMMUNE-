@@ -19,6 +19,7 @@ const _Bolt := preload("res://combat/plasma_bolt.gd")
 const _Tokens := preload("res://ui/research/research_tokens.gd")
 const _Content := preload("res://resources/combat/combat_content.gd")
 const _Look := preload("res://characters/family_look.gd")
+const _LightContract := preload("res://characters/gel/light_contract.gd")
 const _PauseMenu := preload("res://ui/pause_menu.gd")
 const _PlaytestTelemetry := preload("res://combat/combat_playtest_telemetry.gd")
 
@@ -31,6 +32,26 @@ const CLEANSE_CENTER := Vector3(0.0, 0.55, 7.0)
 const STRAFE_LIMIT := 5.4
 const REAR_LIMIT := -7.0
 const FRONT_LIMIT := 8.4
+const PORTRAIT_RENDER_SIZE := Vector2i(336, 252)
+const PORTRAIT_DISPLAY_SIZE := Vector2(344.0, 260.0)
+const PORTRAIT_LEFT_MARGIN := 24.0
+const PORTRAIT_BOTTOM_CLEARANCE := 108.0
+const PORTRAIT_MIN_VIEWPORT := Vector2(1200.0, 620.0)
+const PORTRAIT_MIN_ASPECT := 1.45
+const PORTRAIT_SCALE := {
+	"T": 1.72,
+	"B": 1.58,
+	"M": 1.32,
+	"N": 1.62,
+	"A": 1.32,
+	"D": 1.36,
+}
+const PORTRAIT_Y := {
+	"B": 0.64,
+}
+const HUD_TALL_ASPECT_MAX := 0.8
+const HUD_TALL_SCALE := 2.25
+const HUD_BASE_FONT_SIZE := 16
 
 @export var mission_data: ImmuneMissionData
 @export var auto_spawn: bool = true
@@ -56,6 +77,9 @@ var _core_value: Label
 var _boss_row: Control
 var _boss_bar: ProgressBar
 var _boss_value: Label
+var _hud_root: Control
+var _hud_theme: Theme
+var _hud_layout_scale: float = 1.0
 var _duty_button: Button
 var _intel_button: Button
 var _back_button: Button
@@ -68,6 +92,14 @@ var _cleanse_material: StandardMaterial3D
 var _cleanse_ring_materials: Array[StandardMaterial3D] = []
 var _arena_visuals: Node3D
 var _pause_menu: ImmunePauseMenu
+var _portrait_layer: CanvasLayer
+var _portrait_frame: PanelContainer
+var _portrait_viewport: SubViewport
+var _portrait_stage: Node3D
+var _portrait_camera: Camera3D
+var _portrait_character: ImmuneCharacter
+var _portrait_refresh_frames: int = 0
+var _portrait_layout_frames: int = 0
 var _spawn_cd: float = 1.0
 var _fire_cd: float = 0.35
 var _hud_refresh_cd: float = 0.0
@@ -96,7 +128,9 @@ func _ready() -> void:
 	_spawn_core()
 	_spawn_player()
 	_build_hud()
+	_build_combat_portrait()
 	_build_pause_menu()
+	_assert_jelly_light_contract()
 	if ResearchState.has_signal("duty_unlocked"):
 		ResearchState.duty_unlocked.connect(_on_duty_unlocked)
 	SettingsState.input_device_changed.connect(_on_input_device_changed)
@@ -112,9 +146,37 @@ func _ready() -> void:
 		_show_onboarding()
 
 
+func _assert_jelly_light_contract() -> void:
+	if not OS.is_debug_build():
+		return
+	var contract_error: String = _LightContract.error(self, "combat runtime")
+	assert(contract_error.is_empty(), contract_error)
+
+
+func _exit_tree() -> void:
+	if get_viewport() != null and get_viewport().size_changed.is_connected(_on_viewport_size_changed):
+		get_viewport().size_changed.disconnect(_on_viewport_size_changed)
+	_shutdown_combat_portrait()
+
+
+func _process(_delta: float) -> void:
+	if _portrait_layout_frames > 0:
+		_portrait_layout_frames -= 1
+		_layout_combat_portrait()
+	if _portrait_refresh_frames <= 0 or _portrait_viewport == null:
+		return
+	if _portrait_frame == null or not _portrait_frame.visible:
+		_portrait_refresh_frames = 0
+		_portrait_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
+		return
+	_portrait_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
+	_portrait_refresh_frames -= 1
+
+
 func _on_duty_unlocked(family: StringName, _duty: StringName) -> void:
 	if family == _family_profile.family_id:
 		_refresh_hud()
+		call_deferred("_sync_combat_portrait_duty")
 
 
 func _on_input_device_changed(_is_gamepad: bool) -> void:
@@ -181,6 +243,7 @@ func _toggle_duty() -> void:
 	else:
 		_player.transform_duty(&"fixed")
 		_set_status(tr("STATUS_DUTY_FIXED"))
+	_sync_combat_portrait_duty()
 	AudioDirector.play_sfx(&"duty")
 	_refresh_hud()
 	WebQaBridge.publish(&"duty_changed", {
@@ -241,6 +304,7 @@ func _update_playtest_autopilot() -> void:
 	var desired_duty: StringName = expedition_duty if current_phase == Phase.EXPEDITION else &"fixed"
 	if _player.duty != desired_duty:
 		_player.transform_duty(desired_duty)
+		_sync_combat_portrait_duty()
 		if _telemetry != null:
 			_telemetry.record_duty_switch()
 
@@ -804,17 +868,312 @@ func _spawn_player() -> void:
 	add_child(_player)
 
 
+func _build_combat_portrait() -> void:
+	# The live player must stay small enough for lane tactics. This bounded,
+	# own-world render gives the material and duty silhouette a readable HUD-scale
+	# presentation without touching gameplay camera, transforms, or collision.
+	_portrait_layer = CanvasLayer.new()
+	_portrait_layer.name = "CombatHeroPortraitLayer"
+	_portrait_layer.layer = 2
+	add_child(_portrait_layer)
+	_portrait_frame = PanelContainer.new()
+	_portrait_frame.name = "CombatHeroPortrait"
+	_portrait_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_portrait_frame.clip_contents = true
+	var frame_style := StyleBoxFlat.new()
+	frame_style.bg_color = Color(0.018, 0.035, 0.055, 0.94)
+	frame_style.border_color = Color(mission_data.zone_color, 0.72)
+	frame_style.set_border_width_all(1)
+	frame_style.set_corner_radius_all(14)
+	frame_style.content_margin_left = 4.0
+	frame_style.content_margin_top = 4.0
+	frame_style.content_margin_right = 4.0
+	frame_style.content_margin_bottom = 4.0
+	_portrait_frame.add_theme_stylebox_override("panel", frame_style)
+	_portrait_layer.add_child(_portrait_frame)
+	var viewport_container := SubViewportContainer.new()
+	viewport_container.name = "CombatHeroViewportContainer"
+	viewport_container.stretch = true
+	viewport_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	viewport_container.custom_minimum_size = Vector2(PORTRAIT_RENDER_SIZE)
+	viewport_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	viewport_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_portrait_frame.add_child(viewport_container)
+	_portrait_viewport = SubViewport.new()
+	_portrait_viewport.name = "CombatHeroViewport"
+	_portrait_viewport.size = PORTRAIT_RENDER_SIZE
+	_portrait_viewport.transparent_bg = true
+	_portrait_viewport.own_world_3d = true
+	_portrait_viewport.msaa_3d = Viewport.MSAA_2X
+	_portrait_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
+	viewport_container.add_child(_portrait_viewport)
+	_portrait_stage = Node3D.new()
+	_portrait_stage.name = "CombatHeroStage"
+	_portrait_viewport.add_child(_portrait_stage)
+	var env := WorldEnvironment.new()
+	var environment := Environment.new()
+	environment.background_mode = Environment.BG_COLOR
+	environment.background_color = Color(0.008, 0.016, 0.028)
+	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	environment.ambient_light_color = Color(0.46, 0.58, 0.72)
+	environment.ambient_light_energy = 0.46
+	environment.tonemap_mode = Environment.TONE_MAPPER_ACES
+	env.environment = environment
+	_portrait_stage.add_child(env)
+	var key := DirectionalLight3D.new()
+	key.name = "CombatHeroKey"
+	key.rotation_degrees = Vector3(-40.0, -25.0, 0.0)
+	key.light_color = Color(1.0, 0.95, 0.88)
+	key.light_energy = 1.55
+	key.shadow_enabled = true
+	_portrait_stage.add_child(key)
+	var rim := DirectionalLight3D.new()
+	rim.name = "CombatHeroRim"
+	rim.rotation_degrees = Vector3(-20.0, 155.0, 0.0)
+	rim.light_color = Color(0.34, 0.58, 1.0)
+	rim.light_energy = 0.85
+	_portrait_stage.add_child(rim)
+	_portrait_camera = Camera3D.new()
+	_portrait_camera.name = "CombatHeroCamera"
+	_portrait_camera.position = Vector3(1.0, 1.45, 3.75)
+	_portrait_camera.fov = 29.5
+	_portrait_camera.look_at_from_position(
+		_portrait_camera.position, Vector3(0.0, 0.55, 0.0), Vector3.UP
+	)
+	_portrait_camera.current = true
+	_portrait_stage.add_child(_portrait_camera)
+	if not get_viewport().size_changed.is_connected(_on_viewport_size_changed):
+		get_viewport().size_changed.connect(_on_viewport_size_changed)
+	_connect_portrait_layout_signals()
+	_request_combat_portrait_layout(8)
+
+
+func _spawn_combat_portrait_character() -> void:
+	if _portrait_stage == null or _family_profile == null:
+		return
+	if _portrait_character != null and is_instance_valid(_portrait_character):
+		return
+	var family := String(_family_profile.family_id)
+	var path := str(_Look.SCENE_PATH.get(family, _Look.SCENE_PATH["T"]))
+	var scene := load(path) as PackedScene
+	if scene == null:
+		push_warning("CombatLane: portrait family scene missing %s" % path)
+		return
+	_portrait_character = scene.instantiate() as ImmuneCharacter
+	if _portrait_character == null:
+		push_warning("CombatLane: portrait scene did not instantiate ImmuneCharacter")
+		return
+	_portrait_character.name = "CombatHeroCharacter"
+	_portrait_character.position = Vector3(0.0, float(PORTRAIT_Y.get(family, -0.12)), 0.0)
+	_portrait_character.rotation_degrees.y = -18.0
+	_portrait_character.scale = Vector3.ONE * float(PORTRAIT_SCALE.get(family, 1.45))
+	_portrait_stage.add_child(_portrait_character)
+	# CharacterRoot normally listens to the global unlock signal. The presentation
+	# clone must not race the live player/CombatLane sync or start an animation
+	# while its process mode is frozen.
+	var unlock_callback := Callable(_portrait_character, "_on_duty_unlocked")
+	if ResearchState.duty_unlocked.is_connected(unlock_callback):
+		ResearchState.duty_unlocked.disconnect(unlock_callback)
+	_portrait_character.remove_from_group("immune_character")
+	_disable_portrait_gameplay_nodes(_portrait_character)
+	_sync_combat_portrait_duty()
+	# The portrait is a frozen presentation pose. Its SubViewport is updated only
+	# on demand, so letting the cloned idle animation keep ticking would spend CPU
+	# on transforms that are not rendered (including while the portrait is hidden).
+	_portrait_character.process_mode = Node.PROCESS_MODE_DISABLED
+
+
+func _disable_portrait_gameplay_nodes(node: Node) -> void:
+	if node is CollisionObject3D:
+		var collision_object := node as CollisionObject3D
+		collision_object.collision_layer = 0
+		collision_object.collision_mask = 0
+	elif node is CollisionShape3D:
+		(node as CollisionShape3D).disabled = true
+	elif node is GPUParticles3D:
+		var particles := node as GPUParticles3D
+		particles.emitting = false
+		particles.visible = false
+	for child in node.get_children():
+		_disable_portrait_gameplay_nodes(child)
+
+
+func _sync_combat_portrait_duty() -> void:
+	if _player == null or _portrait_character == null:
+		return
+	_portrait_character.process_mode = Node.PROCESS_MODE_INHERIT
+	var target_duty := _player.duty
+	if _family_profile.family_id == &"A" and target_duty == &"mobile":
+		target_duty = &"relay"
+	if _portrait_character.duty != target_duty:
+		_portrait_character.transform_duty(target_duty)
+		# Resolve the cloned duty transition immediately. The live character keeps
+		# its normal animation; only this isolated presentation clone is advanced.
+		var animation_player := _portrait_character.animation_player
+		if animation_player != null:
+			animation_player.advance(1.2)
+	_disable_portrait_gameplay_nodes(_portrait_character)
+	_portrait_character.process_mode = Node.PROCESS_MODE_DISABLED
+	_refresh_combat_portrait(4)
+
+
+func _refresh_combat_portrait(frames: int = 2) -> void:
+	if _portrait_viewport == null or _portrait_frame == null or not _portrait_frame.visible:
+		return
+	_portrait_refresh_frames = maxi(_portrait_refresh_frames, frames)
+	_portrait_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
+
+
+func _on_viewport_size_changed() -> void:
+	_apply_hud_responsive_layout()
+	_request_combat_portrait_layout(4)
+
+
+func _connect_portrait_layout_signals() -> void:
+	for control_name in ["ActionTray", "MissionBriefingPanel", "VitalsPanel"]:
+		var control := find_child(control_name, true, false) as Control
+		if control == null:
+			continue
+		if not control.minimum_size_changed.is_connected(_on_critical_hud_geometry_changed):
+			control.minimum_size_changed.connect(_on_critical_hud_geometry_changed)
+		# Container layout is deferred after minimum_size_changed. Observe the
+		# resulting rect as well so a hidden portrait can be rebuilt even while
+		# CombatLane processing is paused or frozen by a menu/capture harness.
+		if not control.resized.is_connected(_on_critical_hud_geometry_changed):
+			control.resized.connect(_on_critical_hud_geometry_changed)
+		if not control.visibility_changed.is_connected(_on_critical_hud_geometry_changed):
+			control.visibility_changed.connect(_on_critical_hud_geometry_changed)
+
+
+func _on_critical_hud_geometry_changed() -> void:
+	_request_combat_portrait_layout(4)
+
+
+func _request_combat_portrait_layout(frames: int = 4) -> void:
+	_portrait_layout_frames = maxi(_portrait_layout_frames, frames)
+	call_deferred("_layout_combat_portrait")
+
+
+func _layout_combat_portrait() -> void:
+	if _portrait_frame == null or _portrait_viewport == null:
+		return
+	var viewport_size := get_viewport().get_visible_rect().size
+	var display_rect := _combat_portrait_display_rect(viewport_size)
+	var can_show := _combat_portrait_can_show(viewport_size, display_rect)
+	if not can_show:
+		_portrait_frame.visible = false
+		_portrait_refresh_frames = 0
+		_portrait_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
+		_discard_combat_portrait_character()
+		return
+	_portrait_frame.visible = true
+	if _portrait_character == null or not is_instance_valid(_portrait_character):
+		_spawn_combat_portrait_character()
+	if _portrait_character == null:
+		_portrait_frame.visible = false
+		_portrait_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
+		return
+	_portrait_frame.anchor_left = 0.0
+	_portrait_frame.anchor_top = 1.0
+	_portrait_frame.anchor_right = 0.0
+	_portrait_frame.anchor_bottom = 1.0
+	_portrait_frame.offset_left = display_rect.position.x
+	_portrait_frame.offset_top = -PORTRAIT_BOTTOM_CLEARANCE - PORTRAIT_DISPLAY_SIZE.y
+	_portrait_frame.offset_right = display_rect.end.x
+	_portrait_frame.offset_bottom = -PORTRAIT_BOTTOM_CLEARANCE
+	_refresh_combat_portrait(4)
+
+
+func _discard_combat_portrait_character() -> void:
+	if _portrait_character == null:
+		return
+	var discarded := _portrait_character
+	_portrait_character = null
+	if is_instance_valid(discarded):
+		discarded.process_mode = Node.PROCESS_MODE_DISABLED
+		if discarded.get_parent() != null:
+			discarded.get_parent().remove_child(discarded)
+		discarded.queue_free()
+
+
+func _combat_portrait_display_rect(viewport_size: Vector2) -> Rect2:
+	return Rect2(
+		Vector2(
+			PORTRAIT_LEFT_MARGIN,
+			viewport_size.y - PORTRAIT_BOTTOM_CLEARANCE - PORTRAIT_DISPLAY_SIZE.y
+		),
+		PORTRAIT_DISPLAY_SIZE
+	)
+
+
+func _combat_portrait_can_show(viewport_size: Vector2, display_rect: Rect2) -> bool:
+	var can_show := (
+		viewport_size.x >= PORTRAIT_MIN_VIEWPORT.x
+		and viewport_size.y >= PORTRAIT_MIN_VIEWPORT.y
+		and viewport_size.x / maxf(viewport_size.y, 1.0) >= PORTRAIT_MIN_ASPECT
+	)
+	if can_show:
+		# Keep a protected central playfield and never overlap the three critical
+		# HUD surfaces. Narrow/tall layouts hide the optional portrait instead.
+		var center_playfield := Rect2(
+			Vector2(viewport_size.x * 0.30, viewport_size.y * 0.20),
+			Vector2(viewport_size.x * 0.40, viewport_size.y * 0.62)
+		)
+		can_show = not display_rect.intersects(center_playfield)
+		for control_name in ["ActionTray", "MissionBriefingPanel", "VitalsPanel"]:
+			var control := find_child(control_name, true, false) as Control
+			if control != null and control.is_visible_in_tree():
+				can_show = can_show and not display_rect.grow(8.0).intersects(control.get_global_rect())
+	return can_show
+
+
+func _combat_portrait_should_show() -> bool:
+	var viewport_size := get_viewport().get_visible_rect().size
+	return _combat_portrait_can_show(
+		viewport_size, _combat_portrait_display_rect(viewport_size)
+	)
+
+
+func _shutdown_combat_portrait() -> void:
+	_portrait_refresh_frames = 0
+	_portrait_layout_frames = 0
+	if _portrait_viewport != null and is_instance_valid(_portrait_viewport):
+		_portrait_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
+	if _portrait_character != null and is_instance_valid(_portrait_character):
+		_portrait_character.set_process(false)
+	_portrait_character = null
+	_portrait_camera = null
+	_portrait_stage = null
+	_portrait_viewport = null
+	_portrait_frame = null
+	_portrait_layer = null
+
+
 func _build_hud() -> void:
 	var layer := CanvasLayer.new()
 	layer.layer = 3
 	add_child(layer)
+	_hud_root = Control.new()
+	_hud_root.name = "CombatHudRoot"
+	_hud_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_hud_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_hud_theme = Theme.new()
+	_hud_theme.default_font_size = HUD_BASE_FONT_SIZE
+	_hud_root.theme = _hud_theme
+	layer.add_child(_hud_root)
+	# HUD owns viewport responsiveness; the optional portrait observes the same
+	# idempotent callback but is not required for tall-layout updates to work.
+	if not get_viewport().size_changed.is_connected(_on_viewport_size_changed):
+		get_viewport().size_changed.connect(_on_viewport_size_changed)
 	var top_margin := MarginContainer.new()
+	top_margin.name = "HudTopMargin"
 	top_margin.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
 	top_margin.add_theme_constant_override("margin_left", 24)
 	top_margin.add_theme_constant_override("margin_top", 18)
 	top_margin.add_theme_constant_override("margin_right", 24)
-	layer.add_child(top_margin)
+	_hud_root.add_child(top_margin)
 	var top_row := HBoxContainer.new()
+	top_row.name = "HudTopRow"
 	top_row.add_theme_constant_override("separation", 16)
 	top_margin.add_child(top_row)
 	var briefing_panel := PanelContainer.new()
@@ -825,6 +1184,7 @@ func _build_hud() -> void:
 	))
 	top_row.add_child(briefing_panel)
 	var panel := VBoxContainer.new()
+	panel.name = "BriefingColumn"
 	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	panel.add_theme_constant_override("separation", 6)
 	briefing_panel.add_child(panel)
@@ -849,11 +1209,13 @@ func _build_hud() -> void:
 	))
 	top_row.add_child(vitals_panel)
 	var vitals := VBoxContainer.new()
+	vitals.name = "VitalsColumn"
 	vitals.add_theme_constant_override("separation", 8)
 	vitals_panel.add_child(vitals)
 	var core_row := HBoxContainer.new()
 	vitals.add_child(core_row)
 	var core_label := Label.new()
+	core_label.name = "CoreLabel"
 	core_label.text = "UI_IMMUNE_CORE"
 	core_label.custom_minimum_size.x = 90
 	core_row.add_child(core_label)
@@ -872,6 +1234,7 @@ func _build_hud() -> void:
 	_boss_row.visible = false
 	vitals.add_child(_boss_row)
 	var boss_label := Label.new()
+	boss_label.name = "BossLabel"
 	boss_label.text = "Boss"
 	boss_label.custom_minimum_size.x = 90
 	_boss_row.add_child(boss_label)
@@ -884,12 +1247,13 @@ func _build_hud() -> void:
 	_boss_value = Label.new()
 	_boss_row.add_child(_boss_value)
 	var bottom_margin := MarginContainer.new()
+	bottom_margin.name = "HudBottomMargin"
 	bottom_margin.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
 	bottom_margin.offset_top = -94.0
 	bottom_margin.add_theme_constant_override("margin_left", 24)
 	bottom_margin.add_theme_constant_override("margin_right", 24)
 	bottom_margin.add_theme_constant_override("margin_bottom", 18)
-	layer.add_child(bottom_margin)
+	_hud_root.add_child(bottom_margin)
 	var action_center := CenterContainer.new()
 	action_center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	bottom_margin.add_child(action_center)
@@ -901,6 +1265,7 @@ func _build_hud() -> void:
 	))
 	action_center.add_child(action_panel)
 	var actions := HBoxContainer.new()
+	actions.name = "ActionRow"
 	actions.alignment = BoxContainer.ALIGNMENT_CENTER
 	actions.add_theme_constant_override("separation", 10)
 	action_panel.add_child(actions)
@@ -925,11 +1290,11 @@ func _build_hud() -> void:
 	_damage_layer = Control.new()
 	_damage_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_damage_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	layer.add_child(_damage_layer)
+	_hud_root.add_child(_damage_layer)
 	var result_center := CenterContainer.new()
 	result_center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	result_center.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	layer.add_child(result_center)
+	_hud_root.add_child(result_center)
 	_result_panel = PanelContainer.new()
 	_result_panel.visible = false
 	_result_panel.custom_minimum_size = Vector2(680, 320)
@@ -938,6 +1303,7 @@ func _build_hud() -> void:
 	))
 	result_center.add_child(_result_panel)
 	var result_box := VBoxContainer.new()
+	result_box.name = "ResultColumn"
 	result_box.add_theme_constant_override("separation", 14)
 	_result_panel.add_child(result_box)
 	_result_title = Label.new()
@@ -956,24 +1322,112 @@ func _build_hud() -> void:
 	return_button.text = "UI_RETURN_MISSIONS"
 	return_button.pressed.connect(_back_to_missions)
 	result_box.add_child(return_button)
+	_apply_hud_responsive_layout(true)
 	_refresh_prompts()
+
+
+func _apply_hud_responsive_layout(force: bool = false) -> void:
+	if _hud_root == null or not is_instance_valid(_hud_root):
+		return
+	var viewport_size := get_viewport().get_visible_rect().size
+	var aspect := viewport_size.x / maxf(viewport_size.y, 1.0)
+	var next_scale := HUD_TALL_SCALE if aspect <= HUD_TALL_ASPECT_MAX else 1.0
+	if not force and is_equal_approx(next_scale, _hud_layout_scale):
+		return
+	_hud_layout_scale = next_scale
+	_hud_theme.default_font_size = _hud_metric(HUD_BASE_FONT_SIZE)
+
+	var top_margin := _hud_root.find_child("HudTopMargin", true, false) as MarginContainer
+	var top_row := _hud_root.find_child("HudTopRow", true, false) as HBoxContainer
+	var briefing_panel := _hud_root.find_child("MissionBriefingPanel", true, false) as PanelContainer
+	var briefing_column := _hud_root.find_child("BriefingColumn", true, false) as VBoxContainer
+	var vitals_panel := _hud_root.find_child("VitalsPanel", true, false) as PanelContainer
+	var vitals_column := _hud_root.find_child("VitalsColumn", true, false) as VBoxContainer
+	var core_label := _hud_root.find_child("CoreLabel", true, false) as Label
+	var boss_label := _hud_root.find_child("BossLabel", true, false) as Label
+	var bottom_margin := _hud_root.find_child("HudBottomMargin", true, false) as MarginContainer
+	var action_panel := _hud_root.find_child("ActionTray", true, false) as PanelContainer
+	var actions := _hud_root.find_child("ActionRow", true, false) as HBoxContainer
+	var result_column := _hud_root.find_child("ResultColumn", true, false) as VBoxContainer
+
+	if top_margin != null:
+		top_margin.add_theme_constant_override("margin_left", _hud_metric(24))
+		top_margin.add_theme_constant_override("margin_top", _hud_metric(18))
+		top_margin.add_theme_constant_override("margin_right", _hud_metric(24))
+	if top_row != null:
+		top_row.add_theme_constant_override("separation", _hud_metric(16))
+	if briefing_panel != null:
+		briefing_panel.add_theme_stylebox_override("panel", _panel_box(
+			Color(0.018, 0.052, 0.078, 0.9), Color(mission_data.zone_color, 0.34), 10
+		))
+	if briefing_column != null:
+		briefing_column.add_theme_constant_override("separation", _hud_metric(6))
+	if vitals_panel != null:
+		vitals_panel.custom_minimum_size.x = _hud_metric(360)
+		vitals_panel.add_theme_stylebox_override("panel", _panel_box(
+			Color(0.02, 0.045, 0.065, 0.92), Color(_Tokens.CYAN, 0.26), 10
+		))
+	if vitals_column != null:
+		vitals_column.add_theme_constant_override("separation", _hud_metric(8))
+	if core_label != null:
+		core_label.custom_minimum_size.x = _hud_metric(90)
+	if boss_label != null:
+		boss_label.custom_minimum_size.x = _hud_metric(90)
+	_style_progress_bar(_core_bar, _Tokens.CYAN)
+	_style_progress_bar(_boss_bar, Color(1.0, 0.34, 0.3))
+
+	_hud.add_theme_font_size_override("font_size", _hud_metric(21))
+	_objective.add_theme_font_size_override("font_size", _hud_metric(18))
+	_status.add_theme_font_size_override("font_size", _hud_metric(16))
+	if bottom_margin != null:
+		bottom_margin.offset_top = -float(_hud_metric(94))
+		bottom_margin.add_theme_constant_override("margin_left", _hud_metric(24))
+		bottom_margin.add_theme_constant_override("margin_right", _hud_metric(24))
+		bottom_margin.add_theme_constant_override("margin_bottom", _hud_metric(18))
+	if action_panel != null:
+		action_panel.custom_minimum_size = Vector2(_hud_metric(748), _hud_metric(70))
+		action_panel.add_theme_stylebox_override("panel", _panel_box(
+			Color(0.012, 0.032, 0.048, 0.94), Color(_Tokens.CYAN, 0.34), 12
+		))
+	if actions != null:
+		actions.add_theme_constant_override("separation", _hud_metric(10))
+	for button in [_duty_button, _intel_button, _back_button]:
+		button.custom_minimum_size = Vector2(_hud_metric(220), _hud_metric(52))
+	_style_action_button(
+		_duty_button, _Tokens.family_color(String(_family_profile.family_id)), true
+	)
+	_style_action_button(_intel_button, _Tokens.CYAN)
+	_style_action_button(_back_button, _Tokens.MUTED)
+	_result_panel.custom_minimum_size = Vector2(_hud_metric(680), _hud_metric(320))
+	_result_panel.add_theme_stylebox_override("panel", _panel_box(
+		Color(0.018, 0.045, 0.068, 0.98), Color(_Tokens.CYAN, 0.62), 16
+	))
+	if result_column != null:
+		result_column.add_theme_constant_override("separation", _hud_metric(14))
+	_result_title.add_theme_font_size_override("font_size", _hud_metric(34))
+	_result_body.add_theme_font_size_override("font_size", _hud_metric(19))
+	_request_combat_portrait_layout(4)
+
+
+func _hud_metric(value: int) -> int:
+	return maxi(1, roundi(float(value) * _hud_layout_scale))
 
 
 func _panel_box(fill: Color, border: Color, radius: int) -> StyleBoxFlat:
 	var box := StyleBoxFlat.new()
 	box.bg_color = fill
 	box.border_color = border
-	box.set_border_width_all(1)
-	box.set_corner_radius_all(radius)
-	box.content_margin_left = 14.0
-	box.content_margin_right = 14.0
-	box.content_margin_top = 10.0
-	box.content_margin_bottom = 10.0
+	box.set_border_width_all(_hud_metric(1))
+	box.set_corner_radius_all(_hud_metric(radius))
+	box.content_margin_left = float(_hud_metric(14))
+	box.content_margin_right = float(_hud_metric(14))
+	box.content_margin_top = float(_hud_metric(10))
+	box.content_margin_bottom = float(_hud_metric(10))
 	return box
 
 
 func _style_action_button(button: Button, accent: Color, primary: bool = false) -> void:
-	button.add_theme_font_size_override("font_size", 16)
+	button.add_theme_font_size_override("font_size", _hud_metric(16))
 	button.add_theme_color_override("font_color", Color.WHITE if primary else _Tokens.TEXT)
 	button.add_theme_color_override("font_hover_color", Color.WHITE)
 	button.add_theme_color_override("font_pressed_color", Color.WHITE)
@@ -998,12 +1452,12 @@ func _button_box(fill: Color, border: Color, border_width: int) -> StyleBoxFlat:
 	var box := StyleBoxFlat.new()
 	box.bg_color = fill
 	box.border_color = border
-	box.set_border_width_all(border_width)
-	box.set_corner_radius_all(9)
-	box.content_margin_left = 12.0
-	box.content_margin_right = 12.0
-	box.content_margin_top = 8.0
-	box.content_margin_bottom = 8.0
+	box.set_border_width_all(_hud_metric(border_width))
+	box.set_corner_radius_all(_hud_metric(9))
+	box.content_margin_left = float(_hud_metric(12))
+	box.content_margin_right = float(_hud_metric(12))
+	box.content_margin_top = float(_hud_metric(8))
+	box.content_margin_bottom = float(_hud_metric(8))
 	return box
 
 
@@ -1011,11 +1465,11 @@ func _style_progress_bar(bar: ProgressBar, accent: Color) -> void:
 	var background := StyleBoxFlat.new()
 	background.bg_color = Color(0.008, 0.018, 0.026, 0.92)
 	background.border_color = Color(accent, 0.28)
-	background.set_border_width_all(1)
-	background.set_corner_radius_all(5)
+	background.set_border_width_all(_hud_metric(1))
+	background.set_corner_radius_all(_hud_metric(5))
 	var fill := StyleBoxFlat.new()
 	fill.bg_color = Color(accent, 0.88)
-	fill.set_corner_radius_all(5)
+	fill.set_corner_radius_all(_hud_metric(5))
 	bar.add_theme_stylebox_override("background", background)
 	bar.add_theme_stylebox_override("fill", fill)
 

@@ -10,6 +10,7 @@ extends RefCounted
 
 const SHADER_PATH := "res://characters/gel/wet_gel.gdshader"
 const MEMBRANE_SHADER_PATH := "res://characters/gel/jelly_shell.gdshader"
+const AUTHORED_HEIGHT_PATH := "res://characters/gel/jelly_micro_height.png"
 
 ## Uniforms that carry family identity. Everything else is shared look tuning.
 ## All four are derived from the one palette entry, so a family is one Color.
@@ -28,6 +29,14 @@ const MEMBRANE_OPTIONS: Array[StringName] = [
 	&"membrane_rim_emission",
 	&"membrane_thickness",
 ]
+
+const SHELL_V5_BOUNDS: Dictionary = {
+	&"shell_energy_scale": 0.38,
+	&"shell_diffuse_strength": 0.22,
+	&"shell_specular_level": 0.38,
+	&"shell_emission_limit": 0.02,
+	&"shell_alpha_limit": 0.24,
+}
 
 ## How far the palette colour's saturation is pushed for the body albedo. A gel
 ## absorbs its complement, so the channel opposite the family hue must sit AT
@@ -148,6 +157,28 @@ const DEFAULTS := {
 	&"spec_energy": 0.16,
 	&"spec_f0": 0.06,
 	&"env_specular": 0.0,
+	# Jelly V5 keeps the direct body below the ACES shoulder, then restores a
+	# broad, hue-preserving value ramp with the same macro thickness estimate
+	# already used by the spectral absorption. This is the anti-neon/readability
+	# layer shared by mission previews, combat bodies, and the close-up rig.
+	&"body_exposure_scale": 0.82,
+	# Compatibility-safe per-pass share of the final body budget. Smoke enforces
+	# at most three directional lights per viewport and renders the worst-case topology.
+	&"direct_light_budget_share": 0.10,
+	&"thin_budget_scale": 0.74,
+	&"thickness_contrast": 0.06,
+	&"thickness_power": 1.15,
+	# The V4 membrane lattice is retained as a bounded Compatibility-safe field,
+	# but its effective normal depth is capped, grazing-weighted, and broken up by
+	# the existing anti-aliased inclusion noise. Wet highlights stay organic while
+	# face-on interiors remain smooth.
+	&"membrane_depth_cap": 0.014,
+	&"membrane_grazing_floor": 0.10,
+	&"membrane_grazing_power": 1.35,
+	&"membrane_irregularity": 0.72,
+	&"wet_spec_breakup": 0.28,
+	&"coat_tint": 0.16,
+	&"detail_emission_scale": 0.08,
 	# Low on purpose. A heavily wrapped terminator plus a strong interior fill left
 	# almost nothing on the body dark, so the dominant channel had nowhere to fall to
 	# and sat against the ceiling everywhere. Letting the shaded side actually go
@@ -171,7 +202,7 @@ const DEFAULTS := {
 	# equally hot across its whole outer 5%, and clamping is what lets the zone be
 	# widened without its peak rising too -- every earlier attempt to widen it by
 	# softening the falloff raised the peak as well and overshot.
-	&"thin_bias": 2.4,
+	&"thin_bias": 2.7,
 	&"glow_power": 2.5,
 	&"glow_gain": 1.0,
 	# Keeps the hot band off the facial detail. Signed convexity stops concave folds
@@ -206,15 +237,15 @@ const DEFAULTS := {
 	# plateau above it was saturating there and flooding the interior. These are now
 	# thresholds on signed convexity, so they read as curvature radii and a concave
 	# fold scores below zero instead of scoring as high as a limb tip.
-	&"curv_low": 25.0,
-	&"curv_high": 60.0,
+	&"curv_low": 18.0,
+	&"curv_high": 48.0,
 	# Deliberately small. Curvature comes from screen-space derivatives of the
 	# interpolated normal, which are piecewise-constant per triangle, so on a 5k-tri
 	# mesh a strong weight here draws the faceting: the eye rims and pore rang with a
 	# jagged pale outline that tracked the tessellation rather than the shape. Fresnel
 	# uses the normal directly and stays smooth, so it carries the band and curvature
 	# only nudges genuinely convex tips.
-	&"thin_curvature": 0.10,
+	&"thin_curvature": 0.06,
 	&"thin_glow": 0.22,
 	&"core_glow": 0.02,
 	# Narrower than before: the rim needs to read as a ribbon on the turn of a solid
@@ -362,6 +393,7 @@ static func _make_membrane(jelly: Color, opts: Dictionary) -> ShaderMaterial:
 		return null
 	var membrane := ShaderMaterial.new()
 	membrane.shader = shader
+	apply_v5_shell_bounds(membrane)
 	var clear_tint := rim_color(jelly).lerp(Color.WHITE, 0.16)
 	membrane.set_shader_parameter(&"shell_color", _option(opts, &"membrane_color", clear_tint))
 	membrane.set_shader_parameter(&"face_alpha", _option(opts, &"membrane_face_alpha", 0.012))
@@ -372,6 +404,13 @@ static func _make_membrane(jelly: Color, opts: Dictionary) -> ShaderMaterial:
 	membrane.set_shader_parameter(&"shell_thickness", _option(opts, &"membrane_thickness", 0.006))
 	membrane.render_priority = 1
 	return membrane
+
+
+static func apply_v5_shell_bounds(shell: ShaderMaterial) -> void:
+	if shell == null:
+		return
+	for key in SHELL_V5_BOUNDS:
+		shell.set_shader_parameter(key, SHELL_V5_BOUNDS[key])
 
 
 static func make_material(jelly: Color, opts: Dictionary = {}) -> ShaderMaterial:
@@ -388,6 +427,11 @@ static func make_material(jelly: Color, opts: Dictionary = {}) -> ShaderMaterial
 	mat.set_shader_parameter(&"transmit_color", transmit_color(jelly))
 	mat.set_shader_parameter(&"rim_color", rim_color(jelly))
 	mat.set_shader_parameter(&"use_feature_tex", false)
+	var authored_height := load(AUTHORED_HEIGHT_PATH) as Texture2D
+	if authored_height == null:
+		push_error("ImmuneGelLook: cannot load %s" % AUTHORED_HEIGHT_PATH)
+	else:
+		mat.set_shader_parameter(&"authored_height_tex", authored_height)
 	for key in opts:
 		var uniform_name := StringName(key)
 		if MEMBRANE_OPTIONS.has(uniform_name):
