@@ -23,6 +23,9 @@ const _LightContract := preload("res://characters/gel/light_contract.gd")
 const _PauseMenu := preload("res://ui/pause_menu.gd")
 const _PlaytestTelemetry := preload("res://combat/combat_playtest_telemetry.gd")
 const _Responsive := preload("res://ui/responsive_layout.gd")
+const _ActiveSkillController := preload("res://combat/active_skill_controller.gd")
+const _EncounterDirector := preload("res://combat/combat_encounter_director.gd")
+const _TouchControls := preload("res://ui/combat_touch_controls.gd")
 
 const MISSION_SELECT_SCENE := "res://ui/mission_select/mission_select.tscn"
 const NODE_FIXED := &"BASE-T-03"
@@ -82,6 +85,7 @@ var _hud_layout_scale: float = 1.0
 var _hud_layout_narrow := false
 var _hud_safe_insets := Vector4.ZERO
 var _duty_button: Button
+var _ability_button: Button
 var _intel_button: Button
 var _back_button: Button
 var _result_panel: PanelContainer
@@ -110,6 +114,12 @@ var _over: bool = false
 var _rewarded: bool = false
 var _onboarding_open: bool = false
 var _telemetry: CombatPlaytestTelemetry
+var _active_skill_controller: ActiveSkillController
+var _encounter_director: CombatEncounterDirector
+var _touch_controls: CombatTouchControls
+var _encounter_spawn_multiplier: float = 1.0
+var _resolving_active_skill: bool = false
+var _core_last_hp: int = _Core.MAX_HP
 
 
 func _ready() -> void:
@@ -124,6 +134,7 @@ func _ready() -> void:
 	if telemetry_enabled:
 		_telemetry = _PlaytestTelemetry.new()
 		_telemetry.begin(mission_data.id, _family_profile.family_id, playtest_build_tag)
+	_build_gameplay_components()
 	_build_stage()
 	_build_cleanse_zone()
 	_spawn_core()
@@ -174,6 +185,20 @@ func _process(_delta: float) -> void:
 	_portrait_refresh_frames -= 1
 
 
+func _build_gameplay_components() -> void:
+	_active_skill_controller = _ActiveSkillController.new()
+	_active_skill_controller.name = "ActiveSkillController"
+	_active_skill_controller.configure(_family_profile.active_skill)
+	_active_skill_controller.activation_requested.connect(_on_active_skill_requested)
+	_active_skill_controller.cooldown_changed.connect(_on_active_skill_cooldown_changed)
+	add_child(_active_skill_controller)
+	_encounter_director = _EncounterDirector.new()
+	_encounter_director.name = "EncounterDirector"
+	_encounter_director.configure(mission_data)
+	_encounter_director.event_triggered.connect(_on_encounter_event)
+	add_child(_encounter_director)
+
+
 func _on_duty_unlocked(family: StringName, _duty: StringName) -> void:
 	if family == _family_profile.family_id:
 		_refresh_hud()
@@ -195,6 +220,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed(&"demo_toggle_duty"):
 		_toggle_duty()
 		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed(&"demo_active_skill"):
+		_request_active_skill()
+		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed(&"demo_research"):
 		_show_intel_or_research()
 		get_viewport().set_input_as_handled()
@@ -205,6 +233,10 @@ func _physics_process(delta: float) -> void:
 		return
 	_update_playtest_autopilot()
 	_move_player()
+	if _active_skill_controller != null:
+		_active_skill_controller.tick(delta)
+	if _encounter_director != null:
+		_encounter_director.tick(delta)
 	if _telemetry != null and _player != null:
 		_telemetry.tick(delta, _player.duty)
 	_try_fire(delta)
@@ -214,7 +246,11 @@ func _physics_process(delta: float) -> void:
 	_spawn_cd -= delta
 	if _spawn_cd <= 0.0:
 		var base_interval := mission_data.defense_spawn_interval if current_phase == Phase.CORE_DEFENSE else mission_data.late_spawn_interval
-		_spawn_cd = base_interval * mission_data.difficulty.spawn_interval_multiplier
+		_spawn_cd = (
+			base_interval
+			* mission_data.difficulty.spawn_interval_multiplier
+			* _encounter_spawn_multiplier
+		)
 		if (
 			current_phase != Phase.TOTAL_WAR
 			or get_tree().get_nodes_in_group("bacterium").size() < mission_data.total_war_enemy_cap
@@ -245,6 +281,7 @@ func _toggle_duty() -> void:
 		_player.transform_duty(&"fixed")
 		_set_status(tr("STATUS_DUTY_FIXED"))
 	_sync_combat_portrait_duty()
+	_sync_touch_movement_state()
 	AudioDirector.play_sfx(&"duty")
 	_refresh_hud()
 	WebQaBridge.publish(&"duty_changed", {
@@ -290,6 +327,10 @@ func _move_player() -> void:
 	var move_input: Vector2 = _playtest_move_input() if playtest_autopilot else Input.get_vector(
 		&"demo_move_left", &"demo_move_right", &"demo_move_back", &"demo_move_forward"
 	)
+	if not playtest_autopilot and _touch_controls != null:
+		var touch_input := _touch_controls.movement_vector()
+		if not touch_input.is_zero_approx():
+			move_input = touch_input
 	var move_speed := _family_profile.move_speed * (1.0 + ResearchState.global_stat("moveSpeed"))
 	_player.velocity = Vector3(move_input.x, 0.0, move_input.y) * move_speed
 	_player.move_and_slide()
@@ -308,6 +349,19 @@ func _update_playtest_autopilot() -> void:
 		_sync_combat_portrait_duty()
 		if _telemetry != null:
 			_telemetry.record_duty_switch()
+	_update_playtest_active_skill()
+
+
+func _update_playtest_active_skill() -> void:
+	if _active_skill_controller == null or not _active_skill_controller.is_ready():
+		return
+	var profile := _active_skill_controller.profile
+	if profile == null:
+		return
+	var has_target := not _active_skill_targets(profile).is_empty()
+	var can_repair_core := profile.core_heal > 0 and _core != null and _core.hp < _Core.MAX_HP
+	if has_target or can_repair_core:
+		_request_active_skill()
 
 
 func _playtest_move_input() -> Vector2:
@@ -320,6 +374,150 @@ func _playtest_move_input() -> Vector2:
 	if offset.length() <= 0.18:
 		return Vector2.ZERO
 	return offset.normalized()
+
+
+func _request_active_skill() -> void:
+	if _active_skill_controller == null or _active_skill_controller.profile == null:
+		return
+	if not _active_skill_controller.is_ready():
+		_set_status(tr("STATUS_ACTIVE_SKILL_COOLDOWN") % ceili(
+			_active_skill_controller.remaining_seconds()
+		))
+		return
+	var profile := _active_skill_controller.profile
+	var targets := _active_skill_targets(profile)
+	var can_repair_core := profile.core_heal > 0 and _core != null and _core.hp < _Core.MAX_HP
+	if targets.is_empty() and not can_repair_core:
+		_set_status(tr("STATUS_ACTIVE_SKILL_NO_TARGET"))
+		return
+	_active_skill_controller.request_activation()
+
+
+func _on_active_skill_requested(profile: FamilyActiveSkillProfile) -> void:
+	if _over or _player == null:
+		return
+	var targets := _active_skill_targets(profile)
+	_player.fire_skill(StringName("SKILL-%s-ACTIVE" % String(_family_profile.family_id)))
+	_resolving_active_skill = true
+	var hits := 0
+	for target in targets:
+		if not is_instance_valid(target):
+			continue
+		target.call(
+			"take_profiled_hit",
+			profile.damage,
+			_family_profile.family_id,
+			StringName(profile.hit_effect),
+			profile.hit_effect_power,
+			profile.hit_effect_cap,
+			profile.hit_effect_threshold
+		)
+		hits += 1
+	_resolving_active_skill = false
+	var restored := 0
+	if profile.core_heal > 0 and _core != null:
+		restored = int(_core.call("restore_health", profile.core_heal))
+	if _telemetry != null:
+		_telemetry.record_active_skill(profile.id, hits)
+	if restored > 0:
+		_set_status(tr("STATUS_ACTIVE_SKILL_HEAL") % [tr(profile.name_key), hits, restored])
+	else:
+		_set_status(tr("STATUS_ACTIVE_SKILL_USED") % [tr(profile.name_key), hits])
+	AudioDirector.play_sfx(&"phase", 1.15, -1.0)
+	_shake_camera(0.12)
+	WebQaBridge.publish(&"active_skill_used", {
+		"family": String(_family_profile.family_id),
+		"skill": String(profile.id),
+		"hits": hits,
+		"core_heal": restored,
+	})
+
+
+func _active_skill_targets(profile: FamilyActiveSkillProfile) -> Array[Node3D]:
+	var candidates: Array[Node3D] = []
+	if _player == null:
+		return candidates
+	for enemy in _owned_enemies():
+		if _player.global_position.distance_to(enemy.global_position) <= profile.radius:
+			candidates.append(enemy)
+	candidates.sort_custom(func(a: Node3D, b: Node3D) -> bool:
+		return _active_skill_target_score(a, profile) < _active_skill_target_score(b, profile)
+	)
+	var selected: Array[Node3D] = []
+	for candidate in candidates:
+		if selected.size() >= profile.max_targets:
+			break
+		selected.append(candidate)
+	return selected
+
+
+func _active_skill_target_score(target: Node3D, profile: FamilyActiveSkillProfile) -> float:
+	var distance := _player.global_position.distance_to(target.global_position)
+	if profile.targeting == "lowest_health":
+		return float(target.get("hp")) / float(maxi(int(target.get("max_hp")), 1)) * 1000.0 + distance
+	if profile.targeting == "spread":
+		return distance + absf(target.global_position.x) * 0.05
+	return distance
+
+
+func _on_active_skill_cooldown_changed(_remaining: float, _duration: float) -> void:
+	_refresh_prompts()
+
+
+func _owned_enemies() -> Array[Node3D]:
+	var result: Array[Node3D] = []
+	for node in get_tree().get_nodes_in_group("bacterium"):
+		if node is Node3D and is_ancestor_of(node):
+			result.append(node as Node3D)
+	return result
+
+
+func _on_encounter_event(event_id: StringName, strength: int, occurrence: int) -> void:
+	if _over:
+		return
+	var outcome := 0
+	match event_id:
+		&"surge":
+			outcome = _spawn_encounter_wave(strength)
+		&"systemic_surge":
+			# Systemic pressure alternates frequently with biofilm restoration.
+			# A single reinforcement keeps that cadence lethal without creating
+			# an unavoidable two-hit core spike for lower-DPS families.
+			outcome = _spawn_encounter_wave(mini(strength, 1))
+		&"cytokine":
+			for enemy in _owned_enemies():
+				enemy.call("apply_speed_boost", 1.0 + float(strength) * 0.18, 3.5)
+			outcome = _owned_enemies().size()
+			_shake_camera(0.16)
+		&"adaptive":
+			_encounter_spawn_multiplier = maxf(
+				_encounter_spawn_multiplier * (1.0 - 0.07 * float(strength)), 0.68
+			)
+			_spawn_cd = minf(_spawn_cd, 0.35)
+			outcome = roundi((1.0 - _encounter_spawn_multiplier) * 100.0)
+		&"biofilm", &"systemic_biofilm":
+			for enemy in _owned_enemies():
+				outcome += int(enemy.call("restore_health", strength))
+	var status_key := "STATUS_ENCOUNTER_%s" % String(event_id).to_upper()
+	_set_status(tr(status_key) % outcome)
+	if _telemetry != null:
+		_telemetry.record_encounter_event(event_id)
+	WebQaBridge.publish(&"encounter_event", {
+		"mission": String(mission_data.id),
+		"pattern": String(event_id),
+		"occurrence": occurrence,
+		"outcome": outcome,
+	})
+
+
+func _spawn_encounter_wave(count: int) -> int:
+	var spawned := 0
+	for _index in maxi(count, 0):
+		if current_phase == Phase.TOTAL_WAR and _owned_enemies().size() >= mission_data.total_war_enemy_cap:
+			break
+		_spawn_regular(false)
+		spawned += 1
+	return spawned
 
 
 func _try_fire(delta: float) -> void:
@@ -380,10 +578,10 @@ func _nearest_bacterium() -> Node3D:
 	return best
 
 
-func _spawn_regular() -> void:
+func _spawn_regular(counts_for_objective: bool = true) -> void:
 	var bug: _Bacterium = _Bacterium.new()
 	bug.configure_profile(mission_data.regular_enemy, mission_data.difficulty)
-	_wire_enemy(bug)
+	_wire_enemy(bug, counts_for_objective)
 	add_child(bug)
 	bug.global_position = Vector3(randf_range(-2.2, 2.2), bug.ground_y, SPAWN_Z)
 
@@ -401,16 +599,17 @@ func _spawn_boss() -> void:
 	_boss.health_changed.connect(_on_boss_health_changed)
 
 
-func _wire_enemy(enemy: _Bacterium) -> void:
+func _wire_enemy(enemy: _Bacterium, counts_for_objective: bool = true) -> void:
 	enemy.core = _core
-	enemy.died.connect(_on_enemy_died)
+	enemy.died.connect(_on_enemy_died.bind(counts_for_objective))
 	enemy.hit_received.connect(_on_enemy_hit)
 
 
-func _on_enemy_died(was_boss: bool) -> void:
-	_kills += 1
+func _on_enemy_died(was_boss: bool, counts_for_objective: bool = true) -> void:
+	if counts_for_objective:
+		_kills += 1
 	if _telemetry != null:
-		_telemetry.record_enemy_defeated(was_boss)
+		_telemetry.record_enemy_defeated(was_boss, counts_for_objective)
 	if was_boss and current_phase == Phase.TOTAL_WAR:
 		_victory()
 	elif current_phase == Phase.CORE_DEFENSE and _kills >= mission_data.defense_kills:
@@ -419,7 +618,7 @@ func _on_enemy_died(was_boss: bool) -> void:
 
 
 func _on_enemy_hit(world_position: Vector3, amount: int, was_boss: bool) -> void:
-	if _telemetry != null:
+	if _telemetry != null and not _resolving_active_skill:
 		_telemetry.record_hit(amount, was_boss)
 	AudioDirector.play_sfx(&"hit", randf_range(0.92, 1.08), -1.0)
 	_spawn_damage_number(world_position, amount, was_boss)
@@ -454,22 +653,27 @@ func _update_expedition(delta: float) -> void:
 
 
 func _on_core_hit(hp: int, max_hp: int) -> void:
+	var took_damage := hp < _core_last_hp
+	_core_last_hp = hp
 	if _telemetry != null:
 		_telemetry.record_core_hp(hp, max_hp)
 	_core_bar.max_value = max_hp
 	_core_bar.value = hp
 	_core_value.text = "%d/%d" % [hp, max_hp]
-	AudioDirector.play_sfx(&"core_hit")
-	_shake_camera(0.22)
+	if took_damage:
+		AudioDirector.play_sfx(&"core_hit")
+		_shake_camera(0.22)
 	_refresh_hud()
 	if hp <= 0:
 		_defeat()
-	elif hp < max_hp:
+	elif took_damage and hp < max_hp:
 		_set_status(tr("STATUS_CORE_DAMAGED") % [hp, max_hp])
 
 
 func _set_phase(next_phase: Phase) -> void:
 	current_phase = next_phase
+	if _encounter_director != null:
+		_encounter_director.enter_phase(_phase_code())
 	if _telemetry != null:
 		_telemetry.enter_phase(phase_name())
 	match current_phase:
@@ -491,6 +695,18 @@ func _set_phase(next_phase: Phase) -> void:
 	_refresh_hud()
 	AudioDirector.play_sfx(&"phase", 1.0 + float(current_phase) * 0.04)
 	phase_changed.emit(phase_name(), objective_text())
+
+
+func _phase_code() -> StringName:
+	match current_phase:
+		Phase.CORE_DEFENSE:
+			return &"core"
+		Phase.EXPEDITION:
+			return &"expedition"
+		Phase.TOTAL_WAR:
+			return &"total_war"
+		_:
+			return &"complete"
 
 
 func _victory() -> void:
@@ -616,15 +832,23 @@ func _build_stage() -> void:
 	env.environment = environment
 	add_child(env)
 	var sun := DirectionalLight3D.new()
+	sun.name = "CombatKey"
 	sun.rotation_degrees = Vector3(-48, 30, 0)
-	sun.light_color = Color(1.0, 0.83, 0.67)
-	sun.light_energy = 1.0
+	sun.light_color = Color(1.0, 0.94, 0.86)
+	sun.light_energy = 1.18
 	sun.shadow_enabled = true
 	add_child(sun)
+	var fill := DirectionalLight3D.new()
+	fill.name = "CombatFill"
+	fill.rotation_degrees = Vector3(-18, -62, 0)
+	fill.light_color = Color(0.58, 0.74, 1.0)
+	fill.light_energy = 0.36
+	add_child(fill)
 	var rim := DirectionalLight3D.new()
+	rim.name = "CombatRim"
 	rim.rotation_degrees = Vector3(-28, -145, 0)
-	rim.light_color = Color(0.35, 0.58, 0.8)
-	rim.light_energy = 0.38
+	rim.light_color = Color(0.52, 0.72, 1.0)
+	rim.light_energy = 0.58
 	add_child(rim)
 	_camera = Camera3D.new()
 	_camera.name = "CombatCamera"
@@ -851,6 +1075,7 @@ func _spawn_core() -> void:
 	_core.hp_changed.connect(_on_core_hit)
 	_core.breached.connect(_defeat)
 	add_child(_core)
+	_core_last_hp = _core.hp
 	if _telemetry != null:
 		_telemetry.record_core_hp(_core.hp, _Core.MAX_HP)
 
@@ -867,6 +1092,15 @@ func _spawn_player() -> void:
 		return
 	_player.position = PLAYER_HOME
 	add_child(_player)
+	_sync_touch_movement_state()
+
+
+func _sync_touch_movement_state() -> void:
+	if _touch_controls == null:
+		return
+	_touch_controls.set_movement_enabled(
+		_player != null and _player.duty != &"fixed" and not _over
+	)
 
 
 func _build_combat_portrait() -> void:
@@ -934,6 +1168,12 @@ func _build_combat_portrait() -> void:
 	rim.light_color = Color(0.34, 0.58, 1.0)
 	rim.light_energy = 0.85
 	_portrait_stage.add_child(rim)
+	var fill := DirectionalLight3D.new()
+	fill.name = "CombatHeroFill"
+	fill.rotation_degrees = Vector3(-12.0, 62.0, 0.0)
+	fill.light_color = Color(0.72, 0.82, 1.0)
+	fill.light_energy = 0.32
+	_portrait_stage.add_child(fill)
 	_portrait_camera = Camera3D.new()
 	_portrait_camera.name = "CombatHeroCamera"
 	_portrait_camera.position = Vector3(1.0, 1.45, 3.75)
@@ -1265,18 +1505,24 @@ func _build_hud() -> void:
 	bottom_margin.add_child(action_center)
 	var action_panel := PanelContainer.new()
 	action_panel.name = "ActionTray"
-	action_panel.custom_minimum_size = Vector2(748, 70)
+	action_panel.custom_minimum_size = Vector2(930, 70)
 	action_panel.add_theme_stylebox_override("panel", _panel_box(
 		Color(0.012, 0.032, 0.048, 0.94), Color(_Tokens.CYAN, 0.34), 12
 	))
 	action_center.add_child(action_panel)
 	var actions := GridContainer.new()
 	actions.name = "ActionRow"
-	actions.columns = 3
+	actions.columns = 4
 	actions.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	actions.add_theme_constant_override("h_separation", 10)
 	actions.add_theme_constant_override("v_separation", 10)
 	action_panel.add_child(actions)
+	_ability_button = Button.new()
+	_ability_button.name = "AbilityButton"
+	_ability_button.custom_minimum_size = Vector2(210, 52)
+	_ability_button.pressed.connect(_request_active_skill)
+	_style_action_button(_ability_button, _Tokens.GOLD, true)
+	actions.add_child(_ability_button)
 	_duty_button = Button.new()
 	_duty_button.name = "DutyButton"
 	_duty_button.custom_minimum_size = Vector2(220, 52)
@@ -1295,6 +1541,11 @@ func _build_hud() -> void:
 	_back_button.pressed.connect(_back_to_missions)
 	_style_action_button(_back_button, _Tokens.MUTED)
 	actions.add_child(_back_button)
+	_touch_controls = _TouchControls.new()
+	_touch_controls.name = "CombatTouchControls"
+	_touch_controls.visible = false
+	_hud_root.add_child(_touch_controls)
+	_sync_touch_movement_state()
 	_damage_layer = Control.new()
 	_damage_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_damage_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -1406,7 +1657,7 @@ func _apply_hud_responsive_layout(force: bool = false) -> void:
 	_status.add_theme_font_size_override("font_size", _hud_metric(17 if _hud_layout_narrow else 16))
 	if bottom_margin != null:
 		bottom_margin.offset_top = -float(
-			_hud_metric(220 if _hud_layout_narrow else 94) + roundi(_hud_safe_insets.w)
+			_hud_metric(170 if _hud_layout_narrow else 94) + roundi(_hud_safe_insets.w)
 		)
 		bottom_margin.add_theme_constant_override(
 			"margin_left", _hud_metric(24) + roundi(_hud_safe_insets.x)
@@ -1417,10 +1668,17 @@ func _apply_hud_responsive_layout(force: bool = false) -> void:
 		bottom_margin.add_theme_constant_override(
 			"margin_bottom", _hud_metric(18) + roundi(_hud_safe_insets.w)
 		)
+	var safe_content_width := maxf(
+		viewport_size.x
+		- _hud_safe_insets.x
+		- _hud_safe_insets.z
+		- float(_hud_metric(48)),
+		1.0
+	)
 	if action_panel != null:
 		action_panel.custom_minimum_size = Vector2(
-			0 if _hud_layout_narrow else _hud_metric(748),
-			_hud_metric(200 if _hud_layout_narrow else 70)
+			safe_content_width if _hud_layout_narrow else _hud_metric(930),
+			_hud_metric(150 if _hud_layout_narrow else 70)
 		)
 		action_panel.size_flags_horizontal = (
 			Control.SIZE_EXPAND_FILL if _hud_layout_narrow else Control.SIZE_SHRINK_CENTER
@@ -1429,20 +1687,31 @@ func _apply_hud_responsive_layout(force: bool = false) -> void:
 			Color(0.012, 0.032, 0.048, 0.94), Color(_Tokens.CYAN, 0.34), 12
 		))
 	if actions != null:
-		actions.columns = 1 if _hud_layout_narrow else 3
+		actions.columns = 2 if _hud_layout_narrow else 4
 		actions.add_theme_constant_override("h_separation", _hud_metric(10))
 		actions.add_theme_constant_override("v_separation", _hud_metric(10))
-	for button in [_duty_button, _intel_button, _back_button]:
+	for button in [_ability_button, _duty_button, _intel_button, _back_button]:
 		button.custom_minimum_size = Vector2(
-			0 if _hud_layout_narrow else _hud_metric(220),
+			0 if _hud_layout_narrow else _hud_metric(210),
 			_hud_metric(53 if _hud_layout_narrow else 52)
 		)
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.clip_text = _hud_layout_narrow
+		button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	_style_action_button(
 		_duty_button, _Tokens.family_color(String(_family_profile.family_id)), true
 	)
+	_style_action_button(_ability_button, _Tokens.GOLD, true)
 	_style_action_button(_intel_button, _Tokens.CYAN)
 	_style_action_button(_back_button, _Tokens.MUTED)
+	if _touch_controls != null:
+		_touch_controls.visible = _hud_layout_narrow or DisplayServer.is_touchscreen_available()
+		_touch_controls.apply_layout(
+			_hud_layout_scale,
+			_hud_safe_insets,
+			float(_hud_metric(170 if _hud_layout_narrow else 94))
+		)
+		_sync_touch_movement_state()
 	var result_available_width := (
 		viewport_size.x
 		- _hud_safe_insets.x
@@ -1460,6 +1729,7 @@ func _apply_hud_responsive_layout(force: bool = false) -> void:
 		result_column.add_theme_constant_override("separation", _hud_metric(14))
 	_result_title.add_theme_font_size_override("font_size", _hud_metric(34))
 	_result_body.add_theme_font_size_override("font_size", _hud_metric(19))
+	_refresh_prompts()
 	_request_combat_portrait_layout(4)
 
 
@@ -1472,16 +1742,28 @@ func responsive_contract() -> Dictionary:
 	var bottom_margin := _hud_root.find_child("HudBottomMargin", true, false) as MarginContainer
 	var actions := _hud_root.find_child("ActionRow", true, false) as GridContainer
 	var min_action_height := INF
-	for button in [_duty_button, _intel_button, _back_button]:
+	var min_action_width := INF
+	for button in [_ability_button, _duty_button, _intel_button, _back_button]:
+		var physical_button_size := _Responsive.logical_size_to_physical(
+			get_viewport(),
+			Vector2(
+				maxf(button.size.x, button.custom_minimum_size.x),
+				maxf(button.size.y, button.custom_minimum_size.y)
+			)
+		)
+		min_action_width = minf(min_action_width, physical_button_size.x)
 		min_action_height = minf(
 			min_action_height,
-			_Responsive.logical_height_to_physical(
-				get_viewport(), maxf(button.size.y, button.custom_minimum_size.y)
-			)
+			physical_button_size.y
 		)
 	var copy_physical := _Responsive.logical_height_to_physical(
 		get_viewport(), float(_status.get_theme_font_size("font_size"))
 	)
+	var min_touch_height := 0.0
+	if _touch_controls != null:
+		min_touch_height = _Responsive.logical_height_to_physical(
+			get_viewport(), _touch_controls.minimum_button_height()
+		)
 	var safe_pass := (
 		top_margin != null
 		and bottom_margin != null
@@ -1500,12 +1782,21 @@ func responsive_contract() -> Dictionary:
 		)
 	)
 	var critical_inside_safe := true
-	for control_name in ["MissionBriefingPanel", "VitalsPanel", "ActionTray"]:
+	var critical_controls := ["MissionBriefingPanel", "VitalsPanel", "ActionTray"]
+	var critical_control_contract := {}
+	if narrow:
+		critical_controls.append("TouchDirectionPad")
+	for control_name in critical_controls:
 		var control := _hud_root.find_child(control_name, true, false) as Control
+		var rect := control.get_global_rect() if control != null else Rect2()
+		var inside := control != null and safe_rect.grow(1.0).encloses(rect)
+		critical_control_contract[control_name] = {
+			"inside": inside,
+			"rect": [rect.position.x, rect.position.y, rect.size.x, rect.size.y],
+		}
 		critical_inside_safe = (
 			critical_inside_safe
-			and control != null
-			and safe_rect.grow(1.0).encloses(control.get_global_rect())
+			and inside
 		)
 	var pause_contract := _pause_menu.responsive_contract() if _pause_menu != null else {}
 	var all_pass := (
@@ -1514,8 +1805,13 @@ func responsive_contract() -> Dictionary:
 			top_row != null
 			and top_row.columns == 1
 			and actions != null
-			and actions.columns == 1
+			and actions.columns == 2
+			and min_action_width >= 96.0
 			and min_action_height >= 44.0
+			and _touch_controls != null
+			and _touch_controls.visible
+			and _touch_controls.directional_button_count() == 4
+			and min_touch_height >= 44.0
 			and copy_physical >= 14.0
 			and safe_pass
 			and critical_inside_safe
@@ -1529,12 +1825,17 @@ func responsive_contract() -> Dictionary:
 		"layout_scale": _hud_layout_scale,
 		"safe_area_source": _Responsive.safe_area_source(),
 		"safe_insets_logical": [_hud_safe_insets.x, _hud_safe_insets.y, _hud_safe_insets.z, _hud_safe_insets.w],
+		"safe_rect": [safe_rect.position.x, safe_rect.position.y, safe_rect.size.x, safe_rect.size.y],
 		"top_columns": top_row.columns if top_row != null else 0,
 		"action_columns": actions.columns if actions != null else 0,
+		"minimum_action_width_physical": min_action_width,
 		"minimum_action_height_physical": min_action_height,
+		"minimum_touch_height_physical": min_touch_height,
+		"touch_controls_visible": _touch_controls.visible if _touch_controls != null else false,
 		"minimum_copy_size_physical": copy_physical,
 		"safe_margins_pass": safe_pass,
 		"critical_controls_inside_safe_area": critical_inside_safe,
+		"critical_controls": critical_control_contract,
 		"pause": pause_contract,
 		"all_pass": all_pass,
 	}
@@ -1620,15 +1921,45 @@ func _refresh_hud() -> void:
 	_objective.text = objective_text()
 	if _duty_button:
 		_duty_button.disabled = _over
+	if _ability_button and _active_skill_controller:
+		_ability_button.disabled = _over or not _active_skill_controller.is_ready()
+	_sync_touch_movement_state()
 
 
 func _refresh_prompts() -> void:
+	if _ability_button and _active_skill_controller and _active_skill_controller.profile:
+		_ability_button.disabled = _over or not _active_skill_controller.is_ready()
+		var active_name := tr(_active_skill_controller.profile.name_key)
+		var full_ability_text := ""
+		if _active_skill_controller.is_ready():
+			full_ability_text = tr("UI_ACTIVE_SKILL_READY") % [
+				SettingsState.prompt(&"demo_active_skill"), active_name
+			]
+			_ability_button.text = active_name if _hud_layout_narrow else full_ability_text
+		else:
+			full_ability_text = tr("UI_ACTIVE_SKILL_COOLDOWN") % [
+				active_name, ceili(_active_skill_controller.remaining_seconds())
+			]
+			_ability_button.text = (
+				tr("UI_ACTIVE_SKILL_COOLDOWN_SHORT")
+				% [active_name, ceili(_active_skill_controller.remaining_seconds())]
+				if _hud_layout_narrow
+				else full_ability_text
+			)
+		_ability_button.tooltip_text = full_ability_text
 	if _duty_button:
-		_duty_button.text = tr("UI_TOGGLE_DUTY") % SettingsState.prompt(&"demo_toggle_duty")
+		var full_duty_text := tr("UI_TOGGLE_DUTY") % SettingsState.prompt(&"demo_toggle_duty")
+		_duty_button.text = tr("UI_DUTY_SHORT") if _hud_layout_narrow else full_duty_text
+		_duty_button.tooltip_text = full_duty_text
 	if _intel_button:
-		_intel_button.text = "%s · %s" % [SettingsState.prompt(&"demo_research"), tr("UI_RESEARCH_T") if _family_profile and _family_profile.family_id == &"T" else tr("UI_CHARACTER_INTEL")]
+		var intel_name := tr("UI_RESEARCH_T") if _family_profile and _family_profile.family_id == &"T" else tr("UI_CHARACTER_INTEL")
+		var full_intel_text := "%s · %s" % [SettingsState.prompt(&"demo_research"), intel_name]
+		_intel_button.text = tr("UI_CHARACTER_INTEL_SHORT") if _hud_layout_narrow else full_intel_text
+		_intel_button.tooltip_text = full_intel_text
 	if _back_button:
-		_back_button.text = tr("UI_RETURN_MISSION_DESK")
+		var full_back_text := tr("UI_RETURN_MISSION_DESK")
+		_back_button.text = tr("UI_RETURN_MISSION_DESK_SHORT") if _hud_layout_narrow else full_back_text
+		_back_button.tooltip_text = full_back_text
 
 
 func _set_status(text: String) -> void:
@@ -1693,7 +2024,11 @@ func _show_onboarding() -> void:
 	title.add_theme_font_size_override("font_size", 34)
 	box.add_child(title)
 	var body := Label.new()
-	body.text = (tr("UI_TUTORIAL_BODY") % [SettingsState.prompt(&"demo_toggle_duty"), SettingsState.prompt(&"demo_pause")]).replace("\\n", "\n")
+	body.text = (tr("UI_TUTORIAL_BODY") % [
+		SettingsState.prompt(&"demo_active_skill"),
+		SettingsState.prompt(&"demo_toggle_duty"),
+		SettingsState.prompt(&"demo_pause"),
+	]).replace("\\n", "\n")
 	body.add_theme_font_size_override("font_size", 21)
 	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	box.add_child(body)

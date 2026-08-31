@@ -555,16 +555,88 @@ func _run() -> void:
 			push_error("Missing family skill VFX %s" % skill_vfx)
 			quit(1)
 			return
+	for component_path in [
+		"res://combat/active_skill_controller.gd",
+		"res://combat/combat_encounter_director.gd",
+		"res://ui/combat_touch_controls.gd",
+		"res://resources/combat/family_active_skill_profile.gd",
+	]:
+		if not ResourceLoader.exists(component_path):
+			push_error("Missing V5.3 gameplay component %s" % component_path)
+			quit(1)
+			return
 	for action in [
 		&"demo_pause", &"demo_confirm", &"demo_back", &"demo_toggle_duty",
 		&"demo_research", &"demo_combat", &"demo_next_family", &"demo_prev_family",
 		&"demo_move_left", &"demo_move_right", &"demo_move_forward", &"demo_move_back",
+		&"demo_active_skill",
 	]:
 		if not InputMap.has_action(action) or not _has_gamepad_event(action):
 			push_error("Input action %s is missing its gamepad mapping" % action)
 			quit(1)
 			return
 	var content := load("res://resources/combat/combat_content.gd")
+	var active_skill_ids: Array[StringName] = []
+	for family_id in ["T", "B", "M", "N", "A", "D"]:
+		var family: FamilyCombatProfile = content.call("load_family", StringName(family_id))
+		var active_skill := family.get("active_skill") as Resource if family != null else null
+		if active_skill == null:
+			push_error("Family %s is missing its active-skill profile" % family_id)
+			quit(1)
+			return
+		var active_id := StringName(active_skill.get("id"))
+		if active_id.is_empty() or active_skill_ids.has(active_id):
+			push_error("Family %s has an empty or duplicate active-skill id" % family_id)
+			quit(1)
+			return
+		if float(active_skill.get("cooldown_seconds")) <= 0.0:
+			push_error("Family %s active skill requires a positive cooldown" % family_id)
+			quit(1)
+			return
+		active_skill_ids.append(active_id)
+	var active_controller_script := load("res://combat/active_skill_controller.gd")
+	var active_controller: Node = active_controller_script.new()
+	root.add_child(active_controller)
+	var active_events: Array[StringName] = []
+	active_controller.connect("activation_requested", func(profile: Resource) -> void:
+		active_events.append(StringName(profile.get("id")))
+	)
+	var t_family: FamilyCombatProfile = content.call("load_family", &"T")
+	active_controller.call("configure", t_family.get("active_skill"))
+	if not bool(active_controller.call("request_activation")):
+		push_error("Active skill must fire when its cooldown is ready")
+		quit(1)
+		return
+	if bool(active_controller.call("request_activation")) or active_events.size() != 1:
+		push_error("Active skill must reject repeated activation during cooldown")
+		quit(1)
+		return
+	active_controller.call("tick", float(t_family.get("active_skill").get("cooldown_seconds")) + 0.01)
+	if not bool(active_controller.call("request_activation")) or active_events.size() != 2:
+		push_error("Active skill must become available after its authored cooldown")
+		quit(1)
+		return
+	active_controller.queue_free()
+	var touch_script := load("res://ui/combat_touch_controls.gd")
+	var touch_controls: Control = touch_script.new()
+	root.add_child(touch_controls)
+	await process_frame
+	if int(touch_controls.call("directional_button_count")) != 4:
+		push_error("Combat touch controls must expose four directional buttons")
+		quit(1)
+		return
+	touch_controls.call("set_direction_pressed", &"right", true)
+	if (touch_controls.call("movement_vector") as Vector2).x < 0.9:
+		push_error("Combat touch controls did not produce a rightward movement vector")
+		quit(1)
+		return
+	touch_controls.hide()
+	if not (touch_controls.call("movement_vector") as Vector2).is_zero_approx():
+		push_error("Combat touch controls must cancel held movement when hidden")
+		quit(1)
+		return
+	touch_controls.queue_free()
+	await process_frame
 	var mission_ids: Array[StringName] = content.call("mission_ids")
 	if mission_ids.size() != 6:
 		push_error("Expected 6 authored missions, got %d" % mission_ids.size())
@@ -573,6 +645,8 @@ func _run() -> void:
 	var previous_rank := 0
 	var previous_mission_id: StringName = &""
 	var seen_mission_ids: Array[StringName] = []
+	var seen_encounter_patterns: Array[StringName] = []
+	var encounter_mission: ImmuneMissionData
 	for mission_id in mission_ids:
 		var mission: ImmuneMissionData = content.call("load_mission", mission_id)
 		if mission == null or mission.regular_enemy == null or mission.boss_enemy == null or mission.difficulty == null:
@@ -592,8 +666,43 @@ func _run() -> void:
 			push_error("Mission %s prerequisite chain is invalid" % mission_id)
 			quit(1)
 			return
+		var encounter_pattern := StringName(mission.get("encounter_pattern"))
+		if encounter_pattern.is_empty():
+			push_error("Mission %s is missing its encounter pattern" % mission_id)
+			quit(1)
+			return
+		if mission_id != &"MISSION-01":
+			if encounter_pattern == &"steady" or seen_encounter_patterns.has(encounter_pattern):
+				push_error("Mission %s requires a distinct non-tutorial encounter pattern" % mission_id)
+				quit(1)
+				return
+			seen_encounter_patterns.append(encounter_pattern)
+			if encounter_mission == null:
+				encounter_mission = mission
+		if mission_id == &"MISSION-03" and (
+			mission.briefing.contains("最高難度")
+			or mission.briefing.to_lower().contains("highest difficulty")
+		):
+			push_error("MISSION-03 briefing still claims it is the highest difficulty")
+			quit(1)
+			return
 		previous_rank = mission.difficulty.rank
 		previous_mission_id = mission.id
+	var encounter_script := load("res://combat/combat_encounter_director.gd")
+	var encounter_director: Node = encounter_script.new()
+	root.add_child(encounter_director)
+	var encounter_events: Array[StringName] = []
+	encounter_director.connect("event_triggered", func(event_id: StringName, _strength: int, _occurrence: int) -> void:
+		encounter_events.append(event_id)
+	)
+	encounter_director.call("configure", encounter_mission)
+	encounter_director.call("enter_phase", &"core")
+	encounter_director.call("tick", float(encounter_mission.get("encounter_interval")) + 0.01)
+	if encounter_events.size() != 1 or encounter_events[0].is_empty():
+		push_error("Encounter director did not emit its authored mission event")
+		quit(1)
+		return
+	encounter_director.queue_free()
 	var combat_packed := load("res://scenes/combat_lane.tscn") as PackedScene
 	if combat_packed == null:
 		push_error("combat_lane.tscn missing")
@@ -661,7 +770,7 @@ func _run() -> void:
 		push_error("Cleanse zone must retain two rings and eight signal markers")
 		quit(1)
 		return
-	for property in ["_duty_button", "_intel_button", "_back_button"]:
+	for property in ["_ability_button", "_duty_button", "_intel_button", "_back_button"]:
 		var action_button := combat.get(property) as Button
 		if action_button == null or not action_button.visible:
 			push_error("Combat HUD action button %s is missing or hidden" % property)
@@ -681,6 +790,51 @@ func _run() -> void:
 			push_error("Combat HUD action button %s escaped the bottom action tray" % property)
 			quit(1)
 			return
+	var desktop_responsive: Dictionary = combat.call("responsive_contract")
+	if int(desktop_responsive.get("action_columns", 0)) != 4:
+		push_error("Desktop combat HUD must expose a four-column action tray")
+		quit(1)
+		return
+	if combat.get("_touch_controls") == null:
+		push_error("Combat lane is missing reusable touch movement controls")
+		quit(1)
+		return
+	combat.call("debug_spawn_regular")
+	await process_frame
+	var active_target: Node = null
+	for candidate in combat.get_tree().get_nodes_in_group("bacterium"):
+		if combat.is_ancestor_of(candidate):
+			active_target = candidate
+			break
+	if active_target == null:
+		push_error("Combat active-skill integration requires a spawned target")
+		quit(1)
+		return
+	var active_target_hp := int(active_target.get("hp"))
+	combat.call("_request_active_skill")
+	await process_frame
+	var combat_active_controller := combat.get("_active_skill_controller") as Node
+	if combat_active_controller == null or float(combat_active_controller.call("remaining_seconds")) <= 0.0:
+		push_error("Combat lane did not consume the active-skill cooldown")
+		quit(1)
+		return
+	if is_instance_valid(active_target) and int(active_target.get("hp")) >= active_target_hp:
+		push_error("Combat active skill did not damage its selected pathogen")
+		quit(1)
+		return
+	var enemies_before_surge := 0
+	for candidate in combat.get_tree().get_nodes_in_group("bacterium"):
+		if combat.is_ancestor_of(candidate):
+			enemies_before_surge += 1
+	combat.call("_on_encounter_event", &"surge", 2, 1)
+	var enemies_after_surge := 0
+	for candidate in combat.get_tree().get_nodes_in_group("bacterium"):
+		if combat.is_ancestor_of(candidate):
+			enemies_after_surge += 1
+	if enemies_after_surge != enemies_before_surge + 2:
+		push_error("Combat encounter handler did not spawn its authored surge")
+		quit(1)
+		return
 	var gel_material: ShaderMaterial = look.call("gel_material", "T")
 	if gel_material == null:
 		push_error("T wet-gel material failed to build")
@@ -773,6 +927,10 @@ func _run() -> void:
 	telemetry.tick(0.5, &"fixed")
 	telemetry.record_shot()
 	telemetry.record_hit(2, false)
+	telemetry.call("record_active_skill", &"SKILL-T-EXECUTION-BURST", 2)
+	telemetry.call("record_encounter_event", &"surge")
+	telemetry.record_enemy_defeated(false, true)
+	telemetry.record_enemy_defeated(false, false)
 	telemetry.enter_phase("expedition")
 	telemetry.record_duty_switch()
 	telemetry.tick(0.25, &"mobile")
@@ -793,6 +951,22 @@ func _run() -> void:
 		return
 	if int(telemetry_snapshot.get("shots_fired", 0)) != 1 or int(telemetry_snapshot.get("shots_hit", 0)) != 1:
 		push_error("Playtest telemetry shot contract is invalid")
+		quit(1)
+		return
+	if int(telemetry_snapshot.get("active_skills_used", 0)) != 1 or int(telemetry_snapshot.get("active_skill_hits", 0)) != 2:
+		push_error("Playtest telemetry active-skill contract is invalid")
+		quit(1)
+		return
+	if int(telemetry_snapshot.get("encounter_events", 0)) != 1:
+		push_error("Playtest telemetry encounter-event contract is invalid")
+		quit(1)
+		return
+	if (
+		int(telemetry_snapshot.get("enemies_defeated", 0)) != 2
+		or int(telemetry_snapshot.get("objective_kills", 0)) != 1
+		or int(telemetry_snapshot.get("reinforcements_defeated", 0)) != 1
+	):
+		push_error("Playtest telemetry objective/reinforcement contract is invalid")
 		quit(1)
 		return
 	if float(telemetry_snapshot.get("phase_durations", {}).get("core", 0.0)) != 0.5:
@@ -1034,7 +1208,7 @@ func _run() -> void:
 	if requested_save_path.is_empty():
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(active_save_path))
 	research_state.call("seed_demo")
-	print("SMOKE_OK missions=6 families=6 save=v2 audio=ready gamepad=ready signatures=T+B traits=enrage+regen meshy=B authored_jelly=M+N+A+D gel_fizzy=T+B+M+N+A+D")
+	print("SMOKE_OK missions=6 families=6 save=v2 audio=ready gamepad=ready active_skills=6 encounters=6 touch=ready signatures=T+B traits=enrage+regen meshy=B authored_jelly=M+N+A+D gel_fizzy=T+B+M+N+A+D")
 	var audio_director := root.get_node_or_null("AudioDirector")
 	if audio_director != null:
 		audio_director.call("stop_all")
@@ -1594,16 +1768,16 @@ func _gel_shell_energy_error(shell: ShaderMaterial) -> String:
 	var shell_specular := float(shell.get_shader_parameter("shell_specular_level"))
 	var shell_emission := float(shell.get_shader_parameter("shell_emission_limit"))
 	var shell_alpha := float(shell.get_shader_parameter("shell_alpha_limit"))
-	if shell_energy < 0.36 or shell_energy > 0.40:
-		return "clear membrane edge energy must stay in the accepted V5 window"
-	if shell_diffuse < 0.20 or shell_diffuse > 0.24:
-		return "clear membrane diffuse tint must stay in the accepted V5 window"
-	if shell_specular < 0.36 or shell_specular > 0.40:
-		return "clear membrane specular must stay in the accepted V5 window"
-	if shell_emission < 0.015 or shell_emission > 0.025:
-		return "clear membrane emission must stay in the accepted V5 anti-neon window"
-	if shell_alpha < 0.22 or shell_alpha > 0.26:
-		return "clear membrane alpha must stay in the accepted V5 boundary window"
+	if shell_energy < 0.40 or shell_energy > 0.44:
+		return "clear membrane edge energy must stay in the accepted V5.3 window"
+	if shell_diffuse < 0.16 or shell_diffuse > 0.20:
+		return "clear membrane diffuse tint must stay in the accepted V5.3 window"
+	if shell_specular < 0.46 or shell_specular > 0.50:
+		return "clear membrane specular must stay in the accepted V5.3 window"
+	if shell_emission < 0.020 or shell_emission > 0.030:
+		return "clear membrane emission must stay in the accepted V5.3 anti-neon window"
+	if shell_alpha < 0.27 or shell_alpha > 0.29:
+		return "clear membrane alpha must stay in the accepted V5.3 boundary window"
 	return ""
 
 
@@ -1636,17 +1810,17 @@ func _gel_surface_noise_error(gel: ShaderMaterial) -> String:
 			return "must expose the V5 body response controls"
 	var body_exposure_value: Variant = gel.get_shader_parameter("body_exposure_scale")
 	var body_exposure_scale := float(body_exposure_value)
-	if body_exposure_scale < 0.72 or body_exposure_scale > 0.90:
-		return "V5 body exposure must preserve midtone and deep-core separation"
+	if body_exposure_scale < 0.86 or body_exposure_scale > 0.92:
+		return "V5.3 body exposure must preserve midtone and deep-core separation"
 	var core_glow := float(gel.get_shader_parameter("core_glow"))
-	if core_glow < 0.33 or core_glow > 0.37:
-		return "V5 base-pass volume fill must stay inside the measured core/ribbon window"
+	if core_glow < 0.42 or core_glow > 0.46:
+		return "V5.3 base-pass volume fill must stay inside the measured core/ribbon window"
 	var interior_budget := float(gel.get_shader_parameter("interior_budget"))
-	if interior_budget < 0.48 or interior_budget > 0.52:
-		return "V5 interior budget must remain below the zero-light readability ceiling"
+	if interior_budget < 0.58 or interior_budget > 0.62:
+		return "V5.3 interior budget must remain below the zero-light readability ceiling"
 	var thin_budget_scale := float(gel.get_shader_parameter("thin_budget_scale"))
-	if thin_budget_scale < 0.65 or thin_budget_scale > 0.82:
-		return "V5 thin-part ceiling is outside the non-neon transmission range"
+	if thin_budget_scale < 0.82 or thin_budget_scale > 0.86:
+		return "V5.3 thin-part ceiling is outside the non-neon transmission range"
 	var thickness_contrast := float(gel.get_shader_parameter("thickness_contrast"))
 	if thickness_contrast < 0.04 or thickness_contrast > 0.14:
 		return "V5 macro thickness contrast is outside the restrained gel range"
@@ -1666,8 +1840,8 @@ func _gel_surface_noise_error(gel: ShaderMaterial) -> String:
 	if membrane_irregularity < 0.55:
 		return "V5 membrane cells must use organic amplitude breakup"
 	var wet_spec_breakup := float(gel.get_shader_parameter("wet_spec_breakup"))
-	if wet_spec_breakup < 0.15 or wet_spec_breakup > 0.45:
-		return "V5 wet specular breakup is outside the restrained range"
+	if wet_spec_breakup < 0.06 or wet_spec_breakup > 0.12:
+		return "V5.3 wet specular breakup is outside the smooth-gel range"
 	var coat_tint := float(gel.get_shader_parameter("coat_tint"))
 	if coat_tint < 0.08 or coat_tint > 0.30:
 		return "V5 tight wet highlight must stay restrained and family-tinted"
@@ -1689,8 +1863,8 @@ func _gel_surface_noise_error(gel: ShaderMaterial) -> String:
 	if authored_scale < 0.40 or authored_scale > 0.50:
 		return "V5.1 authored height scale is outside the enlarged-pebble window"
 	var authored_depth := float(gel.get_shader_parameter("authored_height_depth"))
-	if authored_depth < 0.0030 or authored_depth > 0.0060:
-		return "V5.1 authored height depth is outside the restrained wet-skin window"
+	if authored_depth < 0.0010 or authored_depth > 0.0020:
+		return "V5.3 authored height depth is outside the smooth wet-skin window"
 	var authored_blend := float(gel.get_shader_parameter("authored_height_blend"))
 	if authored_blend < 1.5 or authored_blend > 2.5:
 		return "V5.1 triplanar blend is outside the seam-safe window"

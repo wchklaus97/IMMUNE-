@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="FamilyCombatProfile" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="FamilyCombatProfile" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://resources/combat/family_combat_profile.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/skills/active_t_execution_burst.tres" id="2"]
 
 [resource]
 script = ExtResource("1")
@@ -13,6 +14,7 @@ mobile_fire_cooldown = 0.72
 fire_range = 11.0
 move_speed = 6.4
 projectile_color = Color(1, 0.55, 0.22, 1)
+active_skill = ExtResource("2")
 signature_name = "集中處決"
 signature_description = "目標生命低於 30% 時，每發追加 2 點傷害。"
 hit_effect = "execute"

@@ -27,35 +27,38 @@ const BASE: Dictionary = {
 # call with_v5_surface() as well, so their locally-authored colour/silhouette
 # dictionaries cannot accidentally retain the V4 crystalline membrane response.
 const V5_SURFACE: Dictionary = {
-	&"body_exposure_scale": 0.82,
+	# V5.3 keeps the measured per-light ceiling but raises the light-independent
+	# interior enough for gameplay scale. The former profile only became readable
+	# under the three-light look-dev rig and read as dark hard plastic in combat.
+	&"body_exposure_scale": 0.90,
 	&"direct_light_budget_share": 0.10,
 	# Compatibility adds EMISSION only in the base colour pass for this opaque
 	# material, so this bounded hue-preserving fill is not multiplied by shadowed
 	# additive lights. This slight V5.1 lift restores the reference's readable core;
 	# the zero-light probe below guards it from becoming a self-lit lantern.
-	&"core_glow": 0.35,
-	&"interior_budget": 0.50,
-	&"thin_budget_scale": 0.74,
-	&"thickness_contrast": 0.06,
+	&"core_glow": 0.44,
+	&"interior_budget": 0.60,
+	&"thin_budget_scale": 0.84,
+	&"thickness_contrast": 0.11,
 	&"thickness_power": 1.15,
 	&"thin_bias": 2.7,
 	&"glow_power": 2.0,
 	&"curv_low": 18.0,
 	&"curv_high": 48.0,
 	&"thin_curvature": 0.06,
-	&"transmit_strength": 0.85,
-	&"thin_glow": 0.28,
-	&"rim_energy": 0.055,
-	&"rim_budget": 0.035,
-	&"coat_roughness": 0.060,
-	&"coat_strength": 1.20,
-	&"spec_energy": 0.16,
+	&"transmit_strength": 1.02,
+	&"thin_glow": 0.36,
+	&"rim_energy": 0.075,
+	&"rim_budget": 0.045,
+	&"coat_roughness": 0.045,
+	&"coat_strength": 1.35,
+	&"spec_energy": 0.18,
 	&"membrane_depth_cap": 0.014,
 	&"membrane_grazing_floor": 0.10,
 	&"membrane_grazing_power": 1.35,
 	&"membrane_irregularity": 0.72,
-	&"wet_spec_breakup": 0.28,
-	&"coat_tint": 0.16,
+	&"wet_spec_breakup": 0.08,
+	&"coat_tint": 0.10,
 	&"detail_emission_scale": 0.08,
 	# V5.1 replaces the procedural sphere/island normals with one deterministic,
 	# mipmapped height source. The former fields produced circular stamps, closed
@@ -65,7 +68,7 @@ const V5_SURFACE: Dictionary = {
 	# with grazing weighting in the shader, it keeps the face-on core calm while
 	# retaining compact wet pebbles on turning edges and thin limbs.
 	&"authored_height_scale": 0.45,
-	&"authored_height_depth": 0.0040,
+	&"authored_height_depth": 0.0015,
 	&"authored_height_blend": 2.0,
 	&"authored_height_lod_bias": 0.35,
 	&"bubble_depth": 0.0,

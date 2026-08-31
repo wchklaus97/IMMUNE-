@@ -135,6 +135,12 @@ func _build_preview_stage(host: Control) -> void:
 	rim.light_color = Color(0.34, 0.58, 1.0)
 	rim.light_energy = 0.85
 	_preview_stage.add_child(rim)
+	var fill := DirectionalLight3D.new()
+	fill.name = "CellPreviewFill"
+	fill.rotation_degrees = Vector3(-12, 62, 0)
+	fill.light_color = Color(0.72, 0.82, 1.0)
+	fill.light_energy = 0.32
+	_preview_stage.add_child(fill)
 	var camera := Camera3D.new()
 	camera.name = "CellPreviewCamera"
 	camera.position = Vector3(1.0, 1.45, 3.75)

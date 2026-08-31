@@ -21,11 +21,17 @@ UI_IMMUNE_CORE,免疫核心,Immune Core
 UI_RETRY,重新挑戰,Retry
 UI_COMBAT_HUD,%s · %s · %s勤務,%s · %s · %s duty
 UI_TOGGLE_DUTY,%s · 轉換勤務,%s · Switch duty
+UI_ACTIVE_SKILL_READY,%s · %s,%s · %s
+UI_ACTIVE_SKILL_COOLDOWN,%s · %d 秒,%s · %d sec
+UI_ACTIVE_SKILL_COOLDOWN_SHORT,%s · %d秒,%s · %ds
+UI_DUTY_SHORT,勤務,Duty
 UI_RESEARCH_T,研究 T 鏈,Research T chain
 UI_CHARACTER_INTEL,角色情報,Cell intel
+UI_CHARACTER_INTEL_SHORT,情報,Intel
 UI_RETURN_MISSION_DESK,返回任務台,Return to mission desk
+UI_RETURN_MISSION_DESK_SHORT,任務台,Missions
 UI_TUTORIAL_TITLE,任務教學,Mission Tutorial
-UI_TUTORIAL_BODY,1 · 固定勤務會自動攻擊並獲得較高射速。\n2 · 按 %s 轉換勤務並用 WASD／左搖桿移動。\n3 · 第二階段進入發光淨化圈並保持。\n4 · 第三階段擊破 Boss；%s 可開啟暫停與設定。,1 · Fixed duty auto-attacks at a higher fire rate.\n2 · Press %s to switch duty; move with WASD / left stick.\n3 · Hold inside the glowing cleanse zone in phase two.\n4 · Defeat the boss in phase three; %s opens pause and settings.
+UI_TUTORIAL_BODY,1 · 固定勤務會自動攻擊；按 %s 主動施放家族技能。\n2 · 按 %s 轉換勤務並用 WASD／左搖桿／觸控方向鍵移動。\n3 · 第二階段進入發光淨化圈並保持。\n4 · 留意每關獨有嘅感染事件。\n5 · 第三階段擊破 Boss；%s 可開啟暫停與設定。,1 · Fixed duty auto-attacks; press %s to deliberately activate your family skill.\n2 · Press %s to switch duty; move with WASD / left stick / touch pad.\n3 · Hold inside the glowing cleanse zone in phase two.\n4 · Respond to each mission's unique infection events.\n5 · Defeat the boss in phase three; %s opens pause and settings.
 UI_TUTORIAL_START,%s · 開始任務,%s · Start mission
 DUTY_FIXED,固定,Fixed
 DUTY_RELAY,中繼,Relay
@@ -33,6 +39,16 @@ DUTY_MOBILE,移動,Mobile
 STATUS_T_MOBILE_REQUIRED,需要完成 BASE-T-04 移動資格。按 %s 研究 T 細胞鏈。,Complete BASE-T-04 Mobile Clearance. Press %s to research the T-cell chain.
 STATUS_DUTY_MOBILE,勤務轉換完成。使用 WASD／左搖桿推進；再次轉換可重新扎根。,Duty switched. Move with WASD / left stick; switch again to anchor.
 STATUS_DUTY_FIXED,扎根完成。固定勤務會提升射速。,Anchored. Fixed duty increases fire rate.
+STATUS_ACTIVE_SKILL_COOLDOWN,主動技能冷卻中：尚餘 %d 秒。,Active skill cooling down: %d sec remaining.
+STATUS_ACTIVE_SKILL_NO_TARGET,主動技能範圍內暫時冇有效目標。,No valid target is currently inside active-skill range.
+STATUS_ACTIVE_SKILL_USED,%s 命中 %d 個目標。,%s hit %d targets.
+STATUS_ACTIVE_SKILL_HEAL,%s 命中 %d 個目標並修復核心 %d 點。,%s hit %d targets and repaired %d core HP.
+STATUS_ENCOUNTER_SURGE,孢子急湧：額外 %d 隻病原加入。,Spore surge: %d extra pathogens entered.
+STATUS_ENCOUNTER_CYTOKINE,細胞因子脈衝：%d 隻病原短暫加速。,Cytokine pulse: %d pathogens gained a temporary speed boost.
+STATUS_ENCOUNTER_ADAPTIVE,適應性推進：生成節奏已加快 %d%%。,Adaptive advance: spawn pacing is now %d%% faster.
+STATUS_ENCOUNTER_BIOFILM,生物膜再生：病原合共恢復 %d 點生命。,Biofilm bloom: pathogens restored %d total HP.
+STATUS_ENCOUNTER_SYSTEMIC_SURGE,系統急湧：額外 %d 隻融合病原加入。,Systemic surge: %d extra fusion pathogens entered.
+STATUS_ENCOUNTER_SYSTEMIC_BIOFILM,系統生物膜：病原合共恢復 %d 點生命。,Systemic biofilm: pathogens restored %d total HP.
 STATUS_T_FIXED_COMPLETE,BASE-T-03 固定炮台專精完成。再研究一次解鎖移動。,BASE-T-03 Fixed Turret complete. Research once more to unlock movement.
 STATUS_T_FIXED_BLOCKED,BASE-T-03 尚未符合研究條件。,BASE-T-03 research requirements are not met.
 STATUS_T_MOBILE_COMPLETE,BASE-T-04 移動資格已授予。現在可以轉換勤務。,BASE-T-04 Mobile Clearance granted. Duty switching is now available.
@@ -88,6 +104,18 @@ NK 細胞,NK 細胞,NK Cell
 中遠距穩定輸出與良好機動。,中遠距穩定輸出與良好機動。,Stable mid-range damage with good mobility.
 先鋒標定,先鋒標定,Vanguard Designation
 以均衡射程、傷害與機動維持穩定命中。,以均衡射程、傷害與機動維持穩定命中。,Maintains reliable hits through balanced range damage and mobility.
+SKILL_T_ACTIVE_NAME,處決爆發,Execution Burst
+SKILL_T_ACTIVE_DESCRIPTION,鎖定最低生命目標並追加處決傷害。,Targets the lowest-health pathogen and adds execution damage.
+SKILL_B_ACTIVE_NAME,抗體震波,Antibody Wave
+SKILL_B_ACTIVE_DESCRIPTION,向範圍內多個病原施加強效抗體標記。,Marks multiple nearby pathogens with amplified antibodies.
+SKILL_M_ACTIVE_NAME,吞噬震地,Phagocyte Slam
+SKILL_M_ACTIVE_DESCRIPTION,以近距高傷震波清除密集病原。,A high-damage close-range shockwave for clustered pathogens.
+SKILL_N_ACTIVE_NAME,嗜中性突襲,Neutrophil Rush
+SKILL_N_ACTIVE_DESCRIPTION,快速掃擊多個前線目標。,Rapidly strikes several front-line targets.
+SKILL_A_ACTIVE_NAME,中繼光束,Relay Beam
+SKILL_A_ACTIVE_DESCRIPTION,以超長射程串聯三個目標。,Relays a long-range beam across three targets.
+SKILL_D_ACTIVE_NAME,哨戒脈衝,Sentinel Pulse
+SKILL_D_ACTIVE_DESCRIPTION,打擊附近病原並修復免疫核心。,Hits nearby pathogens and repairs the immune core.
 接觸,接觸,Contact
 感染,感染,Infection
 危機,危機,Crisis
@@ -99,7 +127,7 @@ L01 · 核心圍城,L01 · 核心圍城,L01 · Core Siege
 L02 · 血流感染,L02 · 血流感染,L02 · Bloodstream Infection
 孢子載體已穿過第一道防線。敵人更耐久，生成速度亦更快。,孢子載體已穿過第一道防線。敵人更耐久，生成速度亦更快。,Spore carriers breached the first defense. Enemies are tougher and spawn faster.
 L03 · 細胞因子風暴,L03 · 細胞因子風暴,L03 · Cytokine Storm
-裝甲病原與細胞因子巨像同時出現。這是 demo 目前最高難度任務。,裝甲病原與細胞因子巨像同時出現。這是 demo 目前最高難度任務。,Armored pathogens and the Cytokine Colossus appear together.
+裝甲病原與細胞因子巨像同時出現。保持火力並留意高壓推進。,裝甲病原與細胞因子巨像同時出現。保持火力並留意高壓推進。,Armored pathogens and the Cytokine Colossus appear together. Maintain fire and watch for pressure surges.
 L04 · 突變缺口,L04 · 突變缺口,L04 · Mutation Breach
 擬態病原會在低生命時突然加速。維持集中火力，避免殘血敵人穿越防線。,擬態病原會在低生命時突然加速。維持集中火力，避免殘血敵人穿越防線。,Mutators accelerate at low health. Focus fire before wounded enemies cross the line.
 L05 · 生物膜王庭,L05 · 生物膜王庭,L05 · Biofilm Regency

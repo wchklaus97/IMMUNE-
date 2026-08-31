@@ -1,6 +1,110 @@
 # IMMUNE demo handoff
 
-Updated: 2026-08-31
+Updated: 2026-09-01
+
+## V5.3 current handoff — gameplay, jelly, and Steam submission candidate
+
+V5.3 completes every repository-controlled gate in the approved
+`2026-09-01-immune-v53-gameplay-and-steam-readiness.md` plan. The candidate is
+the current local `main` tip containing this section; it has not been pushed,
+tagged, uploaded to Steam, Developer ID signed/notarized, or reviewed by Valve.
+All final imports, smoke, and exports use official signed Godot
+`4.7.2.stable.official.ed1daf0bf` with matching templates.
+
+### What changed
+
+- All six families now reference a typed `FamilyActiveSkillProfile` and expose
+  a deliberate cooldown action on E/right bumper and the fourth HUD button.
+  Targeting, radius, damage, execute/mark behavior, target cap, and optional
+  core repair remain designer-owned Resource data. `ActiveSkillController`
+  owns cooldown only; `CombatLane` owns world resolution and telemetry.
+- Six mission Resources now declare `steady`, `surge`, `cytokine`, `adaptive`,
+  `biofilm`, or alternating `systemic` encounter pacing. Encounter
+  reinforcements are recorded separately from objective kills, preventing
+  pressure waves from accidentally shortening a mission.
+- The real-time playtest autopilot now uses the same active-skill path as a
+  player. The balance harness rejects all non-1x `--time-scale` values after an
+  8x experiment proved non-equivalent projectile/physics outcomes.
+- Combat has four desktop actions, a two-by-two narrow-phone tray, localized
+  compact labels/tooltips, and a reusable four-button touch pad. Held touch
+  movement cancels on hide or window focus loss. Safe-area evidence reports
+  every critical control rectangle instead of only a combined Boolean.
+- The accepted jelly tune raises bounded core/thin-volume readability,
+  transmission, and smooth wet coat response while reducing noisy authored
+  height. Combat, hero portrait, and mission preview retain one shadowed key
+  plus two unshadowed directional fills; the debug light-class contract remains
+  enforced.
+- Six real 1920x1080 gameplay screenshots, current-dimension store/library
+  art, transparent logo, shortcut/app/mac icons, bilingual copy, and a truthful
+  pre-generated-AI disclosure draft are checked into `steam/`.
+- `validate_steam_assets.mjs` and `prepare_steam_build.mjs` fail closed on asset
+  dimensions/alpha, placeholders, duplicate IDs, symlinks, unsafe ZIP paths,
+  missing artifacts, and existing output. Staging only writes preview VDFs and
+  never invokes SteamCMD or uploads.
+
+### Accepted V5.3 evidence
+
+- Exact Godot 4.7.2 imports twice and isolated smoke passes:
+  `missions=6 families=6 save=v2 audio=ready gamepad=ready active_skills=6
+  encounters=6 touch=ready` plus the existing signature/trait/Meshy/jelly
+  identities.
+- The final canonical 1x campaign matrix passes 36/36 runs. Every run reaches
+  victory, defeats one boss, exercises real projectile fire, uses and hits with
+  an active skill, completes the mobile/relay duty round trip, preserves core
+  HP, and maintains a strictly increasing M01→M06 duration ladder. M06 spans
+  79.817–91.950 seconds with 8–12/12 core HP.
+- Final narrow evidence passes 390x844 and 360x800 with simulated
+  `24,47,24,34` insets, both locales, Mission/Research/Combat/Pause, four action
+  buttons, and touch. At 360px, actions are at least 119.625x44.820 physical px,
+  touch buttons 45.570px high, and critical copy 14.440px.
+- V5.3 jelly light-probe evidence stays bounded: median luminance progresses
+  `0.0734 → 0.1925 → 0.2669 → 0.3090` across zero through three lights; the
+  three-light clip ratio is 1.17%. At 1920x1080/10 bodies/300 frames, gel and
+  standard both report 0.910ms mean CPU. Compatibility Metal GPU timing is
+  unavailable and is not converted into a GPU claim.
+- Root release/tool tests pass 45/45, Web research tests 53/53, Meshy workflow
+  tests 6/6, catalog localization 200 nodes/406 rows, translation validation
+  623 rows, and Steam graphical assets 17 files/6 screenshots/transparent logo.
+- Four release exports are rebuilt after the final code review change. The
+  artifact contract passes. Local macOS release smoke verifies ad-hoc
+  codesign, `com.wchklaus97.immune`, version 0.4.0, ICNS, arm64+x86_64, and
+  `RELEASE_SMOKE_OK platform=macOS nodes=200`.
+- Final exported-Web QA completes research → mission → B → combat → mobile duty
+  → Pause in both profiles. Metal is 120.003/106.383 mean/p05 FPS; 4x CPU +
+  SwiftShader is 13.469/9.940. SwiftShader is compatibility stress only.
+- Synthetic-ID native Steam staging passes for 13 files with `preview=1` and
+  `upload=false`. Exact artifact hashes and byte sizes are checked into
+  `steam/build-candidate-v0.4.0.md`.
+
+Ignored local evidence roots include:
+
+- `outputs/v5.3-balance/realtime-final-2/`
+- `outputs/v5.3-jelly-candidate-2/`
+- `outputs/v5.3-steam-store-captures/`
+- `outputs/v5.3-web-release-qa-final/`
+- `outputs/v5.3-export-472/`
+- `outputs/v5.3-steam-stage-final-smoke/`
+- `godot/immune/build/releases/`
+
+### Honest completion boundary and next safest task
+
+- Repository-controlled development is complete and locally ready for an owner
+  submission rehearsal. Public Steam release is not 100% complete: the owner
+  must finish onboarding/content survey/rights review, choose full App versus
+  separate demo, supply real App/depot IDs and support/pricing/date metadata,
+  sign/notarize macOS, and authorize a private SteamPipe upload.
+- This exact V5.3 candidate has not run natively on Windows or Linux. Their
+  PE/ELF headers, sidecars, sizes, hashes, permissions, and depot staging pass;
+  native launch must be completed on those OSes or by an authorized push to
+  the existing three-OS CI. The green V5.2 run `33361771002` is historical, not
+  relabelled as V5.3 evidence.
+- Real minimum-spec, Steam Deck, and six-family human play sessions remain
+  mandatory external evidence. No automated compatibility profile is presented
+  as human/device proof, and no Steam Deck Verified claim is made.
+- Next safest owner-authorized task: push the local candidate, require all CI
+  native release-smoke jobs green, then substitute real IDs into a fresh
+  `prepare:steam` stage and inspect it before any SteamCMD command. Do not reuse
+  the synthetic `4800000`–`4800003` staging IDs.
 
 ## V5.2 current handoff — supersedes the V5.1 layout status below
 

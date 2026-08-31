@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="FamilyActiveSkillProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/combat/family_active_skill_profile.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"SKILL-N-NEUTROPHIL-RUSH"
+name_key = &"SKILL_N_ACTIVE_NAME"
+description_key = &"SKILL_N_ACTIVE_DESCRIPTION"
+cooldown_seconds = 7.0
+radius = 10.5
+max_targets = 4
+targeting = "spread"
+damage = 3

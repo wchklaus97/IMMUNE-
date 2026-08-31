@@ -274,7 +274,7 @@ uniform bool authored_height_enabled = false;
 // The source carries fine shallow pores. A repeat below one enlarges them toward
 // the reference's pebble scale; grazing weighting below keeps the face-on core calm.
 uniform float authored_height_scale : hint_range(0.20, 2.0) = 0.75;
-uniform float authored_height_depth : hint_range(0.0, 0.030) = 0.012;
+uniform float authored_height_depth : hint_range(0.0, 0.030) = 0.0015;
 uniform float authored_height_blend : hint_range(1.0, 4.0) = 2.0;
 // Positive bias intentionally selects a slightly coarser mip. It trades tiny
 // close-up sparkle for stable detail during half-degree turns and minification.

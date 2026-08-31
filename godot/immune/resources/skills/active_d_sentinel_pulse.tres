@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="FamilyActiveSkillProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/combat/family_active_skill_profile.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"SKILL-D-SENTINEL-PULSE"
+name_key = &"SKILL_D_ACTIVE_NAME"
+description_key = &"SKILL_D_ACTIVE_DESCRIPTION"
+cooldown_seconds = 10.0
+radius = 10.0
+max_targets = 6
+targeting = "nearest"
+damage = 3
+core_heal = 2

@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="FamilyCombatProfile" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="FamilyCombatProfile" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://resources/combat/family_combat_profile.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/skills/active_m_phagocyte_slam.tres" id="2"]
 
 [resource]
 script = ExtResource("1")
@@ -13,5 +14,6 @@ mobile_fire_cooldown = 1.05
 fire_range = 8.5
 move_speed = 5.1
 projectile_color = Color(0.92, 0.62, 1, 1)
+active_skill = ExtResource("2")
 signature_name = "吞噬重擊"
 signature_description = "以較短射程換取高單發傷害。"

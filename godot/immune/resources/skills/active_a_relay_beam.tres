@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="FamilyActiveSkillProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/combat/family_active_skill_profile.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"SKILL-A-RELAY-BEAM"
+name_key = &"SKILL_A_ACTIVE_NAME"
+description_key = &"SKILL_A_ACTIVE_DESCRIPTION"
+cooldown_seconds = 9.0
+radius = 16.0
+max_targets = 3
+targeting = "nearest"
+damage = 5

@@ -14,11 +14,11 @@ uniform float rim_emission : hint_range(0.0, 2.0) = 0.12;
 // Authored bodies carry older, deliberately hot per-instance shell values.
 // These V5 bounds live in the shader so every builder receives the same clear
 // dielectric response without duplicating profile data or raising alpha.
-uniform float shell_energy_scale : hint_range(0.0, 1.0) = 0.38;
-uniform float shell_diffuse_strength : hint_range(0.0, 1.0) = 0.22;
-uniform float shell_specular_level : hint_range(0.0, 1.0) = 0.38;
-uniform float shell_emission_limit : hint_range(0.0, 0.2) = 0.02;
-uniform float shell_alpha_limit : hint_range(0.0, 0.8) = 0.24;
+uniform float shell_energy_scale : hint_range(0.0, 1.0) = 0.42;
+uniform float shell_diffuse_strength : hint_range(0.0, 1.0) = 0.18;
+uniform float shell_specular_level : hint_range(0.0, 1.0) = 0.48;
+uniform float shell_emission_limit : hint_range(0.0, 0.2) = 0.025;
+uniform float shell_alpha_limit : hint_range(0.0, 0.8) = 0.28;
 // Zero preserves the separately scaled authored M/N/A/D shell meshes. Imported
 // T/B bodies use this shader as a next pass and opt into a small normal-space
 // expansion, avoiding z-fighting without duplicating their mesh hierarchy.
@@ -32,7 +32,7 @@ void fragment() {
 	float fresnel = clamp(1.0 - abs(dot(normalize(NORMAL), normalize(VIEW))), 0.0, 1.0);
 	float edge = pow(fresnel, max(edge_power * 0.78, 0.5));
 	ALBEDO = shell_color.rgb * shell_diffuse_strength;
-	ROUGHNESS = max(shell_roughness, 0.055);
+	ROUGHNESS = max(shell_roughness, 0.04);
 	METALLIC = 0.0;
 	SPECULAR = shell_specular_level;
 	ALPHA = min(face_alpha + edge_alpha * edge * shell_energy_scale, shell_alpha_limit);

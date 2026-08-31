@@ -6,6 +6,8 @@
   "scripts": {
     "test:tools": "node --test tools/*.test.mjs",
     "test:web-release": "node tools/web_release_qa.mjs",
+    "validate:steam-assets": "node tools/validate_steam_assets.mjs",
+    "prepare:steam": "node tools/prepare_steam_build.mjs",
     "create:playtest-kit": "node tools/create_human_playtest_kit.mjs",
     "create:playtest-campaign": "node tools/create_human_playtest_campaign.mjs",
     "run:playtest-session": "node tools/run_human_playtest_session.mjs",

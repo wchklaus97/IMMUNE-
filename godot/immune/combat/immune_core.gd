@@ -47,3 +47,15 @@ func take_hit(amount: int) -> void:
 	hp_changed.emit(hp, MAX_HP)
 	if hp <= 0:
 		breached.emit()
+
+
+## Returns the HP actually restored by a support ability.
+func restore_health(amount: int) -> int:
+	if hp <= 0 or amount <= 0:
+		return 0
+	var previous := hp
+	hp = mini(hp + amount, MAX_HP)
+	var restored := hp - previous
+	if restored > 0:
+		hp_changed.emit(hp, MAX_HP)
+	return restored

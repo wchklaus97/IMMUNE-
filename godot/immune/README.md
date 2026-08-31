@@ -116,7 +116,9 @@ godot --path godot/immune --rendering-method gl_compatibility \
   --soak --out=outputs/playtests/all-family-campaign-soak.json
 ```
 
-調校時不要提高 `--time-scale`；加速 physics 可能令細 projectile tunnelling，只適合診斷流程，唔適合作 balance 證據。
+正式平衡 harness 只接受 `--time-scale=1`；任何加速值都會 fail closed，因為
+加速 physics 會改變 projectile collision 同 autopilot 結果，唔可以當作
+gameplay-equivalent balance 證據。
 
 完整 6 關 × T/B candidate 1（12 runs）已通過；CI 另外固定跑 MISSION-01 與 MISSION-06 嘅 T/B 四組 bounded regression。結果同調校理由見 `docs/godot-prompter/specs/2026-08-28-immune-campaign-expansion-results.md`。
 

@@ -31,11 +31,11 @@ const MEMBRANE_OPTIONS: Array[StringName] = [
 ]
 
 const SHELL_V5_BOUNDS: Dictionary = {
-	&"shell_energy_scale": 0.38,
-	&"shell_diffuse_strength": 0.22,
-	&"shell_specular_level": 0.38,
-	&"shell_emission_limit": 0.02,
-	&"shell_alpha_limit": 0.24,
+	&"shell_energy_scale": 0.42,
+	&"shell_diffuse_strength": 0.18,
+	&"shell_specular_level": 0.48,
+	&"shell_emission_limit": 0.025,
+	&"shell_alpha_limit": 0.28,
 }
 
 ## How far the palette colour's saturation is pushed for the body albedo. A gel
@@ -146,7 +146,7 @@ const DEFAULTS := {
 	# Not razor-tight. At 0.06 the dimple normals aliased inside the coat lobe and the
 	# crown sheen broke into a field of hard sparkle rather than the reference's smooth
 	# sheen with the cellular texture reading through it.
-	&"coat_roughness": 0.10,
+	&"coat_roughness": 0.045,
 	# Wet gloss comes from the tight coat, not from driving both lobes hard. At
 	# spec_energy 1.3 the broad lobe blew a single wide highlight across the crown --
 	# measurably, it was contributing eight points of the deep core's above-0.75 pixel
@@ -154,19 +154,19 @@ const DEFAULTS := {
 	# and saturated. Cutting the shared energy and leaving the coat tight keeps several
 	# small sharp highlights instead of one broad blown one.
 	&"coat_strength": 1.35,
-	&"spec_energy": 0.16,
+	&"spec_energy": 0.18,
 	&"spec_f0": 0.06,
 	&"env_specular": 0.0,
 	# Jelly V5 keeps the direct body below the ACES shoulder, then restores a
 	# broad, hue-preserving value ramp with the same macro thickness estimate
 	# already used by the spectral absorption. This is the anti-neon/readability
 	# layer shared by mission previews, combat bodies, and the close-up rig.
-	&"body_exposure_scale": 0.82,
+	&"body_exposure_scale": 0.90,
 	# Compatibility-safe per-pass share of the final body budget. Smoke enforces
 	# at most three directional lights per viewport and renders the worst-case topology.
 	&"direct_light_budget_share": 0.10,
-	&"thin_budget_scale": 0.74,
-	&"thickness_contrast": 0.06,
+	&"thin_budget_scale": 0.84,
+	&"thickness_contrast": 0.11,
 	&"thickness_power": 1.15,
 	# The V4 membrane lattice is retained as a bounded Compatibility-safe field,
 	# but its effective normal depth is capped, grazing-weighted, and broken up by
@@ -176,8 +176,8 @@ const DEFAULTS := {
 	&"membrane_grazing_floor": 0.10,
 	&"membrane_grazing_power": 1.35,
 	&"membrane_irregularity": 0.72,
-	&"wet_spec_breakup": 0.28,
-	&"coat_tint": 0.16,
+	&"wet_spec_breakup": 0.08,
+	&"coat_tint": 0.10,
 	&"detail_emission_scale": 0.08,
 	# Low on purpose. A heavily wrapped terminator plus a strong interior fill left
 	# almost nothing on the body dark, so the dominant channel had nowhere to fall to
@@ -187,7 +187,7 @@ const DEFAULTS := {
 	&"light_wrap": 0.16,
 	&"sss_amount": 0.5,
 	&"transmit_power": 2.6,
-	&"transmit_strength": 0.85,
+	&"transmit_strength": 1.02,
 	&"transmit_distort": 0.30,
 	# Transmitted light is mostly the lamp's own colour, tinted only by what the gel
 	# took out of it on the way through. This is the term that makes a thin edge come
@@ -246,12 +246,12 @@ const DEFAULTS := {
 	# uses the normal directly and stays smooth, so it carries the band and curvature
 	# only nudges genuinely convex tips.
 	&"thin_curvature": 0.06,
-	&"thin_glow": 0.22,
-	&"core_glow": 0.02,
+	&"thin_glow": 0.36,
+	&"core_glow": 0.44,
 	# Narrower than before: the rim needs to read as a ribbon on the turn of a solid
 	# body, not as a band wide enough to swallow a whole limb.
 	&"rim_power": 9.0,
-	&"rim_energy": 0.14,
+	&"rim_energy": 0.075,
 	# Absorption model, now almost purely spectral. These numbers are solved against
 	# the reference's own measured channel profile rather than tuned by eye: across the
 	# body its red holds 0.98 and only sags to 0.93 at the deepest core, while green
@@ -294,8 +294,8 @@ const DEFAULTS := {
 	# path by exp(-2.5); removing that raised the same paths tenfold, so the old budgets
 	# no longer bound anything. interior_budget now governs only the ambient core term --
 	# the thin-band glow it used to cap moved inside body_budget.
-	&"interior_budget": 0.10,
-	&"rim_budget": 0.05,
+	&"interior_budget": 0.60,
+	&"rim_budget": 0.045,
 	# Calibrated as a pair with albedo_gain, and the pairing is the point: the gain
 	# drives the dominant channel past clipping across the whole shell and this catches
 	# it just underneath. Set the ceiling too low and the drive is wasted; remove it and

@@ -29,6 +29,8 @@ var _visual_root: Node3D
 var _antibody_marks: int = 0
 var _seconds_since_hit: float = 0.0
 var _regeneration_progress: float = 0.0
+var _temporary_speed_multiplier: float = 1.0
+var _speed_boost_remaining: float = 0.0
 
 const CORE_COLLISION_RADIUS: float = 0.9
 const BODY_COLLISION_RADIUS: float = 0.3
@@ -152,9 +154,26 @@ func take_hit(amount: int) -> void:
 		queue_free()
 
 
+## Encounter events may restore a bounded amount without resetting the trait timer.
+func restore_health(amount: int) -> int:
+	if not _alive or amount <= 0 or hp >= max_hp:
+		return 0
+	var previous := hp
+	hp = mini(hp + amount, max_hp)
+	var restored := hp - previous
+	if restored > 0:
+		health_changed.emit(hp, max_hp)
+		_update_health_bar()
+	return restored
+
+
 func _physics_process(delta: float) -> void:
 	if not _alive:
 		return
+	if _speed_boost_remaining > 0.0:
+		_speed_boost_remaining = maxf(_speed_boost_remaining - delta, 0.0)
+		if _speed_boost_remaining <= 0.0:
+			_temporary_speed_multiplier = 1.0
 	_update_regeneration(delta)
 	if core == null or not is_instance_valid(core):
 		return
@@ -178,10 +197,19 @@ func core_contact_distance() -> float:
 
 
 func current_move_speed() -> float:
+	var trait_multiplier := 1.0
 	if enrage_health_threshold <= 0.0:
-		return speed
+		return speed * _temporary_speed_multiplier
 	var health_ratio := float(hp) / float(maxi(max_hp, 1))
-	return speed * enrage_speed_multiplier if health_ratio <= enrage_health_threshold else speed
+	trait_multiplier = enrage_speed_multiplier if health_ratio <= enrage_health_threshold else 1.0
+	return speed * trait_multiplier * _temporary_speed_multiplier
+
+
+func apply_speed_boost(multiplier: float, duration: float) -> void:
+	if not _alive:
+		return
+	_temporary_speed_multiplier = maxf(_temporary_speed_multiplier, maxf(multiplier, 1.0))
+	_speed_boost_remaining = maxf(_speed_boost_remaining, maxf(duration, 0.0))
 
 
 func antibody_marks() -> int:
