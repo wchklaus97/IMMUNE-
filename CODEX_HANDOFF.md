@@ -5,9 +5,11 @@ Updated: 2026-08-31
 ## V5.2 current handoff — supersedes the V5.1 layout status below
 
 V5.2 keeps the accepted V5.1 jelly surface and adds the locked 390x844 / 360x800
-narrow-phone and safe-area layout tranche. The local source and release evidence
-below use Godot `4.7.2.stable.official.ed1daf0bf`; the exact pushed source commit
-and GitHub Actions run will be added after the final CI gate.
+narrow-phone and safe-area layout tranche. Its exact build source is
+`32a04cd544afd196b454386a4d252828d33badf2`, pushed to `origin/main`. Local and
+remote release evidence use Godot `4.7.2.stable.official.ed1daf0bf`; GitHub
+Actions run `33361771002` completed successfully against that exact commit.
+V5.2 submitted no Meshy task, made no paid API retry, and consumed zero credits.
 
 ### What changed
 
@@ -70,6 +72,18 @@ and GitHub Actions run will be added after the final CI gate.
   duty -> Pause in both profiles. Baseline Metal is `120.002/100` mean/p05 FPS;
   4x CPU + SwiftShader is `14.608/13.089`. SwiftShader remains a compatibility
   stress profile, not a real-hardware benchmark.
+
+### Accepted remote evidence
+
+- GitHub Actions run `33361771002` is green for exact source
+  `32a04cd544afd196b454386a4d252828d33badf2`: `validate-and-export` plus Linux,
+  Windows, and macOS native release-smoke jobs all completed successfully.
+- The four-platform artifact is
+  `immune-demo-32a04cd544afd196b454386a4d252828d33badf2` (433,014,678-byte Actions
+  archive, SHA-256 `f7a6131a399c54993ffb9e57bff5ed0849b3a87bdfeb167d4ac345f617b76908`).
+- The exported-Web QA artifact is
+  `immune-web-release-qa-32a04cd544afd196b454386a4d252828d33badf2` (1,053,578-byte Actions
+  archive, SHA-256 `d61e6468efe9d5c28bf72c4ccece8a240454a5822856b63889c9962f5aa3ea1d`).
 
 Ignored evidence roots:
 
@@ -883,24 +897,24 @@ cd ../../
 npm ci --ignore-scripts
 npm run test:tools
 npm run validate:playtest-template
-gh run download 33316071797 \
-  -n immune-demo-2d011b167e79a1d583d368c98ed3c07a41209d3e \
-  -D outputs/release-ci-33316071797-jelly-v51
+gh run download 33361771002 \
+  -n immune-demo-32a04cd544afd196b454386a4d252828d33badf2 \
+  -D outputs/release-ci-33361771002-jelly-v52
 npm run create:playtest-campaign -- \
-  --artifacts=outputs/release-ci-33316071797-jelly-v51 \
-  --build-commit=2d011b167e79a1d583d368c98ed3c07a41209d3e \
-  --source-run=33316071797 \
-  --source-artifact=immune-demo-2d011b167e79a1d583d368c98ed3c07a41209d3e \
-  --out=outputs/human-playtest-campaigns/immune-v0.4.0-2d011b1-run-33316071797-jelly-v51-portable-v1
+  --artifacts=outputs/release-ci-33361771002-jelly-v52 \
+  --build-commit=32a04cd544afd196b454386a4d252828d33badf2 \
+  --source-run=33361771002 \
+  --source-artifact=immune-demo-32a04cd544afd196b454386a4d252828d33badf2 \
+  --out=outputs/human-playtest-campaigns/immune-v0.4.0-32a04cd-run-33361771002-jelly-v52-portable-v1
 npm run create:playtest-campaign -- \
-  --verify=outputs/human-playtest-campaigns/immune-v0.4.0-2d011b1-run-33316071797-jelly-v51-portable-v1
-cd outputs/human-playtest-campaigns/immune-v0.4.0-2d011b1-run-33316071797-jelly-v51-portable-v1
+  --verify=outputs/human-playtest-campaigns/immune-v0.4.0-32a04cd-run-33361771002-jelly-v52-portable-v1
+cd outputs/human-playtest-campaigns/immune-v0.4.0-32a04cd-run-33361771002-jelly-v52-portable-v1
 node facilitator/run_human_playtest_session.mjs --campaign=. \
   --participant=tester-01 --platform=web --open
 cd ../../..
 npm run aggregate:playtests -- \
-  --dir=outputs/playtests/human/raw/2d011b1 \
-  --out=outputs/playtests/human/aggregate-2d011b1.json \
+  --dir=outputs/playtests/human/raw/32a04cd \
+  --out=outputs/playtests/human/aggregate-32a04cd.json \
   --minimum-participants=3 --require-minimum
 node tools/validate_release_contract.mjs
 node tools/generate_catalog_localization.mjs --check
@@ -944,18 +958,21 @@ Run exports sequentially. Parallel Godot exporters race on the shared
 
 The six-mission vertical slice, all six base-cell playable bodies, V5.1 jelly
 surface, portrait lifecycle, 390x844/360x800 safe-area layouts, desktop/tall
-regressions, local smoke/capture gates, fresh four-platform exports, and final
-exported-Web browser gate are complete locally. The previous checksum-locked
-V5.1 private playtest campaign remains historically valid for commit `2d011b1`,
-but it does not contain V5.2. This is not a content-complete commercial release.
+regressions, local smoke/capture gates, fresh four-platform exports, final
+exported-Web browser gate, and four-job remote CI gate are complete. The
+previous checksum-locked V5.1 private playtest campaign remains historically
+valid for commit `2d011b1`, but it does not contain V5.2. The exact V5.2 release
+artifact exists in run `33361771002`; a V5.2 human campaign has not yet been
+generated. This is not a content-complete commercial release.
 Remaining work is:
 
 1. Keep the N/A/D Meshy manifests as optional comparisons only. Any paid task
    still needs a separate exact 5-credit approval; never batch paid retries after
-   a failed task. V5.1 made no Meshy call and the playable demo does not depend on
+   a failed task. V5.2 made no Meshy call and the playable demo does not depend on
    further generation.
-2. After the V5.2 source CI run is green, download that exact four-platform
-   artifact on a volume with comfortable free space and create a new
+2. Download run `33361771002` artifact
+   `immune-demo-32a04cd544afd196b454386a4d252828d33badf2` on a volume with
+   comfortable free space and create a new
    checksum-locked playtest campaign. Then run real six-family human playtesting
    for material direction, phone readability, accessibility, and control feel,
    followed by an agreed lower-end Windows/Web machine. SwiftShader and

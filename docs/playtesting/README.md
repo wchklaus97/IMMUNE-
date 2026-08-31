@@ -37,33 +37,34 @@ assigned.
 ## Current distribution status
 
 V5.2 adds the verified 390x844 / 360x800 safe-area layouts while keeping the
-accepted V5.1 jelly material. Its exact source commit and CI release artifact
-are still pending the final remote gate. Do not start a new phone-readability
-campaign from the V5.1 bundle below: that bundle is checksum-correct for
-`2d011b1`, but predates the narrow-phone layout. Once V5.2 CI is green, replace
-the commit/run/artifact fields together and generate a fresh campaign on a
-volume with comfortable free space.
+accepted V5.1 jelly material. Exact source
+`32a04cd544afd196b454386a4d252828d33badf2` passed all four jobs in Actions run
+`33361771002`. Use only the matching
+`immune-demo-32a04cd544afd196b454386a4d252828d33badf2` artifact for a new V5.2
+phone-readability campaign. The older V5.1 bundle is checksum-correct for
+`2d011b1`, but predates the narrow-phone layout and is now a historical fallback.
 
 ## Prepare the verified six-person campaign
 
-The recommended Jelly V5.1 path packages the exact successful CI artifact once,
-plus six counterbalanced participant kits. For commit `2d011b1` from Actions run
-`33316071797`:
+The recommended Jelly V5.2 path packages the exact successful CI artifact once,
+plus six counterbalanced participant kits. Run these commands on a volume with
+comfortable free space; the 433,014,678-byte Actions archive expands into all
+four platform builds. For commit `32a04cd` from Actions run `33361771002`:
 
 ```sh
-gh run download 33316071797 \
-  -n immune-demo-2d011b167e79a1d583d368c98ed3c07a41209d3e \
-  -D outputs/release-ci-33316071797-jelly-v51
+gh run download 33361771002 \
+  -n immune-demo-32a04cd544afd196b454386a4d252828d33badf2 \
+  -D outputs/release-ci-33361771002-jelly-v52
 
 npm run create:playtest-campaign -- \
-  --artifacts=outputs/release-ci-33316071797-jelly-v51 \
-  --build-commit=2d011b167e79a1d583d368c98ed3c07a41209d3e \
-  --source-run=33316071797 \
-  --source-artifact=immune-demo-2d011b167e79a1d583d368c98ed3c07a41209d3e \
-  --out=outputs/human-playtest-campaigns/immune-v0.4.0-2d011b1-run-33316071797-jelly-v51-portable-v1
+  --artifacts=outputs/release-ci-33361771002-jelly-v52 \
+  --build-commit=32a04cd544afd196b454386a4d252828d33badf2 \
+  --source-run=33361771002 \
+  --source-artifact=immune-demo-32a04cd544afd196b454386a4d252828d33badf2 \
+  --out=outputs/human-playtest-campaigns/immune-v0.4.0-32a04cd-run-33361771002-jelly-v52-portable-v1
 
 npm run create:playtest-campaign -- \
-  --verify=outputs/human-playtest-campaigns/immune-v0.4.0-2d011b1-run-33316071797-jelly-v51-portable-v1
+  --verify=outputs/human-playtest-campaigns/immune-v0.4.0-32a04cd-run-33361771002-jelly-v52-portable-v1
 ```
 
 The generated bundle contains:
@@ -91,7 +92,7 @@ Use the station instead of manually matching a participant folder, executable,
 sidecar, and Web server:
 
 ```sh
-cd outputs/human-playtest-campaigns/immune-v0.4.0-2d011b1-run-33316071797-jelly-v51-portable-v1
+cd outputs/human-playtest-campaigns/immune-v0.4.0-32a04cd-run-33361771002-jelly-v52-portable-v1
 node facilitator/run_human_playtest_session.mjs \
   --campaign=. \
   --participant=tester-01 \
@@ -126,8 +127,8 @@ the commit that produced the artifact, not the current documentation HEAD:
 ```sh
 npm run create:playtest-kit -- \
   --participant=tester-01 \
-  --build-commit=2d011b167e79a1d583d368c98ed3c07a41209d3e \
-  --out=outputs/human-playtest-kits/tester-01-build-2d011b1
+  --build-commit=32a04cd544afd196b454386a4d252828d33badf2 \
+  --out=outputs/human-playtest-kits/tester-01-build-32a04cd
 ```
 
 The output contains:
@@ -164,7 +165,7 @@ Validate every completed file separately:
 
 ```sh
 node tools/validate_human_playtest.mjs \
-  outputs/playtests/human/raw/2d011b1/tester-01-six-family-playtest-complete.json
+  outputs/playtests/human/raw/32a04cd/tester-01-six-family-playtest-complete.json
 ```
 
 The validator rejects incomplete sessions, placeholders, unknown families,
@@ -175,8 +176,8 @@ hidden in free text.
 
 ```sh
 npm run aggregate:playtests -- \
-  --dir=outputs/playtests/human/raw/2d011b1 \
-  --out=outputs/playtests/human/aggregate-2d011b1.json \
+  --dir=outputs/playtests/human/raw/32a04cd \
+  --out=outputs/playtests/human/aggregate-32a04cd.json \
   --minimum-participants=3 \
   --require-minimum
 ```

@@ -1,6 +1,6 @@
 # IMMUNE narrow-phone and safe-area contract
 
-Status: implemented and locally verified, 2026-08-31; remote CI pending.
+Status: implemented and locally/remotely verified, 2026-08-31.
 
 ## Problem
 
@@ -100,6 +100,10 @@ or notch correctness on hardware until device testing is performed.
   duty -> pause in baseline and SwiftShader profiles. Baseline is 120.002 mean /
   100 p05 FPS; compatibility stress is 14.608 / 13.089 and is not presented as
   a hardware benchmark.
+- Exact source `32a04cd544afd196b454386a4d252828d33badf2` passed GitHub Actions run
+  `33361771002`: validate/export and Linux, Windows, and macOS native launch
+  jobs are green. The four-platform release artifact is
+  `immune-demo-32a04cd544afd196b454386a4d252828d33badf2`.
 
 Evidence roots are ignored generated artifacts:
 
