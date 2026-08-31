@@ -2,7 +2,121 @@
 
 Updated: 2026-09-01
 
-## V5.3 current handoff — gameplay, jelly, and Steam submission candidate
+## V5.4 current handoff — responsive and exact Steam-candidate hardening
+
+The exact artifact source is
+`80ae5affc90165871a73e11312d744fbaa57808d` on local `main`. This source commit
+has not been pushed, tagged, uploaded, submitted to Valve, Developer ID signed,
+or notarized. All four release exports use official signed Godot
+`4.7.2.stable.official.ed1daf0bf` and matching templates. This handoff and the
+artifact hash record are a later documentation-only commit so the record cannot
+silently change the source that produced the candidate.
+
+### V5.4 work completed
+
+- The NUL/Unicode import warning was traced to GDScript literals containing
+  `"\\u0000"`, not to the real player save. Five path validators now inspect
+  UTF-8 buffers for byte zero. Two consecutive official imports are clean of
+  Unicode, script, parse, compile, engine-error, and warning diagnostics.
+- `responsive_layout.gd` now classifies compact 1100-1600 by 650-900 landscape
+  displays and derives physical scaling from height. Mission, Research, Combat,
+  and Pause preserve at least 44px actions and 14px critical copy at 1280x720
+  and 1280x800 without degrading 1600x900 or 1920x1080.
+- Research's manually drawn map labels participate in the same physical type
+  contract. Compact cover framing retains all six bases plus the core, and
+  viewport-size changes reapply the overview until the player deliberately
+  pans, zooms, or focuses a node.
+- Mission/gameplay/research QA always enforces the responsive contract.
+  Gameplay can explicitly capture Pause, test locale changes stay in memory,
+  and the QA save path remains isolated from the real player save.
+- Pause volume labels and Boss are localized in `zh_HK`; translation validation
+  now covers 628 rows.
+- Release tooling now rejects unknown, empty, and duplicate CLI arguments,
+  requires the exact 14-file artifact inventory, scans PCK shipping/exclusion
+  policy, binds native smoke evidence to a full commit plus artifact/log hashes,
+  stages Steam depots transactionally, and copies all Godot/Noto/third-party
+  notices into every native depot.
+- macOS exports with Steam overlay-compatible non-sandbox entitlements. The
+  current local build is intentionally ad-hoc signed; no claim of Developer ID
+  signing or notarization is made.
+
+### Accepted exact-candidate evidence
+
+- Root tools pass `55/55`, Web research tests pass `53/53`, Meshy offline tests
+  pass `6/6`, translation validation passes 628 rows, UI production build
+  succeeds, `git diff --check` passes, two official imports are clean, and the
+  isolated content smoke reports six missions/families/active skills/encounter
+  patterns plus save/audio/gamepad/touch and accepted jelly identities.
+- Responsive visual/contract evidence passes 360x800 and 390x844 with simulated
+  safe insets and both locales, plus 1280x720, 1280x800, 1600x900, and
+  1920x1080 Mission/Research/Combat/Pause coverage. Research at 360x800 reports
+  44.82px actions and 14.44px copy/map labels; 1280x800 reports 44px actions,
+  16px copy, and 17px map labels. Automated runs are not physical-device proof.
+- The full same-tree 1x campaign soak passes 36/36 over six missions and six
+  families: all victories, one defeated boss per run, real hits and active
+  skills, fixed/mobile duty round trips, increasing M01->M06 durations, 1,913.284
+  aggregate game seconds, and 6-12 surviving core HP. It completed immediately
+  before the clean tree was committed; its report schema does not contain a Git
+  SHA, so it remains labelled pre-commit same-tree evidence.
+- Windows, Linux, macOS, and Web were then rebuilt sequentially from exact
+  commit `80ae5af`. The release contract accepts exactly 14 files; readiness
+  reports 17 Steam assets, six gameplay screenshots, 13 rights hashes, and seven
+  open external gate groups. Exact bytes and SHA-256 values are in
+  `steam/build-candidate-v0.4.0.md`.
+- The exported macOS ZIP passes deep/strict code-signature validation, bundle ID
+  `com.wchklaus97.immune`, version `0.4.0`, ICNS, `arm64+x86_64`, entitlement
+  inspection, and a real launch from inside the extracted bundle ending with
+  `RELEASE_SMOKE_OK platform=macOS nodes=200`. Evidence JSON binds full commit
+  `80ae5af`, ZIP SHA-256
+  `26b4dae9213be78c8b65336113bb83215540c3b765a22cecff16ce73f401b594`,
+  and the runtime-log hash.
+- Exact exported-Web QA completes research -> mission -> B -> combat -> mobile
+  duty -> Pause with no page/resource/request failure and exact canvas fit.
+  Metal is `119.998/101.010` mean/p05 FPS at 1600x900. The 4x CPU + SwiftShader
+  compatibility profile is `13.092/9.346` at 1280x720 with no watchdog stall.
+  This is compatibility stress, not a lower-end-hardware benchmark.
+- Fresh synthetic-ID Steam staging contains 22 checksummed native content
+  files, all three licence records per platform, a preserved Linux executable
+  bit, and `preview=1`. The manifest records `upload_performed=false`; no
+  SteamCMD process, login, credential, or network upload was used.
+
+Ignored local evidence roots include:
+
+- `outputs/v5.4-release-hardening/`
+- `godot/immune/build/releases/`
+
+### Diagnosed failures retained as workflow lessons
+
+- The first clean local Web export failed because the manual rebuild command
+  omitted `build/releases/web`. Inspection confirmed CI already creates it; the
+  directory was added locally and the unchanged source export passed. No false
+  CI fix was committed.
+- The first macOS output was named `IMMUNE-macOS-universal.zip`. The strict
+  inventory rejected the extra name and missing contractual name. The unchanged
+  bytes were renamed `IMMUNE-macOS.zip`, after which the exact 14-file contract
+  passed.
+- Old generated artifacts, extracted apps, and synthetic staging were replaced
+  before validation so no previous PCK or depot file could be mixed into this
+  candidate. Generated release output remains ignored and reproducible.
+
+### Honest completion boundary
+
+Repository-controlled demo development and packaging are complete for this
+candidate. A public Steam release is not 100% complete and cannot be made so
+inside the repository. Native exact-candidate Windows/Linux launch, Developer
+ID signing/notarization, real App/depot IDs, Steamworks onboarding/fee/tax/bank,
+audio and Tripo receipt/terms provenance, conditional rights confirmations,
+SteamCMD preview, private Steam-client installs, real minimum-spec/Deck/phone
+testing, six-family human playtests, store metadata/crops, Coming Soon timing,
+Valve review, and explicit owner release authorization remain open.
+
+The next safe owner-controlled step is to review the rights register, supply
+private publisher inputs and real Steam IDs, then authorize a push so the exact
+commit can run native Windows/Linux CI. Do not reuse synthetic `4800000`-
+`4800003` IDs, and do not tag or upload merely because local repository gates
+are green.
+
+## V5.3 historical handoff — gameplay, jelly, and Steam submission candidate
 
 V5.3 completes every repository-controlled gate in the approved
 `2026-09-01-immune-v53-gameplay-and-steam-readiness.md` plan. The candidate is
@@ -1127,3 +1241,10 @@ Remaining work is:
    been performed.
 
 These are explicit external/product gates, not hidden broken demo work.
+
+【交接狀態】
+- CODEX_HANDOFF.md 是否已更新：是；V5.4 exact-candidate evidence and boundaries are recorded.
+- 本次修改檔案：CODEX_HANDOFF.md, steam/build-candidate-v0.4.0.md, steam/release-checklist.md.
+- 測試結果：55/55 tools, 53/53 UI, 6/6 Meshy, 628 translation rows, clean dual import, content/native/Web/release/readiness gates pass.
+- 目前風險：Windows/Linux native, signing/notarization, rights, real Steamworks inputs, hardware/human tests, Valve review, and owner authorization remain external gates.
+- 下一個最安全任務：owner reviews rights and supplies private real IDs/evidence, then authorizes pushing 80ae5af for native Windows/Linux CI before any SteamCMD preview.

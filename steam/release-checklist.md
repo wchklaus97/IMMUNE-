@@ -12,7 +12,7 @@ build, nor that the product is publicly released.
   covered by the Godot smoke contract.
 - [x] Keyboard/gamepad actions, four-action desktop HUD, two-by-two narrow HUD,
   touch movement, safe-area, pause, and bilingual UI contracts exist.
-- [x] V5.3 jelly lighting/material candidate passes the bounded light probe and
+- [x] V5.4 jelly lighting/material candidate passes the bounded light probe and
   automated runtime smoke.
 - [x] The damaged faceted T-cell fix mesh is excluded; runtime and current store
   capture use the clean Tripo 5K T mesh, with a headed A/B audit retained
@@ -29,20 +29,21 @@ build, nor that the product is publicly released.
   the shipping/excluded PCK resource policy, and verifies all handoff records.
 - [x] Depot staging rejects placeholders, unsafe inputs, missing files, and
   credentials; generated VDFs remain in preview mode and do not upload.
-- [ ] Final all-tool, translation, UI, import, smoke, 36-run balance,
-  responsive, performance, and release-artifact regression is green for the
-  exact committed candidate. The pre-commit worktree gates are green; the final
-  commit-bound rebuild/evidence pass is still in progress.
-- [ ] Windows, Linux, macOS, and Web artifacts are rebuilt from that exact
-  committed candidate and checksum-recorded. Current worktree artifacts pass
-  the strict 14-file contract.
-- [ ] Native macOS release smoke is green for the exact committed candidate.
-  The current worktree already passes:
-  ad-hoc signature, bundle/version/icon, arm64+x86_64, and the 200-node runtime
-  marker.
+- [x] Final all-tool, translation, UI, import, smoke, responsive, performance,
+  and release-artifact regression is green for source commit `80ae5af`. The
+  36-run 1x balance soak passed immediately before the clean tree was committed;
+  its schema has no Git field, so the handoff labels it same-tree pre-commit
+  evidence instead of claiming a cryptographic commit binding.
+- [x] Windows, Linux, macOS, and Web artifacts are rebuilt sequentially from
+  exact source commit `80ae5af` and checksum-recorded in
+  `build-candidate-v0.4.0.md`. The strict 14-file contract passes.
+- [x] Native macOS release smoke is green for exact source commit `80ae5af`:
+  machine-readable evidence binds the source SHA, ZIP and log hashes; ad-hoc
+  signature, bundle/version/icon, arm64+x86_64, entitlements, and the 200-node
+  runtime marker all pass.
 - [ ] Native Windows and Linux release smoke is green for the exact candidate
   on those operating systems. Local headers/artifacts pass, but the current
-  V5.2 remote run is historical evidence only; V5.3 has not been pushed or
+  V5.2 remote run is historical evidence only; V5.4 has not been pushed or
   uploaded.
 
 ## Steamworks/account gates
