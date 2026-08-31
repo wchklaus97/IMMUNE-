@@ -46,6 +46,9 @@ to place real player, regular-enemy, and boss instances within the visible lane;
 it does not replace gameplay renderers, draw concept art over the scene, or alter
 shipping camera/balance data. Every capture also passed selection identity,
 portrait lifecycle, HUD overlap, safe-area, and nonblank image checks.
+`01-core-defense.png` was regenerated after the runtime T cell moved from the
+rejected faceted fix mesh to the clean Tripo 5K mesh; its SHA-256 is
+`f9622ff1ba06642c36201e8425898af3036cd6c266344ce902f42436c657fb70`.
 
 ## Automated check
 

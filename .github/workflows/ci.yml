@@ -110,6 +110,7 @@ jobs:
           godot --headless --path godot/immune --export-release "Web" build/releases/web/index.html 2>&1 | tee godot-export-web.log
           if grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" godot-export-windows.log godot-export-linux.log godot-export-macos.log godot-export-web.log; then exit 1; fi
           node tools/validate_release_contract.mjs --artifacts=godot/immune/build/releases
+          node tools/validate_steam_readiness.mjs --artifacts=godot/immune/build/releases
 
       - name: Exercise exported Web demo under baseline and constrained profiles
         timeout-minutes: 5
@@ -141,6 +142,14 @@ jobs:
     timeout-minutes: 10
 
     steps:
+      - name: Checkout evidence tooling
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js for evidence sealing
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
       - name: Download release artifacts
         uses: actions/download-artifact@v8
         with:
@@ -158,6 +167,14 @@ jobs:
           cat linux-release-smoke.log
           grep -F "RELEASE_SMOKE_OK platform=Linux nodes=200" linux-release-smoke.log
           if grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" linux-release-smoke.log; then exit 1; fi
+          node ../tools/create_native_smoke_evidence.mjs \
+            --platform=Linux \
+            --log=linux-release-smoke.log \
+            --artifact=IMMUNE-linux.x86_64 \
+            --pck=IMMUNE-linux.pck \
+            --out=../native-smoke-evidence/linux.json \
+            --commit="$GITHUB_SHA" \
+            --version=0.4.0
 
       - name: Launch Windows release
         if: runner.os == 'Windows'
@@ -170,7 +187,11 @@ jobs:
             "--log-file", $logPath,
             "--", "--release-smoke"
           )
-          $process = Start-Process -FilePath ".\release\IMMUNE-windows.exe" -ArgumentList $arguments -Wait -PassThru
+          $process = Start-Process -FilePath ".\release\IMMUNE-windows.exe" -ArgumentList $arguments -PassThru
+          if (-not $process.WaitForExit(30000)) {
+            $process.Kill($true)
+            throw "Windows release smoke timed out after 30 seconds"
+          }
           if ($process.ExitCode -ne 0) {
             throw "Windows release exited with code $($process.ExitCode)"
           }
@@ -198,6 +219,14 @@ jobs:
           if (-not $versionInfo.ProductVersion.StartsWith("0.4.0")) {
             throw "Windows ProductVersion mismatch: $($versionInfo.ProductVersion)"
           }
+          node tools/create_native_smoke_evidence.mjs `
+            --platform=Windows `
+            --log="$logPath" `
+            --artifact=release/IMMUNE-windows.exe `
+            --pck=release/IMMUNE-windows.pck `
+            --out=native-smoke-evidence/windows.json `
+            --commit="$env:GITHUB_SHA" `
+            --version=0.4.0
 
       - name: Launch macOS release
         if: runner.os == 'macOS'
@@ -215,7 +244,27 @@ jobs:
           test -f "macos/IMMUNE.app/Contents/Resources/$icon_file"
           architectures="$(lipo -archs macos/IMMUNE.app/Contents/MacOS/IMMUNE)"
           [[ "$architectures" == *arm64* && "$architectures" == *x86_64* ]]
+          codesign -d --entitlements :- macos/IMMUNE.app > macos/entitlements.plist 2> macos/codesign-entitlements.log
+          test "$(/usr/libexec/PlistBuddy -c 'Print :com.apple.security.cs.disable-library-validation' macos/entitlements.plist)" = "true"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :com.apple.security.cs.allow-dyld-environment-variables' macos/entitlements.plist)" = "true"
+          if /usr/libexec/PlistBuddy -c 'Print :com.apple.security.app-sandbox' macos/entitlements.plist; then exit 1; fi
           log_path="$PWD/macos-release-smoke.log"
           ./macos/IMMUNE.app/Contents/MacOS/IMMUNE --headless --audio-driver Dummy -- --release-smoke 2>&1 | tee "$log_path"
           grep -F "RELEASE_SMOKE_OK platform=macOS nodes=200" "$log_path"
           if grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" "$log_path"; then exit 1; fi
+          node ../tools/create_native_smoke_evidence.mjs \
+            --platform=macOS \
+            --log=macos-release-smoke.log \
+            --artifact=IMMUNE-macOS.zip \
+            --out=../native-smoke-evidence/macos.json \
+            --commit="$GITHUB_SHA" \
+            --version=0.4.0
+
+      - name: Upload hash-bound native smoke evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: immune-native-smoke-${{ runner.os }}-${{ github.sha }}
+          path: native-smoke-evidence
+          if-no-files-found: error
+          retention-days: 30

@@ -17,8 +17,8 @@ const _Look := preload("res://characters/family_look.gd")
 
 const GLB_CANDIDATES := {
 	"T": [
-		"res://characters/base_t/CHAR-BASE-T-fix.glb",
 		"res://characters/base_t/CHAR-BASE-T-tripo-5k.glb",
+		"res://characters/base_t/CHAR-BASE-T-fix.glb",
 	],
 }
 

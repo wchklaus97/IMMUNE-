@@ -517,7 +517,7 @@ func _globalized_out_path() -> String:
 
 func _validate_out_path() -> bool:
 	var normalized := _out_path.strip_edges().replace("\\", "/")
-	if normalized.is_empty() or normalized.contains("\u0000"):
+	if normalized.is_empty() or normalized.to_utf8_buffer().has(0):
 		return _arg_error("--out must name a JSON file")
 	if normalized.ends_with("/") or normalized.get_extension().to_lower() != "json":
 		return _arg_error("--out must name a .json file")

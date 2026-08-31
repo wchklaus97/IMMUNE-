@@ -149,7 +149,7 @@ func _volume_row(bus_name: String) -> Control:
 	var row := HBoxContainer.new()
 	row.name = "%sVolumeRow" % bus_name
 	var label := Label.new()
-	label.text = bus_name
+	label.text = "UI_VOLUME_%s" % bus_name.to_upper()
 	label.custom_minimum_size.x = 110
 	row.add_child(label)
 	var slider := HSlider.new()
@@ -176,7 +176,7 @@ func _apply_responsive_layout(force: bool = false) -> void:
 	if _safe_margin == null or not is_instance_valid(_safe_margin):
 		return
 	var narrow := _Responsive.is_narrow_phone(get_viewport())
-	var next_scale := _Responsive.layout_scale(get_viewport()) if narrow else 1.0
+	var next_scale := _Responsive.layout_scale(get_viewport())
 	var next_insets := _Responsive.logical_safe_insets(get_viewport())
 	if (
 		not force
@@ -217,25 +217,25 @@ func _apply_responsive_layout(force: bool = false) -> void:
 			button.add_theme_font_size_override("font_size", _metric(17))
 	else:
 		_set_safe_margins(0)
-		_panel.custom_minimum_size = Vector2(560, 660)
-		_box.add_theme_constant_override("separation", 14)
-		_title.add_theme_font_size_override("font_size", 32)
-		_language_label.custom_minimum_size.x = 160
-		_language_label.add_theme_font_size_override("font_size", 16)
-		_language_row.add_theme_constant_override("separation", 10)
-		_locale_button.custom_minimum_size.y = 44
-		_locale_button.add_theme_font_size_override("font_size", 16)
+		_panel.custom_minimum_size = Vector2(_metric(560), _metric(660))
+		_box.add_theme_constant_override("separation", _metric(14))
+		_title.add_theme_font_size_override("font_size", _metric(32))
+		_language_label.custom_minimum_size.x = _metric(160)
+		_language_label.add_theme_font_size_override("font_size", _metric(16))
+		_language_row.add_theme_constant_override("separation", _metric(10))
+		_locale_button.custom_minimum_size.y = _metric(44)
+		_locale_button.add_theme_font_size_override("font_size", _metric(16))
 		for index in _volume_rows.size():
-			_volume_rows[index].custom_minimum_size.y = 0
-			_volume_labels[index].custom_minimum_size.x = 110
-			_volume_labels[index].add_theme_font_size_override("font_size", 16)
-			_volume_sliders[index].custom_minimum_size = Vector2(300, 44)
+			_volume_rows[index].custom_minimum_size.y = _metric(44)
+			_volume_labels[index].custom_minimum_size.x = _metric(110)
+			_volume_labels[index].add_theme_font_size_override("font_size", _metric(16))
+			_volume_sliders[index].custom_minimum_size = Vector2(_metric(300), _metric(44))
 		for toggle in _toggle_buttons:
-			toggle.custom_minimum_size.y = 0
-			toggle.add_theme_font_size_override("font_size", 16)
+			toggle.custom_minimum_size.y = _metric(48)
+			toggle.add_theme_font_size_override("font_size", _metric(16))
 		for button in [_resume_button, _restart_button, _research_button]:
-			button.custom_minimum_size.y = 48
-			button.add_theme_font_size_override("font_size", 16)
+			button.custom_minimum_size.y = _metric(48)
+			button.add_theme_font_size_override("font_size", _metric(16))
 
 
 func _set_safe_margins(base: int) -> void:
@@ -253,6 +253,7 @@ func _metric(value: int) -> int:
 
 func responsive_contract() -> Dictionary:
 	var narrow := _Responsive.is_narrow_phone(get_viewport())
+	var compact := _Responsive.is_compact_landscape(get_viewport())
 	var physical := _Responsive.physical_window_size()
 	var viewport_size := get_viewport().get_visible_rect().size
 	var min_action_height := INF
@@ -309,7 +310,7 @@ func responsive_contract() -> Dictionary:
 		)
 	)
 	var all_pass := (
-		not narrow
+		not (narrow or compact)
 		or (
 			min_action_height >= 44.0
 			and copy_physical >= 14.0
@@ -318,7 +319,7 @@ func responsive_contract() -> Dictionary:
 		)
 	)
 	return {
-		"mode": "narrow-phone" if narrow else "wide",
+		"mode": "narrow-phone" if narrow else ("compact-landscape" if compact else "wide"),
 		"physical": [physical.x, physical.y],
 		"logical": [viewport_size.x, viewport_size.y],
 		"layout_scale": _layout_scale,

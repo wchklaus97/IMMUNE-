@@ -465,7 +465,7 @@ func _has_debug_save_path_override() -> bool:
 func _save_path_override_error(path: String, qa_run: bool) -> String:
 	if path.is_empty():
 		return "save path is empty"
-	if path.contains("\u0000"):
+	if path.to_utf8_buffer().has(0):
 		return "save path contains a null byte"
 	var normalized := path.replace("\\", "/")
 	if normalized.ends_with("/"):

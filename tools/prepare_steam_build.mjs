@@ -6,21 +6,30 @@ import {
   chmod,
   copyFile,
   lstat,
+  mkdtemp,
   mkdir,
   readFile,
   readdir,
+  rename,
+  rm,
   stat,
   writeFile,
 } from "node:fs/promises";
-import { join, relative, resolve, sep } from "node:path";
+import { basename, dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
+const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const PLATFORMS = ["windows", "linux", "macos"];
 const PLATFORM_FILES = {
   windows: ["IMMUNE-windows.exe", "IMMUNE-windows.pck"],
   linux: ["IMMUNE-linux.x86_64", "IMMUNE-linux.pck"],
   macos: ["IMMUNE-macOS.zip"],
 };
+const DEFAULT_NOTICE_FILES = [
+  { source: join(ROOT, "steam/THIRD_PARTY_NOTICES.txt"), target: "THIRD_PARTY_NOTICES.txt" },
+  { source: join(ROOT, "steam/GODOT_COPYRIGHT.txt"), target: "GODOT_COPYRIGHT.txt" },
+  { source: join(ROOT, "godot/immune/fonts/OFL.txt"), target: "NotoSansHK-OFL.txt" },
+];
 
 function expectPlainObject(value, label) {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
@@ -122,18 +131,18 @@ ${depotLines}
   };
 }
 
-async function ensureFreshOutput(output) {
+async function prepareFreshOutput(output) {
   const absolute = resolve(output);
   if (absolute === resolve(sep) || absolute === resolve(process.cwd())) {
     throw new Error(`Refusing unsafe Steam stage output: ${absolute}`);
   }
   try {
-    await stat(absolute);
+    await lstat(absolute);
     throw new Error(`Steam stage output already exists: ${absolute}`);
   } catch (error) {
     if (error?.code !== "ENOENT") throw error;
   }
-  await mkdir(absolute, { recursive: true });
+  await mkdir(dirname(absolute), { recursive: true });
   return absolute;
 }
 
@@ -159,6 +168,23 @@ async function copyPlatformFiles(artifacts, output, platform) {
     const target = join(destination, file);
     await copyFile(source, target);
     if (platform === "linux" && file.endsWith(".x86_64")) await chmod(target, 0o755);
+  }
+}
+
+async function copyNoticeFiles(output, platform, noticeFiles) {
+  const destination = join(output, "content", platform);
+  await mkdir(destination, { recursive: true });
+  const seen = new Set();
+  for (const notice of noticeFiles) {
+    if (!notice || typeof notice.source !== "string" || typeof notice.target !== "string") {
+      throw new Error("Steam notice entries must contain source and target strings");
+    }
+    if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/u.test(notice.target) || seen.has(notice.target)) {
+      throw new Error(`Invalid or duplicate Steam notice target: ${notice.target}`);
+    }
+    seen.add(notice.target);
+    await validatedArtifact(notice.source, notice.target);
+    await copyFile(notice.source, join(destination, notice.target));
   }
 }
 
@@ -227,62 +253,88 @@ function normalizedPlatforms(platforms) {
   return values.sort();
 }
 
-export async function stageSteamBuild({ artifacts, output, config, platforms = PLATFORMS }) {
+export async function stageSteamBuild({
+  artifacts,
+  output,
+  config,
+  platforms = PLATFORMS,
+  noticeFiles = DEFAULT_NOTICE_FILES,
+}) {
   const normalized = validateSteamConfig(config);
   const selected = normalizedPlatforms(platforms);
   const artifactRoot = resolve(artifacts);
-  const outputRoot = await ensureFreshOutput(output);
-  for (const platform of selected) {
-    if (platform === "macos") await extractMacArtifact(artifactRoot, outputRoot);
-    else await copyPlatformFiles(artifactRoot, outputRoot, platform);
+  const outputRoot = await prepareFreshOutput(output);
+  const stagingRoot = await mkdtemp(join(dirname(outputRoot), `.${basename(outputRoot)}.tmp-`));
+  try {
+    for (const platform of selected) {
+      if (platform === "macos") await extractMacArtifact(artifactRoot, stagingRoot);
+      else await copyPlatformFiles(artifactRoot, stagingRoot, platform);
+      await copyNoticeFiles(stagingRoot, platform, noticeFiles);
+    }
+    const rendered = renderSteamVdfs(normalized, selected);
+    const scripts = join(stagingRoot, "scripts");
+    await mkdir(scripts, { recursive: true });
+    await writeFile(join(scripts, `app_build_${normalized.appId}.vdf`), rendered.appBuild, "utf8");
+    for (const platform of selected) {
+      await writeFile(
+        join(scripts, `depot_build_${normalized.depots[platform]}.vdf`),
+        rendered.depots[platform],
+        "utf8",
+      );
+    }
+    const contentRoot = join(stagingRoot, "content");
+    const stagedFiles = await collectFiles(contentRoot);
+    const files = [];
+    for (const path of stagedFiles) {
+      const info = await stat(path);
+      files.push({
+        path: relative(stagingRoot, path).split(sep).join("/"),
+        bytes: info.size,
+        sha256: await fileDigest(path),
+      });
+    }
+    const report = {
+      schema_version: 2,
+      app_id: normalized.appId,
+      depots: Object.fromEntries(selected.map((platform) => [platform, normalized.depots[platform]])),
+      platforms: selected,
+      license_files: noticeFiles.map(({ target }) => target),
+      files,
+      upload_performed: false,
+      upload_command: `steamcmd +login <STEAM_ACCOUNT> +run_app_build ${join("scripts", `app_build_${normalized.appId}.vdf`)} +quit`,
+    };
+    await writeFile(join(stagingRoot, "steam-stage-manifest.json"), `${JSON.stringify(report, null, 2)}\n`, "utf8");
+    try {
+      await lstat(outputRoot);
+      throw new Error(`Steam stage output appeared during staging: ${outputRoot}`);
+    } catch (error) {
+      if (error?.code !== "ENOENT") throw error;
+    }
+    await rename(stagingRoot, outputRoot);
+    return report;
+  } catch (error) {
+    await rm(stagingRoot, { recursive: true, force: true });
+    throw error;
   }
-  const rendered = renderSteamVdfs(normalized, selected);
-  const scripts = join(outputRoot, "scripts");
-  await mkdir(scripts, { recursive: true });
-  await writeFile(join(scripts, `app_build_${normalized.appId}.vdf`), rendered.appBuild, "utf8");
-  for (const platform of selected) {
-    await writeFile(
-      join(scripts, `depot_build_${normalized.depots[platform]}.vdf`),
-      rendered.depots[platform],
-      "utf8",
-    );
-  }
-  const contentRoot = join(outputRoot, "content");
-  const stagedFiles = await collectFiles(contentRoot);
-  const files = [];
-  for (const path of stagedFiles) {
-    const info = await stat(path);
-    files.push({
-      path: relative(outputRoot, path).split(sep).join("/"),
-      bytes: info.size,
-      sha256: await fileDigest(path),
-    });
-  }
-  const report = {
-    schema_version: 1,
-    app_id: normalized.appId,
-    depots: Object.fromEntries(selected.map((platform) => [platform, normalized.depots[platform]])),
-    platforms: selected,
-    files,
-    upload_performed: false,
-    upload_command: `steamcmd +login <STEAM_ACCOUNT> +run_app_build ${join("scripts", `app_build_${normalized.appId}.vdf`)} +quit`,
-  };
-  await writeFile(join(outputRoot, "steam-stage-manifest.json"), `${JSON.stringify(report, null, 2)}\n`, "utf8");
-  return report;
 }
 
-function argumentsFrom(argv) {
+export function stagingArguments(argv) {
+  const allowed = new Set([
+    "artifacts", "out", "app-id", "windows-depot", "linux-depot", "macos-depot", "platforms",
+  ]);
   const result = {};
   for (const argument of argv) {
     const match = /^--([^=]+)=(.*)$/u.exec(argument);
-    if (!match) throw new Error(`Unknown Steam staging argument: ${argument}`);
+    if (!match || !allowed.has(match[1])) throw new Error(`Unknown Steam staging argument: ${argument}`);
+    if (Object.hasOwn(result, match[1])) throw new Error(`Duplicate Steam staging argument: --${match[1]}`);
+    if (!match[2]) throw new Error(`Steam staging argument requires a value: --${match[1]}`);
     result[match[1]] = match[2];
   }
   return result;
 }
 
 async function main() {
-  const args = argumentsFrom(process.argv.slice(2));
+  const args = stagingArguments(process.argv.slice(2));
   const required = ["artifacts", "out", "app-id", "windows-depot", "linux-depot", "macos-depot"];
   for (const name of required) {
     if (!args[name]) throw new Error(`Missing required argument --${name}=...`);

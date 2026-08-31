@@ -1,8 +1,8 @@
 # IMMUNE — English Steam store copy draft
 
-Status: copy-ready draft; owner must choose full-game versus separate-demo App
-type and confirm final hardware requirements, pricing, support contacts, and
-release date in Steamworks.
+Status: copy-ready draft for the selected separate Steam Demo App; owner must
+associate it with the real base-game App and confirm final hardware
+requirements, support contacts, territories, and release date in Steamworks.
 
 ## Short description
 
@@ -75,6 +75,7 @@ macOS, and Steam Deck testing.
 - 64-bit operating system and processor
 - 4 GB RAM
 - OpenGL 3.3-compatible graphics
+- Minimum display resolution: 1280x720
 - 1 GB available storage
 - Controller optional
 
@@ -85,5 +86,6 @@ macOS, and Steam Deck testing.
   Steam Deck Verified.
 - Steam achievements, cloud saves, leaderboards, Workshop, and Steam Input API
   integration are not implemented and must not be selected as features.
-- Store key art and one shipping B-cell mesh use pre-generated AI workflows;
-  use the disclosure draft before submitting the content survey.
+- Store key art, the shipping B/T meshes, and portions of concept/text work use
+  pre-generated or AI-assisted workflows; use the complete disclosure draft
+  before submitting the content survey.

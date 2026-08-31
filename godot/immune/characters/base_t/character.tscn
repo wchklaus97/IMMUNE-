@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://characters/character_root.gd" id="1"]
-[ext_resource type="PackedScene" path="res://characters/base_t/CHAR-BASE-T-fix.glb" id="2"]
+[ext_resource type="PackedScene" path="res://characters/base_t/CHAR-BASE-T-tripo-5k.glb" id="2"]
 
 [node name="Character" type="CharacterBody3D"]
 script = ExtResource("1")

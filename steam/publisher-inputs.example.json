@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "release_track": "steam_demo",
+  "base_game_app_id": null,
+  "demo_app_id": null,
+  "depots": {
+    "windows": null,
+    "linux": null,
+    "macos": null
+  },
+  "publisher": {
+    "legal_name": null,
+    "developer_name": null,
+    "support_email": null,
+    "support_url": null,
+    "privacy_policy_url": null
+  },
+  "evidence": {
+    "asset_rights_attestation": null,
+    "audio_provenance": null,
+    "tripo_receipt_and_terms": null,
+    "content_survey_record": null,
+    "native_windows_smoke": null,
+    "native_linux_smoke": null,
+    "native_macos_smoke": null,
+    "macos_signing_identity_record": null,
+    "macos_notarization": null,
+    "steamworks_configuration_record": null,
+    "steamcmd_preview_log": null,
+    "private_branch_install_report": null,
+    "minimum_spec_platform_report": null,
+    "steam_deck_session_report": null,
+    "human_playtest_aggregate": null,
+    "store_page_preview_record": null,
+    "valve_store_review_approval": null,
+    "valve_build_review_approval": null
+  },
+  "owner_attestations": {
+    "all_shipping_asset_rights_verified": false,
+    "audio_provenance_attached": false,
+    "tripo_task_and_terms_attached": false,
+    "generative_ai_disclosure_approved": false,
+    "content_survey_completed": false,
+    "macos_developer_id_signed": false,
+    "macos_notarization_accepted": false,
+    "native_windows_smoke_exact_candidate": false,
+    "native_linux_smoke_exact_candidate": false,
+    "native_macos_smoke_exact_candidate": false,
+    "steamworks_configuration_verified": false,
+    "private_steam_branch_install_tested": false,
+    "minimum_spec_platforms_tested": false,
+    "steam_deck_session_tested": false,
+    "human_playtest_gate_accepted": false,
+    "store_page_preview_approved": false,
+    "valve_store_review_approved": false,
+    "valve_build_review_approved": false,
+    "public_release_authorized": false
+  }
+}

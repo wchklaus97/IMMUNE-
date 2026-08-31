@@ -446,7 +446,8 @@ func _apply_responsive_layout(force: bool = false) -> void:
 	if _safe_margin == null or not is_instance_valid(_safe_margin):
 		return
 	var narrow := _Responsive.is_narrow_phone(get_viewport())
-	var next_scale := _Responsive.layout_scale(get_viewport()) if narrow else 1.0
+	var compact := _Responsive.is_compact_landscape(get_viewport())
+	var next_scale := _Responsive.layout_scale(get_viewport())
 	var next_insets := _Responsive.logical_safe_insets(get_viewport())
 	if (
 		not force
@@ -457,7 +458,7 @@ func _apply_responsive_layout(force: bool = false) -> void:
 	_layout_scale = next_scale
 	_safe_insets = next_insets
 	_set_research_safe_margins(12 if narrow else 0)
-	_scale_control_tree(_safe_content, narrow)
+	_scale_control_tree(_safe_content, narrow, compact)
 	if narrow:
 		_title_bar.offset_top = 0
 		_title_bar.offset_bottom = _metric(140)
@@ -480,23 +481,25 @@ func _apply_responsive_layout(force: bool = false) -> void:
 		_toast.offset_top = 0
 		_toast.offset_bottom = _metric(30)
 	else:
-		_title_bar.offset_top = 20
-		_title_bar.offset_bottom = 168
+		_title_bar.offset_top = _metric(20)
+		_title_bar.offset_bottom = _metric(168)
 		_left_cards.visible = true
 		_right_cards.visible = true
+		_place_side_cards(_left_cards, false)
+		_place_side_cards(_right_cards, true)
 		_bottom_hud.columns = 3
 		_bottom_hud.clip_contents = true
-		_bottom_hud.custom_minimum_size = Vector2(0, 160)
-		_bottom_hud.offset_left = 16
-		_bottom_hud.offset_right = -16
-		_bottom_hud.offset_top = -176
-		_bottom_hud.offset_bottom = -16
-		_bottom_hud.add_theme_constant_override("h_separation", 12)
-		_bottom_hud.add_theme_constant_override("v_separation", 12)
-		_resource_panel.custom_minimum_size.x = 188
-		_camera_column.add_theme_constant_override("separation", 6)
-		_toast.offset_top = 8
-		_toast.offset_bottom = 36
+		_bottom_hud.custom_minimum_size = Vector2(0, _metric(160))
+		_bottom_hud.offset_left = _metric(16)
+		_bottom_hud.offset_right = -_metric(16)
+		_bottom_hud.offset_top = -_metric(176)
+		_bottom_hud.offset_bottom = -_metric(16)
+		_bottom_hud.add_theme_constant_override("h_separation", _metric(12))
+		_bottom_hud.add_theme_constant_override("v_separation", _metric(12))
+		_resource_panel.custom_minimum_size.x = _metric(188)
+		_camera_column.add_theme_constant_override("separation", _metric(6))
+		_toast.offset_top = _metric(8)
+		_toast.offset_bottom = _metric(36)
 	_safe_content.queue_redraw()
 
 
@@ -507,28 +510,35 @@ func _set_research_safe_margins(base: int) -> void:
 	_safe_margin.add_theme_constant_override("margin_bottom", _metric(base) + roundi(_safe_insets.w))
 
 
-func _scale_control_tree(node: Node, narrow: bool) -> void:
+func _scale_control_tree(node: Node, narrow: bool, compact: bool) -> void:
 	if node is Control:
 		var control := node as Control
 		if not control.has_meta("responsive_base_minimum"):
 			control.set_meta("responsive_base_minimum", control.custom_minimum_size)
 		var base_minimum: Vector2 = control.get_meta("responsive_base_minimum")
+		control.custom_minimum_size = base_minimum * _layout_scale if compact else base_minimum
 		if control is BaseButton:
-			control.custom_minimum_size = Vector2(
-				base_minimum.x,
-				maxf(base_minimum.y * _layout_scale, float(_metric(53))) if narrow else base_minimum.y
-			)
+			if narrow:
+				control.custom_minimum_size = Vector2(
+					base_minimum.x,
+					maxf(base_minimum.y * _layout_scale, float(_metric(53)))
+				)
+			elif compact:
+				control.custom_minimum_size.y = maxf(
+					base_minimum.y * _layout_scale, float(_metric(44))
+				)
 		if control is Label or control is BaseButton:
 			if not control.has_meta("responsive_base_font_size"):
 				control.set_meta(
 					"responsive_base_font_size", control.get_theme_font_size("font_size")
 				)
 			var base_font := int(control.get_meta("responsive_base_font_size"))
+			var target_font := maxi(base_font, 17) if narrow else (maxi(base_font, 14) if compact else base_font)
 			control.add_theme_font_size_override(
-				"font_size", _metric(maxi(base_font, 17)) if narrow else base_font
+				"font_size", _metric(target_font)
 			)
 	for child in node.get_children():
-		_scale_control_tree(child, narrow)
+		_scale_control_tree(child, narrow, compact)
 
 
 func _metric(value: int) -> int:
@@ -539,6 +549,7 @@ func _metric(value: int) -> int:
 
 func responsive_contract() -> Dictionary:
 	var narrow := _Responsive.is_narrow_phone(get_viewport())
+	var compact := _Responsive.is_compact_landscape(get_viewport())
 	var physical := _Responsive.physical_window_size()
 	var viewport_size := get_viewport().get_visible_rect().size
 	var min_action_height := INF
@@ -554,6 +565,11 @@ func responsive_contract() -> Dictionary:
 	var copy_physical := _Responsive.logical_height_to_physical(
 		get_viewport(), float(_detail_title.get_theme_font_size("font_size"))
 	)
+	var map_label_physical := (
+		_map.minimum_label_size_physical()
+		if _map != null and _map.has_method("minimum_label_size_physical")
+		else 0.0
+	)
 	var safe_pass := (
 		_safe_margin.get_theme_constant("margin_left") >= roundi(_safe_insets.x)
 		and _safe_margin.get_theme_constant("margin_top") >= roundi(_safe_insets.y)
@@ -563,20 +579,31 @@ func responsive_contract() -> Dictionary:
 	var bottom_inside_safe := _safe_content.get_global_rect().grow(1.0).encloses(
 		_bottom_hud.get_global_rect()
 	)
-	var all_pass := (
-		not narrow
-		or (
+	var all_pass := true
+	if narrow:
+		all_pass = (
 			_bottom_hud.columns == 1
 			and not _left_cards.visible
 			and not _right_cards.visible
 			and min_action_height >= 44.0
 			and copy_physical >= 14.0
+			and map_label_physical >= 14.0
 			and safe_pass
 			and bottom_inside_safe
 		)
-	)
+	elif compact:
+		all_pass = (
+			_bottom_hud.columns == 3
+			and _left_cards.visible
+			and _right_cards.visible
+			and min_action_height >= 44.0
+			and copy_physical >= 14.0
+			and map_label_physical >= 14.0
+			and safe_pass
+			and bottom_inside_safe
+		)
 	return {
-		"mode": "narrow-phone" if narrow else "wide",
+		"mode": "narrow-phone" if narrow else ("compact-landscape" if compact else "wide"),
 		"physical": [physical.x, physical.y],
 		"logical": [viewport_size.x, viewport_size.y],
 		"layout_scale": _layout_scale,
@@ -586,6 +613,7 @@ func responsive_contract() -> Dictionary:
 		"side_cards_hidden": not _left_cards.visible and not _right_cards.visible,
 		"minimum_action_height_physical": min_action_height,
 		"minimum_copy_size_physical": copy_physical,
+		"minimum_map_label_size_physical": map_label_physical,
 		"safe_margins_pass": safe_pass,
 		"bottom_inside_safe_area": bottom_inside_safe,
 		"all_pass": all_pass,
@@ -598,13 +626,13 @@ func _place_side_cards(col: Control, on_right: bool) -> void:
 	col.anchor_top = 0.18
 	col.anchor_bottom = 0.18
 	if on_right:
-		col.offset_left = -258
-		col.offset_right = -18
+		col.offset_left = -_metric(258)
+		col.offset_right = -_metric(18)
 	else:
-		col.offset_left = 18
-		col.offset_right = 258
+		col.offset_left = _metric(18)
+		col.offset_right = _metric(258)
 	col.offset_top = 0
-	col.offset_bottom = 320
+	col.offset_bottom = _metric(320)
 
 
 func _make_title_bar() -> Control:

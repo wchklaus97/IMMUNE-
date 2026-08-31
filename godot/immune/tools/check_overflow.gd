@@ -66,7 +66,9 @@ func _run() -> void:
 	_log_line("OVERFLOW_CHECK_START")
 	var requested_window := DisplayServer.window_get_size()
 	var narrow_phone := requested_window.x <= 430 and requested_window.y > requested_window.x
-	_target_window = requested_window if narrow_phone else Vector2i(1920, 1080)
+	var compact_landscape := ImmuneResponsiveLayout.is_compact_landscape()
+	var responsive_target := narrow_phone or compact_landscape
+	_target_window = requested_window if responsive_target else Vector2i(1920, 1080)
 	DisplayServer.window_set_size(_target_window)
 	TranslationServer.set_locale("zh_HK")
 	var packed := load("res://ui/research/research_network.tscn") as PackedScene
@@ -76,7 +78,7 @@ func _run() -> void:
 	var hud := packed.instantiate() as Control
 	root.add_child(hud)
 	await create_timer(0.4).timeout
-	_viewport_size = root.get_visible_rect().size if narrow_phone else Vector2(1920, 1080)
+	_viewport_size = root.get_visible_rect().size if responsive_target else Vector2(1920, 1080)
 	hud.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	hud.size = _viewport_size
 	await process_frame
@@ -97,14 +99,13 @@ func _run() -> void:
 		_log_line("MAP_%s SIZE %s CLIP %s" % [locale, map.size, map.clip_contents])
 		failures.append_array(_check_control_tree(hud, Rect2(Vector2.ZERO, _viewport_size)))
 		failures.append_array(_check_resource_text(hud, locale))
-		if narrow_phone:
-			if not hud.has_method("responsive_contract"):
-				failures.append("narrow phone responsive contract missing")
-			else:
-				var contract: Dictionary = hud.call("responsive_contract")
-				_log_line("RESPONSIVE_%s %s" % [locale, JSON.stringify(contract)])
-				if not bool(contract.get("all_pass", false)):
-					failures.append("narrow phone responsive contract failed %s" % JSON.stringify(contract))
+		if not hud.has_method("responsive_contract"):
+			failures.append("responsive contract missing for %s" % locale)
+		else:
+			var contract: Dictionary = hud.call("responsive_contract")
+			_log_line("RESPONSIVE_%s %s" % [locale, JSON.stringify(contract)])
+			if not bool(contract.get("all_pass", false)):
+				failures.append("responsive contract failed %s" % JSON.stringify(contract))
 		map.call("cover_view")
 		await process_frame
 		failures.append_array(_check_map_labels(map, "cover", locale))
@@ -212,7 +213,7 @@ func _parse_args() -> bool:
 
 func _prepare_artifact_dir(raw_path: String) -> bool:
 	var normalized := raw_path.strip_edges().replace("\\", "/")
-	if normalized.is_empty() or normalized.contains("\u0000") or not normalized.is_absolute_path():
+	if normalized.is_empty() or normalized.to_utf8_buffer().has(0) or not normalized.is_absolute_path():
 		push_error("check_overflow.gd: --out must be an absolute directory")
 		return false
 	var absolute_path := normalized.simplify_path().trim_suffix("/")

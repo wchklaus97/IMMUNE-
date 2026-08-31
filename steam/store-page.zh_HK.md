@@ -1,7 +1,7 @@
 # IMMUNE — Steam 商店繁體中文文案草稿
 
-狀態：文案已可供上架填寫；擁有人仍需喺 Steamworks 決定係完整產品定獨立
-Demo App，並確認硬件要求、售價、支援聯絡資料同推出日期。
+狀態：文案已可供所選嘅獨立 Steam Demo App 上架填寫；擁有人仍需將 Demo
+連結到真實主遊戲 App，並確認硬件要求、支援聯絡資料、地區同推出日期。
 
 ## 短描述
 
@@ -59,6 +59,7 @@ Windows、Linux、macOS 同 Steam Deck 實機測試後確認或更換。
 - 64 位元作業系統及處理器
 - 4 GB RAM
 - 支援 OpenGL 3.3 嘅顯示硬件
+- 最低顯示解像度：1280×720
 - 1 GB 可用儲存空間
 - 控制器可選
 
@@ -68,5 +69,5 @@ Windows、Linux、macOS 同 Steam Deck 實機測試後確認或更換。
   程序生成或「Steam Deck 已驗證」。
 - Steam 成就、雲端存檔、排行榜、Workshop 同 Steam Input API 尚未整合，
   Steamworks 功能表唔應該剔選呢啲項目。
-- 商店主視覺同正式 B 細胞模型包含預先生成 AI 流程；提交內容問卷前必須核對
-  `content-survey-draft.md`。
+- 商店主視覺、正式 B／T 細胞模型，以及部分概念圖／文字內容包含預先生成或
+  AI 輔助流程；提交內容問卷前必須核對完整嘅 `content-survey-draft.md`。

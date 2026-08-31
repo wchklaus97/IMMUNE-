@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-import { readFile, stat } from "node:fs/promises";
-import { dirname, isAbsolute, join, resolve } from "node:path";
+import { lstat, readFile, readdir, stat } from "node:fs/promises";
+import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -19,6 +19,15 @@ const EXPECTED_EXPORTS = [
   ["web/index.wasm", 1_000_000],
   ["web/index.audio.worklet.js", 1_000],
   ["web/index.audio.position.worklet.js", 1_000],
+  ["web/index.png", 1_000],
+  ["web/index.icon.png", 1_000],
+  ["web/index.apple-touch-icon.png", 1_000],
+];
+const EXPECTED_EXPORT_PATHS = new Set(EXPECTED_EXPORTS.map(([path]) => path));
+const EXCLUDED_RELEASE_RESOURCES = [
+  "res://characters/base_m/CHAR-BASE-M-meshy-t2.glb",
+  "res://characters/base_t/CHAR-BASE-T-fix.glb",
+  "res://characters/base_t/CHAR-BASE-T-fix_orange+alien+blob+3d+model-+remesh_basecolor.jpg",
 ];
 
 export function parseConfig(source, file = "config") {
@@ -77,7 +86,45 @@ function projectResourcePath(root, resourcePath) {
   return join(root, "godot/immune", resourcePath.slice("res://".length));
 }
 
+export async function validateArtifactInventory(artifactRoot) {
+  const errors = [];
+  const discovered = [];
+  async function visit(directory) {
+    const entries = await readdir(directory, { withFileTypes: true });
+    entries.sort((a, b) => a.name.localeCompare(b.name, "en"));
+    for (const entry of entries) {
+      const target = join(directory, entry.name);
+      const info = await lstat(target);
+      const path = relative(artifactRoot, target).split(sep).join("/");
+      if (info.isSymbolicLink()) {
+        errors.push(`artifact ${path}: symbolic links are not allowed`);
+      } else if (info.isDirectory()) {
+        await visit(target);
+      } else if (info.isFile()) {
+        discovered.push(path);
+      } else {
+        errors.push(`artifact ${path}: expected a regular file`);
+      }
+    }
+  }
+  try {
+    await visit(artifactRoot);
+  } catch (error) {
+    if (error?.code === "ENOENT") errors.push(`artifact root: missing ${artifactRoot}`);
+    else throw error;
+  }
+  for (const path of discovered) {
+    if (!EXPECTED_EXPORT_PATHS.has(path)) errors.push(`unexpected artifact ${path}: file is not part of the release contract`);
+  }
+  for (const path of EXPECTED_EXPORT_PATHS) {
+    if (!discovered.includes(path)) errors.push(`artifact ${path}: missing`);
+  }
+  return { errors, files: discovered };
+}
+
 async function validateArtifactSet(errors, artifactRoot) {
+  const inventory = await validateArtifactInventory(artifactRoot);
+  errors.push(...inventory.errors);
   for (const [relative, minimumBytes] of EXPECTED_EXPORTS) {
     const target = join(artifactRoot, relative);
     try {
@@ -86,7 +133,7 @@ async function validateArtifactSet(errors, artifactRoot) {
         errors.push(`artifact ${relative}: expected a file of at least ${minimumBytes} bytes`);
       }
     } catch {
-      errors.push(`artifact ${relative}: missing`);
+      // Exact inventory check above reports missing paths once.
     }
   }
   try {
@@ -173,6 +220,19 @@ export async function validateReleaseContract({ root = ROOT, tag = "", artifacts
       errors.push(`macOS bundle identifier: invalid ${JSON.stringify(bundle)}`);
     }
     macSigning = mac.options["codesign/codesign"] === 1 && mac.options["codesign/identity"] === "-" ? "adhoc" : "configured";
+    expect(errors, mac.options["codesign/entitlements/allow_dyld_environment_variables"], true, "macOS Steam overlay DYLD entitlement");
+    expect(errors, mac.options["codesign/entitlements/disable_library_validation"], true, "macOS Steam overlay library entitlement");
+    expect(errors, mac.options["codesign/entitlements/debugging"], false, "macOS production debugging entitlement");
+    expect(errors, mac.options["codesign/entitlements/app_sandbox/enabled"], false, "macOS Steam App Sandbox entitlement");
+  }
+
+  for (const [label, preset] of [["Windows Desktop", windows], ["Linux/X11", linux], ["Web", web], ["macOS", mac]]) {
+    if (!preset) continue;
+    expect(errors, preset.base.export_filter, "exclude", `${label} release resource policy`);
+    const excluded = String(preset.base.export_files ?? "");
+    for (const resource of EXCLUDED_RELEASE_RESOURCES) {
+      if (!excluded.includes(`\"${resource}\"`)) errors.push(`${label} release exclusions: missing ${resource}`);
+    }
   }
 
   for (const [section, values] of presets) {
@@ -201,14 +261,22 @@ export async function validateReleaseContract({ root = ROOT, tag = "", artifacts
   };
 }
 
-function argument(name) {
-  const prefix = `--${name}=`;
-  const match = process.argv.slice(2).find((value) => value.startsWith(prefix));
-  return match ? match.slice(prefix.length) : "";
+export function releaseArguments(argv) {
+  const allowed = new Set(["tag", "artifacts"]);
+  const result = {};
+  for (const raw of argv) {
+    const match = /^--([^=]+)=(.*)$/u.exec(raw);
+    if (!match || !allowed.has(match[1])) throw new Error(`Unknown release-contract argument: ${raw}`);
+    if (Object.hasOwn(result, match[1])) throw new Error(`Duplicate release-contract argument: --${match[1]}`);
+    if (!match[2]) throw new Error(`Release-contract argument requires a value: --${match[1]}`);
+    result[match[1]] = match[2];
+  }
+  return result;
 }
 
 async function main() {
-  const report = await validateReleaseContract({ tag: argument("tag"), artifacts: argument("artifacts") });
+  const args = releaseArguments(process.argv.slice(2));
+  const report = await validateReleaseContract({ tag: args.tag ?? "", artifacts: args.artifacts ?? "" });
   console.log(`RELEASE_CONTRACT_OK version=${report.version} presets=${report.presetCount} icon=${report.icon} web=${report.webMode} mac_signing=${report.macSigning} artifacts=${report.artifacts} tag=${report.tag}`);
 }
 

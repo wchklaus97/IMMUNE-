@@ -1319,9 +1319,9 @@ func _layout_combat_portrait() -> void:
 	_portrait_frame.anchor_right = 0.0
 	_portrait_frame.anchor_bottom = 1.0
 	_portrait_frame.offset_left = display_rect.position.x
-	_portrait_frame.offset_top = -PORTRAIT_BOTTOM_CLEARANCE - PORTRAIT_DISPLAY_SIZE.y
+	_portrait_frame.offset_top = display_rect.position.y - viewport_size.y
 	_portrait_frame.offset_right = display_rect.end.x
-	_portrait_frame.offset_bottom = -PORTRAIT_BOTTOM_CLEARANCE
+	_portrait_frame.offset_bottom = display_rect.end.y - viewport_size.y
 	_refresh_combat_portrait(4)
 
 
@@ -1338,12 +1338,15 @@ func _discard_combat_portrait_character() -> void:
 
 
 func _combat_portrait_display_rect(viewport_size: Vector2) -> Rect2:
+	var scale := _Responsive.layout_scale(get_viewport())
+	var display_size := PORTRAIT_DISPLAY_SIZE * scale
+	var bottom_clearance := PORTRAIT_BOTTOM_CLEARANCE * scale
 	return Rect2(
 		Vector2(
-			PORTRAIT_LEFT_MARGIN,
-			viewport_size.y - PORTRAIT_BOTTOM_CLEARANCE - PORTRAIT_DISPLAY_SIZE.y
+			PORTRAIT_LEFT_MARGIN * scale,
+			viewport_size.y - bottom_clearance - display_size.y
 		),
-		PORTRAIT_DISPLAY_SIZE
+		display_size
 	)
 
 
@@ -1481,7 +1484,7 @@ func _build_hud() -> void:
 	vitals.add_child(_boss_row)
 	var boss_label := Label.new()
 	boss_label.name = "BossLabel"
-	boss_label.text = "Boss"
+	boss_label.text = "UI_BOSS"
 	boss_label.custom_minimum_size.x = 90
 	_boss_row.add_child(boss_label)
 	_boss_bar = ProgressBar.new()
@@ -1735,6 +1738,7 @@ func _apply_hud_responsive_layout(force: bool = false) -> void:
 
 func responsive_contract() -> Dictionary:
 	var narrow := _Responsive.is_narrow_phone(get_viewport())
+	var compact := _Responsive.is_compact_landscape(get_viewport())
 	var physical := _Responsive.physical_window_size()
 	var viewport_size := get_viewport().get_visible_rect().size
 	var top_margin := _hud_root.find_child("HudTopMargin", true, false) as MarginContainer
@@ -1799,9 +1803,9 @@ func responsive_contract() -> Dictionary:
 			and inside
 		)
 	var pause_contract := _pause_menu.responsive_contract() if _pause_menu != null else {}
-	var all_pass := (
-		not narrow
-		or (
+	var all_pass := true
+	if narrow:
+		all_pass = (
 			top_row != null
 			and top_row.columns == 1
 			and actions != null
@@ -1817,9 +1821,21 @@ func responsive_contract() -> Dictionary:
 			and critical_inside_safe
 			and bool(pause_contract.get("all_pass", false))
 		)
-	)
+	elif compact:
+		all_pass = (
+			top_row != null
+			and top_row.columns == 2
+			and actions != null
+			and actions.columns == 4
+			and min_action_width >= 96.0
+			and min_action_height >= 44.0
+			and copy_physical >= 14.0
+			and safe_pass
+			and critical_inside_safe
+			and bool(pause_contract.get("all_pass", false))
+		)
 	return {
-		"mode": "narrow-phone" if narrow else ("tall" if _hud_layout_scale > 1.0 else "wide"),
+		"mode": "narrow-phone" if narrow else ("compact-landscape" if compact else ("tall" if _hud_layout_scale > 1.0 else "wide")),
 		"physical": [physical.x, physical.y],
 		"logical": [viewport_size.x, viewport_size.y],
 		"layout_scale": _hud_layout_scale,

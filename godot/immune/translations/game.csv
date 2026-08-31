@@ -3,6 +3,10 @@ UI_PAUSE_TITLE,暫停／設定,Pause / Settings
 UI_SCREEN_SHAKE,鏡頭震動,Camera shake
 UI_REDUCED_MOTION,減少動態效果,Reduce motion
 UI_LANGUAGE,介面語言,Interface language
+UI_VOLUME_MASTER,總音量,Master
+UI_VOLUME_MUSIC,音樂,Music
+UI_VOLUME_SFX,音效,SFX
+UI_VOLUME_UI,介面音效,UI
 UI_RESUME,%s · 繼續,%s · Resume
 UI_RESTART_MISSION,重新開始任務,Restart mission
 UI_RETURN_MISSIONS,返回任務選擇,Return to mission select
@@ -18,6 +22,7 @@ UI_COMPLETE_TO_UNLOCK,完成上一任務後解鎖,Complete the previous mission 
 UI_MISSION_BADGE_COMPLETE, · 已完成, · COMPLETE
 UI_MISSION_BADGE_LOCKED, · 鎖定, · LOCKED
 UI_IMMUNE_CORE,免疫核心,Immune Core
+UI_BOSS,首領,Boss
 UI_RETRY,重新挑戰,Retry
 UI_COMBAT_HUD,%s · %s · %s勤務,%s · %s · %s duty
 UI_TOGGLE_DUTY,%s · 轉換勤務,%s · Switch duty

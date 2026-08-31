@@ -1,0 +1,53 @@
+IMMUNE THIRD-PARTY NOTICES
+==========================
+
+This file accompanies every native Steam depot staged by this repository.
+
+GODOT ENGINE
+------------
+
+This game uses Godot Engine, available under the following license:
+
+Copyright (c) 2014-present Godot Engine contributors.
+Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+The accompanying GODOT_COPYRIGHT.txt contains the complete Godot 4.7.2
+third-party copyright and license inventory from:
+https://github.com/godotengine/godot/blob/4.7.2-stable/COPYRIGHT.txt
+
+NOTO SANS HK VARIABLE FONT
+--------------------------
+
+Copyright: © 2014-2021 Adobe (http://www.adobe.com/), with Reserved Font Name
+'Source'. The font is distributed under the SIL Open Font License, Version 1.1.
+The complete license is included as NotoSansHK-OFL.txt.
+
+PROCTEXTURE ORANGE PEEL HEIGHT SOURCE
+-------------------------------------
+
+The runtime `jelly_micro_height.png` is a transformed data texture derived from
+ProcTexture's Orange Peel Seamless PBR Texture height channel, released under
+CC0. Attribution is not required, but provenance is retained at:
+https://proctexture.com/textures/plaster/textured/orange-peel
+
+Project-specific generated-model and marketing-art provenance is recorded in
+`steam/asset-rights-register.md` in the source handoff. Those records are not
+substitute license grants; the publisher must complete the owner attestations.

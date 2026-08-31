@@ -7,6 +7,7 @@ import test from "node:test";
 import {
   requiredSteamAssets,
   renderSteamVdfs,
+  stagingArguments,
   stageSteamBuild,
   validateSteamConfig,
 } from "./prepare_steam_build.mjs";
@@ -19,6 +20,12 @@ const VALID_CONFIG = {
     macos: "4800003",
   },
 };
+
+test("staging CLI rejects unknown, empty, and duplicate inputs", () => {
+  assert.throws(() => stagingArguments(["--password=secret"]), /Unknown/u);
+  assert.throws(() => stagingArguments(["--out="]), /requires a value/u);
+  assert.throws(() => stagingArguments(["--app-id=4800000", "--app-id=4800001"]), /Duplicate/u);
+});
 
 test("rejects placeholder or ambiguous Steam identifiers before staging", () => {
   assert.throws(
@@ -57,12 +64,19 @@ test("stages deterministic Windows and Linux depots with a checksummed manifest"
     config: VALID_CONFIG,
     platforms: ["windows", "linux"],
   });
-  assert.equal(report.schema_version, 1);
+  assert.equal(report.schema_version, 2);
   assert.deepEqual(report.platforms, ["linux", "windows"]);
-  assert.equal(report.files.length, 4);
+  assert.deepEqual(report.license_files, [
+    "THIRD_PARTY_NOTICES.txt",
+    "GODOT_COPYRIGHT.txt",
+    "NotoSansHK-OFL.txt",
+  ]);
+  assert.equal(report.files.length, 10);
   assert.ok(report.files.every((entry) => /^[a-f0-9]{64}$/u.test(entry.sha256)));
   assert.equal((await stat(join(output, "content/windows/IMMUNE-windows.exe"))).isFile(), true);
   assert.equal((await stat(join(output, "content/linux/IMMUNE-linux.x86_64"))).isFile(), true);
+  assert.equal((await stat(join(output, "content/windows/THIRD_PARTY_NOTICES.txt"))).isFile(), true);
+  assert.equal((await stat(join(output, "content/linux/GODOT_COPYRIGHT.txt"))).isFile(), true);
   assert.match(await readFile(join(output, "scripts/app_build_4800000.vdf"), "utf8"), /4800002/u);
   assert.deepEqual(JSON.parse(await readFile(join(output, "steam-stage-manifest.json"), "utf8")), report);
 });
@@ -70,12 +84,14 @@ test("stages deterministic Windows and Linux depots with a checksummed manifest"
 test("fails closed when a required platform sidecar is missing", async () => {
   const fixture = await mkdtemp(join(tmpdir(), "immune-steam-missing-"));
   const artifacts = join(fixture, "artifacts");
+  const output = join(fixture, "stage");
   await mkdir(artifacts, { recursive: true });
   await writeFile(join(artifacts, "IMMUNE-windows.exe"), "windows-binary");
   await assert.rejects(
-    stageSteamBuild({ artifacts, output: join(fixture, "stage"), config: VALID_CONFIG, platforms: ["windows"] }),
+    stageSteamBuild({ artifacts, output, config: VALID_CONFIG, platforms: ["windows"] }),
     /IMMUNE-windows\.pck/u,
   );
+  await assert.rejects(stat(output), { code: "ENOENT" });
 });
 
 test("locks the current required Steam graphical-asset inventory", () => {

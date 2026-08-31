@@ -9,6 +9,7 @@
 - Texturing: disabled; the shared Godot wet-gel shader supplies the violet jelly look
 - Meshy output: GLB only, 158,348 bytes
 - Integrated GLB: 736,468 bytes after Assimp 6.0.2 regenerated missing smooth vertex normals and repaired the rear-pole shading seam; geometry, topology, and silhouette unchanged
+- Integrated GLB SHA-256: `c57cbf701c6ec66dfca69715e82ffe9339bc5ebf121fa05251f54157bab3100e`
 - Reproducible post-process source: `tools/smooth_meshy_b_normals.cpp`
 - Credits consumed: 5
 - Generated: 2026-08-27 (Asia/Hong_Kong)

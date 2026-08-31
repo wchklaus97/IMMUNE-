@@ -555,7 +555,7 @@ func _write_report(report: Dictionary) -> bool:
 
 func _validate_out_path() -> bool:
 	var normalized := _out_path.strip_edges().replace("\\", "/")
-	if normalized.is_empty() or normalized.contains("\u0000"):
+	if normalized.is_empty() or normalized.to_utf8_buffer().has(0):
 		push_error("gel_perf.gd: --out must name a JSON file")
 		return false
 	if normalized.ends_with("/") or normalized.get_extension().to_lower() != "json":

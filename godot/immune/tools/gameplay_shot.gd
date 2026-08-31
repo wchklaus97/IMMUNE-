@@ -6,11 +6,11 @@ extends Node
 ##   godot --path <proj> --resolution 1920x1080 res://tools/gameplay_shot.tscn -- \
 ##     --out=<absolute-dir> [--family=B] [--mission=MISSION-01] [--tag=B-v2] \
 ##     [--locale=zh_HK|en] --portrait-expected=visible|hidden \
-##     [--store-framing=on|off]
+##     [--store-framing=on|off] [--pause-capture=auto|on|off]
 
 const ALLOWED_ARGS: Array[String] = [
 	"out", "family", "mission", "tag", "locale", "portrait-expected", "save-path",
-	"store-framing",
+	"store-framing", "pause-capture",
 ]
 const QA_STARTUP_FAILURE_EXIT_CODE := 74
 const IMAGE_SAMPLE_GRID := 16
@@ -29,6 +29,7 @@ var _tag := "gameplay"
 var _locale := "zh_HK"
 var _portrait_expected := ""
 var _store_framing := false
+var _pause_capture := "auto"
 var _combat: Node
 var _presentation_samples: Array[Dictionary] = []
 var _baseline_live_scale := Vector3.ONE
@@ -51,6 +52,7 @@ func _ready() -> void:
 	_locale = String(_args.get("locale", "zh_HK"))
 	_portrait_expected = String(_args.get("portrait-expected", "")).to_lower()
 	var store_framing_value := String(_args.get("store-framing", "off")).to_lower()
+	_pause_capture = String(_args.get("pause-capture", "auto")).to_lower()
 	if not ResearchState.VALID_FAMILIES.has(_family):
 		push_error("gameplay_shot.gd: unsupported --family=%s" % _family)
 		get_tree().quit(2)
@@ -73,6 +75,10 @@ func _ready() -> void:
 		push_error("gameplay_shot.gd: --store-framing must be on or off")
 		get_tree().quit(2)
 		return
+	if _pause_capture not in ["auto", "on", "off"]:
+		push_error("gameplay_shot.gd: --pause-capture must be auto, on, or off")
+		get_tree().quit(2)
+		return
 	_store_framing = store_framing_value == "on"
 	if not _is_safe_tag(_tag):
 		push_error(
@@ -81,6 +87,10 @@ func _ready() -> void:
 		)
 		get_tree().quit(2)
 		return
+	# Keep the pause-menu selector and translated copy in the same in-memory QA
+	# locale without calling SettingsState.set_locale(), which would persist over
+	# the player's real settings file.
+	SettingsState.locale_code = _locale
 	TranslationServer.set_locale(_locale)
 	if _out_dir.is_empty():
 		push_error("gameplay_shot.gd: --out=<dir> required")
@@ -517,11 +527,13 @@ func _narrow_phone_contract_passes() -> bool:
 
 func _capture_narrow_pause() -> bool:
 	var physical_size := DisplayServer.window_get_size()
-	if physical_size.x > 430 or physical_size.y <= physical_size.x:
+	var narrow_phone := physical_size.x <= 430 and physical_size.y > physical_size.x
+	var should_capture := _pause_capture == "on" or (_pause_capture == "auto" and narrow_phone)
+	if not should_capture:
 		return true
 	var pause_menu := _combat.get("_pause_menu") as ImmunePauseMenu
 	if pause_menu == null or not pause_menu.has_method("responsive_contract"):
-		push_error("gameplay_shot.gd: pause menu missing for narrow-phone evidence")
+		push_error("gameplay_shot.gd: pause menu missing for requested evidence")
 		return false
 	pause_menu.set_open(true)
 	# Keep the deterministic capture coroutine advancing while retaining the
@@ -535,7 +547,7 @@ func _capture_narrow_pause() -> bool:
 	pause_menu.set_open(false)
 	get_tree().paused = false
 	if not contract_ok:
-		push_error("gameplay_shot.gd: narrow-phone pause contract failed")
+		push_error("gameplay_shot.gd: pause responsive contract failed")
 	return contract_ok and save_ok
 
 
