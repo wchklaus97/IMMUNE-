@@ -40,9 +40,19 @@ V5.2 adds the verified 390x844 / 360x800 safe-area layouts while keeping the
 accepted V5.1 jelly material. Exact source
 `32a04cd544afd196b454386a4d252828d33badf2` passed all four jobs in Actions run
 `33361771002`. Use only the matching
-`immune-demo-32a04cd544afd196b454386a4d252828d33badf2` artifact for a new V5.2
-phone-readability campaign. The older V5.1 bundle is checksum-correct for
-`2d011b1`, but predates the narrow-phone layout and is now a historical fallback.
+`immune-demo-32a04cd544afd196b454386a4d252828d33badf2` artifact. A verified local
+campaign now exists at
+`outputs/human-playtest-campaigns/immune-v0.4.0-32a04cd-run-33361771002-jelly-v52-portable-v1/`.
+Its artifact-set SHA-256 is
+`11041aa0447929cf1b75b02574ee630f8a080a564ffde52402ceb76873f29bc6`;
+repo, portable, and independent 43/43 checksum verification pass. Six Web
+assignments, all four platform preflights, the real facilitator station, and an
+eight-state exported-Web rehearsal pass. It is ready for private distribution
+but contains no completed human result. The older V5.1 bundle is now a
+historical fallback because it predates the narrow-phone layout.
+
+The full provenance and failure audit is in
+`docs/godot-prompter/specs/2026-08-31-jelly-v52-human-playtest-campaign.md`.
 
 ## Prepare the verified six-person campaign
 
@@ -50,6 +60,11 @@ The recommended Jelly V5.2 path packages the exact successful CI artifact once,
 plus six counterbalanced participant kits. Run these commands on a volume with
 comfortable free space; the 433,014,678-byte Actions archive expands into all
 four platform builds. For commit `32a04cd` from Actions run `33361771002`:
+
+The local output path already exists on the current machine. Use the verifier
+and facilitator commands against it; the commands below are the reproducible
+creation path for another checkout or volume where that destination is absent.
+On this machine they intentionally refuse to overwrite the verified bundle.
 
 ```sh
 gh run download 33361771002 \

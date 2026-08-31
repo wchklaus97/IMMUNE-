@@ -85,11 +85,34 @@ V5.2 submitted no Meshy task, made no paid API retry, and consumed zero credits.
   `immune-web-release-qa-32a04cd544afd196b454386a4d252828d33badf2` (1,053,578-byte Actions
   archive, SHA-256 `d61e6468efe9d5c28bf72c4ccece8a240454a5822856b63889c9962f5aa3ea1d`).
 
+### Accepted V5.2 portable campaign evidence
+
+- The exact Actions artifact is packaged at
+  `outputs/human-playtest-campaigns/immune-v0.4.0-32a04cd-run-33361771002-jelly-v52-portable-v1/`.
+  Its artifact-set SHA-256 is
+  `11041aa0447929cf1b75b02574ee630f8a080a564ffde52402ceb76873f29bc6`.
+- Repository and bundled portable verifiers pass 6 participants / 14 artifacts;
+  independent verification passes all 43 artifact, participant, and facilitator
+  checksums. Six Web assignments plus Web/Windows/Linux/macOS platform
+  preflights pass, including the Linux execute bit.
+- The real facilitator station returns HTTP 200 for landing, assigned form,
+  selected Web build, and WASM. It supplies no-store, COOP/COEP, same-origin,
+  and `application/wasm` contracts.
+- The exact campaign Web build completes research -> mission -> B -> combat ->
+  mobile duty -> Pause in both profiles. Metal is `119.996/104.167` mean/p05
+  FPS; 4x CPU + SwiftShader is `13.207/10.823`. All eight screenshots were
+  visually reviewed without blank or broken output. The constrained 1280x720 T
+  preview still reaches beyond its top edge and remains a human framing question.
+- This is distribution-integrity evidence only. No tester has completed a
+  session and no human-result claim is recorded.
+
 Ignored evidence roots:
 
 - `outputs/v5.2-narrow-phone-green/`
 - `outputs/v5.2-responsive-regression/`
 - `outputs/v5.2-web-release-qa-final/`
+- `outputs/human-playtest-campaigns/immune-v0.4.0-32a04cd-run-33361771002-jelly-v52-portable-v1/`
+- `outputs/v5.2-playtest-campaign-web-qa-33361771002/`
 - `godot/immune/build/releases/`
 
 ### Failure handling and residual risk
@@ -103,6 +126,13 @@ Ignored evidence roots:
 - A first research evidence copy lost a race with automatic QA cleanup. The
   harness now writes atomically to an explicitly validated durable `--out` path;
   both positive output and negative source-path tests pass.
+- The first campaign Web rehearsal failed at `listen EPERM` because its sandbox
+  denied the loopback listener. Its empty partial output was removed and the
+  unchanged gate passed with loopback permission. A later parallel content
+  request race was rechecked sequentially against the still-live station and
+  passed. The final 36-test tool suite reproduced the same restriction only in
+  its two listener tests, then passed 36/36 unchanged with loopback permission;
+  no product failure or relaxed assertion was hidden.
 - Godot 4.7.2 still emits non-fatal Unicode/NUL parser warnings while loading
   `catalog.gd` / `research_network.gd`. Both files are valid ASCII/UTF-8 with no
   NUL bytes, imports and releases have no compile/error failure, and upstream
@@ -885,6 +915,8 @@ Generated local artifacts (ignored by Git):
 - `outputs/v5.2-narrow-phone-green/`
 - `outputs/v5.2-responsive-regression/`
 - `outputs/v5.2-web-release-qa-final/`
+- `outputs/human-playtest-campaigns/immune-v0.4.0-32a04cd-run-33361771002-jelly-v52-portable-v1/`
+- `outputs/v5.2-playtest-campaign-web-qa-33361771002/`
 
 ## Repeatable release commands
 
@@ -962,19 +994,18 @@ regressions, local smoke/capture gates, fresh four-platform exports, final
 exported-Web browser gate, and four-job remote CI gate are complete. The
 previous checksum-locked V5.1 private playtest campaign remains historically
 valid for commit `2d011b1`, but it does not contain V5.2. The exact V5.2 release
-artifact exists in run `33361771002`; a V5.2 human campaign has not yet been
-generated. This is not a content-complete commercial release.
+artifact from run `33361771002` is now packaged as a verified, checksum-locked
+six-person V5.2 campaign. It is ready for private distribution, but contains no
+completed human result. This is not a content-complete commercial release.
 Remaining work is:
 
 1. Keep the N/A/D Meshy manifests as optional comparisons only. Any paid task
    still needs a separate exact 5-credit approval; never batch paid retries after
    a failed task. V5.2 made no Meshy call and the playable demo does not depend on
    further generation.
-2. Download run `33361771002` artifact
-   `immune-demo-32a04cd544afd196b454386a4d252828d33badf2` on a volume with
-   comfortable free space and create a new
-   checksum-locked playtest campaign. Then run real six-family human playtesting
-   for material direction, phone readability, accessibility, and control feel,
+2. Use the existing checksum-locked V5.2 campaign to run real six-family
+   human playtesting for material direction, phone readability, accessibility,
+   and control feel,
    followed by an agreed lower-end Windows/Web machine. SwiftShader and
    deterministic captures prove neither human judgement nor hardware speed.
 3. If exact V4/V5 cost comparison is required, approve launching the
