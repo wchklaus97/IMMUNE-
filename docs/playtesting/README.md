@@ -34,6 +34,16 @@ The six numeric tester codes `tester-01` through `tester-06` start on a
 different family. Continue with `tester-07` only after the first rotation is
 assigned.
 
+## Current distribution status
+
+V5.2 adds the verified 390x844 / 360x800 safe-area layouts while keeping the
+accepted V5.1 jelly material. Its exact source commit and CI release artifact
+are still pending the final remote gate. Do not start a new phone-readability
+campaign from the V5.1 bundle below: that bundle is checksum-correct for
+`2d011b1`, but predates the narrow-phone layout. Once V5.2 CI is green, replace
+the commit/run/artifact fields together and generate a fresh campaign on a
+volume with comfortable free space.
+
 ## Prepare the verified six-person campaign
 
 The recommended Jelly V5.1 path packages the exact successful CI artifact once,

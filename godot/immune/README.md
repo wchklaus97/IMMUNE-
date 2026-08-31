@@ -46,6 +46,35 @@ save isolation、效能同 Web evidence 見
 
 Compatibility renderer 下，細小 mobile duty accessories 會停用 shadow casting，避免 custom gel shadow pass 造成 screen-sized wedge；角色主體仍保留正常陰影。
 
+## V5.2 narrow-phone / safe-area QA
+
+390x844 同 360x800 會使用單欄 Mission、Research、Combat 同 Pause layout；
+debug QA 可用實體像素順序 `left,top,right,bottom` 模擬安全區。Android/iOS
+production 讀取平台 safe area；Godot 預設 Web shell 冇啟用
+`viewport-fit=cover`，所以 browser viewport 本身已係 unobscured area。
+
+```bash
+evidence="$PWD/outputs/v5.2-narrow-phone-green"
+IMMUNE_QA_SAFE_AREA_INSETS=24,47,24,34 godot \
+  --path godot/immune --resolution 390x844 \
+  res://tools/mission_select_shot.tscn -- \
+  --out="$evidence/mission-390" --locale=zh_HK --tag=green-390
+IMMUNE_QA_SAFE_AREA_INSETS=24,47,24,34 godot \
+  --path godot/immune --resolution 390x844 \
+  res://tools/gameplay_shot.tscn -- \
+  --out="$evidence/gameplay-390" --family=B --mission=MISSION-01 \
+  --tag=green-390 --locale=zh_HK --portrait-expected=hidden
+IMMUNE_QA_SAFE_AREA_INSETS=24,47,24,34 godot \
+  --path godot/immune --resolution 390x844 \
+  --script res://tools/check_overflow.gd -- \
+  --out="$evidence/research-390"
+```
+
+三個 harness 都會驗證至少 44 physical-pixel action、14px critical copy、
+stacked columns 同 safe margins；Research `--out` 只接受 system temp 或 repo
+`outputs/` 之下嘅絕對路徑。完整矩陣同風險邊界見
+`docs/godot-prompter/specs/2026-08-31-narrow-phone-safe-area.md`。
+
 ```bash
 capture_root="$PWD/outputs/v5.1-repro-472"
 godot --path godot/immune --resolution 1280x720 res://tools/gameplay_shot.tscn -- \

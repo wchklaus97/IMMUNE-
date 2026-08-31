@@ -22,6 +22,7 @@ const _Look := preload("res://characters/family_look.gd")
 const _LightContract := preload("res://characters/gel/light_contract.gd")
 const _PauseMenu := preload("res://ui/pause_menu.gd")
 const _PlaytestTelemetry := preload("res://combat/combat_playtest_telemetry.gd")
+const _Responsive := preload("res://ui/responsive_layout.gd")
 
 const MISSION_SELECT_SCENE := "res://ui/mission_select/mission_select.tscn"
 const NODE_FIXED := &"BASE-T-03"
@@ -49,8 +50,6 @@ const PORTRAIT_SCALE := {
 const PORTRAIT_Y := {
 	"B": 0.64,
 }
-const HUD_TALL_ASPECT_MAX := 0.8
-const HUD_TALL_SCALE := 2.25
 const HUD_BASE_FONT_SIZE := 16
 
 @export var mission_data: ImmuneMissionData
@@ -80,6 +79,8 @@ var _boss_value: Label
 var _hud_root: Control
 var _hud_theme: Theme
 var _hud_layout_scale: float = 1.0
+var _hud_layout_narrow := false
+var _hud_safe_insets := Vector4.ZERO
 var _duty_button: Button
 var _intel_button: Button
 var _back_button: Button
@@ -1172,9 +1173,12 @@ func _build_hud() -> void:
 	top_margin.add_theme_constant_override("margin_top", 18)
 	top_margin.add_theme_constant_override("margin_right", 24)
 	_hud_root.add_child(top_margin)
-	var top_row := HBoxContainer.new()
+	var top_row := GridContainer.new()
 	top_row.name = "HudTopRow"
-	top_row.add_theme_constant_override("separation", 16)
+	top_row.columns = 2
+	top_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	top_row.add_theme_constant_override("h_separation", 16)
+	top_row.add_theme_constant_override("v_separation", 16)
 	top_margin.add_child(top_row)
 	var briefing_panel := PanelContainer.new()
 	briefing_panel.name = "MissionBriefingPanel"
@@ -1191,10 +1195,12 @@ func _build_hud() -> void:
 	_hud = Label.new()
 	_hud.add_theme_font_size_override("font_size", 21)
 	_hud.add_theme_color_override("font_color", _Tokens.TEXT)
+	_hud.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	panel.add_child(_hud)
 	_objective = Label.new()
 	_objective.add_theme_font_size_override("font_size", 18)
 	_objective.add_theme_color_override("font_color", _Tokens.GOLD)
+	_objective.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	panel.add_child(_objective)
 	_status = Label.new()
 	_status.add_theme_font_size_override("font_size", 16)
@@ -1264,10 +1270,12 @@ func _build_hud() -> void:
 		Color(0.012, 0.032, 0.048, 0.94), Color(_Tokens.CYAN, 0.34), 12
 	))
 	action_center.add_child(action_panel)
-	var actions := HBoxContainer.new()
+	var actions := GridContainer.new()
 	actions.name = "ActionRow"
-	actions.alignment = BoxContainer.ALIGNMENT_CENTER
-	actions.add_theme_constant_override("separation", 10)
+	actions.columns = 3
+	actions.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	actions.add_theme_constant_override("h_separation", 10)
+	actions.add_theme_constant_override("v_separation", 10)
 	action_panel.add_child(actions)
 	_duty_button = Button.new()
 	_duty_button.name = "DutyButton"
@@ -1330,15 +1338,23 @@ func _apply_hud_responsive_layout(force: bool = false) -> void:
 	if _hud_root == null or not is_instance_valid(_hud_root):
 		return
 	var viewport_size := get_viewport().get_visible_rect().size
-	var aspect := viewport_size.x / maxf(viewport_size.y, 1.0)
-	var next_scale := HUD_TALL_SCALE if aspect <= HUD_TALL_ASPECT_MAX else 1.0
-	if not force and is_equal_approx(next_scale, _hud_layout_scale):
+	var next_narrow := _Responsive.is_narrow_phone(get_viewport())
+	var next_scale := _Responsive.layout_scale(get_viewport())
+	var next_insets := _Responsive.logical_safe_insets(get_viewport())
+	if (
+		not force
+		and is_equal_approx(next_scale, _hud_layout_scale)
+		and next_narrow == _hud_layout_narrow
+		and next_insets.is_equal_approx(_hud_safe_insets)
+	):
 		return
 	_hud_layout_scale = next_scale
-	_hud_theme.default_font_size = _hud_metric(HUD_BASE_FONT_SIZE)
+	_hud_layout_narrow = next_narrow
+	_hud_safe_insets = next_insets
+	_hud_theme.default_font_size = _hud_metric(17 if _hud_layout_narrow else HUD_BASE_FONT_SIZE)
 
 	var top_margin := _hud_root.find_child("HudTopMargin", true, false) as MarginContainer
-	var top_row := _hud_root.find_child("HudTopRow", true, false) as HBoxContainer
+	var top_row := _hud_root.find_child("HudTopRow", true, false) as GridContainer
 	var briefing_panel := _hud_root.find_child("MissionBriefingPanel", true, false) as PanelContainer
 	var briefing_column := _hud_root.find_child("BriefingColumn", true, false) as VBoxContainer
 	var vitals_panel := _hud_root.find_child("VitalsPanel", true, false) as PanelContainer
@@ -1347,15 +1363,23 @@ func _apply_hud_responsive_layout(force: bool = false) -> void:
 	var boss_label := _hud_root.find_child("BossLabel", true, false) as Label
 	var bottom_margin := _hud_root.find_child("HudBottomMargin", true, false) as MarginContainer
 	var action_panel := _hud_root.find_child("ActionTray", true, false) as PanelContainer
-	var actions := _hud_root.find_child("ActionRow", true, false) as HBoxContainer
+	var actions := _hud_root.find_child("ActionRow", true, false) as GridContainer
 	var result_column := _hud_root.find_child("ResultColumn", true, false) as VBoxContainer
 
 	if top_margin != null:
-		top_margin.add_theme_constant_override("margin_left", _hud_metric(24))
-		top_margin.add_theme_constant_override("margin_top", _hud_metric(18))
-		top_margin.add_theme_constant_override("margin_right", _hud_metric(24))
+		top_margin.add_theme_constant_override(
+			"margin_left", _hud_metric(24) + roundi(_hud_safe_insets.x)
+		)
+		top_margin.add_theme_constant_override(
+			"margin_top", _hud_metric(18) + roundi(_hud_safe_insets.y)
+		)
+		top_margin.add_theme_constant_override(
+			"margin_right", _hud_metric(24) + roundi(_hud_safe_insets.z)
+		)
 	if top_row != null:
-		top_row.add_theme_constant_override("separation", _hud_metric(16))
+		top_row.columns = 1 if _hud_layout_narrow else 2
+		top_row.add_theme_constant_override("h_separation", _hud_metric(16))
+		top_row.add_theme_constant_override("v_separation", _hud_metric(10 if _hud_layout_narrow else 16))
 	if briefing_panel != null:
 		briefing_panel.add_theme_stylebox_override("panel", _panel_box(
 			Color(0.018, 0.052, 0.078, 0.9), Color(mission_data.zone_color, 0.34), 10
@@ -1363,7 +1387,8 @@ func _apply_hud_responsive_layout(force: bool = false) -> void:
 	if briefing_column != null:
 		briefing_column.add_theme_constant_override("separation", _hud_metric(6))
 	if vitals_panel != null:
-		vitals_panel.custom_minimum_size.x = _hud_metric(360)
+		vitals_panel.custom_minimum_size.x = 0 if _hud_layout_narrow else _hud_metric(360)
+		vitals_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		vitals_panel.add_theme_stylebox_override("panel", _panel_box(
 			Color(0.02, 0.045, 0.065, 0.92), Color(_Tokens.CYAN, 0.26), 10
 		))
@@ -1378,27 +1403,56 @@ func _apply_hud_responsive_layout(force: bool = false) -> void:
 
 	_hud.add_theme_font_size_override("font_size", _hud_metric(21))
 	_objective.add_theme_font_size_override("font_size", _hud_metric(18))
-	_status.add_theme_font_size_override("font_size", _hud_metric(16))
+	_status.add_theme_font_size_override("font_size", _hud_metric(17 if _hud_layout_narrow else 16))
 	if bottom_margin != null:
-		bottom_margin.offset_top = -float(_hud_metric(94))
-		bottom_margin.add_theme_constant_override("margin_left", _hud_metric(24))
-		bottom_margin.add_theme_constant_override("margin_right", _hud_metric(24))
-		bottom_margin.add_theme_constant_override("margin_bottom", _hud_metric(18))
+		bottom_margin.offset_top = -float(
+			_hud_metric(220 if _hud_layout_narrow else 94) + roundi(_hud_safe_insets.w)
+		)
+		bottom_margin.add_theme_constant_override(
+			"margin_left", _hud_metric(24) + roundi(_hud_safe_insets.x)
+		)
+		bottom_margin.add_theme_constant_override(
+			"margin_right", _hud_metric(24) + roundi(_hud_safe_insets.z)
+		)
+		bottom_margin.add_theme_constant_override(
+			"margin_bottom", _hud_metric(18) + roundi(_hud_safe_insets.w)
+		)
 	if action_panel != null:
-		action_panel.custom_minimum_size = Vector2(_hud_metric(748), _hud_metric(70))
+		action_panel.custom_minimum_size = Vector2(
+			0 if _hud_layout_narrow else _hud_metric(748),
+			_hud_metric(200 if _hud_layout_narrow else 70)
+		)
+		action_panel.size_flags_horizontal = (
+			Control.SIZE_EXPAND_FILL if _hud_layout_narrow else Control.SIZE_SHRINK_CENTER
+		)
 		action_panel.add_theme_stylebox_override("panel", _panel_box(
 			Color(0.012, 0.032, 0.048, 0.94), Color(_Tokens.CYAN, 0.34), 12
 		))
 	if actions != null:
-		actions.add_theme_constant_override("separation", _hud_metric(10))
+		actions.columns = 1 if _hud_layout_narrow else 3
+		actions.add_theme_constant_override("h_separation", _hud_metric(10))
+		actions.add_theme_constant_override("v_separation", _hud_metric(10))
 	for button in [_duty_button, _intel_button, _back_button]:
-		button.custom_minimum_size = Vector2(_hud_metric(220), _hud_metric(52))
+		button.custom_minimum_size = Vector2(
+			0 if _hud_layout_narrow else _hud_metric(220),
+			_hud_metric(53 if _hud_layout_narrow else 52)
+		)
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_style_action_button(
 		_duty_button, _Tokens.family_color(String(_family_profile.family_id)), true
 	)
 	_style_action_button(_intel_button, _Tokens.CYAN)
 	_style_action_button(_back_button, _Tokens.MUTED)
-	_result_panel.custom_minimum_size = Vector2(_hud_metric(680), _hud_metric(320))
+	var result_available_width := (
+		viewport_size.x
+		- _hud_safe_insets.x
+		- _hud_safe_insets.z
+		- float(_hud_metric(48))
+	)
+	_result_panel.custom_minimum_size = Vector2(
+		minf(float(_hud_metric(680)), result_available_width) if _hud_layout_narrow else _hud_metric(680),
+		_hud_metric(320)
+	)
 	_result_panel.add_theme_stylebox_override("panel", _panel_box(
 		Color(0.018, 0.045, 0.068, 0.98), Color(_Tokens.CYAN, 0.62), 16
 	))
@@ -1407,6 +1461,83 @@ func _apply_hud_responsive_layout(force: bool = false) -> void:
 	_result_title.add_theme_font_size_override("font_size", _hud_metric(34))
 	_result_body.add_theme_font_size_override("font_size", _hud_metric(19))
 	_request_combat_portrait_layout(4)
+
+
+func responsive_contract() -> Dictionary:
+	var narrow := _Responsive.is_narrow_phone(get_viewport())
+	var physical := _Responsive.physical_window_size()
+	var viewport_size := get_viewport().get_visible_rect().size
+	var top_margin := _hud_root.find_child("HudTopMargin", true, false) as MarginContainer
+	var top_row := _hud_root.find_child("HudTopRow", true, false) as GridContainer
+	var bottom_margin := _hud_root.find_child("HudBottomMargin", true, false) as MarginContainer
+	var actions := _hud_root.find_child("ActionRow", true, false) as GridContainer
+	var min_action_height := INF
+	for button in [_duty_button, _intel_button, _back_button]:
+		min_action_height = minf(
+			min_action_height,
+			_Responsive.logical_height_to_physical(
+				get_viewport(), maxf(button.size.y, button.custom_minimum_size.y)
+			)
+		)
+	var copy_physical := _Responsive.logical_height_to_physical(
+		get_viewport(), float(_status.get_theme_font_size("font_size"))
+	)
+	var safe_pass := (
+		top_margin != null
+		and bottom_margin != null
+		and top_margin.get_theme_constant("margin_left") >= roundi(_hud_safe_insets.x)
+		and top_margin.get_theme_constant("margin_top") >= roundi(_hud_safe_insets.y)
+		and top_margin.get_theme_constant("margin_right") >= roundi(_hud_safe_insets.z)
+		and bottom_margin.get_theme_constant("margin_left") >= roundi(_hud_safe_insets.x)
+		and bottom_margin.get_theme_constant("margin_right") >= roundi(_hud_safe_insets.z)
+		and bottom_margin.get_theme_constant("margin_bottom") >= roundi(_hud_safe_insets.w)
+	)
+	var safe_rect := Rect2(
+		Vector2(_hud_safe_insets.x, _hud_safe_insets.y),
+		Vector2(
+			viewport_size.x - _hud_safe_insets.x - _hud_safe_insets.z,
+			viewport_size.y - _hud_safe_insets.y - _hud_safe_insets.w
+		)
+	)
+	var critical_inside_safe := true
+	for control_name in ["MissionBriefingPanel", "VitalsPanel", "ActionTray"]:
+		var control := _hud_root.find_child(control_name, true, false) as Control
+		critical_inside_safe = (
+			critical_inside_safe
+			and control != null
+			and safe_rect.grow(1.0).encloses(control.get_global_rect())
+		)
+	var pause_contract := _pause_menu.responsive_contract() if _pause_menu != null else {}
+	var all_pass := (
+		not narrow
+		or (
+			top_row != null
+			and top_row.columns == 1
+			and actions != null
+			and actions.columns == 1
+			and min_action_height >= 44.0
+			and copy_physical >= 14.0
+			and safe_pass
+			and critical_inside_safe
+			and bool(pause_contract.get("all_pass", false))
+		)
+	)
+	return {
+		"mode": "narrow-phone" if narrow else ("tall" if _hud_layout_scale > 1.0 else "wide"),
+		"physical": [physical.x, physical.y],
+		"logical": [viewport_size.x, viewport_size.y],
+		"layout_scale": _hud_layout_scale,
+		"safe_area_source": _Responsive.safe_area_source(),
+		"safe_insets_logical": [_hud_safe_insets.x, _hud_safe_insets.y, _hud_safe_insets.z, _hud_safe_insets.w],
+		"top_columns": top_row.columns if top_row != null else 0,
+		"action_columns": actions.columns if actions != null else 0,
+		"minimum_action_height_physical": min_action_height,
+		"minimum_copy_size_physical": copy_physical,
+		"safe_margins_pass": safe_pass,
+		"critical_controls_inside_safe_area": critical_inside_safe,
+		"pause": pause_contract,
+		"all_pass": all_pass,
+	}
 
 
 func _hud_metric(value: int) -> int:

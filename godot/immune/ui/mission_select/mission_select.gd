@@ -2,6 +2,7 @@ extends Node3D
 
 const _Content := preload("res://resources/combat/combat_content.gd")
 const _Look := preload("res://characters/family_look.gd")
+const _Responsive := preload("res://ui/responsive_layout.gd")
 const RESEARCH_SCENE := "res://ui/research/research_network.tscn"
 const FAMILIES: PackedStringArray = ["T", "B", "M", "N", "A", "D"]
 const PREVIEW_SCALE := {
@@ -35,6 +36,18 @@ var _mission_buttons: Array[Button] = []
 var _family_buttons: Array[Button] = []
 var _preview_stage: Node3D
 var _preview_viewport: SubViewport
+var _scroll: ScrollContainer
+var _safe_margin: MarginContainer
+var _columns: GridContainer
+var _left_column: VBoxContainer
+var _right_column: VBoxContainer
+var _family_grid: GridContainer
+var _heading: Label
+var _subtitle: Label
+var _family_label: Label
+var _preview_space: Control
+var _layout_scale := 1.0
+var _safe_insets := Vector4.ZERO
 
 
 func _ready() -> void:
@@ -45,6 +58,7 @@ func _ready() -> void:
 	_mission_index = maxi(_mission_index_for(ResearchState.selected_mission_id), 0)
 	_family_index = maxi(FAMILIES.find(String(ResearchState.selected_family_id)), 0)
 	_build_ui()
+	_apply_responsive_layout(true)
 	_refresh()
 	AudioDirector.play_music()
 	WebQaBridge.publish(&"mission_select_ready", {
@@ -54,6 +68,8 @@ func _ready() -> void:
 
 
 func _exit_tree() -> void:
+	if get_viewport() != null and get_viewport().size_changed.is_connected(_on_viewport_size_changed):
+		get_viewport().size_changed.disconnect(_on_viewport_size_changed)
 	_shutdown_preview()
 
 
@@ -137,107 +153,285 @@ func _build_ui() -> void:
 	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	layer.add_child(background)
-	var scroll := ScrollContainer.new()
-	scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	layer.add_child(scroll)
-	var margin := MarginContainer.new()
-	margin.custom_minimum_size = Vector2(1268, 700)
-	margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	margin.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	margin.add_theme_constant_override("margin_left", 42)
-	margin.add_theme_constant_override("margin_top", 34)
-	margin.add_theme_constant_override("margin_right", 42)
-	margin.add_theme_constant_override("margin_bottom", 34)
-	scroll.add_child(margin)
-	var columns := HBoxContainer.new()
-	columns.add_theme_constant_override("separation", 34)
-	margin.add_child(columns)
-	var left := VBoxContainer.new()
-	left.custom_minimum_size.x = 650
-	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	left.add_theme_constant_override("separation", 12)
-	columns.add_child(left)
-	var heading := Label.new()
-	heading.text = "UI_MISSION_HEADING"
-	heading.add_theme_font_size_override("font_size", 38)
-	heading.add_theme_color_override("font_color", TEXT)
-	left.add_child(heading)
-	var sub := Label.new()
-	sub.text = "UI_MISSION_SUBTITLE"
-	sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	sub.add_theme_color_override("font_color", MUTED)
-	left.add_child(sub)
+	_scroll = ScrollContainer.new()
+	_scroll.name = "MissionScroll"
+	_scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	layer.add_child(_scroll)
+	_safe_margin = MarginContainer.new()
+	_safe_margin.name = "MissionSafeArea"
+	_safe_margin.custom_minimum_size = Vector2(1268, 700)
+	_safe_margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_safe_margin.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_safe_margin.add_theme_constant_override("margin_left", 42)
+	_safe_margin.add_theme_constant_override("margin_top", 34)
+	_safe_margin.add_theme_constant_override("margin_right", 42)
+	_safe_margin.add_theme_constant_override("margin_bottom", 34)
+	_scroll.add_child(_safe_margin)
+	_columns = GridContainer.new()
+	_columns.name = "MissionColumns"
+	_columns.columns = 2
+	_columns.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_columns.add_theme_constant_override("h_separation", 34)
+	_columns.add_theme_constant_override("v_separation", 34)
+	_safe_margin.add_child(_columns)
+	_left_column = VBoxContainer.new()
+	_left_column.name = "MissionChoices"
+	_left_column.custom_minimum_size.x = 650
+	_left_column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_left_column.add_theme_constant_override("separation", 12)
+	_columns.add_child(_left_column)
+	_heading = Label.new()
+	_heading.name = "MissionHeading"
+	_heading.text = "UI_MISSION_HEADING"
+	_heading.add_theme_font_size_override("font_size", 38)
+	_heading.add_theme_color_override("font_color", TEXT)
+	_left_column.add_child(_heading)
+	_subtitle = Label.new()
+	_subtitle.name = "MissionSubtitle"
+	_subtitle.text = "UI_MISSION_SUBTITLE"
+	_subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_subtitle.add_theme_color_override("font_color", MUTED)
+	_left_column.add_child(_subtitle)
 	for i in _missions.size():
 		var button := Button.new()
+		button.name = "MissionButton%d" % (i + 1)
 		button.custom_minimum_size.y = 56
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		button.toggle_mode = true
 		_style_button(button)
 		button.pressed.connect(_select_mission.bind(i))
-		left.add_child(button)
+		_left_column.add_child(button)
 		_mission_buttons.append(button)
-	var family_label := Label.new()
-	family_label.text = "UI_FAMILY_HEADING"
-	family_label.add_theme_font_size_override("font_size", 23)
-	family_label.add_theme_color_override("font_color", TEXT)
-	left.add_child(family_label)
-	var grid := GridContainer.new()
-	grid.columns = 3
-	grid.add_theme_constant_override("h_separation", 8)
-	grid.add_theme_constant_override("v_separation", 8)
-	left.add_child(grid)
+	_family_label = Label.new()
+	_family_label.name = "FamilyHeading"
+	_family_label.text = "UI_FAMILY_HEADING"
+	_family_label.add_theme_font_size_override("font_size", 23)
+	_family_label.add_theme_color_override("font_color", TEXT)
+	_left_column.add_child(_family_label)
+	_family_grid = GridContainer.new()
+	_family_grid.name = "MissionFamilyGrid"
+	_family_grid.columns = 3
+	_family_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_family_grid.add_theme_constant_override("h_separation", 8)
+	_family_grid.add_theme_constant_override("v_separation", 8)
+	_left_column.add_child(_family_grid)
 	for i in FAMILIES.size():
 		var button := Button.new()
+		button.name = "Family%sButton" % FAMILIES[i]
 		button.custom_minimum_size = Vector2(190, 48)
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.toggle_mode = true
 		_style_button(button)
 		button.pressed.connect(_select_family.bind(i))
-		grid.add_child(button)
+		_family_grid.add_child(button)
 		_family_buttons.append(button)
-	var right := VBoxContainer.new()
-	right.custom_minimum_size.x = 500
-	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	right.add_theme_constant_override("separation", 12)
-	columns.add_child(right)
-	var preview_space := Control.new()
-	preview_space.custom_minimum_size.y = 250
-	right.add_child(preview_space)
-	_build_preview_stage(preview_space)
+	_right_column = VBoxContainer.new()
+	_right_column.name = "MissionPreviewAndActions"
+	_right_column.custom_minimum_size.x = 500
+	_right_column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_right_column.add_theme_constant_override("separation", 12)
+	_columns.add_child(_right_column)
+	_preview_space = Control.new()
+	_preview_space.name = "MissionCellPreview"
+	_preview_space.custom_minimum_size.y = 250
+	_right_column.add_child(_preview_space)
+	_build_preview_stage(_preview_space)
 	_title = Label.new()
 	_title.add_theme_font_size_override("font_size", 30)
 	_title.add_theme_color_override("font_color", TEXT)
-	right.add_child(_title)
+	_right_column.add_child(_title)
 	_difficulty = Label.new()
 	_difficulty.add_theme_font_size_override("font_size", 18)
 	_difficulty.add_theme_color_override("font_color", WARM)
-	right.add_child(_difficulty)
+	_right_column.add_child(_difficulty)
 	_briefing = Label.new()
 	_briefing.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_briefing.custom_minimum_size.y = 70
 	_briefing.add_theme_color_override("font_color", MUTED)
-	right.add_child(_briefing)
+	_right_column.add_child(_briefing)
 	_family_title = Label.new()
 	_family_title.add_theme_font_size_override("font_size", 24)
 	_family_title.add_theme_color_override("font_color", ACCENT)
-	right.add_child(_family_title)
+	_right_column.add_child(_family_title)
 	_family_role = Label.new()
 	_family_role.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_family_role.add_theme_color_override("font_color", TEXT)
-	right.add_child(_family_role)
+	_right_column.add_child(_family_role)
 	_start_button = Button.new()
+	_start_button.name = "MissionStartButton"
 	_start_button.custom_minimum_size.y = 58
 	_style_button(_start_button, true)
 	_start_button.pressed.connect(_start)
-	right.add_child(_start_button)
+	_right_column.add_child(_start_button)
 	_back_button = Button.new()
+	_back_button.name = "MissionBackButton"
 	_back_button.custom_minimum_size.y = 48
 	_style_button(_back_button)
 	_back_button.pressed.connect(_back)
-	right.add_child(_back_button)
+	_right_column.add_child(_back_button)
+	if not get_viewport().size_changed.is_connected(_on_viewport_size_changed):
+		get_viewport().size_changed.connect(_on_viewport_size_changed)
 	SettingsState.input_device_changed.connect(func(_gamepad: bool) -> void: _refresh())
 	SettingsState.settings_changed.connect(_refresh)
+
+
+func _on_viewport_size_changed() -> void:
+	call_deferred("_apply_responsive_layout")
+
+
+func _apply_responsive_layout(force: bool = false) -> void:
+	if _safe_margin == null or not is_instance_valid(_safe_margin):
+		return
+	var narrow := _Responsive.is_narrow_phone(get_viewport())
+	var next_scale := _Responsive.layout_scale(get_viewport()) if narrow else 1.0
+	var next_insets := _Responsive.logical_safe_insets(get_viewport())
+	if (
+		not force
+		and is_equal_approx(next_scale, _layout_scale)
+		and next_insets.is_equal_approx(_safe_insets)
+	):
+		return
+	_layout_scale = next_scale
+	_safe_insets = next_insets
+	if narrow:
+		_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+		_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
+		_safe_margin.custom_minimum_size = Vector2.ZERO
+		_set_safe_margins(18, 18, 18, 18)
+		_columns.columns = 1
+		_columns.add_theme_constant_override("h_separation", _metric(18))
+		_columns.add_theme_constant_override("v_separation", _metric(18))
+		_left_column.custom_minimum_size.x = 0
+		_right_column.custom_minimum_size.x = 0
+		_left_column.add_theme_constant_override("separation", _metric(10))
+		_right_column.add_theme_constant_override("separation", _metric(10))
+		_heading.add_theme_font_size_override("font_size", _metric(30))
+		_subtitle.add_theme_font_size_override("font_size", _metric(17))
+		_family_label.add_theme_font_size_override("font_size", _metric(20))
+		_family_grid.columns = 2
+		_family_grid.add_theme_constant_override("h_separation", _metric(6))
+		_family_grid.add_theme_constant_override("v_separation", _metric(6))
+		_preview_space.custom_minimum_size.y = _metric(150)
+		_title.add_theme_font_size_override("font_size", _metric(24))
+		_difficulty.add_theme_font_size_override("font_size", _metric(17))
+		_briefing.add_theme_font_size_override("font_size", _metric(17))
+		_briefing.custom_minimum_size.y = _metric(60)
+		_family_title.add_theme_font_size_override("font_size", _metric(20))
+		_family_role.add_theme_font_size_override("font_size", _metric(17))
+		for button in _mission_buttons:
+			button.custom_minimum_size = Vector2(0, _metric(53))
+			button.add_theme_font_size_override("font_size", _metric(17))
+		for button in _family_buttons:
+			button.custom_minimum_size = Vector2(0, _metric(53))
+			button.add_theme_font_size_override("font_size", _metric(16))
+		_start_button.custom_minimum_size.y = _metric(53)
+		_back_button.custom_minimum_size.y = _metric(53)
+		_start_button.add_theme_font_size_override("font_size", _metric(17))
+		_back_button.add_theme_font_size_override("font_size", _metric(17))
+	else:
+		_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+		_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+		_safe_margin.custom_minimum_size = Vector2(1268, 700)
+		_set_safe_margins(42, 34, 42, 34)
+		_columns.columns = 2
+		_columns.add_theme_constant_override("h_separation", 34)
+		_columns.add_theme_constant_override("v_separation", 34)
+		_left_column.custom_minimum_size.x = 650
+		_right_column.custom_minimum_size.x = 500
+		_left_column.add_theme_constant_override("separation", 12)
+		_right_column.add_theme_constant_override("separation", 12)
+		_heading.add_theme_font_size_override("font_size", 38)
+		_subtitle.add_theme_font_size_override("font_size", 16)
+		_family_label.add_theme_font_size_override("font_size", 23)
+		_family_grid.columns = 3
+		_family_grid.add_theme_constant_override("h_separation", 8)
+		_family_grid.add_theme_constant_override("v_separation", 8)
+		_preview_space.custom_minimum_size.y = 250
+		_title.add_theme_font_size_override("font_size", 30)
+		_difficulty.add_theme_font_size_override("font_size", 18)
+		_briefing.add_theme_font_size_override("font_size", 16)
+		_briefing.custom_minimum_size.y = 70
+		_family_title.add_theme_font_size_override("font_size", 24)
+		_family_role.add_theme_font_size_override("font_size", 16)
+		for button in _mission_buttons:
+			button.custom_minimum_size = Vector2(0, 56)
+			button.add_theme_font_size_override("font_size", 16)
+		for button in _family_buttons:
+			button.custom_minimum_size = Vector2(190, 48)
+			button.add_theme_font_size_override("font_size", 16)
+		_start_button.custom_minimum_size.y = 58
+		_back_button.custom_minimum_size.y = 48
+		_start_button.add_theme_font_size_override("font_size", 16)
+		_back_button.add_theme_font_size_override("font_size", 16)
+	_safe_margin.queue_redraw()
+
+
+func _set_safe_margins(left: int, top: int, right: int, bottom: int) -> void:
+	_safe_margin.add_theme_constant_override("margin_left", _metric(left) + roundi(_safe_insets.x))
+	_safe_margin.add_theme_constant_override("margin_top", _metric(top) + roundi(_safe_insets.y))
+	_safe_margin.add_theme_constant_override("margin_right", _metric(right) + roundi(_safe_insets.z))
+	_safe_margin.add_theme_constant_override("margin_bottom", _metric(bottom) + roundi(_safe_insets.w))
+
+
+func _metric(value: int) -> int:
+	return maxi(1, roundi(float(value) * _layout_scale))
+
+
+func responsive_contract() -> Dictionary:
+	var viewport_size := get_viewport().get_visible_rect().size
+	var physical_size := _Responsive.physical_window_size()
+	var narrow := _Responsive.is_narrow_phone(get_viewport())
+	var button_physical := minf(
+		_Responsive.logical_height_to_physical(get_viewport(), _start_button.size.y),
+		_Responsive.logical_height_to_physical(get_viewport(), _back_button.size.y)
+	)
+	var copy_physical := minf(
+		_Responsive.logical_height_to_physical(
+			get_viewport(), float(_subtitle.get_theme_font_size("font_size"))
+		),
+		_Responsive.logical_height_to_physical(
+			get_viewport(), float(_briefing.get_theme_font_size("font_size"))
+		)
+	)
+	var no_horizontal_scroll := (
+		_scroll.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED
+		and not _scroll.get_h_scroll_bar().visible
+	)
+	var safe_pass := (
+		_safe_margin.get_theme_constant("margin_left") >= roundi(_safe_insets.x)
+		and _safe_margin.get_theme_constant("margin_top") >= roundi(_safe_insets.y)
+		and _safe_margin.get_theme_constant("margin_right") >= roundi(_safe_insets.z)
+		and _safe_margin.get_theme_constant("margin_bottom") >= roundi(_safe_insets.w)
+	)
+	var layout_pass := (
+		not narrow
+		or (
+			_columns.columns == 1
+			and _family_grid.columns == 2
+			and no_horizontal_scroll
+			and button_physical >= 44.0
+			and copy_physical >= 14.0
+			and safe_pass
+		)
+	)
+	return {
+		"mode": "narrow-phone" if narrow else "wide",
+		"physical": [physical_size.x, physical_size.y],
+		"logical": [viewport_size.x, viewport_size.y],
+		"layout_scale": _layout_scale,
+		"safe_area_source": _Responsive.safe_area_source(),
+		"safe_insets_logical": [_safe_insets.x, _safe_insets.y, _safe_insets.z, _safe_insets.w],
+		"main_columns": _columns.columns,
+		"family_columns": _family_grid.columns,
+		"horizontal_scroll_disabled": no_horizontal_scroll,
+		"minimum_action_height_physical": button_physical,
+		"minimum_copy_size_physical": copy_physical,
+		"safe_margins_pass": safe_pass,
+		"all_pass": layout_pass,
+	}
 
 
 func _select_mission(index: int) -> void:

@@ -144,6 +144,7 @@ func _ready() -> void:
 	_hide_particles(_combat)
 	_record_presentation_contract("boss")
 	_evidence_ok = (await _save("%s-combat-boss.png" % _tag) == OK) and _evidence_ok
+	_evidence_ok = await _capture_narrow_pause() and _evidence_ok
 	if _portrait_expected == "visible":
 		_evidence_ok = await _exercise_portrait_lifecycle() and _evidence_ok
 	_evidence_ok = _write_presentation_report() and _evidence_ok
@@ -364,6 +365,7 @@ func _record_presentation_contract(stage: String, expected_override: String = ""
 			"fov": camera.fov if camera != null else -1.0,
 			"unchanged": main_camera_unchanged,
 		},
+		"responsive": _responsive_contract(),
 		"checks": {
 			"character_lifecycle_correct": portrait_loaded == expected_visible,
 			"family_matches": not expected_visible or (portrait_character != null and player != null and portrait_character.family_id == player.family_id),
@@ -378,6 +380,7 @@ func _record_presentation_contract(stage: String, expected_override: String = ""
 			"no_hud_overlap": no_overlap,
 			"visibility_correct": portrait_visible == expected_visible,
 			"production_visibility_consistent": portrait_visible == production_should_show,
+			"narrow_phone_contract": _narrow_phone_contract_passes(),
 		},
 	}
 	var sample_pass := true
@@ -386,6 +389,50 @@ func _record_presentation_contract(stage: String, expected_override: String = ""
 	(sample["checks"] as Dictionary)["all_pass"] = sample_pass
 	_presentation_samples.append(sample)
 	print("GAMEPLAY_PRESENTATION %s" % JSON.stringify(sample))
+
+
+func _responsive_contract() -> Dictionary:
+	if _combat != null and _combat.has_method("responsive_contract"):
+		return _combat.call("responsive_contract")
+	return {}
+
+
+func _narrow_phone_contract_passes() -> bool:
+	var physical_size := DisplayServer.window_get_size()
+	if physical_size.x > 430 or physical_size.y <= physical_size.x:
+		return true
+	var contract := _responsive_contract()
+	if contract.is_empty():
+		push_error("gameplay_shot.gd: narrow phone responsive contract missing")
+		return false
+	if not bool(contract.get("all_pass", false)):
+		push_error("gameplay_shot.gd: narrow phone responsive contract failed")
+		return false
+	return true
+
+
+func _capture_narrow_pause() -> bool:
+	var physical_size := DisplayServer.window_get_size()
+	if physical_size.x > 430 or physical_size.y <= physical_size.x:
+		return true
+	var pause_menu := _combat.get("_pause_menu") as ImmunePauseMenu
+	if pause_menu == null or not pause_menu.has_method("responsive_contract"):
+		push_error("gameplay_shot.gd: pause menu missing for narrow-phone evidence")
+		return false
+	pause_menu.set_open(true)
+	# Keep the deterministic capture coroutine advancing while retaining the
+	# exact production overlay that set_open() presents to a player.
+	get_tree().paused = false
+	await _settle(6)
+	var contract: Dictionary = pause_menu.responsive_contract()
+	print("GAMEPLAY_PAUSE_RESPONSIVE %s" % JSON.stringify(contract))
+	var contract_ok := bool(contract.get("all_pass", false))
+	var save_ok := await _save("%s-pause.png" % _tag) == OK
+	pause_menu.set_open(false)
+	get_tree().paused = false
+	if not contract_ok:
+		push_error("gameplay_shot.gd: narrow-phone pause contract failed")
+	return contract_ok and save_ok
 
 
 func _exercise_portrait_lifecycle() -> bool:

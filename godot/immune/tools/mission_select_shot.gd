@@ -23,6 +23,7 @@ var _locale := "zh_HK"
 var _tag := "mission-select"
 var _desk: Node
 var _capture_records: Array[Dictionary] = []
+var _layout_contract_ok := true
 
 
 func _ready() -> void:
@@ -60,6 +61,7 @@ func _ready() -> void:
 	_desk = packed.instantiate()
 	add_child(_desk)
 	await _settle(12)
+	_layout_contract_ok = _verify_narrow_phone_contract()
 	var saved_count := 0
 	for i in FAMILIES.size():
 		var requested_family := String(FAMILIES[i])
@@ -90,7 +92,11 @@ func _ready() -> void:
 	await get_tree().create_timer(0.1).timeout
 	RenderingServer.force_sync()
 	await get_tree().process_frame
-	if saved_count != FAMILIES.size() or not _capture_records_match_contract():
+	if (
+		saved_count != FAMILIES.size()
+		or not _capture_records_match_contract()
+		or not _layout_contract_ok
+	):
 		push_error(
 			"mission_select_shot.gd: required 6 identity-bound PNGs, successfully verified %d"
 			% saved_count
@@ -99,6 +105,22 @@ func _ready() -> void:
 		return
 	print("MISSION_SELECT_SHOTS_OK count=%d" % saved_count)
 	get_tree().quit(0)
+
+
+func _verify_narrow_phone_contract() -> bool:
+	var physical_size := DisplayServer.window_get_size()
+	var narrow_phone := physical_size.x <= 430 and physical_size.y > physical_size.x
+	if not narrow_phone:
+		return true
+	if _desk == null or not _desk.has_method("responsive_contract"):
+		push_error("mission_select_shot.gd: narrow phone responsive contract missing")
+		return false
+	var contract: Dictionary = _desk.call("responsive_contract")
+	print("MISSION_SELECT_RESPONSIVE %s" % JSON.stringify(contract))
+	if not bool(contract.get("all_pass", false)):
+		push_error("mission_select_shot.gd: narrow phone responsive contract failed")
+		return false
+	return true
 
 
 func _parse_args() -> bool:

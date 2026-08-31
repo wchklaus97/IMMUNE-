@@ -1,6 +1,10 @@
 extends SceneTree
 
 ## Layout + label overflow check for the research HUD. Exit 1 on failure.
+##
+## Optional evidence output:
+##   godot --path <proj> --resolution 390x844 --script res://tools/check_overflow.gd -- \
+##     --out=<absolute-temp-or-repository-outputs-dir>
 
 
 const FORBIDDEN_COVER_LABELS := {
@@ -14,6 +18,9 @@ const EXPECTED_COVER_LABELS := {
 }
 
 var _log: PackedStringArray = []
+var _target_window := Vector2i(1920, 1080)
+var _viewport_size := Vector2(1920, 1080)
+var _artifact_dir := ""
 
 
 func _catalog_nodes() -> Array:
@@ -53,8 +60,14 @@ func _run() -> void:
 				exit_code = int(research_state.call("qa_startup_failure_exit_code"))
 			quit(exit_code)
 			return
+	if not _parse_args():
+		quit(2)
+		return
 	_log_line("OVERFLOW_CHECK_START")
-	DisplayServer.window_set_size(Vector2i(1920, 1080))
+	var requested_window := DisplayServer.window_get_size()
+	var narrow_phone := requested_window.x <= 430 and requested_window.y > requested_window.x
+	_target_window = requested_window if narrow_phone else Vector2i(1920, 1080)
+	DisplayServer.window_set_size(_target_window)
 	TranslationServer.set_locale("zh_HK")
 	var packed := load("res://ui/research/research_network.tscn") as PackedScene
 	if packed == null:
@@ -63,8 +76,9 @@ func _run() -> void:
 	var hud := packed.instantiate() as Control
 	root.add_child(hud)
 	await create_timer(0.4).timeout
+	_viewport_size = root.get_visible_rect().size if narrow_phone else Vector2(1920, 1080)
 	hud.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	hud.size = Vector2(1920, 1080)
+	hud.size = _viewport_size
 	await process_frame
 	await process_frame
 	_log_line("HUD_SIZE %s WINDOW %s MAP_WAIT" % [hud.size, DisplayServer.window_get_size()])
@@ -81,8 +95,16 @@ func _run() -> void:
 			_finish(["research map missing for %s" % locale], false)
 			return
 		_log_line("MAP_%s SIZE %s CLIP %s" % [locale, map.size, map.clip_contents])
-		failures.append_array(_check_control_tree(hud, Rect2(Vector2.ZERO, Vector2(1920, 1080))))
+		failures.append_array(_check_control_tree(hud, Rect2(Vector2.ZERO, _viewport_size)))
 		failures.append_array(_check_resource_text(hud, locale))
+		if narrow_phone:
+			if not hud.has_method("responsive_contract"):
+				failures.append("narrow phone responsive contract missing")
+			else:
+				var contract: Dictionary = hud.call("responsive_contract")
+				_log_line("RESPONSIVE_%s %s" % [locale, JSON.stringify(contract)])
+				if not bool(contract.get("all_pass", false)):
+					failures.append("narrow phone responsive contract failed %s" % JSON.stringify(contract))
 		map.call("cover_view")
 		await process_frame
 		failures.append_array(_check_map_labels(map, "cover", locale))
@@ -123,7 +145,10 @@ func _finish(failures: PackedStringArray, ok: bool) -> void:
 	var report := PackedStringArray()
 	report.append_array(_log)
 	if ok:
-		report.append("OVERFLOW_CHECK_OK viewport=1920x1080 locales=zh_HK+en cover_labels=core+6bases no_pair_stack clip=pass")
+		report.append(
+			"OVERFLOW_CHECK_OK viewport=%dx%d window=%dx%d locales=zh_HK+en cover_labels=core+6bases no_pair_stack clip=pass"
+			% [_viewport_size.x, _viewport_size.y, _target_window.x, _target_window.y]
+		)
 	else:
 		for line in failures:
 			report.append("FAIL %s" % line)
@@ -140,6 +165,8 @@ func _finish(failures: PackedStringArray, ok: bool) -> void:
 
 
 func _artifact_path(file_name: String) -> String:
+	if not _artifact_dir.is_empty():
+		return _artifact_dir.path_join(file_name)
 	# QA save isolation already owns a unique per-run directory. Keep screenshots
 	# and reports beside that isolated save so a routine check cannot dirty tracked
 	# source files under res://tools.
@@ -153,6 +180,106 @@ func _artifact_path(file_name: String) -> String:
 	if directory_error != OK:
 		printerr("OVERFLOW_ARTIFACT_DIR_ERROR %s %s" % [directory, error_string(directory_error)])
 	return directory.path_join(file_name)
+
+
+func _parse_args() -> bool:
+	var seen := {}
+	for raw_arg: String in OS.get_cmdline_user_args():
+		var arg := raw_arg.strip_edges()
+		if not arg.begins_with("--") or arg == "--":
+			push_error("check_overflow.gd: positional or malformed argument: %s" % raw_arg)
+			return false
+		var pair := arg.trim_prefix("--").split("=", true, 1)
+		if pair.size() != 2:
+			push_error("check_overflow.gd: option requires =<value>: %s" % raw_arg)
+			return false
+		var key := String(pair[0]).strip_edges()
+		var value := String(pair[1]).strip_edges()
+		if key not in ["out", "save-path"]:
+			push_error("check_overflow.gd: unknown option --%s" % key)
+			return false
+		if seen.has(key):
+			push_error("check_overflow.gd: duplicate option --%s" % key)
+			return false
+		if value.is_empty():
+			push_error("check_overflow.gd: --%s cannot be empty" % key)
+			return false
+		seen[key] = value
+	if not seen.has("out"):
+		return true
+	return _prepare_artifact_dir(String(seen["out"]))
+
+
+func _prepare_artifact_dir(raw_path: String) -> bool:
+	var normalized := raw_path.strip_edges().replace("\\", "/")
+	if normalized.is_empty() or normalized.contains("\u0000") or not normalized.is_absolute_path():
+		push_error("check_overflow.gd: --out must be an absolute directory")
+		return false
+	var absolute_path := normalized.simplify_path().trim_suffix("/")
+	var temp_root := OS.get_temp_dir().replace("\\", "/").simplify_path().trim_suffix("/")
+	var outputs_root := _repository_outputs_root()
+	var project_source_root := ProjectSettings.globalize_path("res://").replace("\\", "/").simplify_path().trim_suffix("/")
+	if _path_is_within(absolute_path, project_source_root):
+		push_error("check_overflow.gd: --out cannot write into res:// source")
+		return false
+	var trusted_root := ""
+	if _path_is_within(absolute_path, temp_root):
+		trusted_root = temp_root
+	elif _path_is_within(absolute_path, outputs_root):
+		trusted_root = outputs_root
+	else:
+		push_error(
+			"check_overflow.gd: --out must be inside the system temp or repository outputs directory"
+		)
+		return false
+	if (
+		_path_compare_value(absolute_path) == _path_compare_value(trusted_root)
+		or _path_crosses_link(absolute_path, trusted_root)
+	):
+		push_error("check_overflow.gd: --out is unsafe or crosses a symbolic link")
+		return false
+	if FileAccess.file_exists(absolute_path):
+		push_error("check_overflow.gd: --out names a file")
+		return false
+	var directory_error := DirAccess.make_dir_recursive_absolute(absolute_path)
+	if directory_error != OK and not DirAccess.dir_exists_absolute(absolute_path):
+		push_error(
+			"check_overflow.gd: cannot create --out %s (%s)"
+			% [absolute_path, error_string(directory_error)]
+		)
+		return false
+	_artifact_dir = absolute_path
+	return true
+
+
+func _repository_outputs_root() -> String:
+	var godot_project_root := ProjectSettings.globalize_path("res://").replace("\\", "/").simplify_path()
+	return godot_project_root.get_base_dir().get_base_dir().path_join("outputs").simplify_path()
+
+
+func _path_is_within(path: String, root_path: String) -> bool:
+	var normalized_path := path.replace("\\", "/").simplify_path().trim_suffix("/")
+	var normalized_root := root_path.replace("\\", "/").simplify_path().trim_suffix("/")
+	var comparable_path := _path_compare_value(normalized_path)
+	var comparable_root := _path_compare_value(normalized_root)
+	return comparable_path == comparable_root or comparable_path.begins_with(comparable_root + "/")
+
+
+func _path_compare_value(path: String) -> String:
+	return path.to_lower() if OS.get_name() in ["Windows", "macOS"] else path
+
+
+func _path_crosses_link(path: String, trusted_root: String) -> bool:
+	var relative := path.substr(trusted_root.length()).trim_prefix("/")
+	var cursor := trusted_root
+	for component: String in relative.split("/", false):
+		var directory := DirAccess.open(cursor)
+		if directory == null:
+			return false
+		if directory.is_link(component):
+			return true
+		cursor = cursor.path_join(component)
+	return false
 
 
 func _check_resource_text(node: Node, locale: String) -> PackedStringArray:

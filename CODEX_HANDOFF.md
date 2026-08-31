@@ -2,7 +2,104 @@
 
 Updated: 2026-08-31
 
-## V5.1 current handoff — supersedes the V4 status below
+## V5.2 current handoff — supersedes the V5.1 layout status below
+
+V5.2 keeps the accepted V5.1 jelly surface and adds the locked 390x844 / 360x800
+narrow-phone and safe-area layout tranche. The local source and release evidence
+below use Godot `4.7.2.stable.official.ed1daf0bf`; the exact pushed source commit
+and GitHub Actions run will be added after the final CI gate.
+
+### What changed
+
+- `ui/responsive_layout.gd` is the shared physical-pixel contract. It converts
+  the expanded canvas into physical metrics, detects portrait windows at 430px
+  or narrower, converts safe insets back to logical units, and preserves the
+  existing desktop and 720x1280 behavior.
+- Debug QA accepts `IMMUNE_QA_SAFE_AREA_INSETS=left,top,right,bottom` with
+  non-negative physical pixels. Production calls `get_display_safe_area()` only
+  on Android/iOS. The default Godot Web shell does not opt into
+  `viewport-fit=cover`, so Web treats the browser viewport as already
+  unobscured instead of misusing desktop screen coordinates.
+- Mission selection stacks its two main columns, changes the family grid 3->2,
+  disables horizontal scrolling, retains hidden-bar vertical scrolling, and
+  scales type/actions inside safe margins.
+- Research hides redundant desktop side cards, leaves the map as the decorative
+  field, and stacks resources/detail/navigation in one safe bottom column.
+- Combat changes its briefing/vitals and action rows to responsive grids;
+  narrow phones use 1+1 top panels and three stacked actions. Pause/settings is
+  centered in a safe MarginContainer and verifies both hidden minimum geometry
+  and its real visible rectangle.
+- The strict final review includes locale, four volume sliders, screen-shake and
+  reduced-motion toggles, resume, restart, and return in the 44px action gate;
+  desktop margins restore to exactly zero.
+- Mission/gameplay/research harnesses fail closed on a missing/false responsive
+  contract. Narrow gameplay captures Pause. `check_overflow.gd --out=<dir>` now
+  persists research PNG/report evidence in a validated temp or repository
+  `outputs/` directory while rejecting source paths, symlink crossings,
+  malformed/duplicate/unknown arguments, and files.
+
+### Accepted local evidence
+
+- 390x844 and 360x800 pass Mission, Research, Combat, and Pause in `zh_HK` and
+  English with simulated `24,47,24,34` safe insets. Final 390 minimum action/copy
+  metrics are `44.688/14.422` physical pixels; final 360 metrics are
+  `44.820/14.440`.
+- Final 390 Mission proves 6/6 family-bound PNGs. Gameplay proves fixed/mobile/
+  boss plus Pause and verifies all three identity/lifecycle samples. Research
+  proves both locales, one-column bottom HUD, hidden side cards, core+six base
+  labels, unclipped resources, and safe containment.
+- Desktop/tall regressions pass at 1600x900 Mission, 1280x720 gameplay with
+  portrait, 720x1280 gameplay without portrait, and 1920x1080 Research in both
+  locales.
+- Root tool tests pass 36/36; Web research tests pass 53/53 and build. Playtest
+  template, 595-row translation tables, 200-node/406-row catalog localization,
+  release identity, `git diff --check`, exact Godot import/compile, isolated
+  six-mission/six-family smoke, and desktop overflow pass.
+- All four final local exports were rebuilt sequentially after the last review
+  change. The artifact contract passes; export logs contain no script, parse,
+  compile, or engine `ERROR:`. Final SHA-256 values are:
+  - Windows EXE: `198e8e41c131937abf58676e18de522a6612a96885309512609036ec994c2832`
+  - shared Windows/Web PCK: `9803e12524d042f251a12986351a3883955896eb0960305d24db5d9073330427`
+  - Linux: `d9f79ab89b5ae369aeed11c6052d402e8218cd503bf85b4a235f9c30c46a7c63`
+  - macOS ZIP: `20114166ad94067d0cb7c62a1e444043d56385354b50d164551b6d346430773f`
+  - Web HTML/WASM: `b765b0cc6d1f23269325f2b73fc94d818caa9d0e8a3b219722c3fb3f5d07c9b7` /
+    `fc74679e3b97f76878947fcd4fbe1268cbfa6188182a2e33bbc3f5dc9bfa57d0`
+- The rebuilt macOS binary launches and reports
+  `RELEASE_SMOKE_OK platform=macOS nodes=200`.
+- Final exported-Web QA completes research -> mission -> B -> combat -> mobile
+  duty -> Pause in both profiles. Baseline Metal is `120.002/100` mean/p05 FPS;
+  4x CPU + SwiftShader is `14.608/13.089`. SwiftShader remains a compatibility
+  stress profile, not a real-hardware benchmark.
+
+Ignored evidence roots:
+
+- `outputs/v5.2-narrow-phone-green/`
+- `outputs/v5.2-responsive-regression/`
+- `outputs/v5.2-web-release-qa-final/`
+- `godot/immune/build/releases/`
+
+### Failure handling and residual risk
+
+- The first native Linux attempt used the wrong remembered preset `Linux`.
+  Export stopped, `export_presets.cfg` was treated as authoritative, and the
+  corrected `Linux/X11` plus the other exact names all passed.
+- The first final smoke save under `/private/tmp` was correctly rejected because
+  macOS `OS.get_temp_dir()` resolved under `/var/folders/.../T`. The rerun used a
+  system-created `mktemp -d` and passed.
+- A first research evidence copy lost a race with automatic QA cleanup. The
+  harness now writes atomically to an explicitly validated durable `--out` path;
+  both positive output and negative source-path tests pass.
+- Godot 4.7.2 still emits non-fatal Unicode/NUL parser warnings while loading
+  `catalog.gd` / `research_network.gd`. Both files are valid ASCII/UTF-8 with no
+  NUL bytes, imports and releases have no compile/error failure, and upstream
+  Godot tracks the same warning family. Do not weaken compiled-script export
+  settings merely to hide it.
+- Real Android/iOS notch geometry, touch gameplay, human readability/control
+  feel, and a real lower-end device remain external gates. No human result has
+  been fabricated. Tag, GitHub Release, notarization, public upload, and store
+  submission remain owner-approved publishing actions.
+
+## V5.1 historical handoff — superseded by V5.2 above
 
 V5.1 was developed from `d40b23a63e6553025238acf0e34573eac6160878`
 and its exact build source is
@@ -771,6 +868,9 @@ Generated local artifacts (ignored by Git):
 - `outputs/human-playtest-campaigns/immune-v0.4.0-2b077c5-run-33262958960-jelly-v3-portable-v1/`
 - `outputs/jelly-v3-playtest-campaign-qa/`
 - `outputs/playtests/human/`
+- `outputs/v5.2-narrow-phone-green/`
+- `outputs/v5.2-responsive-regression/`
+- `outputs/v5.2-web-release-qa-final/`
 
 ## Repeatable release commands
 
@@ -811,6 +911,10 @@ smoke_dir="$(mktemp -d)"
 godot --headless --path godot/immune --script res://tools/smoke.gd -- \
   --save-path="$smoke_dir/state.json"
 godot --headless --path godot/immune --script res://tools/check_overflow.gd
+IMMUNE_QA_SAFE_AREA_INSETS=24,47,24,34 godot \
+  --path godot/immune --resolution 390x844 \
+  --script res://tools/check_overflow.gd -- \
+  --out="$PWD/outputs/v5.2-narrow-phone-green/research-390"
 godot --headless --path godot/immune --script res://tools/balance_matrix.gd -- \
   --out=user://six-family-mission-01.json --missions=MISSION-01 \
   --families=T,B,M,N,A,D --trials=1
@@ -839,31 +943,35 @@ Run exports sequentially. Parallel Godot exporters race on the shared
 ## Honest status and next development tranche
 
 The six-mission vertical slice, all six base-cell playable bodies, V5.1 jelly
-surface, portrait lifecycle, 720x1280 HUD target, local smoke/capture gates,
-fresh exported-Web browser gate, pushed source, green four-platform CI, and
-checksum-locked V5.1 private playtest campaign are complete. It is not a
-content-complete commercial release. Remaining work is:
+surface, portrait lifecycle, 390x844/360x800 safe-area layouts, desktop/tall
+regressions, local smoke/capture gates, fresh four-platform exports, and final
+exported-Web browser gate are complete locally. The previous checksum-locked
+V5.1 private playtest campaign remains historically valid for commit `2d011b1`,
+but it does not contain V5.2. This is not a content-complete commercial release.
+Remaining work is:
 
 1. Keep the N/A/D Meshy manifests as optional comparisons only. Any paid task
    still needs a separate exact 5-credit approval; never batch paid retries after
    a failed task. V5.1 made no Meshy call and the playable demo does not depend on
    further generation.
-2. Run real six-family human playtesting for the final material direction,
-   fun/readability/accessibility/control feel, then repeat on an agreed lower-end
-   Windows/Web machine. SwiftShader and deterministic capture evidence do not
-   prove either human judgement or real-hardware performance.
+2. After the V5.2 source CI run is green, download that exact four-platform
+   artifact on a volume with comfortable free space and create a new
+   checksum-locked playtest campaign. Then run real six-family human playtesting
+   for material direction, phone readability, accessibility, and control feel,
+   followed by an agreed lower-end Windows/Web machine. SwiftShader and
+   deterministic captures prove neither human judgement nor hardware speed.
 3. If exact V4/V5 cost comparison is required, approve launching the
    checksum-identified V4 worktree and run the same 10-body/300-frame harness.
    The current standard-material sentinel is green but is not a historical V4
    measurement.
-4. Add a stacked 360/390 px phone layout and display safe-area insets before
-   claiming narrow-phone/notch support. The current portrait and HUD lock covers
-   landscape plus 720x1280.
+4. Run the new layout on real Android and iOS devices before claiming notch or
+   touch support. The automated gate simulates safe insets and production reads
+   mobile safe-area geometry, but no physical phone result is claimed.
 5. Add a Developer ID Application identity, notarization credentials, privacy /
    storefront metadata, and store-specific packaging before public distribution.
 6. A future tag/release remains an explicit owner-approved publishing action.
-   Run `node tools/validate_release_contract.mjs --tag=v0.4.0` first. V5.1 source
-   is pushed, but no tag, GitHub Release, public upload, notarization, or
-   storefront submission has been performed.
+   Run `node tools/validate_release_contract.mjs --tag=v0.4.0` first. No tag,
+   GitHub Release, public upload, notarization, or storefront submission has
+   been performed.
 
 These are explicit external/product gates, not hidden broken demo work.

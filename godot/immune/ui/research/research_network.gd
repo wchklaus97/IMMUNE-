@@ -7,6 +7,7 @@ const _Look := preload("res://characters/family_look.gd")
 const _Icons := preload("res://ui/research/icon_library.gd")
 const _ResearchMap = preload("res://ui/research/research_map.gd")
 const _FamilyRow = preload("res://ui/research/family_row.gd")
+const _Responsive := preload("res://ui/responsive_layout.gd")
 
 const LEFT_FAMILIES: PackedStringArray = ["T", "M", "N"]
 const RIGHT_FAMILIES: PackedStringArray = ["B", "A", "D"]
@@ -29,6 +30,17 @@ var _track_btn: Button
 var _toast: Label
 var _progress_label: Label
 var _locale_applied := ""
+var _safe_margin: MarginContainer
+var _safe_content: Control
+var _title_bar: Control
+var _left_cards: Control
+var _right_cards: Control
+var _bottom_hud: GridContainer
+var _resource_panel: PanelContainer
+var _camera_column: VBoxContainer
+var _camera_buttons: Array[Button] = []
+var _layout_scale := 1.0
+var _safe_insets := Vector4.ZERO
 
 const STAT_LABEL := {
 	"attackSpeed": "RESEARCH_STAT_ATTACK_SPEED",
@@ -80,6 +92,13 @@ func _ready() -> void:
 	WebQaBridge.publish(&"research_ready", {"nodes": Catalog.node_count()})
 	if OS.get_cmdline_user_args().has("--release-smoke"):
 		call_deferred("_run_release_smoke")
+	if not get_viewport().size_changed.is_connected(_on_viewport_size_changed):
+		get_viewport().size_changed.connect(_on_viewport_size_changed)
+
+
+func _exit_tree() -> void:
+	if get_viewport() != null and get_viewport().size_changed.is_connected(_on_viewport_size_changed):
+		get_viewport().size_changed.disconnect(_on_viewport_size_changed)
 
 
 func _reset_ui() -> void:
@@ -89,6 +108,7 @@ func _reset_ui() -> void:
 		stale_child.queue_free()
 	_family_bars.clear()
 	_resource_rows.clear()
+	_camera_buttons.clear()
 
 
 func _on_settings_changed() -> void:
@@ -364,29 +384,45 @@ func _build() -> void:
 	if not Engine.is_editor_hint():
 		_map.node_clicked.connect(_on_node_clicked)
 	add_child(_map)
+	_safe_margin = MarginContainer.new()
+	_safe_margin.name = "ResearchSafeArea"
+	_safe_margin.set_anchors_and_offsets_preset(PRESET_FULL_RECT)
+	_safe_margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_safe_margin)
+	_safe_content = Control.new()
+	_safe_content.name = "ResearchSafeContent"
+	_safe_content.set_anchors_and_offsets_preset(PRESET_FULL_RECT)
+	_safe_content.size_flags_horizontal = SIZE_EXPAND_FILL
+	_safe_content.size_flags_vertical = SIZE_EXPAND_FILL
+	_safe_content.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_safe_margin.add_child(_safe_content)
 
-	var title := _make_title_bar()
-	title.set_anchors_and_offsets_preset(PRESET_TOP_WIDE)
-	title.offset_top = 20
-	title.offset_bottom = 168
-	title.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(title)
+	_title_bar = _make_title_bar()
+	_title_bar.name = "ResearchTitleBar"
+	_title_bar.set_anchors_and_offsets_preset(PRESET_TOP_WIDE)
+	_title_bar.offset_top = 20
+	_title_bar.offset_bottom = 168
+	_title_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_safe_content.add_child(_title_bar)
 
-	var left := _make_card_column(LEFT_FAMILIES)
-	add_child(left)
-	_place_side_cards(left, false)
+	_left_cards = _make_card_column(LEFT_FAMILIES)
+	_left_cards.name = "ResearchLeftFamilies"
+	_safe_content.add_child(_left_cards)
+	_place_side_cards(_left_cards, false)
 
-	var right := _make_card_column(RIGHT_FAMILIES)
-	add_child(right)
-	_place_side_cards(right, true)
+	_right_cards = _make_card_column(RIGHT_FAMILIES)
+	_right_cards.name = "ResearchRightFamilies"
+	_safe_content.add_child(_right_cards)
+	_place_side_cards(_right_cards, true)
 
-	var hud := _make_bottom_hud()
-	hud.set_anchors_and_offsets_preset(PRESET_BOTTOM_WIDE)
-	hud.offset_left = 16
-	hud.offset_right = -16
-	hud.offset_top = -176
-	hud.offset_bottom = -16
-	add_child(hud)
+	_bottom_hud = _make_bottom_hud() as GridContainer
+	_bottom_hud.name = "ResearchBottomHud"
+	_bottom_hud.set_anchors_and_offsets_preset(PRESET_BOTTOM_WIDE)
+	_bottom_hud.offset_left = 16
+	_bottom_hud.offset_right = -16
+	_bottom_hud.offset_top = -176
+	_bottom_hud.offset_bottom = -16
+	_safe_content.add_child(_bottom_hud)
 
 	_toast = Label.new()
 	_toast.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -398,7 +434,162 @@ func _build() -> void:
 	_toast.set_anchors_preset(PRESET_TOP_WIDE)
 	_toast.offset_top = 8.0
 	_toast.offset_bottom = 36.0
-	add_child(_toast)
+	_safe_content.add_child(_toast)
+	_apply_responsive_layout(true)
+
+
+func _on_viewport_size_changed() -> void:
+	call_deferred("_apply_responsive_layout")
+
+
+func _apply_responsive_layout(force: bool = false) -> void:
+	if _safe_margin == null or not is_instance_valid(_safe_margin):
+		return
+	var narrow := _Responsive.is_narrow_phone(get_viewport())
+	var next_scale := _Responsive.layout_scale(get_viewport()) if narrow else 1.0
+	var next_insets := _Responsive.logical_safe_insets(get_viewport())
+	if (
+		not force
+		and is_equal_approx(next_scale, _layout_scale)
+		and next_insets.is_equal_approx(_safe_insets)
+	):
+		return
+	_layout_scale = next_scale
+	_safe_insets = next_insets
+	_set_research_safe_margins(12 if narrow else 0)
+	_scale_control_tree(_safe_content, narrow)
+	if narrow:
+		_title_bar.offset_top = 0
+		_title_bar.offset_bottom = _metric(140)
+		_left_cards.visible = false
+		_right_cards.visible = false
+		_bottom_hud.columns = 1
+		_bottom_hud.clip_contents = false
+		_bottom_hud.custom_minimum_size = Vector2(0, _metric(440))
+		_bottom_hud.offset_left = 0
+		_bottom_hud.offset_right = 0
+		_bottom_hud.offset_top = -float(_metric(440))
+		_bottom_hud.offset_bottom = 0
+		_bottom_hud.add_theme_constant_override("h_separation", _metric(8))
+		_bottom_hud.add_theme_constant_override("v_separation", _metric(8))
+		_resource_panel.custom_minimum_size.x = 0
+		_resource_panel.size_flags_horizontal = SIZE_EXPAND_FILL
+		_detail_panel.size_flags_horizontal = SIZE_EXPAND_FILL
+		_camera_column.size_flags_horizontal = SIZE_EXPAND_FILL
+		_camera_column.add_theme_constant_override("separation", _metric(6))
+		_toast.offset_top = 0
+		_toast.offset_bottom = _metric(30)
+	else:
+		_title_bar.offset_top = 20
+		_title_bar.offset_bottom = 168
+		_left_cards.visible = true
+		_right_cards.visible = true
+		_bottom_hud.columns = 3
+		_bottom_hud.clip_contents = true
+		_bottom_hud.custom_minimum_size = Vector2(0, 160)
+		_bottom_hud.offset_left = 16
+		_bottom_hud.offset_right = -16
+		_bottom_hud.offset_top = -176
+		_bottom_hud.offset_bottom = -16
+		_bottom_hud.add_theme_constant_override("h_separation", 12)
+		_bottom_hud.add_theme_constant_override("v_separation", 12)
+		_resource_panel.custom_minimum_size.x = 188
+		_camera_column.add_theme_constant_override("separation", 6)
+		_toast.offset_top = 8
+		_toast.offset_bottom = 36
+	_safe_content.queue_redraw()
+
+
+func _set_research_safe_margins(base: int) -> void:
+	_safe_margin.add_theme_constant_override("margin_left", _metric(base) + roundi(_safe_insets.x))
+	_safe_margin.add_theme_constant_override("margin_top", _metric(base) + roundi(_safe_insets.y))
+	_safe_margin.add_theme_constant_override("margin_right", _metric(base) + roundi(_safe_insets.z))
+	_safe_margin.add_theme_constant_override("margin_bottom", _metric(base) + roundi(_safe_insets.w))
+
+
+func _scale_control_tree(node: Node, narrow: bool) -> void:
+	if node is Control:
+		var control := node as Control
+		if not control.has_meta("responsive_base_minimum"):
+			control.set_meta("responsive_base_minimum", control.custom_minimum_size)
+		var base_minimum: Vector2 = control.get_meta("responsive_base_minimum")
+		if control is BaseButton:
+			control.custom_minimum_size = Vector2(
+				base_minimum.x,
+				maxf(base_minimum.y * _layout_scale, float(_metric(53))) if narrow else base_minimum.y
+			)
+		if control is Label or control is BaseButton:
+			if not control.has_meta("responsive_base_font_size"):
+				control.set_meta(
+					"responsive_base_font_size", control.get_theme_font_size("font_size")
+				)
+			var base_font := int(control.get_meta("responsive_base_font_size"))
+			control.add_theme_font_size_override(
+				"font_size", _metric(maxi(base_font, 17)) if narrow else base_font
+			)
+	for child in node.get_children():
+		_scale_control_tree(child, narrow)
+
+
+func _metric(value: int) -> int:
+	if value == 0:
+		return 0
+	return maxi(1, roundi(float(value) * _layout_scale))
+
+
+func responsive_contract() -> Dictionary:
+	var narrow := _Responsive.is_narrow_phone(get_viewport())
+	var physical := _Responsive.physical_window_size()
+	var viewport_size := get_viewport().get_visible_rect().size
+	var min_action_height := INF
+	var action_buttons: Array[Button] = [_research_btn, _track_btn]
+	action_buttons.append_array(_camera_buttons)
+	for button in action_buttons:
+		min_action_height = minf(
+			min_action_height,
+			_Responsive.logical_height_to_physical(
+				get_viewport(), maxf(button.size.y, button.custom_minimum_size.y)
+			)
+		)
+	var copy_physical := _Responsive.logical_height_to_physical(
+		get_viewport(), float(_detail_title.get_theme_font_size("font_size"))
+	)
+	var safe_pass := (
+		_safe_margin.get_theme_constant("margin_left") >= roundi(_safe_insets.x)
+		and _safe_margin.get_theme_constant("margin_top") >= roundi(_safe_insets.y)
+		and _safe_margin.get_theme_constant("margin_right") >= roundi(_safe_insets.z)
+		and _safe_margin.get_theme_constant("margin_bottom") >= roundi(_safe_insets.w)
+	)
+	var bottom_inside_safe := _safe_content.get_global_rect().grow(1.0).encloses(
+		_bottom_hud.get_global_rect()
+	)
+	var all_pass := (
+		not narrow
+		or (
+			_bottom_hud.columns == 1
+			and not _left_cards.visible
+			and not _right_cards.visible
+			and min_action_height >= 44.0
+			and copy_physical >= 14.0
+			and safe_pass
+			and bottom_inside_safe
+		)
+	)
+	return {
+		"mode": "narrow-phone" if narrow else "wide",
+		"physical": [physical.x, physical.y],
+		"logical": [viewport_size.x, viewport_size.y],
+		"layout_scale": _layout_scale,
+		"safe_area_source": _Responsive.safe_area_source(),
+		"safe_insets_logical": [_safe_insets.x, _safe_insets.y, _safe_insets.z, _safe_insets.w],
+		"bottom_columns": _bottom_hud.columns,
+		"side_cards_hidden": not _left_cards.visible and not _right_cards.visible,
+		"minimum_action_height_physical": min_action_height,
+		"minimum_copy_size_physical": copy_physical,
+		"safe_margins_pass": safe_pass,
+		"bottom_inside_safe_area": bottom_inside_safe,
+		"all_pass": all_pass,
+	}
 
 
 func _place_side_cards(col: Control, on_right: bool) -> void:
@@ -536,19 +727,24 @@ func _make_family_symbol(family: String) -> Control:
 
 
 func _make_bottom_hud() -> Control:
-	var bar := HBoxContainer.new()
+	var bar := GridContainer.new()
+	bar.columns = 3
 	bar.custom_minimum_size = Vector2(0, 160)
+	bar.size_flags_horizontal = SIZE_EXPAND_FILL
 	bar.mouse_filter = Control.MOUSE_FILTER_STOP
 	bar.clip_contents = true
-	bar.add_theme_constant_override("separation", 12)
+	bar.add_theme_constant_override("h_separation", 12)
+	bar.add_theme_constant_override("v_separation", 12)
 	bar.add_child(_make_resource_well())
 	bar.add_child(_make_detail())
-	var cam := VBoxContainer.new()
-	cam.add_theme_constant_override("separation", 6)
-	bar.add_child(cam)
-	_add_cam_btn(cam, tr("RESEARCH_UI_VIEW_ALL"), func() -> void: _map.cover_view())
-	_add_cam_btn(cam, tr("RESEARCH_UI_RETURN_CORE"), func() -> void: _map.focus_id(&"CORE-IMMUNE", 0.48))
-	_add_cam_btn(cam, tr("RESEARCH_UI_START_MISSION"), _enter_combat)
+	_camera_column = VBoxContainer.new()
+	_camera_column.name = "ResearchNavigation"
+	_camera_column.size_flags_horizontal = SIZE_EXPAND_FILL
+	_camera_column.add_theme_constant_override("separation", 6)
+	bar.add_child(_camera_column)
+	_add_cam_btn(_camera_column, tr("RESEARCH_UI_VIEW_ALL"), func() -> void: _map.cover_view())
+	_add_cam_btn(_camera_column, tr("RESEARCH_UI_RETURN_CORE"), func() -> void: _map.focus_id(&"CORE-IMMUNE", 0.48))
+	_add_cam_btn(_camera_column, tr("RESEARCH_UI_START_MISSION"), _enter_combat)
 	return bar
 
 
@@ -563,12 +759,16 @@ func _enter_combat() -> void:
 func _add_cam_btn(parent: Control, text: String, cb: Callable) -> void:
 	var btn := Button.new()
 	btn.text = text
+	btn.size_flags_horizontal = SIZE_EXPAND_FILL
 	btn.pressed.connect(cb)
 	parent.add_child(btn)
+	_camera_buttons.append(btn)
 
 
 func _make_resource_well() -> Control:
 	var panel := PanelContainer.new()
+	_resource_panel = panel
+	panel.name = "ResearchResources"
 	panel.custom_minimum_size = Vector2(188, 0)
 	panel.size_flags_vertical = SIZE_EXPAND_FILL
 	var style := StyleBoxFlat.new()
