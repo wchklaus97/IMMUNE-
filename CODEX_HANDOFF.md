@@ -1,13 +1,15 @@
 # IMMUNE demo handoff
 
-Updated: 2026-08-30
+Updated: 2026-08-31
 
 ## V5.1 current handoff — supersedes the V4 status below
 
-V5.1 was developed from `d40b23a63e6553025238acf0e34573eac6160878`.
-Use `git rev-parse HEAD` after the local handoff commit as its exact committed
-source identity. The working editor and every final runtime/capture/export check in this
-tranche use Godot `4.7.2.stable.official.ed1daf0bf` with Compatibility rendering.
+V5.1 was developed from `d40b23a63e6553025238acf0e34573eac6160878`
+and its exact build source is
+`2d011b167e79a1d583d368c98ed3c07a41209d3e`. The source is pushed to
+`origin/main`. The working editor and every final runtime/capture/export check
+in this tranche use Godot `4.7.2.stable.official.ed1daf0bf` with Compatibility
+rendering.
 
 ### What changed
 
@@ -114,16 +116,17 @@ not a power-loss durability or hostile same-user TOCTOU guarantee.
 
 ### Honest external gates
 
-- No V5.1 Windows, Linux, or macOS native artifact exists locally because only
-  the exact Godot 4.7.2 Web template could be installed within available disk.
-- No V5.1 four-platform portable campaign exists. The latest campaign below is
-  V4 and must not be used to collect or label V5.1 results.
+- GitHub Actions run `33316071797` produced and launched the exact V5.1 Linux,
+  Windows, and macOS artifacts and exported the complete Web build. The
+  checksum-locked V5.1 four-platform campaign now exists locally and is ready
+  for private human distribution.
 - The exact matched V4 performance launch was denied by two permission-review
   timeouts. No matched V4 delta is claimed.
 - Six-family human art/readability/control testing and a real agreed lower-end
   machine remain required. Browser automation and SwiftShader do not prove them.
-- Push, remote CI, tag, GitHub Release, notarization, and storefront publication
-  require separate owner approval and have not been performed.
+- No human report has been created or implied by campaign preflight.
+- Tag, GitHub Release, notarization, public upload, and storefront publication
+  remain separate owner-approved publishing actions and have not been performed.
 
 ## Current milestone
 
@@ -193,11 +196,15 @@ The latest tranche adds:
   sources separately checksummed; and
 - a historical portable Jelly V3 campaign sourced from successful Godot 4.7.2
   run `33262958960`, locking all six tester kits to code commit `2b077c5` with
-  43 checksums and a verified exported-Web research-to-pause rehearsal. Current
-  V4 source supersedes it, so it must not be used for new V4 reports.
-- a current portable Jelly V4 campaign sourced from successful Godot 4.7.2 run
+  43 checksums and a verified exported-Web research-to-pause rehearsal. V5.1
+  supersedes it, so it must not be used for new reports.
+- a historical portable Jelly V4 campaign sourced from successful Godot 4.7.2 run
   `33264998027`, locking six tester kits to code commit `23f5bdc`, 14 artifacts,
   43 checksums, four platform preflights, and a verified exported-Web
+  research-to-pause rehearsal; and
+- the current portable Jelly V5.1 campaign sourced from successful Godot 4.7.2
+  run `33316071797`, locking six tester kits to code commit `2d011b1`, 14
+  artifacts, 43 checksums, four platform preflights, and a verified exported-Web
   research-to-pause rehearsal.
 
 ## Playable loop
@@ -422,6 +429,35 @@ python3 tools/meshy/validate_hero_glb.py \
 ```
 
 ## Verification completed
+
+- Jelly V5.1 remote and campaign gate (2026-08-31): source commit
+  `2d011b167e79a1d583d368c98ed3c07a41209d3e` was pushed to `origin/main` and
+  GitHub Actions run `33316071797` completed successfully. The main
+  validate/export job and Linux, Windows, and macOS native release-smoke jobs all
+  passed. The downloaded 432,905,770-byte release ZIP matches the Actions digest
+  `4dae88f2db99716d538f8932d65a44efca6bf992e298c674410d0af4ed6f4af0`;
+  the downloaded hosted-Web QA ZIP matches
+  `8d603d6b81bc60d5eca8cc7b0e6ed359ff030285cc92c3a7d79eada498302828`.
+  The release contract accepts exactly 14 files. The V5.1 campaign contains the
+  exact four-platform artifact set, six cyclic participant kits, and five
+  portable facilitator files; repository, bundled, and independent 43/43
+  checksum verification pass. Its artifact-set SHA-256 is
+  `29c38e83a45a08d6bd7f89f59ee922fce3c89cd4553e78aea59955233045fc88`.
+  All four platform preflights pass. The real Web facilitator station served its
+  landing, game, and assigned-kit routes with HTTP 200. The exact copied Web
+  artifact completed research, mission select, B combat, mobile duty, pause,
+  and resume in Chromium at 119.970/101.010 mean/p05 FPS on local Metal and
+  13.787/12.180 on 4x-CPU SwiftShader. All eight screenshots pass visual review
+  without blank output, scroll/HUD displacement, or broken hero rendering. In
+  one 1280x720 mission-select frame the animated orange hero reaches the preview
+  panel's top edge; treat its framing as human-review feedback, not a proven
+  defect or a hidden automated pass.
+  Hosted CI also completed all eight lifecycle events in both SwiftShader
+  profiles with exact canvas fit and no effective resource, console, page, or
+  request failure; its 1.875/1.250 and 2.126/1.304 FPS readings are
+  compatibility-only liveness evidence. No human result or real lower-end
+  hardware performance claim is made. Full provenance is in
+  `docs/godot-prompter/specs/2026-08-31-jelly-v51-human-playtest-campaign.md`.
 
 - Jelly V4 local release gate (2026-08-30): reference/V3 audit, three stopped
   probe rounds, a witnessed RED smoke contract, and GREEN six-family production
@@ -729,6 +765,8 @@ Generated local artifacts (ignored by Git):
 - `outputs/jelly-v4-lookdev/`
 - `outputs/human-playtest-campaigns/immune-v0.4.0-23f5bdc-run-33264998027-jelly-v4-portable-v1/`
 - `outputs/jelly-v4-playtest-campaign-qa/`
+- `outputs/v5.1-remote-ci-2d011b1/`
+- `outputs/human-playtest-campaigns/immune-v0.4.0-2d011b1-run-33316071797-jelly-v51-portable-v1/`
 - `outputs/release-ci-33262958960-jelly-v3/`
 - `outputs/human-playtest-campaigns/immune-v0.4.0-2b077c5-run-33262958960-jelly-v3-portable-v1/`
 - `outputs/jelly-v3-playtest-campaign-qa/`
@@ -745,24 +783,24 @@ cd ../../
 npm ci --ignore-scripts
 npm run test:tools
 npm run validate:playtest-template
-gh run download 33264998027 \
-  -n immune-demo-23f5bdc82c7f9eae0311d6959e532ed06da0b167 \
-  -D outputs/release-ci-33264998027-jelly-v4
+gh run download 33316071797 \
+  -n immune-demo-2d011b167e79a1d583d368c98ed3c07a41209d3e \
+  -D outputs/release-ci-33316071797-jelly-v51
 npm run create:playtest-campaign -- \
-  --artifacts=outputs/release-ci-33264998027-jelly-v4 \
-  --build-commit=23f5bdc82c7f9eae0311d6959e532ed06da0b167 \
-  --source-run=33264998027 \
-  --source-artifact=immune-demo-23f5bdc82c7f9eae0311d6959e532ed06da0b167 \
-  --out=outputs/human-playtest-campaigns/immune-v0.4.0-23f5bdc-run-33264998027-jelly-v4-portable-v1
+  --artifacts=outputs/release-ci-33316071797-jelly-v51 \
+  --build-commit=2d011b167e79a1d583d368c98ed3c07a41209d3e \
+  --source-run=33316071797 \
+  --source-artifact=immune-demo-2d011b167e79a1d583d368c98ed3c07a41209d3e \
+  --out=outputs/human-playtest-campaigns/immune-v0.4.0-2d011b1-run-33316071797-jelly-v51-portable-v1
 npm run create:playtest-campaign -- \
-  --verify=outputs/human-playtest-campaigns/immune-v0.4.0-23f5bdc-run-33264998027-jelly-v4-portable-v1
-cd outputs/human-playtest-campaigns/immune-v0.4.0-23f5bdc-run-33264998027-jelly-v4-portable-v1
+  --verify=outputs/human-playtest-campaigns/immune-v0.4.0-2d011b1-run-33316071797-jelly-v51-portable-v1
+cd outputs/human-playtest-campaigns/immune-v0.4.0-2d011b1-run-33316071797-jelly-v51-portable-v1
 node facilitator/run_human_playtest_session.mjs --campaign=. \
   --participant=tester-01 --platform=web --open
 cd ../../..
 npm run aggregate:playtests -- \
-  --dir=outputs/playtests/human/raw/23f5bdc \
-  --out=outputs/playtests/human/aggregate-23f5bdc.json \
+  --dir=outputs/playtests/human/raw/2d011b1 \
+  --out=outputs/playtests/human/aggregate-2d011b1.json \
   --minimum-participants=3 --require-minimum
 node tools/validate_release_contract.mjs
 node tools/generate_catalog_localization.mjs --check
@@ -801,36 +839,31 @@ Run exports sequentially. Parallel Godot exporters race on the shared
 ## Honest status and next development tranche
 
 The six-mission vertical slice, all six base-cell playable bodies, V5.1 jelly
-surface, portrait lifecycle, 720x1280 HUD target, local smoke/capture gates, and
-fresh exported-Web browser gate are complete. It is not a content-complete
-commercial release. Remaining work is:
+surface, portrait lifecycle, 720x1280 HUD target, local smoke/capture gates,
+fresh exported-Web browser gate, pushed source, green four-platform CI, and
+checksum-locked V5.1 private playtest campaign are complete. It is not a
+content-complete commercial release. Remaining work is:
 
 1. Keep the N/A/D Meshy manifests as optional comparisons only. Any paid task
    still needs a separate exact 5-credit approval; never batch paid retries after
    a failed task. V5.1 made no Meshy call and the playable demo does not depend on
    further generation.
-2. Push the owner-approved V5.1 commit and let checked-in Godot 4.7.2 CI produce
-   Windows, Linux, macOS, and Web artifacts. Local V5.1 has only the exact 4.7.2
-   Web template, so the older V4 native artifacts cannot be relabelled or mixed.
-3. Only after that remote artifact is green, create a new checksum-locked V5.1
-   portable campaign. The existing `23f5bdc` campaign is V4 historical evidence,
-   not a V5.1 distribution.
-4. Run real six-family human playtesting for the final material direction,
+2. Run real six-family human playtesting for the final material direction,
    fun/readability/accessibility/control feel, then repeat on an agreed lower-end
    Windows/Web machine. SwiftShader and deterministic capture evidence do not
    prove either human judgement or real-hardware performance.
-5. If exact V4/V5 cost comparison is required, approve launching the
+3. If exact V4/V5 cost comparison is required, approve launching the
    checksum-identified V4 worktree and run the same 10-body/300-frame harness.
    The current standard-material sentinel is green but is not a historical V4
    measurement.
-6. Add a stacked 360/390 px phone layout and display safe-area insets before
+4. Add a stacked 360/390 px phone layout and display safe-area insets before
    claiming narrow-phone/notch support. The current portrait and HUD lock covers
    landscape plus 720x1280.
-7. Add a Developer ID Application identity, notarization credentials, privacy /
+5. Add a Developer ID Application identity, notarization credentials, privacy /
    storefront metadata, and store-specific packaging before public distribution.
-8. A future push/tag/release remains an explicit owner-approved publishing
-   action. Run `node tools/validate_release_contract.mjs --tag=v0.4.0` first; no
-   push, tag, GitHub Release, upload, notarization, or storefront submission was
-   performed in the V5.1 local tranche.
+6. A future tag/release remains an explicit owner-approved publishing action.
+   Run `node tools/validate_release_contract.mjs --tag=v0.4.0` first. V5.1 source
+   is pushed, but no tag, GitHub Release, public upload, notarization, or
+   storefront submission has been performed.
 
 These are explicit external/product gates, not hidden broken demo work.
