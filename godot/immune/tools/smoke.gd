@@ -188,6 +188,32 @@ func _run() -> void:
 				push_error("%s missing %s duty animation" % [unit.get("family_id"), animation_name])
 				quit(1)
 				return
+		var move_animation := animator.get_animation(&"move")
+		var expected_move_length := 1.12 if _GelProfiles.v8_enabled() else 0.92
+		if not is_equal_approx(move_animation.length, expected_move_length):
+			push_error(
+				"%s move loop length drifted for gel look %s"
+				% [unit.get("family_id"), _GelProfiles.selected_look()]
+			)
+			quit(1)
+			return
+		if _GelProfiles.v8_enabled():
+			var core_track := move_animation.find_track(NodePath("CoreMesh:position"), Animation.TYPE_VALUE)
+			if core_track < 0:
+				push_error("%s V8 move loop must drive the visible core" % unit.get("family_id"))
+				quit(1)
+				return
+			var min_move_y := INF
+			var max_move_y := -INF
+			for sample in 25:
+				var sample_time := move_animation.length * float(sample) / 24.0
+				var sample_position: Vector3 = move_animation.value_track_interpolate(core_track, sample_time)
+				min_move_y = minf(min_move_y, sample_position.y)
+				max_move_y = maxf(max_move_y, sample_position.y)
+			if max_move_y - min_move_y > 0.22:
+				push_error("%s V8 viscous locomotion must not become a solid-body hop" % unit.get("family_id"))
+				quit(1)
+				return
 		if unit.has_method("transform_duty"):
 			unit.call("transform_duty", &"mobile")
 			var duty_burst := unit.get_node_or_null("KitSwapBurst") as GPUParticles3D
@@ -714,7 +740,7 @@ func _run() -> void:
 		push_error("Wet-gel rim is above the anti-neon limit")
 		quit(1)
 		return
-	var coat_limit := 1.75 if _GelProfiles.v7_enabled() else 1.6
+	var coat_limit := 1.75 if _GelProfiles.gummy_glass_enabled() else 1.6
 	if float(gel_material.get_shader_parameter("coat_strength")) > coat_limit:
 		push_error("Wet-gel coat is too strong for the soft reference")
 		quit(1)
@@ -1629,7 +1655,7 @@ func _gel_membrane_error(gel: ShaderMaterial) -> String:
 
 
 func _gel_shell_energy_error(shell: ShaderMaterial) -> String:
-	if _GelProfiles.v7_enabled():
+	if _GelProfiles.gummy_glass_enabled():
 		return _gel_v7_shell_error(shell)
 	if _GelProfiles.banner_match_enabled():
 		return _gel_banner_shell_error(shell)
@@ -1723,6 +1749,12 @@ func _gel_banner_shell_error(shell: ShaderMaterial) -> String:
 
 
 func _gel_surface_noise_error(gel: ShaderMaterial) -> String:
+	if not _GelProfiles.v8_enabled():
+		var legacy_motion_error := _gel_legacy_liquid_motion_error(gel)
+		if not legacy_motion_error.is_empty():
+			return legacy_motion_error
+	if _GelProfiles.v8_enabled():
+		return _gel_v8_surface_error(gel)
 	if _GelProfiles.v7_enabled():
 		return _gel_v7_surface_error(gel)
 	if _GelProfiles.banner_match_enabled():
@@ -1832,6 +1864,114 @@ func _gel_surface_noise_error(gel: ShaderMaterial) -> String:
 	]:
 		if not is_zero_approx(float(gel.get_shader_parameter(retired_parameter))):
 			return "V5.1 retired circular/island detail must remain disabled"
+	return ""
+
+
+func _gel_legacy_liquid_motion_error(gel: ShaderMaterial) -> String:
+	for parameter in [
+		"liquid_flow_strength",
+		"liquid_flow_idle_speed",
+		"liquid_flow_move_boost",
+		"liquid_flow_advection",
+		"liquid_flow_warp",
+		"liquid_flow_emission",
+		"liquid_flow_budget",
+		"liquid_flow_phase",
+		"liquid_flow_motion_mix",
+		"liquid_slime_strength",
+		"liquid_slime_thinness",
+		"liquid_body_deform_strength",
+		"liquid_body_squash",
+	]:
+		if gel.get_shader_parameter(parameter) == null:
+			return "preserved gel looks must expose the inert V8 %s control" % parameter
+		if not is_zero_approx(float(gel.get_shader_parameter(parameter))):
+			return "V5/V6/V7 must keep V8 liquid motion disabled at %s" % parameter
+	return ""
+
+
+func _gel_v8_surface_error(gel: ShaderMaterial) -> String:
+	var light_semantics_error := _gel_light_semantics_error(gel)
+	if not light_semantics_error.is_empty():
+		return light_semantics_error
+	var expected := {
+		# Optical response stays on the exact V7 foundation. Only the suspended
+		# detail density is reduced so broad V8 slime folds dominate the read.
+		"body_exposure_scale": 0.76,
+		"core_glow": 0.14,
+		"interior_budget": 0.30,
+		"thickness_contrast": 0.32,
+		"studio_reflection_strength": 0.74,
+		"studio_reflection_budget": 0.32,
+		"studio_streak_strength": 0.72,
+		"authored_fleck_strength": 0.18,
+		"authored_fleck_budget": 0.050,
+		"authored_inclusion_strength": 0.30,
+		"authored_inclusion_thinness": 0.060,
+		"authored_inclusion_budget": 0.070,
+		"authored_caustic_strength": 0.20,
+		"authored_caustic_budget": 0.040,
+		"authored_fiber_strength": 0.30,
+		"authored_fiber_scale": 0.18,
+		"authored_fiber_threshold": 0.30,
+		"authored_fiber_width": 0.016,
+		"authored_fiber_thinness": 0.035,
+		"authored_fiber_budget": 0.070,
+		"authored_fiber_lod_bias": 0.22,
+		"liquid_flow_strength": 0.78,
+		"liquid_flow_idle_speed": 0.21,
+		"liquid_flow_move_boost": 0.50,
+		"liquid_flow_advection": 0.25,
+		"liquid_flow_warp": 0.14,
+		"liquid_flow_emission": 0.46,
+		"liquid_flow_budget": 0.070,
+		"liquid_flow_motion_mix": 0.0,
+		"liquid_slime_strength": 0.94,
+		"liquid_slime_scale": 0.92,
+		"liquid_slime_threshold": 0.49,
+		"liquid_slime_softness": 0.14,
+		"liquid_slime_thinness": 0.15,
+		"liquid_body_deform_strength": 0.82,
+	}
+	for parameter in expected:
+		if gel.get_shader_parameter(parameter) == null:
+			return "V8 living-liquid body must expose %s" % parameter
+		if not is_equal_approx(float(gel.get_shader_parameter(parameter)), float(expected[parameter])):
+			return "V8 living-liquid body %s drifted from its additive profile" % parameter
+	var phase := float(gel.get_shader_parameter("liquid_flow_phase"))
+	if phase <= 0.0 or phase >= TAU:
+		return "V8 family phase must remain deterministic and inside one cycle"
+	if gel.get_shader_parameter("authored_height_enabled") != true:
+		return "V8 must retain the mipmapped authored texture source"
+	var authored_height := gel.get_shader_parameter("authored_height_tex") as Texture2D
+	if authored_height == null or authored_height.resource_path != "res://characters/gel/jelly_micro_height.png":
+		return "V8 must reuse the reproducible CC0 authored height resource"
+	var authored_image := authored_height.get_image()
+	if authored_image == null or not authored_image.has_mipmaps():
+		return "V8 authored detail must retain generated mipmaps"
+	for retired_parameter in [
+		"bubble_depth",
+		"bubble_emission",
+		"bubble_shell_emission",
+		"microbubble_depth",
+		"microbubble_emission",
+		"microbubble_shell_emission",
+		"inclusion_depth",
+		"inclusion_emission",
+	]:
+		if not is_zero_approx(float(gel.get_shader_parameter(retired_parameter))):
+			return "V8 must not re-enable retired procedural sphere/island relief"
+	var shader_source := gel.shader.code
+	if not shader_source.contains("TIME * ("):
+		return "V8 idle liquid flow must be driven by an uninterrupted shader clock"
+	if not shader_source.contains("liquid_sample_position"):
+		return "V8 must advect the internal authored inclusion coordinates"
+	if not shader_source.contains("liquid_slime_volume"):
+		return "V8 must retain its low-frequency cohesive slime field"
+	if not shader_source.contains("liquid_body_lag"):
+		return "V8 must retain direction-aware viscous vertex lag"
+	if shader_source.contains("hint_screen_texture"):
+		return "V8 liquid motion must remain Compatibility/Web safe"
 	return ""
 
 
@@ -2055,12 +2195,56 @@ func _authored_jelly_error(unit: Node, family: String) -> String:
 	var noise_error := _gel_surface_noise_error(runtime_gel)
 	if not noise_error.is_empty():
 		return "CHAR-BASE-%s %s" % [family, noise_error]
+	if _GelProfiles.v8_enabled():
+		if not unit.has_method("update_liquid_flow") or not unit.has_method("liquid_material_count"):
+			return "CHAR-BASE-%s V8 must expose its runtime liquid-flow bridge" % family
+		if int(unit.call("liquid_material_count")) <= 0:
+			return "CHAR-BASE-%s V8 must discover its per-instance wet-gel materials" % family
+		if not unit.has_method("liquid_shell_material_count") or int(unit.call("liquid_shell_material_count")) <= 0:
+			return "CHAR-BASE-%s V8 must bind viscosity to its clear membrane" % family
+		var collision := unit.get_node_or_null("CollisionShape3D") as CollisionShape3D
+		if collision == null or collision.shape == null:
+			return "CHAR-BASE-%s V8 must retain its stable gameplay collision" % family
+		var collision_transform := collision.transform
+		var collision_shape := collision.shape
+		unit.call("update_liquid_flow", Vector3(3.0, 0.0, 0.0), 0.5)
+		var moving_mix := float(runtime_gel.get_shader_parameter("liquid_flow_motion_mix"))
+		var moving_direction := runtime_gel.get_shader_parameter("liquid_flow_direction") as Vector3
+		var moving_lag := runtime_gel.get_shader_parameter("liquid_body_lag") as Vector3
+		var moving_squash := float(runtime_gel.get_shader_parameter("liquid_body_squash"))
+		if moving_mix < 0.72:
+			return "CHAR-BASE-%s V8 walking must smoothly raise the liquid-motion overlay" % family
+		if moving_direction.x < 0.70:
+			return "CHAR-BASE-%s V8 liquid flow must follow local walking direction" % family
+		if moving_lag.x > -0.003 or moving_squash <= 0.004:
+			return "CHAR-BASE-%s V8 visible mass must lag and compress like viscous liquid" % family
+		for settle_step in 120:
+			unit.call("update_liquid_flow", Vector3.ZERO, 1.0 / 60.0)
+		var resting_mix := float(runtime_gel.get_shader_parameter("liquid_flow_motion_mix"))
+		var resting_lag := runtime_gel.get_shader_parameter("liquid_body_lag") as Vector3
+		var resting_squash := float(runtime_gel.get_shader_parameter("liquid_body_squash"))
+		if resting_mix >= 0.12 or resting_mix < 0.0:
+			return "CHAR-BASE-%s V8 liquid overlay must decay smoothly back to idle" % family
+		if resting_lag.length() >= 0.012 or resting_squash >= 0.008:
+			return "CHAR-BASE-%s V8 visible mass must settle without a residual wobble" % family
+		if (
+			not collision.transform.is_equal_approx(collision_transform)
+			or collision.shape != collision_shape
+		):
+			return "CHAR-BASE-%s V8 visual viscosity must not deform gameplay collision" % family
 	var shell_material := shell.material_override as ShaderMaterial
 	if shell_material == null or shell_material.shader == null or not shell_material.shader.resource_path.ends_with("jelly_shell.gdshader"):
 		return "CHAR-BASE-%s authored body must keep its clear membrane" % family
 	var shell_error := _gel_shell_energy_error(shell_material)
 	if not shell_error.is_empty():
 		return "CHAR-BASE-%s %s" % [family, shell_error]
+	if _GelProfiles.v8_enabled():
+		if not is_equal_approx(float(shell_material.get_shader_parameter("liquid_body_deform_strength")), 0.82):
+			return "CHAR-BASE-%s V8 membrane must inherit the body deformation strength" % family
+		var body_lag := runtime_gel.get_shader_parameter("liquid_body_lag") as Vector3
+		var shell_lag := shell_material.get_shader_parameter("liquid_body_lag") as Vector3
+		if not body_lag.is_equal_approx(shell_lag):
+			return "CHAR-BASE-%s V8 wet core and clear shell must deform together" % family
 	var expected_path := "res://characters/base_%s/reference_body.tscn" % family.to_lower()
 	if family == "M":
 		expected_path = "res://characters/base_m/authored_body.tscn"
@@ -2072,7 +2256,7 @@ func _authored_jelly_error(unit: Node, family: String) -> String:
 	if not _all_geometry_shadows_disabled(real_mesh):
 		return "CHAR-BASE-%s authored body must not cast internal primitive shadows" % family
 	if family == "A":
-		if _GelProfiles.v7_enabled():
+		if _GelProfiles.gummy_glass_enabled():
 			if real_mesh.get_node_or_null("FootL") == null or real_mesh.get_node_or_null("FootR") == null:
 				return "CHAR-BASE-A V7 body must preserve its banner lower lobes"
 		elif real_mesh.get_node_or_null("FootL") != null or real_mesh.get_node_or_null("FootR") != null:

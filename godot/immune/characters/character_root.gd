@@ -9,6 +9,7 @@ signal skill_fired(skill_id: StringName)
 
 const _KitBlockout := preload("res://characters/kit_blockout.gd")
 const _GelAnim := preload("res://characters/gel_anim.gd")
+const _GelProfiles := preload("res://characters/gel/gel_profiles.gd")
 const _Look := preload("res://characters/family_look.gd")
 
 @export var family_id: StringName = &"T"
@@ -38,10 +39,37 @@ var duty: StringName = &"fixed"
 var _hover_t := 0.0
 var _hover_homes: Dictionary = {}
 var _gel_driven := false
+var _liquid_materials: Array[ShaderMaterial] = []
+var _liquid_shell_materials: Array[ShaderMaterial] = []
+var _liquid_seen_materials: Dictionary = {}
+var _liquid_motion_mix := 0.0
+var _liquid_flow_direction := Vector3.FORWARD
+var _viscous_body_lag := Vector3.ZERO
+var _viscous_body_velocity := Vector3.ZERO
+var _viscous_body_squash := 0.0
+var _viscous_last_local_velocity := Vector3.ZERO
+var _liquid_locomotion_active := false
+var _liquid_last_sent_motion := -1.0
+var _liquid_last_sent_direction := Vector3.ZERO
+var _liquid_last_sent_lag := Vector3(99.0, 99.0, 99.0)
+var _liquid_last_sent_squash := -1.0
 
 const A_HOVER_LIFT := 0.38
 const A_HOVER_BOB := 0.055
 const _HOVER_NODES: PackedStringArray = ["CoreMesh", "Face", "WeaponSocket", "DutyKits", "KitSwapBurst", "LimbKit"]
+const _WET_GEL_SHADER_SUFFIX := "characters/gel/wet_gel.gdshader"
+const _GEL_SHELL_SHADER_SUFFIX := "characters/gel/jelly_shell.gdshader"
+const _LIQUID_SPEED_FLOOR := 0.04
+const _LIQUID_FULL_SPEED := 2.20
+const _LIQUID_ACCEL_RESPONSE := 3.4
+const _LIQUID_DECEL_RESPONSE := 1.65
+const _LIQUID_DIRECTION_RESPONSE := 2.2
+const _VISCOUS_LAG_DISTANCE := 0.13
+const _VISCOUS_LAG_LIMIT := 0.16
+const _VISCOUS_SPRING_STIFFNESS := 24.0
+const _VISCOUS_SPRING_DAMPING := 7.2
+const _VISCOUS_SQUASH_RESPONSE := 4.0
+const _VISCOUS_DEFORM_STRENGTH := 0.82
 
 
 func _ready() -> void:
@@ -69,9 +97,13 @@ func _ready() -> void:
 	if family_id == &"A":
 		_cache_hover_homes()
 		_apply_hover(A_HOVER_LIFT)
-	# The gel rig carries A's hover and bob itself, so the per-frame offset
-	# would only fight the animation tracks for the same properties.
-	set_process(family_id == &"A" and not _gel_driven)
+	# The gel rig carries A's hover and bob itself, so the legacy per-frame offset
+	# only runs when that rig is absent. V8's internal flow is independent and runs
+	# for every character that owns a wet-gel material.
+	set_process(
+		(family_id == &"A" and not _gel_driven)
+		or not _liquid_materials.is_empty()
+	)
 	_play_rest()
 
 
@@ -127,10 +159,183 @@ func _realize_imported_mesh() -> void:
 
 
 func _process(delta: float) -> void:
-	if family_id != &"A" or _gel_driven:
+	if not _liquid_materials.is_empty():
+		update_liquid_flow(velocity, delta)
+	if family_id == &"A" and not _gel_driven:
+		_hover_t += delta
+		_apply_hover(A_HOVER_LIFT + sin(_hover_t * 2.2) * A_HOVER_BOB)
+
+
+## Smoothly overlays movement onto the shader's uninterrupted TIME-driven idle
+## circulation. Public for deterministic smoke/preview harnesses; gameplay simply
+## feeds CharacterBody3D.velocity from _process().
+func update_liquid_flow(world_velocity: Vector3, delta: float) -> void:
+	if _liquid_materials.is_empty():
 		return
-	_hover_t += delta
-	_apply_hover(A_HOVER_LIFT + sin(_hover_t * 2.2) * A_HOVER_BOB)
+	var speed := world_velocity.length()
+	var speed_ratio := clampf(
+		(speed - _LIQUID_SPEED_FLOOR) / (_LIQUID_FULL_SPEED - _LIQUID_SPEED_FLOOR),
+		0.0,
+		1.0
+	)
+	var target_motion := speed_ratio * speed_ratio * (3.0 - 2.0 * speed_ratio)
+	var response := _LIQUID_ACCEL_RESPONSE if target_motion > _liquid_motion_mix else _LIQUID_DECEL_RESPONSE
+	var safe_delta := maxf(delta, 0.0)
+	var motion_alpha := 1.0 - exp(-response * safe_delta)
+	_liquid_motion_mix = lerpf(_liquid_motion_mix, target_motion, motion_alpha)
+
+	var local_velocity := global_transform.basis.orthonormalized().inverse() * world_velocity
+	if speed > _LIQUID_SPEED_FLOOR:
+		var target_direction := local_velocity.normalized()
+		var direction_alpha := 1.0 - exp(-_LIQUID_DIRECTION_RESPONSE * safe_delta)
+		var blended_direction := _liquid_flow_direction.lerp(target_direction, direction_alpha)
+		_liquid_flow_direction = (
+			target_direction
+			if blended_direction.length_squared() < 0.000001
+			else blended_direction.normalized()
+		)
+	_update_viscous_body(local_velocity, target_motion, safe_delta)
+	_update_v8_locomotion_state(speed)
+	_apply_liquid_runtime_uniforms()
+
+
+func _update_viscous_body(local_velocity: Vector3, target_motion: float, delta: float) -> void:
+	var planar_velocity := Vector3(local_velocity.x, 0.0, local_velocity.z)
+	var target_lag := Vector3.ZERO
+	if planar_velocity.length() > _LIQUID_SPEED_FLOOR:
+		target_lag = -planar_velocity.normalized() * _VISCOUS_LAG_DISTANCE * target_motion
+	var spring_delta := minf(delta, 0.05)
+	var spring_acceleration := (
+		(target_lag - _viscous_body_lag) * _VISCOUS_SPRING_STIFFNESS
+		- _viscous_body_velocity * _VISCOUS_SPRING_DAMPING
+	)
+	_viscous_body_velocity += spring_acceleration * spring_delta
+	_viscous_body_lag += _viscous_body_velocity * spring_delta
+	if _viscous_body_lag.length() > _VISCOUS_LAG_LIMIT:
+		_viscous_body_lag = _viscous_body_lag.normalized() * _VISCOUS_LAG_LIMIT
+
+	var velocity_delta := (planar_velocity - _viscous_last_local_velocity).length()
+	var acceleration_ratio := clampf(velocity_delta / maxf(delta, 0.001) / 24.0, 0.0, 1.0)
+	var target_squash := target_motion * 0.018 + acceleration_ratio * 0.055
+	var squash_alpha := 1.0 - exp(-_VISCOUS_SQUASH_RESPONSE * delta)
+	_viscous_body_squash = lerpf(_viscous_body_squash, target_squash, squash_alpha)
+	_viscous_last_local_velocity = planar_velocity
+
+
+func _update_v8_locomotion_state(speed: float) -> void:
+	var threshold := 0.08 if _liquid_locomotion_active else 0.14
+	var next_active := duty == &"mobile" and speed > threshold
+	if next_active == _liquid_locomotion_active:
+		return
+	_liquid_locomotion_active = next_active
+	if animation_player == null:
+		return
+	var current := animation_player.current_animation
+	if current == "idle" or current == "move" or not animation_player.is_playing():
+		_play_rest()
+
+
+func liquid_material_count() -> int:
+	return _liquid_materials.size()
+
+
+func liquid_motion_mix() -> float:
+	return _liquid_motion_mix
+
+
+func liquid_flow_direction() -> Vector3:
+	return _liquid_flow_direction
+
+
+func liquid_body_lag() -> Vector3:
+	return _viscous_body_lag
+
+
+func liquid_body_squash() -> float:
+	return _viscous_body_squash
+
+
+func liquid_shell_material_count() -> int:
+	return _liquid_shell_materials.size()
+
+
+func _cache_liquid_materials() -> void:
+	_liquid_materials.clear()
+	_liquid_shell_materials.clear()
+	_liquid_seen_materials.clear()
+	_liquid_motion_mix = 0.0
+	_liquid_flow_direction = Vector3.FORWARD
+	_viscous_body_lag = Vector3.ZERO
+	_viscous_body_velocity = Vector3.ZERO
+	_viscous_body_squash = 0.0
+	_viscous_last_local_velocity = Vector3.ZERO
+	_liquid_locomotion_active = false
+	_liquid_last_sent_motion = -1.0
+	_liquid_last_sent_direction = Vector3.ZERO
+	_liquid_last_sent_lag = Vector3(99.0, 99.0, 99.0)
+	_liquid_last_sent_squash = -1.0
+	if not _GelProfiles.v8_enabled():
+		return
+	_collect_liquid_materials(self)
+	_apply_liquid_runtime_uniforms(true)
+
+
+func _collect_liquid_materials(node: Node) -> void:
+	if node is MeshInstance3D:
+		var mesh_instance := node as MeshInstance3D
+		_append_liquid_material(mesh_instance.material_override)
+		if mesh_instance.mesh != null:
+			for surface in mesh_instance.mesh.get_surface_count():
+				_append_liquid_material(mesh_instance.get_surface_override_material(surface))
+				_append_liquid_material(mesh_instance.mesh.surface_get_material(surface))
+	for child in node.get_children():
+		_collect_liquid_materials(child)
+
+
+func _append_liquid_material(material: Material) -> void:
+	if material == null:
+		return
+	var instance_id := material.get_instance_id()
+	if _liquid_seen_materials.has(instance_id):
+		return
+	_liquid_seen_materials[instance_id] = true
+	var shader_material := material as ShaderMaterial
+	if shader_material != null and shader_material.shader != null:
+		var shader_path := shader_material.shader.resource_path
+		if shader_path.ends_with(_WET_GEL_SHADER_SUFFIX):
+			_liquid_materials.append(shader_material)
+		elif shader_path.ends_with(_GEL_SHELL_SHADER_SUFFIX):
+			_liquid_shell_materials.append(shader_material)
+	_append_liquid_material(material.next_pass)
+
+
+func _apply_liquid_runtime_uniforms(force: bool = false) -> void:
+	if (
+		not force
+		and absf(_liquid_motion_mix - _liquid_last_sent_motion) < 0.001
+		and _liquid_flow_direction.distance_squared_to(_liquid_last_sent_direction) < 0.000004
+		and _viscous_body_lag.distance_squared_to(_liquid_last_sent_lag) < 0.000002
+		and absf(_viscous_body_squash - _liquid_last_sent_squash) < 0.0005
+	):
+		return
+	for material in _liquid_materials:
+		material.set_shader_parameter(&"liquid_flow_motion_mix", _liquid_motion_mix)
+		material.set_shader_parameter(&"liquid_flow_direction", _liquid_flow_direction)
+		_apply_viscous_material_uniforms(material)
+	for material in _liquid_shell_materials:
+		material.set_shader_parameter(&"liquid_flow_motion_mix", _liquid_motion_mix)
+		material.set_shader_parameter(&"liquid_flow_direction", _liquid_flow_direction)
+		_apply_viscous_material_uniforms(material)
+	_liquid_last_sent_motion = _liquid_motion_mix
+	_liquid_last_sent_direction = _liquid_flow_direction
+	_liquid_last_sent_lag = _viscous_body_lag
+	_liquid_last_sent_squash = _viscous_body_squash
+
+
+func _apply_viscous_material_uniforms(material: ShaderMaterial) -> void:
+	material.set_shader_parameter(&"liquid_body_deform_strength", _VISCOUS_DEFORM_STRENGTH)
+	material.set_shader_parameter(&"liquid_body_lag", _viscous_body_lag)
+	material.set_shader_parameter(&"liquid_body_squash", _viscous_body_squash)
 
 
 func _cache_hover_homes() -> void:
@@ -222,6 +427,7 @@ func play_rest() -> void:
 ## Call this after swapping CoreMesh, since the squash pivot is measured from
 ## the mesh bounds.
 func rebuild_gel_anims() -> void:
+	_cache_liquid_materials()
 	_gel_driven = false
 	if animation_player == null:
 		return
@@ -246,6 +452,8 @@ func rebuild_gel_anims() -> void:
 
 
 func _rest_anim() -> StringName:
+	if _GelProfiles.v8_enabled() and duty == &"mobile":
+		return &"move" if _liquid_locomotion_active else &"idle"
 	return &"move" if duty == &"mobile" else &"idle"
 
 

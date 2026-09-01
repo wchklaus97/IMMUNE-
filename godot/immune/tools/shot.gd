@@ -5,6 +5,8 @@ const _GelStudio := preload("res://characters/gel/gel_studio_environment.gd")
 
 ## Headed screenshot rig for character review.
 ## Run: godot --path <proj> --resolution 1024x1024 res://tools/shot.tscn -- --scene=<res path> --out=<abs dir> [--tag=name] [--anim=idle] [--frames=8]
+## Living-liquid review: replace --frames with
+## [--flow-seconds=0.25,1.0,1.75,2.5] [--flow-velocity=3,0,0].
 ## Look-dev: add [--height-scale=0.75] [--height-depth=0.016]
 ## and/or [--yaw-sequence=0,0.5,1.0] for deterministic full-body yaw samples.
 ## Renders 3/4, front, side, back, plus a face close-up so a reviewer can judge
@@ -13,7 +15,7 @@ const _GelStudio := preload("res://characters/gel/gel_studio_environment.gd")
 const ALLOWED_ARGS: Array[String] = [
 	# Harness-owned controls.
 	"scene", "out", "tag", "anim", "frames", "height-scale", "height-depth",
-	"yaw-sequence", "save-path",
+	"yaw-sequence", "flow-seconds", "flow-velocity", "save-path",
 	# Intentional subject passthrough documented by gel_preview, anim_preview, and
 	# the accepted M reference-body review scene.
 	"family", "mesh", "set", "body", "ground", "variant",
@@ -56,6 +58,8 @@ var _height := 1.0
 var _yaw_sequence: Array[float] = []
 var _height_overrides := {}
 var _animation_frames := 8
+var _flow_seconds: Array[float] = []
+var _flow_velocity := Vector3.ZERO
 
 
 func _ready() -> void:
@@ -145,6 +149,46 @@ func _validate_lookdev_args() -> bool:
 	if _args.has("anim") and _args.has("yaw-sequence"):
 		push_error("shot.gd: --anim and --yaw-sequence cannot be used together")
 		return false
+	if _args.has("flow-seconds"):
+		if not _args.has("anim"):
+			push_error("shot.gd: --flow-seconds requires --anim")
+			return false
+		if _args.has("frames") or _args.has("yaw-sequence"):
+			push_error("shot.gd: --flow-seconds cannot be combined with --frames or --yaw-sequence")
+			return false
+		var previous_second := -1.0
+		for index in String(_args["flow-seconds"]).split(",", true).size():
+			var token := String(_args["flow-seconds"]).split(",", true)[index].strip_edges()
+			var parsed_second := _parse_finite_float("flow-seconds[%d]" % index, token)
+			if not bool(parsed_second.get("ok", false)):
+				return false
+			var second := float(parsed_second["value"])
+			if second < 0.0 or second > 30.0 or second <= previous_second:
+				push_error("shot.gd: --flow-seconds must increase from 0..30 seconds")
+				return false
+			_flow_seconds.append(second)
+			previous_second = second
+		if _flow_seconds.is_empty():
+			push_error("shot.gd: --flow-seconds requires at least one sample")
+			return false
+	if _args.has("flow-velocity"):
+		if _flow_seconds.is_empty():
+			push_error("shot.gd: --flow-velocity requires --flow-seconds")
+			return false
+		var components := String(_args["flow-velocity"]).split(",", true)
+		if components.size() != 3:
+			push_error("shot.gd: --flow-velocity requires x,y,z")
+			return false
+		var velocity_values: Array[float] = []
+		for index in components.size():
+			var parsed_component := _parse_finite_float(
+				"flow-velocity[%d]" % index,
+				String(components[index]).strip_edges()
+			)
+			if not bool(parsed_component.get("ok", false)):
+				return false
+			velocity_values.append(float(parsed_component["value"]))
+		_flow_velocity = Vector3(velocity_values[0], velocity_values[1], velocity_values[2])
 	if not _validate_subject_passthrough_args():
 		return false
 
@@ -514,6 +558,8 @@ func _run() -> bool:
 			_place_camera(bool(shot["face"]))
 			all_saved = (await _save("%s-%s.png" % [_tag, shot["name"]]) == OK) and all_saved
 		return all_saved
+	if not _flow_seconds.is_empty():
+		return await _run_flow_sequence(anim_name)
 	return await _run_anim(anim_name)
 
 
@@ -552,6 +598,54 @@ func _run_anim(anim_name: String) -> bool:
 		player.seek(t, true, true)
 		all_saved = (await _save("%s-%s-%02d.png" % [_tag, anim_name, i]) == OK) and all_saved
 	return all_saved
+
+
+## Captures real elapsed shader time rather than seeking AnimationPlayer. This is
+## the evidence path for continuous internal flow: the pose animation and shader
+## clock both run normally, and an optional stationary velocity sample exercises
+## the same movement overlay CharacterRoot receives in combat.
+func _run_flow_sequence(anim_name: String) -> bool:
+	var player := _find_player(_subject)
+	if player == null or not player.has_animation(anim_name):
+		push_error("shot.gd: no animation '%s' for flow sequence" % anim_name)
+		return false
+	var character := _find_liquid_character(_subject)
+	if character == null:
+		push_error("shot.gd: flow sequence requires an ImmuneCharacter subject")
+		return false
+	character.velocity = _flow_velocity
+	_pivot.rotation_degrees = Vector3(0.0, 35.0, 0.0)
+	_place_camera(false)
+	player.play(anim_name)
+	var all_saved := true
+	var elapsed := 0.0
+	for index in _flow_seconds.size():
+		var target_second := _flow_seconds[index]
+		var wait_seconds := target_second - elapsed
+		if wait_seconds > 0.0:
+			await get_tree().create_timer(wait_seconds).timeout
+		elapsed = target_second
+		var file_name := "%s-%s-flow-%03d.png" % [_tag, anim_name, index]
+		var save_error := await _save(file_name)
+		if save_error == OK:
+			print(
+				"SHOT_FLOW index=%d seconds=%.3f speed=%.3f file=%s"
+				% [index, target_second, _flow_velocity.length(), file_name]
+			)
+		else:
+			all_saved = false
+	character.velocity = Vector3.ZERO
+	return all_saved
+
+
+func _find_liquid_character(node: Node) -> CharacterBody3D:
+	if node is CharacterBody3D and node.has_method("update_liquid_flow"):
+		return node as CharacterBody3D
+	for child in node.get_children():
+		var found := _find_liquid_character(child)
+		if found != null:
+			return found
+	return null
 
 
 func _find_player(node: Node) -> AnimationPlayer:

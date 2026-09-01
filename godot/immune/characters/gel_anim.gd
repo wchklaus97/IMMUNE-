@@ -1,6 +1,8 @@
 class_name ImmuneGelAnim
 extends RefCounted
 
+const _GelProfiles := preload("res://characters/gel/gel_profiles.gd")
+
 ## Squash-and-stretch animation set for the skeleton-free gel bodies.
 ##
 ## The six base cells are one closed blob each: no armature, no shape keys. All
@@ -107,6 +109,8 @@ static func build(anim_name: String, ctx: Dictionary) -> Animation:
 		"relay_close":
 			return _bake(1.15, false, kit_path, ctx, _plant_channels(), "keys")
 		"move":
+			if _GelProfiles.v8_enabled():
+				return _bake(1.12, true, "", ctx, _move_slime_channels(), "keys")
 			return _bake(0.92, true, "", ctx, _move_channels(), "keys")
 		"hit":
 			return _bake(0.36, false, "", ctx, _hit_channels(), "keys")
@@ -206,9 +210,51 @@ static func _uproot_channels() -> Dictionary:
 	}
 
 
-## In-place lope: gather, launch, float, land, absorb. The gameplay code owns
-## the actual translation; this is the vertical and the weight. The crouch and
-## the landing splat are both held so the landing is impossible to miss.
+## V8 replaces the solid-body hop with a low travelling compression wave. Its
+## contact patch never enters a long airborne phase; the runtime shader spring
+## supplies direction-aware drag while this clip supplies slow volume transfer.
+static func _move_slime_channels() -> Dictionary:
+	return {
+		"sy": [
+			[0.00, 1.000, "io"], [0.14, 0.930, "io"], [0.24, 0.900, "io"],
+			[0.38, 1.045, "io"], [0.52, 1.095, "io"], [0.64, 1.025, "io"],
+			[0.76, 0.915, "io"], [0.84, 0.905, "io"], [0.98, 1.055, "io"],
+			[1.12, 1.000, "lin"],
+		],
+		"py": [
+			[0.00, 0.000, "io"], [0.16, -0.018, "io"], [0.26, -0.016, "io"],
+			[0.42, 0.035, "io"], [0.54, 0.052, "io"], [0.66, 0.024, "io"],
+			[0.78, -0.018, "io"], [0.88, -0.012, "io"], [1.00, 0.012, "io"],
+			[1.12, 0.000, "lin"],
+		],
+		"rx": [
+			[0.00, 0.0, "io"], [0.20, 3.2, "io"], [0.40, -2.4, "io"],
+			[0.60, -3.0, "io"], [0.80, 2.8, "io"], [1.00, 0.8, "io"],
+			[1.12, 0.0, "lin"],
+		],
+		"pz": [
+			[0.00, 0.000, "io"], [0.18, -0.038, "io"], [0.36, -0.052, "io"],
+			[0.56, 0.030, "io"], [0.74, 0.048, "io"], [0.94, -0.014, "io"],
+			[1.12, 0.000, "lin"],
+		],
+		"rz": [
+			[0.00, 0.0, "io"], [0.28, 1.8, "io"], [0.56, 0.0, "io"],
+			[0.84, -1.8, "io"], [1.12, 0.0, "lin"],
+		],
+		"spread": [
+			[0.00, 1.000, "io"], [0.22, 1.085, "io"], [0.50, 0.955, "io"],
+			[0.80, 1.095, "io"], [1.02, 0.980, "io"], [1.12, 1.000, "lin"],
+		],
+		"lag": [
+			[0.00, 0.000, "io"], [0.18, 0.030, "io"], [0.40, -0.055, "io"],
+			[0.62, -0.028, "io"], [0.82, 0.042, "io"], [1.02, -0.010, "io"],
+			[1.12, 0.000, "lin"],
+		],
+	}
+
+
+## Preserved V5/V6/V7 in-place lope: gather, launch, float, land, absorb. The
+## gameplay code owns translation; this clip supplies the vertical weight.
 static func _move_channels() -> Dictionary:
 	return {
 		"sy": [

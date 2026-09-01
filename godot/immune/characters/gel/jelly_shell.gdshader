@@ -30,8 +30,33 @@ uniform float studio_streak_strength : hint_range(0.0, 1.0) = 0.0;
 // T/B bodies use this shader as a next pass and opt into a small normal-space
 // expansion, avoiding z-fighting without duplicating their mesh hierarchy.
 uniform float shell_thickness : hint_range(0.0, 0.03) = 0.0;
+// V8 visual-only viscosity. Runtime sends the same spring values to the wet core
+// and every clear shell, keeping the membrane attached while collision stays stable.
+uniform float liquid_flow_motion_mix : hint_range(0.0, 1.0) = 0.0;
+uniform vec3 liquid_flow_direction = vec3(0.0, 0.0, -1.0);
+uniform float liquid_body_deform_strength : hint_range(0.0, 1.0) = 0.0;
+uniform vec3 liquid_body_lag = vec3(0.0);
+uniform float liquid_body_squash : hint_range(0.0, 0.2) = 0.0;
 
 void vertex() {
+	float body_squash = liquid_body_squash * liquid_body_deform_strength;
+	float vertical_scale = max(1.0 - body_squash, 0.8);
+	float lateral_scale = 1.0 + body_squash * 0.55;
+	VERTEX.y *= vertical_scale;
+	VERTEX.xz *= lateral_scale;
+	vec2 move_direction = liquid_flow_direction.xz;
+	if (length(move_direction) > 0.001) {
+		move_direction = normalize(move_direction);
+		float along = dot(VERTEX.xz, move_direction);
+		VERTEX.xz += move_direction * along
+			* liquid_flow_motion_mix * liquid_body_deform_strength * 0.035;
+	}
+	float upper_mass = smoothstep(-0.48, 0.56, VERTEX.y);
+	VERTEX += liquid_body_lag * upper_mass * liquid_body_deform_strength;
+	NORMAL = normalize(vec3(
+		NORMAL.x / lateral_scale,
+		NORMAL.y / vertical_scale,
+		NORMAL.z / lateral_scale));
 	VERTEX += NORMAL * shell_thickness;
 }
 

@@ -374,7 +374,27 @@ const DEFAULTS := {
 	&"ink_high": 0.36,
 	&"ink_roughness": 0.05,
 	&"tex_tint_mix": 0.0,
-}
+	# V8 runtime controls are explicit zeroes in the shared builder so every
+	# preserved V5/V6/V7 material remains motion-inert even if shader defaults drift.
+	&"liquid_flow_strength": 0.0,
+	&"liquid_flow_idle_speed": 0.0,
+	&"liquid_flow_move_boost": 0.0,
+	&"liquid_flow_advection": 0.0,
+	&"liquid_flow_warp": 0.0,
+	&"liquid_flow_emission": 0.0,
+	&"liquid_flow_budget": 0.0,
+	&"liquid_flow_phase": 0.0,
+	&"liquid_flow_motion_mix": 0.0,
+	&"liquid_flow_direction": Vector3(0.0, 0.0, -1.0),
+	&"liquid_slime_strength": 0.0,
+	&"liquid_slime_scale": 0.85,
+	&"liquid_slime_threshold": 0.50,
+	&"liquid_slime_softness": 0.12,
+	&"liquid_slime_thinness": 0.0,
+	&"liquid_body_deform_strength": 0.0,
+	&"liquid_body_lag": Vector3.ZERO,
+	&"liquid_body_squash": 0.0,
+	}
 
 
 ## Body albedo: the palette hue at near-full saturation, pre-rotated for ACES by
@@ -438,7 +458,7 @@ static func apply_v5_shell_bounds(shell: ShaderMaterial) -> void:
 	if shell == null:
 		return
 	var bounds := SHELL_V5_BOUNDS
-	if _Profiles.v7_enabled():
+	if _Profiles.gummy_glass_enabled():
 		bounds = SHELL_V7_BOUNDS
 	elif _Profiles.banner_match_enabled():
 		bounds = SHELL_V6_BOUNDS

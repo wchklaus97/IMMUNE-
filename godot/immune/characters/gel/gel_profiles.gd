@@ -298,6 +298,48 @@ const V7_FAMILY: Dictionary = {
 	},
 }
 
+# V8 is an additive motion layer over the exact V7 gummy-glass foundation. The
+# authored skin and silhouette remain unchanged; only the internal inclusion and
+# fiber coordinates circulate. Runtime movement supplies direction and a 0..1
+# blend, while these values guarantee that idle characters never become static.
+const V8_LIVING_LIQUID: Dictionary = {
+	# V8 trades V7's dense suspended-fleck read for fewer, quieter anchors so the
+	# new broad slime folds remain the dominant internal cue. V7 itself is untouched.
+	&"authored_fleck_strength": 0.18,
+	&"authored_fleck_budget": 0.050,
+	&"authored_inclusion_strength": 0.30,
+	&"authored_inclusion_thinness": 0.060,
+	&"authored_inclusion_budget": 0.070,
+	&"authored_caustic_strength": 0.20,
+	&"authored_caustic_budget": 0.040,
+	&"authored_fiber_strength": 0.30,
+	&"authored_fiber_thinness": 0.035,
+	&"authored_fiber_budget": 0.070,
+	&"liquid_flow_strength": 0.78,
+	&"liquid_flow_idle_speed": 0.21,
+	&"liquid_flow_move_boost": 0.50,
+	&"liquid_flow_advection": 0.25,
+	&"liquid_flow_warp": 0.14,
+	&"liquid_flow_emission": 0.46,
+	&"liquid_flow_budget": 0.070,
+	&"liquid_flow_motion_mix": 0.0,
+	&"liquid_slime_strength": 0.94,
+	&"liquid_slime_scale": 0.92,
+	&"liquid_slime_threshold": 0.49,
+	&"liquid_slime_softness": 0.14,
+	&"liquid_slime_thinness": 0.15,
+	&"liquid_body_deform_strength": 0.82,
+}
+
+const V8_FAMILY: Dictionary = {
+	"T": {&"liquid_flow_phase": 0.31},
+	"B": {&"liquid_flow_phase": 1.17},
+	"M": {&"liquid_flow_phase": 2.03},
+	"N": {&"liquid_flow_phase": 2.89},
+	"A": {&"liquid_flow_phase": 3.73},
+	"D": {&"liquid_flow_phase": 4.61},
+}
+
 # Historical Fizzy/V5 base values retained as the reversible material control.
 # V6 overrides its production-facing response after this dictionary is merged;
 # legacy look-dev callers can still request these values directly.
@@ -449,12 +491,18 @@ static func options(family: String, overrides: Dictionary = {}) -> Dictionary:
 		var v6_family_values: Dictionary = V6_FAMILY.get(family, {})
 		for key in v6_family_values:
 			merged[key] = v6_family_values[key]
-	if v7_enabled():
+	if gummy_glass_enabled():
 		for key in V7_GUMMY_GLASS:
 			merged[key] = V7_GUMMY_GLASS[key]
 		var v7_family_values: Dictionary = V7_FAMILY.get(family, {})
 		for key in v7_family_values:
 			merged[key] = v7_family_values[key]
+	if v8_enabled():
+		for key in V8_LIVING_LIQUID:
+			merged[key] = V8_LIVING_LIQUID[key]
+		var v8_family_values: Dictionary = V8_FAMILY.get(family, {})
+		for key in v8_family_values:
+			merged[key] = v8_family_values[key]
 	for key in overrides:
 		merged[key] = overrides[key]
 	return merged
@@ -470,29 +518,43 @@ static func with_v5_surface(values: Dictionary, family: String = "") -> Dictiona
 		var v6_family_values: Dictionary = V6_FAMILY.get(family, {})
 		for key in v6_family_values:
 			merged[key] = v6_family_values[key]
-	if v7_enabled():
+	if gummy_glass_enabled():
 		for key in V7_GUMMY_GLASS:
 			merged[key] = V7_GUMMY_GLASS[key]
 		var v7_family_values: Dictionary = V7_FAMILY.get(family, {})
 		for key in v7_family_values:
 			merged[key] = v7_family_values[key]
+	if v8_enabled():
+		for key in V8_LIVING_LIQUID:
+			merged[key] = V8_LIVING_LIQUID[key]
+		var v8_family_values: Dictionary = V8_FAMILY.get(family, {})
+		for key in v8_family_values:
+			merged[key] = v8_family_values[key]
 	return merged
 
 
 static func selected_look() -> String:
 	var override := OS.get_environment("IMMUNE_GEL_LOOK").strip_edges().to_lower()
-	if override in ["v5", "v6", "v7"]:
+	if override in ["v5", "v6", "v7", "v8"]:
 		return override
 	var configured := str(ProjectSettings.get_setting("immune/visual/gel_look", "v6")).strip_edges().to_lower()
-	return configured if configured in ["v5", "v6", "v7"] else "v6"
+	return configured if configured in ["v5", "v6", "v7", "v8"] else "v6"
 
 
 static func banner_match_enabled() -> bool:
-	return selected_look() in ["v6", "v7"]
+	return selected_look() in ["v6", "v7", "v8"]
+
+
+static func gummy_glass_enabled() -> bool:
+	return selected_look() in ["v7", "v8"]
 
 
 static func v7_enabled() -> bool:
 	return selected_look() == "v7"
+
+
+static func v8_enabled() -> bool:
+	return selected_look() == "v8"
 
 
 static func profile_name(family: String) -> StringName:

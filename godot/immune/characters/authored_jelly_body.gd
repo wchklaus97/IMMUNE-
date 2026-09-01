@@ -169,7 +169,7 @@ func _make_shell(shell_color: Color) -> ShaderMaterial:
 	shell.shader = _SHELL_SHADER
 	_Gel.apply_v5_shell_bounds(shell)
 	shell.set_shader_parameter(&"shell_color", shell_color)
-	if _GelProfiles.v7_enabled():
+	if _GelProfiles.gummy_glass_enabled():
 		shell.set_shader_parameter(&"face_alpha", 0.003)
 		shell.set_shader_parameter(&"edge_alpha", 0.55)
 		shell.set_shader_parameter(&"edge_power", 1.95)
@@ -186,7 +186,7 @@ func _make_shell(shell_color: Color) -> ShaderMaterial:
 
 
 func _build_body(gel: Material, shell: Material) -> void:
-	if _GelProfiles.v7_enabled():
+	if _GelProfiles.gummy_glass_enabled():
 		_build_v7_body(gel, shell)
 		return
 	match family_id:
@@ -277,13 +277,13 @@ func _build_face(gel: Material, cavity_color: Color) -> void:
 	var eye_x := 0.18 if family_id == "N" else 0.19
 	var eye_y := 0.60 if family_id == "N" else (0.68 if family_id == "M" else (0.64 if family_id == "A" else 0.61))
 	var eye_z := 0.420 if family_id == "N" else (0.475 if family_id == "M" else (0.445 if family_id == "A" else 0.435))
-	if _GelProfiles.v7_enabled():
+	if _GelProfiles.gummy_glass_enabled():
 		eye_x = 0.20 if family_id != "M" else 0.215
 		eye_y = 0.61 if family_id == "N" else (0.68 if family_id == "M" else (0.63 if family_id == "A" else 0.60))
 		eye_z = 0.475 if family_id == "N" else (0.515 if family_id == "M" else (0.490 if family_id == "A" else 0.480))
 	_add_sphere("EyeL", Vector3(-eye_x, eye_y, eye_z), Vector3(0.155, 0.155, 0.105), eye, 64, 32)
 	_add_sphere("EyeR", Vector3(eye_x, eye_y, eye_z), Vector3(0.155, 0.155, 0.105), eye, 64, 32)
-	if not _GelProfiles.v7_enabled():
+	if not _GelProfiles.gummy_glass_enabled():
 		_add_face_ring("EyeRimL", Vector3(-eye_x, eye_y, eye_z + 0.047), 0.073, 0.087, gel)
 		_add_face_ring("EyeRimR", Vector3(eye_x, eye_y, eye_z + 0.047), 0.073, 0.087, gel)
 
@@ -293,18 +293,18 @@ func _build_face(gel: Material, cavity_color: Color) -> void:
 	if family_id == "N":
 		# Two nested horizontal capsules produce the concept's short pill-shaped
 		# mouth with a coloured gel lip instead of an O-mouth.
-		var n_mouth_z := 0.508 if _GelProfiles.v7_enabled() else 0.443
-		var n_cavity_z := 0.532 if _GelProfiles.v7_enabled() else 0.466
+		var n_mouth_z := 0.508 if _GelProfiles.gummy_glass_enabled() else 0.443
+		var n_cavity_z := 0.532 if _GelProfiles.gummy_glass_enabled() else 0.466
 		_add_capsule("MouthRim", Vector3(0.0, 0.40, n_mouth_z), 0.047, 0.19, Vector3(1.0, 1.0, 0.42), Vector3(0.0, 0.0, 90.0), gel)
 		_add_capsule("MouthCavity", Vector3(0.0, 0.40, n_cavity_z), 0.032, 0.15, Vector3(1.0, 1.0, 0.34), Vector3(0.0, 0.0, 90.0), cavity)
 		return
 	var mouth_y := 0.44 if family_id == "M" else (0.39 if family_id == "A" else 0.38)
 	var mouth_z := 0.505 if family_id == "M" else (0.465 if family_id == "A" else 0.455)
-	if _GelProfiles.v7_enabled():
+	if _GelProfiles.gummy_glass_enabled():
 		mouth_y = 0.43 if family_id == "M" else (0.37 if family_id == "A" else 0.365)
 		mouth_z = 0.545 if family_id == "M" else (0.515 if family_id == "A" else 0.505)
 	_add_sphere("MouthCavity", Vector3(0.0, mouth_y, mouth_z), Vector3(0.185, 0.205, 0.048), cavity, 64, 32)
-	var mouth_inner := 0.102 if _GelProfiles.v7_enabled() else 0.092
+	var mouth_inner := 0.102 if _GelProfiles.gummy_glass_enabled() else 0.092
 	_add_face_ring("MouthRim", Vector3(0.0, mouth_y, mouth_z + 0.025), mouth_inner, 0.114, gel)
 
 

@@ -328,6 +328,38 @@ uniform float authored_fiber_thinness : hint_range(0.0, 0.3) = 0.0;
 uniform float authored_fiber_budget : hint_range(0.0, 0.3) = 0.0;
 uniform float authored_fiber_lod_bias : hint_range(0.0, 1.25) = 0.22;
 
+group_uniforms liquid_motion;
+// V8 keeps the material's inner phase alive independently of AnimationPlayer.
+// Every control is inert by default, so V5/V6/V7 retain their reviewed pixels.
+// The outer authored-height normal is deliberately not advected: the membrane
+// stays attached to the character while only the lower-frequency interior reads
+// circulate underneath it.
+uniform float liquid_flow_strength : hint_range(0.0, 1.0) = 0.0;
+uniform float liquid_flow_idle_speed : hint_range(0.0, 1.5) = 0.0;
+uniform float liquid_flow_move_boost : hint_range(0.0, 2.0) = 0.0;
+uniform float liquid_flow_advection : hint_range(0.0, 1.0) = 0.0;
+uniform float liquid_flow_warp : hint_range(0.0, 0.3) = 0.0;
+uniform float liquid_flow_emission : hint_range(0.0, 1.0) = 0.0;
+uniform float liquid_flow_budget : hint_range(0.0, 0.3) = 0.0;
+uniform float liquid_flow_phase : hint_range(0.0, 6.2832) = 0.0;
+// Low-frequency cohesive mass. Unlike the authored fiber/fleck texture, this
+// analytic field spans large parts of the body and folds through itself, which
+// reads as viscous slime instead of independent particles drifting in suspension.
+uniform float liquid_slime_strength : hint_range(0.0, 1.0) = 0.0;
+uniform float liquid_slime_scale : hint_range(0.2, 3.0) = 0.85;
+uniform float liquid_slime_threshold : hint_range(0.1, 0.9) = 0.50;
+uniform float liquid_slime_softness : hint_range(0.02, 0.3) = 0.12;
+uniform float liquid_slime_thinness : hint_range(0.0, 0.3) = 0.0;
+// Runtime-owned values. CharacterRoot eases these instead of switching them, so
+// stopping, turning, and resuming never reset the TIME-driven idle circulation.
+uniform float liquid_flow_motion_mix : hint_range(0.0, 1.0) = 0.0;
+uniform vec3 liquid_flow_direction = vec3(0.0, 0.0, -1.0);
+// Direction-aware secondary deformation. CharacterRoot drives a damped spring
+// into these values; defaults are inert for every preserved look.
+uniform float liquid_body_deform_strength : hint_range(0.0, 1.0) = 0.0;
+uniform vec3 liquid_body_lag = vec3(0.0);
+uniform float liquid_body_squash : hint_range(0.0, 0.2) = 0.0;
+
 group_uniforms v5_readability;
 // Pulls direct body light below the ACES shoulder. V4 sat close to 1.0 linear
 // over most of the body, so the display transform compressed the core and middle
@@ -686,6 +718,24 @@ float spec_lobe(vec3 n, vec3 v, vec3 l, float rough) {
 
 
 void vertex() {
+	float body_squash = liquid_body_squash * liquid_body_deform_strength;
+	float vertical_scale = max(1.0 - body_squash, 0.8);
+	float lateral_scale = 1.0 + body_squash * 0.55;
+	VERTEX.y *= vertical_scale;
+	VERTEX.xz *= lateral_scale;
+	vec2 move_direction = liquid_flow_direction.xz;
+	if (length(move_direction) > 0.001) {
+		move_direction = normalize(move_direction);
+		float along = dot(VERTEX.xz, move_direction);
+		VERTEX.xz += move_direction * along
+			* liquid_flow_motion_mix * liquid_body_deform_strength * 0.035;
+	}
+	float upper_mass = smoothstep(-0.48, 0.56, VERTEX.y);
+	VERTEX += liquid_body_lag * upper_mass * liquid_body_deform_strength;
+	NORMAL = normalize(vec3(
+		NORMAL.x / lateral_scale,
+		NORMAL.y / vertical_scale,
+		NORMAL.z / lateral_scale));
 	v_obj_pos = VERTEX;
 	v_obj_normal = NORMAL;
 }
@@ -703,6 +753,71 @@ void fragment() {
 	float lum_g = sqrt(max(lum, 0.0));
 	float ink = 1.0 - smoothstep(ink_low, max(ink_high, ink_low + 0.001), lum_g);
 	float gel_mask = 1.0 - ink;
+
+	// --- continuous V8 internal circulation --------------------------------
+	// TIME is never restarted by idle/move/attack animation transitions. The
+	// slow vertical drift therefore remains continuous; velocity only tilts and
+	// accelerates the bounded swirl layered over it. The dynamic direction never
+	// multiplies unbounded time, avoiding a pop when the player turns late in a run.
+	float liquid_motion = clamp(liquid_flow_motion_mix, 0.0, 1.0);
+	float liquid_phase = TIME * (
+		liquid_flow_idle_speed + liquid_flow_move_boost * liquid_motion)
+		+ liquid_flow_phase;
+	vec3 liquid_direction = liquid_flow_direction;
+	if (length(liquid_direction) < 0.001) {
+		liquid_direction = vec3(0.0, 0.0, -1.0);
+	}
+	liquid_direction = normalize(liquid_direction);
+	vec3 liquid_idle_axis = normalize(vec3(0.18, 1.0, -0.14));
+	vec3 liquid_move_axis = normalize(vec3(
+		liquid_direction.x,
+		0.24,
+		liquid_direction.z));
+	vec3 liquid_axis = normalize(mix(
+		liquid_idle_axis,
+		liquid_move_axis,
+		liquid_motion * 0.78));
+	vec3 liquid_side = normalize(cross(liquid_axis, vec3(1.0, 0.0, 0.0)));
+	vec3 liquid_curl = normalize(cross(liquid_side, liquid_axis));
+	vec3 liquid_sample_position = v_obj_pos;
+	float liquid_pulse = 0.5;
+	if (liquid_flow_strength > 0.001) {
+		float side_wave = sin(
+			liquid_phase * 1.17 + dot(v_obj_pos, liquid_side) * 3.4);
+		float curl_wave = cos(
+			liquid_phase * 0.83 + dot(v_obj_pos, liquid_curl) * 4.1);
+		float travel_wave = sin(
+			liquid_phase * 1.41 + dot(v_obj_pos, liquid_direction) * 3.0);
+		vec3 idle_drift = liquid_idle_axis * liquid_phase * liquid_flow_advection;
+		vec3 circulation = (
+			liquid_side * side_wave + liquid_curl * curl_wave * 0.72)
+			* liquid_flow_warp * (1.0 + liquid_motion * 0.65);
+		vec3 travel_overlay = liquid_direction * travel_wave
+			* liquid_flow_advection * liquid_motion * 0.42;
+		liquid_sample_position = v_obj_pos - (
+			idle_drift + circulation + travel_overlay) * liquid_flow_strength;
+		liquid_pulse = 0.5 + 0.5 * sin(
+			liquid_phase * 1.63 + dot(v_obj_pos, liquid_axis) * 4.8);
+	}
+	float liquid_slime_volume = 0.0;
+	float liquid_slime_ridge = 0.0;
+	if (liquid_flow_strength > 0.001 && liquid_slime_strength > 0.001) {
+		vec3 slime_position = liquid_sample_position * liquid_slime_scale;
+		float slime_field = 0.5
+			+ 0.22 * sin(dot(slime_position, vec3(0.83, 1.19, 0.47)) + liquid_phase * 0.53)
+			+ 0.17 * sin(dot(slime_position, vec3(-1.11, 0.54, 0.91)) - liquid_phase * 0.37)
+			+ 0.11 * cos(dot(slime_position, vec3(0.38, -0.76, 1.27)) + liquid_phase * 0.23);
+		slime_field = clamp(slime_field, 0.0, 1.0);
+		float slime_aa = max(fwidth(slime_field) * 1.5, 0.008);
+		liquid_slime_volume = smoothstep(
+			liquid_slime_threshold - liquid_slime_softness - slime_aa,
+			liquid_slime_threshold + liquid_slime_softness + slime_aa,
+			slime_field) * liquid_slime_strength;
+		liquid_slime_ridge = (1.0 - smoothstep(
+			liquid_slime_softness * 0.42,
+			liquid_slime_softness * 0.42 + slime_aa * 2.0,
+			abs(slime_field - liquid_slime_threshold))) * liquid_slime_strength;
+	}
 
 	// --- thinness, measured before dimples so creases do not read as limbs ---
 	vec3 base_n = normalize(NORMAL);
@@ -769,7 +884,7 @@ void fragment() {
 	}
 	if (authored_height_enabled && authored_inclusion_strength > 0.001) {
 		authored_inclusion_signal = authored_texture_triplanar(
-			v_obj_pos,
+			liquid_sample_position,
 			normalize(v_obj_normal),
 			authored_inclusion_scale,
 			vec3(
@@ -790,9 +905,9 @@ void fragment() {
 		// Stretching the rotated frame before triplanar sampling produces long,
 		// broken inclusions rather than a second field of round stamps.
 		vec3 fiber_position = vec3(
-			dot(v_obj_pos, vec3(0.819, 0.242, 0.521)),
-			dot(v_obj_pos, vec3(0.000, 0.907, -0.421)),
-			dot(v_obj_pos, vec3(-0.574, 0.346, 0.745))
+			dot(liquid_sample_position, vec3(0.819, 0.242, 0.521)),
+			dot(liquid_sample_position, vec3(0.000, 0.907, -0.421)),
+			dot(liquid_sample_position, vec3(-0.574, 0.346, 0.745))
 		) * vec3(1.85, 0.46, 1.20);
 		vec3 fiber_normal = normalize(vec3(
 			dot(v_obj_normal, vec3(0.819, 0.242, 0.521)),
@@ -915,7 +1030,8 @@ void fragment() {
 		- bubble.x * bubble_thinness
 		- microbubble.x * microbubble_thinness
 		- authored_inclusion * authored_inclusion_thinness
-		- authored_fiber * authored_fiber_thinness,
+		- authored_fiber * authored_fiber_thinness
+		- liquid_slime_volume * liquid_slime_thinness,
 		0.0,
 		1.0);
 	vec3 through = gel_throughput(local_thickness);
@@ -1016,6 +1132,17 @@ void fragment() {
 		transmit_color.rgb,
 		studio_key_color.rgb,
 		0.76) * authored_fiber * (0.24 + 0.76 * fres) * gel_mask;
+	float liquid_current = max(
+		max(authored_fiber, authored_inclusion * 0.62),
+		max(liquid_slime_ridge, liquid_slime_volume * 0.34))
+		* liquid_flow_strength
+		* mix(0.38, 1.0, liquid_pulse)
+		* mix(0.72, 1.0, liquid_motion);
+	vec3 liquid_flow_glow = mix(
+		deep_color.rgb,
+		transmit_color.rgb,
+		0.68) * liquid_current * liquid_flow_emission
+		* (0.22 + 0.78 * fres) * gel_mask;
 	// A fixed studio light-card rig in view space. Unlike screen-space refraction it
 	// is deterministic on Compatibility/Web, follows the surface normal during motion,
 	// and is independently energy-limited before it reaches the display transform.
@@ -1058,7 +1185,8 @@ void fragment() {
 		+ peak_limit(fleck_glow, authored_fleck_budget)
 		+ peak_limit(authored_inclusion_glow, authored_inclusion_budget)
 		+ peak_limit(authored_caustic_glow, authored_caustic_budget)
-		+ peak_limit(authored_fiber_glow, authored_fiber_budget);
+		+ peak_limit(authored_fiber_glow, authored_fiber_budget)
+		+ peak_limit(liquid_flow_glow, liquid_flow_budget);
 
 	v_ink = ink;
 	v_hot = hot;
