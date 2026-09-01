@@ -2,6 +2,52 @@
 
 Updated: 2026-09-01
 
+## V8 source checkpoint — living-slime idle and locomotion
+
+V8 is implemented and preserved at local source checkpoint
+`884198eaf28a6370363e74af8c155122d828da40`. It is an additive visual version
+over the V7 gummy-glass foundation: V5.1, V6, V7, their selectors/checkpoints,
+earlier r1/r2 captures, generated models, and the existing `web/` / `web-v7/`
+builds remain intact. V8 is now the project default; `IMMUNE_GEL_LOOK=v5`, `v6`,
+`v7`, and `v8` all pass content smoke. No Meshy task was submitted and no
+generation credit was consumed.
+
+Idle characters now retain slow cohesive internal circulation from an
+uninterrupted shader clock. Movement smoothly adds local speed/direction,
+direction-aware spring lag, acceleration squash, lateral volume compensation,
+and a separate grounded 1.12-second compression-wave move loop. The wet core
+and clear membrane receive identical deformation state. Gameplay still uses the
+unchanged stable collision sphere; six-family smoke proves visual flow cannot
+change its transform or shape and settles without residual wobble after stopping.
+
+Preserved/accepted ignored evidence lives under
+`outputs/v8-liquid-motion/`: r1, slime-r2, accepted slime-r3 idle/move strips,
+real B gameplay/portrait captures, two order-varied V7/V8 ten-body performance
+pairs, and exported-Web QA. The V8 Web build is separate at
+`godot/immune/build/releases/web-v8/`. The first export correctly stopped when
+that new directory did not exist; pre-creating only the V8 target fixed the
+workflow without touching older builds.
+
+Local Godot 4.6.1 import, default V8 plus explicit V5/V6/V7 smoke, 58/58 root
+tools, playtest template, bilingual overflow, headed image contracts,
+fixed/mobile/boss/pause gameplay presentation, and the two-profile exported-Web
+lifecycle all pass. Baseline Web is `60.003/59.88` mean/p05 FPS; 4x CPU plus
+SwiftShader is `12.593/11.99` and remains compatibility stress, not hardware
+evidence. The order-varied performance pairs show no measured V8 CPU/wall
+regression, but the Metal GPU timer is unavailable.
+
+Full architecture, exact parameters, preservation map, failure diagnosis,
+performance table, evidence paths, and reproduction commands are in
+`docs/godot-prompter/specs/2026-09-01-jelly-v8-living-slime-motion.md`.
+
+V8 is a tested local development checkpoint, not a public release. The
+repository's exact release baseline used Godot 4.7.2, so V8 still needs a clean
+4.7.2 rerun plus human motion/texture preference, physical minimum-spec/native
+target evidence, owner-approved storefront material, rights/IDs,
+signing/notarization, Steamworks/Valve review, and explicit owner publishing
+authorization. No push, tag, release, public upload, notarization, or storefront
+submission occurred.
+
 ## V7 exact local candidate and blinded-preference handoff
 
 V7 is now rebuilt sequentially for Windows, Linux, macOS, and Web into the new
