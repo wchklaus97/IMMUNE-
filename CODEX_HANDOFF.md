@@ -20,8 +20,8 @@ and clear membrane receive identical deformation state. Gameplay still uses the
 unchanged stable collision sphere; six-family smoke proves visual flow cannot
 change its transform or shape and settles without residual wobble after stopping.
 
-Preserved/accepted ignored evidence lives under
-`outputs/v8-liquid-motion/`: r1, slime-r2, accepted slime-r3 idle/move strips,
+Preserved/current verification evidence lives under
+`outputs/v8-liquid-motion/`: r1, slime-r2, current slime-r3 idle/move strips,
 real B gameplay/portrait captures, two order-varied V7/V8 ten-body performance
 pairs, and exported-Web QA. The V8 Web build is separate at
 `godot/immune/build/releases/web-v8/`. The first export correctly stopped when

@@ -48,7 +48,7 @@ new output locations:
 
 - `outputs/v8-liquid-motion/idle-b/`: preserved first-pass flow evidence;
 - `outputs/v8-liquid-motion/slime-r2/`: preserved cohesive-slime prototype;
-- `outputs/v8-liquid-motion/slime-r3/`: accepted idle/move motion evidence;
+- `outputs/v8-liquid-motion/slime-r3/`: current verified idle/move motion evidence;
 - `outputs/v8-liquid-motion/gameplay-b/`: real combat and portrait captures;
 - `outputs/v8-liquid-motion/perf/`: order-varied V7/V8 performance reports;
 - `outputs/v8-liquid-motion/web-qa/`: exported-Web lifecycle report;
@@ -125,7 +125,7 @@ camera-framed subject.
 
 ## Visual evidence
 
-The accepted B-family r3 strips contain four real-time samples at 0.25, 1.0,
+The current B-family r3 verification strips contain four real-time samples at 0.25, 1.0,
 1.75, and 2.5 seconds.
 
 - Idle frame 0 versus frame 3 has whole-frame mean absolute luma difference
