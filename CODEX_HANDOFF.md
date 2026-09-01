@@ -2,6 +2,41 @@
 
 Updated: 2026-09-01
 
+## V6 working-tree handoff — banner-match visual convergence
+
+V6 is implemented, verified, and preserved at source checkpoint
+`c45c3eb90c97018bfcae7c56e21f377572ef4170`. It is not the checksum-locked V5.4
+artifact candidate described below, and no release artifact or Steam submission
+should be labelled V6 until every platform is rebuilt from this exact source
+checkpoint. The later handoff/documentation commit does not change game source.
+
+The production project now defaults to `immune/visual/gel_look="v6"` while
+`IMMUNE_GEL_LOOK=v5` remains a tested rollback. T, B, and M no longer depend on
+their old generated geometry for the playable body; they join N/A/D on the
+source-controlled authored builder. The shared V6 response adds a darker optical
+core, clear membrane, broad studio reflections, glossy black eyes, and stable
+object-space flecks/inclusions/caustic contours. Mission preview, character
+captures, and the combat portrait use the same studio environment and corrected
+framing. The combat arena environment and gameplay logic remain unchanged.
+
+Accepted ignored evidence is under `outputs/v6-banner-ab/`, including the final
+six-family contact strip, B yaw sequence, mission framing, gameplay portrait,
+V5/V6 performance sentinel, and exported-Web screenshots/report. Two official
+Godot 4.7.2 imports are clean. Default V6 and explicit V5 smoke pass; 6/6 mission
+previews, B fixed/mobile/boss gameplay, root tools `55/55`, Web UI `53/53`, Meshy
+offline safety `6/6`, 200-node catalog, 628 translation rows, Steam repository
+checks, overflow, UI build, and Web export pass. Real-browser QA completes all
+eight research-to-pause events on both ANGLE Metal (`60.003/59.88` mean/p05 FPS)
+and SwiftShader (`13.095/11.99`). The latter is compatibility stress only.
+
+The matched ten-body sentinel measured V5/V6 CPU means of `0.622/0.609 ms` and
+wall means of `1.553/1.454 ms`; the Compatibility GPU timer was unavailable, so
+no GPU-parity claim is made. V6 is a Web-safe pseudo-translucent style, not true
+screen-space refraction. Human preference, real minimum-spec hardware, physical
+phone/Deck checks, refreshed V6 storefront captures, and every publisher gate
+remain open. Full rationale, evidence, rollback, and reproduction are recorded
+in `docs/godot-prompter/specs/2026-09-01-jelly-v6-banner-match.md`.
+
 ## V5.4 current handoff — responsive and exact Steam-candidate hardening
 
 The exact artifact source is
@@ -1243,8 +1278,8 @@ Remaining work is:
 These are explicit external/product gates, not hidden broken demo work.
 
 【交接狀態】
-- CODEX_HANDOFF.md 是否已更新：是；V5.4 exact-candidate evidence and boundaries are recorded.
-- 本次修改檔案：CODEX_HANDOFF.md, steam/build-candidate-v0.4.0.md, steam/release-checklist.md.
-- 測試結果：55/55 tools, 53/53 UI, 6/6 Meshy, 628 translation rows, clean dual import, content/native/Web/release/readiness gates pass.
-- 目前風險：Windows/Linux native, signing/notarization, rights, real Steamworks inputs, hardware/human tests, Valve review, and owner authorization remain external gates.
-- 下一個最安全任務：owner reviews rights and supplies private real IDs/evidence, then authorizes pushing 80ae5af for native Windows/Linux CI before any SteamCMD preview.
+- CODEX_HANDOFF.md 是否已更新：是；V6 banner-match working-tree implementation, evidence, rollback, and honest limits are recorded above the historical V5.4 candidate.
+- 本次修改檔案：V6 gel shaders/profiles/environment, authored T/B/M/N/A/D bodies and adapters, mission/combat/shot/smoke integration, project setting, V6 spec, and this handoff.
+- 測試結果：55/55 tools, 53/53 UI, 6/6 Meshy, dual clean import, V6+V5 smoke, six-family visual gates, overflow/build/export, and two-profile real-browser lifecycle pass.
+- 目前風險：V6 is source-preserved but not an exact rebuilt release artifact; true refraction, real hardware/human preference, refreshed storefront captures, rights/IDs, signing/notarization, Steamworks/Valve review, and owner authorization remain open.
+- 下一個最安全任務：develop V7 additively with V5/V6 selectors and checkpoints intact; promote only after side-by-side visual, motion, performance, smoke, and exported-Web gates pass.
