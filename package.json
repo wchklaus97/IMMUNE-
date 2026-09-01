@@ -8,6 +8,8 @@
     "test:web-release": "node tools/web_release_qa.mjs",
     "validate:steam-assets": "node tools/validate_steam_assets.mjs",
     "validate:steam-readiness": "node tools/validate_steam_readiness.mjs",
+    "validate:release-audio": "node tools/generate_release_audio.mjs --check",
+    "generate:release-audio": "node tools/generate_release_audio.mjs --write",
     "prepare:steam": "node tools/prepare_steam_build.mjs",
     "create:native-smoke-evidence": "node tools/create_native_smoke_evidence.mjs",
     "create:playtest-kit": "node tools/create_human_playtest_kit.mjs",

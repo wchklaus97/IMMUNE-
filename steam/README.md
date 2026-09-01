@@ -17,8 +17,8 @@ App/depot identifiers, signing identities, or an uploaded build.
   account owner's IDs, evidence records, and attestations;
 - `THIRD_PARTY_NOTICES.txt` and `GODOT_COPYRIGHT.txt`: redistribution notices
   copied into every native depot together with the Noto Sans HK OFL;
-- `build-candidate-v0.4.0.md`: exact local artifact hashes, validation evidence,
-  and the remaining native-platform/signing boundary;
+- `build-candidate-v0.4.0.md`: preserved historical V5.4 artifact record; the
+  current V8.1 record is created only after a clean source commit and rebuild;
 - `assets/`: exact-dimension store/library art, icons, six real 1920x1080
   gameplay screenshots, source art, and provenance notes;
 - `release-checklist.md`: automated gates and the remaining account, human,
@@ -65,8 +65,9 @@ Steamworks SDK, account name, password, guard code, signing
 credentials, and completed publisher-input file outside this repo.
 
 After the owner has resolved every external gate, copy
-`publisher-inputs.example.json` outside the repository, fill it with real IDs
-and evidence references, and run:
+`publisher-inputs.example.json` outside the repository, fill it with real IDs,
+the exact candidate commit, absolute paths to archived evidence files, and the
+SHA-256 of every evidence file, then run:
 
 ```sh
 npm run validate:steam-readiness -- \
@@ -74,9 +75,11 @@ npm run validate:steam-readiness -- \
   --publisher-inputs=/absolute/private/path/publisher-inputs.json
 ```
 
-The checked-in example is intentionally rejected. The validator requires every
-attestation except public-release authorization to be backed by evidence;
-public release remains a separate owner decision.
+The checked-in example is intentionally rejected. The validator opens every
+evidence path, rejects symlinks and empty files, verifies every SHA-256, checks
+that the three native-smoke records bind the same clean commit/version, and—if
+artifacts are supplied—cross-checks their bytes and hashes. Public release
+remains a separate owner decision.
 
 ## Submission boundary
 

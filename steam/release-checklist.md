@@ -12,39 +12,37 @@ build, nor that the product is publicly released.
   covered by the Godot smoke contract.
 - [x] Keyboard/gamepad actions, four-action desktop HUD, two-by-two narrow HUD,
   touch movement, safe-area, pause, and bilingual UI contracts exist.
-- [x] V5.4 jelly lighting/material candidate passes the bounded light probe and
-  automated runtime smoke.
-- [x] The damaged faceted T-cell fix mesh is excluded; runtime and current store
-  capture use the clean Tripo 5K T mesh, with a headed A/B audit retained
-  locally.
+- [x] V8.1 living-slime material, idle circulation, viscous locomotion, and
+  authored six-family body contracts pass automated runtime smoke.
+- [x] All Meshy/Tripo hero experiments and the damaged faceted T variant are
+  excluded from shipping PCKs; all six runtime families use authored jelly
+  bodies while source/history evidence remains preserved.
 - [x] Current Steam store/library/icon dimensions are represented by checked-in
   assets and a fail-closed validator.
-- [x] Six 1920x1080, 16:9, actual-gameplay screenshots are checked in.
+- [x] Six current V8.1 1920x1080, 16:9, actual-gameplay screenshots cover all
+  six families and six missions.
+- [x] All nine shipping audio files have deterministic project source,
+  provenance, exact checksum locks, and a CI drift gate.
 - [x] English and Traditional Chinese store-copy drafts exist.
 - [x] Known pre-generated AI content has a content-survey disclosure draft and
   local provenance references.
 - [x] Godot/Noto/CC0 notices and the exact Godot 4.7.2 copyright inventory are
   checked in and copied into all three staged native depots.
 - [x] The repository readiness gate scans the runtime for network APIs, checks
-  the shipping/excluded PCK resource policy, and verifies all handoff records.
+  the shipping/excluded PCK resource policy, verifies rights-bound files, and
+  requires every publisher evidence file to exist with a matching SHA-256.
+- [x] Native-smoke evidence creation refuses a caller-supplied SHA unless it is
+  the current clean tracked Git HEAD; publisher validation cross-checks all
+  three native records against one candidate commit/version and final artifacts.
 - [x] Depot staging rejects placeholders, unsafe inputs, missing files, and
   credentials; generated VDFs remain in preview mode and do not upload.
-- [x] Final all-tool, translation, UI, import, smoke, responsive, performance,
-  and release-artifact regression is green for source commit `80ae5af`. The
-  36-run 1x balance soak passed immediately before the clean tree was committed;
-  its schema has no Git field, so the handoff labels it same-tree pre-commit
-  evidence instead of claiming a cryptographic commit binding.
-- [x] Windows, Linux, macOS, and Web artifacts are rebuilt sequentially from
-  exact source commit `80ae5af` and checksum-recorded in
-  `build-candidate-v0.4.0.md`. The strict 14-file contract passes.
-- [x] Native macOS release smoke is green for exact source commit `80ae5af`:
-  machine-readable evidence binds the source SHA, ZIP and log hashes; ad-hoc
-  signature, bundle/version/icon, arm64+x86_64, entitlements, and the 200-node
-  runtime marker all pass.
+- [ ] Rebuild and record the final V8.1 Windows, Linux, macOS, and Web artifacts
+  from the next clean source commit. The older `build-candidate-v0.4.0.md` is a
+  preserved V5.4 historical record and must not be presented as current.
+- [ ] Run a fresh native macOS release smoke against that exact V8.1 commit and
+  ZIP. Existing pre-V8.1 or intermediate evidence is historical only.
 - [ ] Native Windows and Linux release smoke is green for the exact candidate
-  on those operating systems. Local headers/artifacts pass, but the current
-  V5.2 remote run is historical evidence only; V5.4 has not been pushed or
-  uploaded.
+  on those operating systems. Historical remote runs do not prove V8.1.
 
 ## Steamworks/account gates
 
@@ -55,9 +53,10 @@ build, nor that the product is publicly released.
 - [ ] Obtain the real App ID and unique Windows/Linux/macOS depot IDs.
 - [ ] Enter supported operating systems, launch options, install folders, and
   branch/package access in Steamworks.
-- [ ] Verify ownership/licensing for every game and marketing asset. Audio has
-  no checked-in provenance, and the shipping Tripo T model lacks its original
-  task/receipt/terms; both are release blockers in `asset-rights-register.md`.
+- [ ] Owner-sign the final asset-rights attestation. Project-authored audio now
+  has deterministic source and exact hashes, while generated Meshy/Tripo
+  development models are non-shipping; Steam key-art inputs and contributor
+  authority still require owner confirmation in `asset-rights-register.md`.
 - [ ] Complete and owner-sign the content survey, including the pre-generated AI
   disclosure in `content-survey-draft.md`.
 - [ ] Choose pricing, supported territories, release date/time, support email,

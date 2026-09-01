@@ -14,6 +14,7 @@ const REQUIRED_REPOSITORY_FILES = [
   ["steam/THIRD_PARTY_NOTICES.txt", 1_000, "Permission is hereby granted"],
   ["steam/GODOT_COPYRIGHT.txt", 90_000, "Upstream-Name: Godot Engine"],
   ["godot/immune/fonts/OFL.txt", 4_000, "SIL OPEN FONT LICENSE"],
+  ["godot/immune/audio/AUDIO_PROVENANCE.md", 1_000, "deterministic integer noise"],
   ["steam/asset-rights-register.md", 2_000, "Commercial readiness remains fail-closed"],
   ["steam/content-survey-draft.md", 1_000, "Pre-generated content"],
   ["steam/privacy-notice-draft.md", 500, "offline single-player demo"],
@@ -31,8 +32,17 @@ const NETWORK_TOKENS = [
   /\bStreamPeerTCP\b/u,
   /\bPacketPeerUDP\b/u,
 ];
-const EXCLUDED_PCK_MARKERS = ["CHAR-BASE-M-meshy-t2", "CHAR-BASE-T-fix.glb"];
-const REQUIRED_PCK_MARKER = "CHAR-BASE-T-tripo-5k";
+const EXCLUDED_PCK_MARKERS = [
+  "CHAR-BASE-B-meshy-t2",
+  "CHAR-BASE-M-meshy-t2",
+  "CHAR-BASE-T-tripo-5k",
+  "CHAR-BASE-T-fix.glb",
+];
+const REQUIRED_PCK_MARKERS = [
+  "characters/authored_jelly_body.gdc",
+  "characters/base_b/reference_body.scn",
+  "characters/base_t/reference_body.scn",
+];
 const PCK_DIRECTORY_ENCRYPTED = 1;
 const PCK_SPARSE_BUNDLE = 4;
 const MAX_PCK_RESOURCE_COUNT = 100_000;
@@ -41,20 +51,19 @@ const RIGHTS_BOUND_FILES = {
   "godot/immune/characters/base_t/CHAR-BASE-T-tripo-5k.glb": "4b969a424da09aad9dfb80b810e7ec6b7ce08db61cb54da7febc482b259dd105",
   "godot/immune/characters/gel/jelly_micro_height.png": "25ba40fcb8a6d800fc1ffe4747a4dadad95593fc8d8f3299aed5eef7888fc9a6",
   "godot/immune/fonts/NotoSansHK-VF.ttf": "70172afd2cf0e045182787219b949e7798253982a36e364114757c09efd55477",
-  "godot/immune/audio/music/immune_pulse.ogg": "fa81aeb7ef4bcb5eab7d47374b1c6f6ef74041505252829128bc1ce3fff95e8c",
-  "godot/immune/audio/sfx/core_hit.wav": "852662350ab846736b69224112c5bf22534a065afb676287c923f39bcf10f1f5",
-  "godot/immune/audio/sfx/defeat.wav": "084e968270f4457c1bde9894134ea5df312f02245acfb0c59359de8a7148f126",
-  "godot/immune/audio/sfx/duty.wav": "e93f1edf282a2af483c38cc9276ab9808d0d93efb9f97bb32db04044d17683e2",
-  "godot/immune/audio/sfx/hit.wav": "db65fbf670fdd942491a3a173f798f940ab50aab86210536a400012a5a2e742d",
-  "godot/immune/audio/sfx/phase.wav": "fb86c677b47bf614542fc439c4c6270f276d0e085118d055841703fd5ae41702",
-  "godot/immune/audio/sfx/shot.wav": "833c78f25a5615cbd70e529979be2d24db9637588b1311f9766f75258db18394",
-  "godot/immune/audio/sfx/ui.wav": "a14af0ed734b778ae0c923df24c1afdc2eef0ea9a02b60cd72046dc93c8b3d56",
-  "godot/immune/audio/sfx/victory.wav": "0c6b4170755d5fa58d20271d8c6106f652569187ac0afb7eee9b44c3f653027d",
+  "godot/immune/audio/music/immune_pulse.ogg": "1daba74fd27ac64db650cda112689ac5b5a9ea4776a5d56b0f71b6d5474de3a4",
+  "godot/immune/audio/sfx/core_hit.wav": "41ae39ffb58e7fe3e1117cccb9d6e3c99afc790e0335b8d1e98e4f36cc81c5fe",
+  "godot/immune/audio/sfx/defeat.wav": "ed52b15f1e95df443c13a02ca183d8d83d6b046b0ffd86bfcbc9ade2b01bf06a",
+  "godot/immune/audio/sfx/duty.wav": "b17e5aedf0a2629b4b90fbc3f1e22111983fce75f8bf276f69e88a9b968acbbe",
+  "godot/immune/audio/sfx/hit.wav": "fc53b90d36baf9fb1a16c4f9695a025fd54c4670e6cd0fbeacbde9d24949405a",
+  "godot/immune/audio/sfx/phase.wav": "881510d74cb039475d0fcd0e943201eb11c4d597f2b0a3f08b62969f1d631d66",
+  "godot/immune/audio/sfx/shot.wav": "1c653efcd6c960650ed7332f33aabfe83baf02f76401287ac67ac70b04c6237c",
+  "godot/immune/audio/sfx/ui.wav": "2a0c5878e276e1f8be32e3ae3991913ceefce8787e9e0fd02bd767ceedd427e5",
+  "godot/immune/audio/sfx/victory.wav": "d62dc33fa149114e75052ef6c11f77356a783510ee17c08d68bcc91b3340e963",
 };
 const REQUIRED_OWNER_ATTESTATIONS = [
   "all_shipping_asset_rights_verified",
   "audio_provenance_attached",
-  "tripo_task_and_terms_attached",
   "generative_ai_disclosure_approved",
   "content_survey_completed",
   "macos_developer_id_signed",
@@ -74,7 +83,6 @@ const REQUIRED_OWNER_ATTESTATIONS = [
 const REQUIRED_EXTERNAL_EVIDENCE = [
   "asset_rights_attestation",
   "audio_provenance",
-  "tripo_receipt_and_terms",
   "content_survey_record",
   "native_windows_smoke",
   "native_linux_smoke",
@@ -91,6 +99,16 @@ const REQUIRED_EXTERNAL_EVIDENCE = [
   "valve_store_review_approval",
   "valve_build_review_approval",
 ];
+const NATIVE_EVIDENCE_PLATFORMS = {
+  native_windows_smoke: "Windows",
+  native_linux_smoke: "Linux",
+  native_macos_smoke: "macOS",
+};
+const NATIVE_ARTIFACT_FILES = {
+  Windows: ["IMMUNE-windows.exe", "IMMUNE-windows.pck"],
+  Linux: ["IMMUNE-linux.x86_64", "IMMUNE-linux.pck"],
+  macOS: ["IMMUNE-macOS.zip"],
+};
 
 function extension(path) {
   const match = /\.[^.\/]+$/u.exec(path);
@@ -139,11 +157,11 @@ async function validateRightsBoundFiles(root) {
     const absolute = join(root, path);
     const info = await lstat(absolute);
     if (!info.isFile() || info.isSymbolicLink() || info.size < 1) {
-      throw new Error(`Rights-bound shipping asset is invalid: ${path}`);
+      throw new Error(`Rights-bound asset is invalid: ${path}`);
     }
     const actual = createHash("sha256").update(await readFile(absolute)).digest("hex");
-    if (actual !== expected) throw new Error(`Rights-bound shipping asset changed without review: ${path}`);
-    if (!register.includes(expected)) throw new Error(`Rights register is missing the exact shipping hash: ${path}`);
+    if (actual !== expected) throw new Error(`Rights-bound asset changed without review: ${path}`);
+    if (!register.includes(expected)) throw new Error(`Rights register is missing the exact bound hash: ${path}`);
   }
   return Object.keys(RIGHTS_BOUND_FILES).length;
 }
@@ -232,8 +250,10 @@ export function validatePckResourcePolicyBuffer(buffer) {
       throw new Error(`Excluded source resource leaked into PCK: ${marker}`);
     }
   }
-  if (!paths.some((path) => path.includes(REQUIRED_PCK_MARKER))) {
-    throw new Error(`Shipping T resource is missing from PCK: ${REQUIRED_PCK_MARKER}`);
+  for (const marker of REQUIRED_PCK_MARKERS) {
+    if (!paths.some((path) => path.includes(marker))) {
+      throw new Error(`Required authored character resource is missing from PCK: ${marker}`);
+    }
   }
   return { files: paths.length };
 }
@@ -252,8 +272,14 @@ export function validatePublisherInputs(input) {
   if (!input || typeof input !== "object" || Array.isArray(input)) {
     throw new Error("PUBLISHER_INPUTS_INCOMPLETE\n- root: expected an object");
   }
-  if (input.schema_version !== 1) errors.push("schema_version: expected 1");
+  if (input.schema_version !== 2) errors.push("schema_version: expected 2");
   if (input.release_track !== "steam_demo") errors.push("release_track: expected steam_demo");
+  if (!/^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/u.test(input.candidate?.version ?? "")) {
+    errors.push("candidate.version: expected a semantic version");
+  }
+  if (!/^[0-9a-f]{40}$/u.test(input.candidate?.commit ?? "")) {
+    errors.push("candidate.commit: expected a full 40-character Git SHA");
+  }
   try {
     const normalized = validateSteamConfig({ appId: input.demo_app_id, depots: input.depots });
     const baseId = String(input.base_game_app_id ?? "");
@@ -290,7 +316,19 @@ export function validatePublisherInputs(input) {
     errors.push("evidence: expected an object");
   } else {
     for (const key of REQUIRED_EXTERNAL_EVIDENCE) {
-      if (!presentText(evidence[key])) errors.push(`evidence.${key}: required path or record ID`);
+      if (!presentText(evidence[key]) || !isAbsolute(evidence[key])) {
+        errors.push(`evidence.${key}: required absolute archived-file path`);
+      }
+    }
+  }
+  const evidenceHashes = input.evidence_sha256;
+  if (!evidenceHashes || typeof evidenceHashes !== "object" || Array.isArray(evidenceHashes)) {
+    errors.push("evidence_sha256: expected an object");
+  } else {
+    for (const key of REQUIRED_EXTERNAL_EVIDENCE) {
+      if (!/^[0-9a-f]{64}$/u.test(evidenceHashes[key] ?? "")) {
+        errors.push(`evidence_sha256.${key}: expected a lowercase SHA-256 digest`);
+      }
     }
   }
   if (errors.length) throw new Error(`PUBLISHER_INPUTS_INCOMPLETE\n- ${errors.join("\n- ")}`);
@@ -298,7 +336,74 @@ export function validatePublisherInputs(input) {
     releaseTrack: "steam_demo",
     externalEvidence: REQUIRED_EXTERNAL_EVIDENCE.length,
     publicReleaseAuthorized: input.owner_attestations.public_release_authorized === true,
+    candidate: { ...input.candidate },
   };
+}
+
+async function validatePublisherEvidenceFiles(input, artifactRoot, releaseVersion) {
+  const errors = [];
+  const nativeReports = {};
+  for (const key of REQUIRED_EXTERNAL_EVIDENCE) {
+    const path = input.evidence[key];
+    try {
+      const info = await lstat(path);
+      if (!info.isFile() || info.isSymbolicLink() || info.size < 1) {
+        errors.push(`evidence.${key}: must be a non-empty regular file, not a symlink`);
+        continue;
+      }
+      const buffer = await readFile(path);
+      const digest = createHash("sha256").update(buffer).digest("hex");
+      if (digest !== input.evidence_sha256[key]) {
+        errors.push(`evidence.${key}: SHA-256 does not match evidence_sha256.${key}`);
+        continue;
+      }
+      const platform = NATIVE_EVIDENCE_PLATFORMS[key];
+      if (platform) {
+        let report;
+        try {
+          report = JSON.parse(buffer.toString("utf8"));
+        } catch {
+          errors.push(`evidence.${key}: expected valid native-smoke JSON`);
+          continue;
+        }
+        if (report.schema_version !== 1 || report.status !== "pass" || report.platform !== platform) {
+          errors.push(`evidence.${key}: native-smoke identity/status mismatch`);
+        }
+        if (report.build?.commit !== input.candidate.commit || report.build?.version !== input.candidate.version) {
+          errors.push(`evidence.${key}: native-smoke candidate does not match publisher candidate`);
+        }
+        if (report.source_repository?.head_verified !== true || report.source_repository?.tracked_tree_clean !== true) {
+          errors.push(`evidence.${key}: native-smoke source repository was not verified clean`);
+        }
+        nativeReports[platform] = report;
+      }
+    } catch (error) {
+      errors.push(`evidence.${key}: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+  if (input.candidate.version !== releaseVersion) {
+    errors.push(`candidate.version: expected release version ${releaseVersion}`);
+  }
+  if (artifactRoot) {
+    for (const [platform, files] of Object.entries(NATIVE_ARTIFACT_FILES)) {
+      const report = nativeReports[platform];
+      if (!report) continue;
+      for (const file of files) {
+        const record = report.artifacts?.find((entry) => entry.name === file);
+        if (!record) {
+          errors.push(`evidence native ${platform}: missing artifact record ${file}`);
+          continue;
+        }
+        const buffer = await readFile(join(artifactRoot, file));
+        const digest = createHash("sha256").update(buffer).digest("hex");
+        if (record.bytes !== buffer.length || record.sha256 !== digest) {
+          errors.push(`evidence native ${platform}: artifact identity mismatch for ${file}`);
+        }
+      }
+    }
+  }
+  if (errors.length) throw new Error(`PUBLISHER_EVIDENCE_INVALID\n- ${errors.join("\n- ")}`);
+  return REQUIRED_EXTERNAL_EVIDENCE.length;
 }
 
 export async function validateSteamReadiness({ root = ROOT, artifacts = "", publisherInputs = null } = {}) {
@@ -313,12 +418,15 @@ export async function validateSteamReadiness({ root = ROOT, artifacts = "", publ
   ]);
   if (artifactRoot) await validatePckResourcePolicy(artifactRoot);
   const publisher = publisherInputs ? validatePublisherInputs(publisherInputs) : null;
+  const publisherEvidence = publisher
+    ? await validatePublisherEvidenceFiles(publisherInputs, artifactRoot, release.version)
+    : 0;
   return {
     schema_version: 1,
     status: publisher
       ? publisher.publicReleaseAuthorized
-        ? "release-evidence-complete-owner-authorized"
-        : "release-evidence-complete-owner-authorization-pending"
+        ? "release-evidence-verified-owner-authorized"
+        : "release-evidence-verified-owner-authorization-pending"
       : "repository-ready-publisher-gates-open",
     version: release.version,
     release_artifacts: artifactRoot ? "verified" : "not-requested",
@@ -327,10 +435,11 @@ export async function validateSteamReadiness({ root = ROOT, artifacts = "", publ
     runtime_source_files_scanned: runtimeFiles,
     rights_hashes_verified: rightsHashes,
     publisher_inputs: publisher ? "complete" : "not-supplied",
+    publisher_evidence_files_verified: publisherEvidence,
     external_gates: publisher
       ? publisher.publicReleaseAuthorized ? [] : ["owner public release authorization"]
       : [
-        "asset/audio/Tripo rights evidence",
+        "owner asset and marketing-rights attestation",
         "real Steam App and depot IDs",
         "native Windows and Linux exact-candidate smoke",
         "Developer ID signing and Apple notarization",

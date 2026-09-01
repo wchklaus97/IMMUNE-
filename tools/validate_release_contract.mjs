@@ -25,7 +25,10 @@ const EXPECTED_EXPORTS = [
 ];
 const EXPECTED_EXPORT_PATHS = new Set(EXPECTED_EXPORTS.map(([path]) => path));
 const EXCLUDED_RELEASE_RESOURCES = [
+  "res://characters/base_b/CHAR-BASE-B-meshy-t2.glb",
   "res://characters/base_m/CHAR-BASE-M-meshy-t2.glb",
+  "res://characters/base_t/CHAR-BASE-T-tripo-5k.glb",
+  "res://characters/base_t/CHAR-BASE-T-tripo-5k_orange+alien+blob+3d+model-+remesh_basecolor.jpg",
   "res://characters/base_t/CHAR-BASE-T-fix.glb",
   "res://characters/base_t/CHAR-BASE-T-fix_orange+alien+blob+3d+model-+remesh_basecolor.jpg",
 ];

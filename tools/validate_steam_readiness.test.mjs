@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
 
@@ -53,36 +55,40 @@ test("readiness CLI rejects unknown, empty, and duplicate inputs", () => {
 test("PCK policy audits resource entries instead of matching UID-cache payload text", () => {
   const paths = [
     ".godot/uid_cache.bin",
-    ".godot/imported/CHAR-BASE-T-tripo-5k.glb-example.scn",
+    "characters/authored_jelly_body.gdc",
+    "characters/base_b/reference_body.scn",
+    "characters/base_t/reference_body.scn",
   ];
   for (const version of [2, 3, 4]) {
     const pck = makePck(paths, "CHAR-BASE-M-meshy-t2 CHAR-BASE-T-fix.glb", version);
     assert.deepEqual(parsePckResourcePaths(pck), paths);
-    assert.deepEqual(validatePckResourcePolicyBuffer(pck), { files: 2 });
+    assert.deepEqual(validatePckResourcePolicyBuffer(pck), { files: 4 });
   }
 });
 
 test("PCK policy rejects an excluded directory entry and a missing shipping entry", () => {
   const leaked = makePck([
-    ".godot/imported/CHAR-BASE-T-tripo-5k.glb-example.scn",
+    "characters/authored_jelly_body.gdc",
+    "characters/base_b/reference_body.scn",
+    "characters/base_t/reference_body.scn",
     ".godot/imported/CHAR-BASE-M-meshy-t2.glb-example.scn",
   ]);
   assert.throws(() => validatePckResourcePolicyBuffer(leaked), /Excluded source resource leaked/u);
   assert.throws(
     () => validatePckResourcePolicyBuffer(makePck(["project.binary"])),
-    /Shipping T resource is missing/u,
+    /Required authored character resource is missing/u,
   );
 });
 
 test("PCK parser fails closed on encrypted, truncated, and out-of-bounds packs", () => {
-  const encrypted = makePck([".godot/imported/CHAR-BASE-T-tripo-5k.glb-example.scn"]);
+  const encrypted = makePck(["characters/authored_jelly_body.gdc"]);
   encrypted.writeUInt32LE(3, 20);
   assert.throws(() => parsePckResourcePaths(encrypted), /encrypted directories/u);
 
-  const truncated = makePck([".godot/imported/CHAR-BASE-T-tripo-5k.glb-example.scn"]);
+  const truncated = makePck(["characters/authored_jelly_body.gdc"]);
   assert.throws(() => parsePckResourcePaths(truncated.subarray(0, 12)), /file bounds/u);
 
-  const invalidPayload = makePck([".godot/imported/CHAR-BASE-T-tripo-5k.glb-example.scn"]);
+  const invalidPayload = makePck(["characters/authored_jelly_body.gdc"]);
   const directoryOffset = Number(invalidPayload.readBigUInt64LE(32));
   const pathLength = invalidPayload.readUInt32LE(directoryOffset + 4);
   const sizeOffset = directoryOffset + 4 + 4 + pathLength + 8;
@@ -105,9 +111,11 @@ test("fails closed on the intentionally incomplete publisher example", async () 
 });
 
 test("distinguishes complete release evidence from the final owner authorization", async () => {
+  const candidateCommit = "81a3cbe1a5ba60227bbe0d8c873c55d07871b729";
   const input = {
-    schema_version: 1,
+    schema_version: 2,
     release_track: "steam_demo",
+    candidate: { version: "0.4.0", commit: candidateCommit },
     base_game_app_id: "5800000",
     demo_app_id: "5800010",
     depots: { windows: "5800011", linux: "5800012", macos: "5800013" },
@@ -121,7 +129,6 @@ test("distinguishes complete release evidence from the final owner authorization
     owner_attestations: {
       all_shipping_asset_rights_verified: true,
       audio_provenance_attached: true,
-      tripo_task_and_terms_attached: true,
       generative_ai_disclosure_approved: true,
       content_survey_completed: true,
       macos_developer_id_signed: true,
@@ -142,7 +149,6 @@ test("distinguishes complete release evidence from the final owner authorization
     evidence: {
       asset_rights_attestation: "records/rights.pdf",
       audio_provenance: "records/audio.zip",
-      tripo_receipt_and_terms: "records/tripo.pdf",
       content_survey_record: "records/content-survey.pdf",
       native_windows_smoke: "records/windows.json",
       native_linux_smoke: "records/linux.json",
@@ -159,22 +165,56 @@ test("distinguishes complete release evidence from the final owner authorization
       valve_store_review_approval: "records/valve-store-approval.txt",
       valve_build_review_approval: "records/valve-build-approval.txt",
     },
+    evidence_sha256: {},
   };
+  const evidenceRoot = await mkdtemp(path.join(tmpdir(), "immune-publisher-evidence-"));
+  const nativePlatforms = {
+    native_windows_smoke: "Windows",
+    native_linux_smoke: "Linux",
+    native_macos_smoke: "macOS",
+  };
+  for (const key of Object.keys(input.evidence)) {
+    const platform = nativePlatforms[key];
+    const content = platform
+      ? `${JSON.stringify({
+        schema_version: 1,
+        status: "pass",
+        platform,
+        build: { version: "0.4.0", commit: candidateCommit },
+        source_repository: { head_verified: true, tracked_tree_clean: true },
+        artifacts: [],
+      }, null, 2)}\n`
+      : `archived evidence fixture: ${key}\n`;
+    const evidencePath = path.join(evidenceRoot, `${key}${platform ? ".json" : ".txt"}`);
+    await writeFile(evidencePath, content);
+    input.evidence[key] = evidencePath;
+    input.evidence_sha256[key] = createHash("sha256").update(content).digest("hex");
+  }
   const missingAttestation = structuredClone(input);
   delete missingAttestation.owner_attestations.steamworks_configuration_verified;
   assert.throws(() => validatePublisherInputs(missingAttestation), /steamworks_configuration_verified/u);
   const invalidEmail = structuredClone(input);
   invalidEmail.publisher.support_email = "not-an-email";
   assert.throws(() => validatePublisherInputs(invalidEmail), /support_email/u);
+  const relativeEvidence = structuredClone(input);
+  relativeEvidence.evidence.asset_rights_attestation = "records/rights.pdf";
+  assert.throws(() => validatePublisherInputs(relativeEvidence), /absolute archived-file path/u);
   const result = validatePublisherInputs(input);
   assert.equal(result.releaseTrack, "steam_demo");
   assert.equal(result.publicReleaseAuthorized, false);
   assert.equal(input.owner_attestations.public_release_authorized, false);
   const pending = await validateSteamReadiness({ root: path.resolve("."), publisherInputs: input });
-  assert.equal(pending.status, "release-evidence-complete-owner-authorization-pending");
+  assert.equal(pending.status, "release-evidence-verified-owner-authorization-pending");
+  assert.equal(pending.publisher_evidence_files_verified, 17);
   assert.deepEqual(pending.external_gates, ["owner public release authorization"]);
   input.owner_attestations.public_release_authorized = true;
   const authorized = await validateSteamReadiness({ root: path.resolve("."), publisherInputs: input });
-  assert.equal(authorized.status, "release-evidence-complete-owner-authorized");
+  assert.equal(authorized.status, "release-evidence-verified-owner-authorized");
   assert.deepEqual(authorized.external_gates, []);
+
+  await writeFile(input.evidence.asset_rights_attestation, "tampered\n");
+  await assert.rejects(
+    validateSteamReadiness({ root: path.resolve("."), publisherInputs: input }),
+    /SHA-256 does not match/u,
+  );
 });

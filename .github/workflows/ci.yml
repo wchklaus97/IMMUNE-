@@ -43,6 +43,7 @@ jobs:
         run: |
           node tools/validate_translation_csv.mjs
           node tools/generate_catalog_localization.mjs --check
+          npm run validate:release-audio
           npm run validate:steam-assets
 
       - name: Validate release identity contract

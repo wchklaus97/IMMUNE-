@@ -40,15 +40,26 @@ the rights to every source/reference image.
 
 ## Screenshots
 
-The six files under `screenshots/` are direct Godot viewport captures from the
-actual combat scene at 1920x1080. The capture harness uses `--store-framing=on`
-to place real player, regular-enemy, and boss instances within the visible lane;
-it does not replace gameplay renderers, draw concept art over the scene, or alter
-shipping camera/balance data. Every capture also passed selection identity,
-portrait lifecycle, HUD overlap, safe-area, and nonblank image checks.
-`01-core-defense.png` was regenerated after the runtime T cell moved from the
-rejected faceted fix mesh to the clean Tripo 5K mesh; its SHA-256 is
-`f9622ff1ba06642c36201e8425898af3036cd6c266344ce902f42436c657fb70`.
+The six files under `screenshots/` are direct Godot 4.7.2 viewport captures from
+the V8.1 authored-body combat scene at 1920x1080. The capture harness uses the
+Compatibility renderer and `--store-framing=on` to place real player,
+regular-enemy, and boss instances within the visible lane; it does not replace
+gameplay renderers, draw concept art over the scene, or alter shipping
+camera/balance data. Every capture passed selection identity, portrait
+lifecycle, HUD overlap, safe-area, and nonblank image checks.
+
+| File | V8.1 capture | SHA-256 |
+| --- | --- | --- |
+| `01-core-defense.png` | T / M01 / fixed combat | `31fb76f6eb2213e82f959d25fd0fb7f589dfbd5a4f5dedc16307f74c5829059e` |
+| `02-boss-spore-queen.png` | B / M02 / boss combat | `92d73d60ccda49cd0dc015269f351dfacd43ba4b4c437acfba2b482983f58d3b` |
+| `03-expedition-macrophage.png` | M / M03 / mobile combat | `0c6d4eef4e491574a27a735f376674ff54e1a266afa708a69e53f617a779c180` |
+| `04-boss-mutation-hive.png` | N / M04 / boss combat | `7bbf4caa3f69c8ded93ec71d604a1d9b98a6d9a61729d529f8a4aeb2a18e22ee` |
+| `05-relay-expedition.png` | A / M05 / mobile combat | `55834d3af0a7c2e8d1e8ea7ebfb72c55902e60d4a0732139d749bf8ed726ff1d` |
+| `06-boss-systemic-devourer.png` | D / M06 / boss combat | `0317749bd60c23708ee1195faad9f66736ec9ed390d288ee42bfc8be55337a46` |
+
+The generated Meshy/Tripo development models are excluded from release exports;
+these screenshots show the same authored procedural jelly bodies included in
+the shipping PCK.
 
 ## Automated check
 

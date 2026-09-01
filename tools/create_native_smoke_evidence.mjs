@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 
 import { createHash } from "node:crypto";
-import { lstat, mkdir, readFile, stat, writeFile } from "node:fs/promises";
+import { spawnSync } from "node:child_process";
+import { lstat, mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const PLATFORM_MARKERS = {
   Windows: "RELEASE_SMOKE_OK platform=Windows nodes=200",
   Linux: "RELEASE_SMOKE_OK platform=Linux nodes=200",
@@ -34,6 +36,34 @@ function validateIdentity(platform, commit, version) {
   }
 }
 
+function runGit(root, args, label) {
+  const result = spawnSync("git", ["-C", root, ...args], {
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  if (result.error || result.status !== 0) {
+    const detail = result.error?.message ?? (result.stderr.trim() || `exit ${result.status}`);
+    throw new Error(`${label} failed: ${detail}`);
+  }
+  return result.stdout.trim();
+}
+
+function verifyRepositoryIdentity(root, commit) {
+  const head = runGit(root, ["rev-parse", "--verify", "HEAD"], "Git HEAD verification");
+  if (head !== commit) {
+    throw new Error(`commit does not match repository HEAD: expected ${head}, received ${commit}`);
+  }
+  const trackedChanges = runGit(
+    root,
+    ["status", "--porcelain=v1", "--untracked-files=no"],
+    "Git tracked-tree verification",
+  );
+  if (trackedChanges) {
+    throw new Error("repository tracked tree must be clean before native smoke evidence is created");
+  }
+  return head;
+}
+
 export async function createNativeSmokeEvidence({
   platform,
   log,
@@ -43,12 +73,15 @@ export async function createNativeSmokeEvidence({
   commit,
   version,
   generatedAt = new Date().toISOString(),
+  repositoryRoot = ROOT,
+  verifyRepository = true,
 }) {
   validateIdentity(platform, commit, version);
   if (!out) throw new Error("out is required");
   if ((platform === "Windows" || platform === "Linux") && !pck) {
     throw new Error(`${platform} evidence requires a PCK sidecar`);
   }
+  const verifiedHead = verifyRepository ? verifyRepositoryIdentity(resolve(repositoryRoot), commit) : null;
   const [logInfo, artifactInfo] = await Promise.all([
     regularFile(log, "runtime log"),
     regularFile(artifact, "release artifact"),
@@ -80,6 +113,10 @@ export async function createNativeSmokeEvidence({
     status: "pass",
     platform,
     build: { version, commit },
+    source_repository: {
+      head_verified: verifiedHead === commit,
+      tracked_tree_clean: verifiedHead === commit,
+    },
     runtime: {
       marker,
       nodes: 200,

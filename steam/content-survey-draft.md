@@ -20,13 +20,13 @@ Category: **Pre-generated content**. Runtime generation: **None**.
 
 Suggested detailed description for owner review:
 
-> Pre-generated AI tools assisted with visual and text content. The shipping
-> B-cell base mesh was created from a project reference image using Meshy
-> Image-to-3D Smart Topology (`meshy-t2`) and then locally processed to restore
-> smooth normals. The shipping T-cell uses a Tripo remesh and its baked colour
-> as a feature mask. The visible wet-jelly lighting, micro-height, coat, and
-> membrane response are authored in Godot; the M/N/A/D bodies are project-coded
-> procedural models. Steam marketing key art was generated for this project
+> Pre-generated AI tools assisted with development references, marketing
+> visuals, and text drafting. All six shipping character bodies and their
+> visible wet-jelly lighting, internal flow, micro-height, coat, and membrane
+> response are authored procedurally in Godot. Earlier Meshy and Tripo hero
+> experiments remain in source history but are explicitly excluded from every
+> release package and are not used in the final screenshots. Steam marketing
+> key art was generated for this project
 > with OpenAI image generation and then cropped/composited into the required
 > capsule and library formats; the transparent wordmark and icons are
 > code-native/project-authored. A subset of research/character concept imagery,
@@ -47,10 +47,11 @@ Evidence:
 
 ## Owner confirmations still required
 
-- Resolve every conditional/blocked row in `asset-rights-register.md`, including
-  the missing Tripo task receipt and the undocumented audio source sessions.
-- Confirm the rights to every source/reference image used by Meshy, Tripo,
-  OpenAI image generation, and all other shipping art.
+- Resolve every conditional row in `asset-rights-register.md`, especially the
+  generated Steam key art and final bilingual text review.
+- Confirm the rights to every source/reference image used by OpenAI image
+  generation and any other shipping or marketing art. Meshy/Tripo development
+  assets must remain excluded unless their separate rights chains are resolved.
 - Confirm whether any final audio, narrative, localization, replacement art, or
   store material adds further AI-assisted player-consumed content.
 - Confirm that the store page and final build show consistent assets.
