@@ -478,7 +478,7 @@ static func apply_v5_shell_bounds(shell: ShaderMaterial) -> void:
 	if shell == null:
 		return
 	var bounds := SHELL_V5_BOUNDS
-	if _Profiles.v8_2_enabled():
+	if _Profiles.living_volume_enabled():
 		bounds = SHELL_V8_2_BOUNDS
 	elif _Profiles.gummy_glass_enabled():
 		bounds = SHELL_V7_BOUNDS

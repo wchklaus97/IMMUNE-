@@ -168,6 +168,9 @@ func _ready() -> void:
 		kit_swap_burst.emitting = false
 		kit_swap_burst.one_shot = true
 		kit_swap_burst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		if _GelProfiles.v8_3_enabled():
+			# The single-mass presentation never emits loose dots around the body.
+			kit_swap_burst.visible = false
 	if family_id == &"A":
 		_cache_hover_homes()
 		_apply_hover(A_HOVER_LIFT)
@@ -308,7 +311,7 @@ func settle_motion(physics_delta: float = 1.0 / 60.0, terminal: bool = false) ->
 ## selects the matching terminal animation.
 func enter_terminal(result: StringName, physics_delta: float = 1.0 / 60.0) -> bool:
 	if (
-		not _GelProfiles.v8_2_enabled()
+		not _GelProfiles.living_volume_enabled()
 		or (result != &"victory" and result != &"defeat")
 		or animation_player == null
 		or not animation_player.has_animation(result)
@@ -412,8 +415,9 @@ func _update_viscous_body(local_velocity: Vector3, target_motion: float, delta: 
 	)
 	_viscous_body_velocity += spring_acceleration * spring_delta
 	_viscous_body_lag += _viscous_body_velocity * spring_delta
-	if _viscous_body_lag.length() > _VISCOUS_LAG_LIMIT:
-		_viscous_body_lag = _viscous_body_lag.normalized() * _VISCOUS_LAG_LIMIT
+	var lag_limit := 0.13 if _GelProfiles.v8_3_enabled() else _VISCOUS_LAG_LIMIT
+	if _viscous_body_lag.length() > lag_limit:
+		_viscous_body_lag = _viscous_body_lag.normalized() * lag_limit
 
 	var velocity_delta := (planar_velocity - _viscous_last_local_velocity).length()
 	var acceleration_ratio := clampf(velocity_delta / maxf(delta, 0.001) / 24.0, 0.0, 1.0)
@@ -432,10 +436,11 @@ func _update_v8_1_responses(local_velocity: Vector3, target_motion: float, delta
 
 	var turn_squash := absf(_liquid_turn_shear) * 0.45
 	var contact_squash := maxf(_liquid_contact_amount, 0.0) * 0.060
+	var squash_limit := 0.09 if _GelProfiles.v8_3_enabled() else 0.12
 	_liquid_effective_squash = clampf(
 		_viscous_body_squash + turn_squash + contact_squash,
 		0.0,
-		0.12
+		squash_limit
 	)
 	var contact_rebound := _liquid_contact_normal * minf(_liquid_contact_amount, 0.0) * 0.025
 	_liquid_effective_lag = _viscous_body_lag + contact_rebound
@@ -848,7 +853,8 @@ func _apply_liquid_runtime_uniforms(force: bool = false) -> void:
 
 
 func _apply_viscous_material_uniforms(material: ShaderMaterial) -> void:
-	material.set_shader_parameter(&"liquid_body_deform_strength", _VISCOUS_DEFORM_STRENGTH)
+	var deform_strength := 0.64 if _GelProfiles.v8_3_enabled() else _VISCOUS_DEFORM_STRENGTH
+	material.set_shader_parameter(&"liquid_body_deform_strength", deform_strength)
 	material.set_shader_parameter(
 		&"liquid_body_lag",
 		_liquid_effective_lag if _GelProfiles.motion_truth_enabled() else _viscous_body_lag
@@ -899,7 +905,12 @@ func transform_duty(new_duty: StringName) -> void:
 	# The base scenes intentionally keep an empty particle placeholder. Submitting
 	# a GPUParticles3D restart without both a process material and draw mesh can
 	# rasterize undefined full-screen triangles on the Compatibility/Web renderer.
-	if kit_swap_burst and kit_swap_burst.process_material != null and kit_swap_burst.draw_pass_1 != null:
+	if (
+		not _GelProfiles.v8_3_enabled()
+		and kit_swap_burst
+		and kit_swap_burst.process_material != null
+		and kit_swap_burst.draw_pass_1 != null
+	):
 		kit_swap_burst.restart()
 	_apply_duty(new_duty)
 	if animation_player == null:
@@ -923,6 +934,18 @@ func transform_duty(new_duty: StringName) -> void:
 
 
 func _apply_duty(new_duty: StringName) -> void:
+	if _GelProfiles.v8_3_enabled():
+		# Duty remains a gameplay state, but V8.3 communicates it through motion,
+		# HUD, and attacks. The old wheels/dish were free-floating gel geometry and
+		# broke the one-character silhouette whenever mobile/relay became active.
+		var duty_kits := get_node_or_null("DutyKits") as Node3D
+		if duty_kits != null:
+			duty_kits.visible = false
+		for hidden_kit in [base_kit, locomotion_kit, relay_dish]:
+			if hidden_kit != null:
+				hidden_kit.visible = false
+				hidden_kit.scale = Vector3(0.15, 0.15, 0.15)
+		return
 	if base_kit:
 		base_kit.visible = new_duty == &"fixed"
 		base_kit.scale = Vector3.ONE if base_kit.visible else Vector3(0.15, 0.15, 0.15)
@@ -968,6 +991,24 @@ func request_combat_action(
 		# Auto-fire retries without consuming cadence while a transform or another
 		# action owns the one-shot layer; it never grows an unbounded queue.
 		if _animation_priority >= _ANIM_DUTY:
+			if (
+				_GelProfiles.v8_3_enabled()
+				and family_id == &"T"
+				and (
+					_animation_kind == _KIND_DUTY
+					or _animation_kind == _KIND_HIT
+					or (
+						_animation_kind == _KIND_ACTIVE
+						and bool(_combat_request.get("released", false))
+					)
+				)
+			):
+				# T's 0.55 s fixed cadence is faster than the shared recovery poses;
+				# keep the stronger pose while releasing its scheduled basic token.
+				# Active wind-up retains ownership until its own hit has committed, so a
+				# basic cannot erase the last target just before the active release marker.
+				_release_basic_over_presentation(request)
+				return true
 			return false
 		_start_combat_request(request)
 		return true
@@ -983,6 +1024,15 @@ func request_combat_action(
 		_cancel_current_combat_action(&"preempted")
 	_start_combat_request(request)
 	return true
+
+
+func _release_basic_over_presentation(request: Dictionary) -> void:
+	var request_id := int(request.get("id", 0))
+	if request_id <= 0:
+		return
+	var visual_id := StringName(request.get("visual_id", &""))
+	skill_fired.emit(visual_id)
+	combat_action_released.emit(request_id, _KIND_BASIC)
 
 
 func cancel_combat_action(reason: StringName = &"cancelled") -> void:

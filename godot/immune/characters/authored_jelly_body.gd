@@ -12,6 +12,7 @@ extends Node3D
 const _Gel := preload("res://characters/gel/gel_look.gd")
 const _GelProfiles := preload("res://characters/gel/gel_profiles.gd")
 const _PrimitiveMeshes := preload("res://characters/primitive_mesh_cache.gd")
+const _SingleMassBlob := preload("res://characters/single_mass_blob_mesh.gd")
 const _SHELL_SHADER := preload("res://characters/gel/jelly_shell.gdshader")
 const _EYE_SHADER := preload("res://characters/gel/gel_eye.gdshader")
 
@@ -169,7 +170,7 @@ func _make_shell(shell_color: Color, options: Dictionary) -> ShaderMaterial:
 	shell.shader = _SHELL_SHADER
 	_Gel.apply_v5_shell_bounds(shell)
 	shell.set_shader_parameter(&"shell_color", shell_color)
-	if _GelProfiles.v8_2_enabled():
+	if _GelProfiles.living_volume_enabled():
 		# V8.2 keeps the production topology at one explicit Body membrane. These
 		# family/profile values sharpen the dielectric edge while lowering face
 		# alpha enough for the moving optical core to remain legible underneath.
@@ -202,6 +203,9 @@ func _make_shell(shell_color: Color, options: Dictionary) -> ShaderMaterial:
 
 
 func _build_body(gel: Material, shell: Material) -> void:
+	if _GelProfiles.v8_3_enabled():
+		_build_v8_3_body(gel, shell)
+		return
 	if _GelProfiles.gummy_glass_enabled():
 		_build_v7_body(gel, shell)
 		return
@@ -266,6 +270,32 @@ func _build_v7_body(gel: Material, shell: Material) -> void:
 			_add_gel_sphere("FootR", Vector3(0.25, 0.080, 0.06), Vector3(0.41, 0.27, 0.41), gel, shell)
 
 
+func _build_v8_3_body(gel: Material, shell: Material) -> void:
+	# One indexed watertight surface owns the full silhouette. Arms, lower lobes,
+	# and D's top ridge are sculpted into this mesh; no free-standing gel pieces
+	# exist for animation to expose or separate.
+	var body_mesh := _SingleMassBlob.mesh(family_id)
+	var body_position := _SingleMassBlob.centre(family_id)
+	var body := MeshInstance3D.new()
+	body.name = "Body"
+	body.mesh = body_mesh
+	body.position = body_position
+	body.material_override = gel.duplicate()
+	body.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	body.set_meta(&"v8_3_single_mass", true)
+	add_child(body)
+
+	var membrane := MeshInstance3D.new()
+	membrane.name = "BodyShell"
+	membrane.mesh = body_mesh
+	membrane.position = body_position
+	membrane.scale = Vector3.ONE * 1.006
+	membrane.material_override = shell.duplicate()
+	membrane.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	membrane.set_meta(&"v8_3_single_mass_shell", true)
+	add_child(membrane)
+
+
 func _build_d_crown(gel: Material, shell: Material) -> void:
 	var crown := [
 		[Vector3(-0.34, 0.99, -0.01), Vector3(0.24, 0.30, 0.23)],
@@ -297,20 +327,31 @@ func _build_face(gel: Material, cavity_color: Color) -> void:
 		eye_x = 0.20 if family_id != "M" else 0.215
 		eye_y = 0.61 if family_id == "N" else (0.68 if family_id == "M" else (0.63 if family_id == "A" else 0.60))
 		eye_z = 0.475 if family_id == "N" else (0.515 if family_id == "M" else (0.490 if family_id == "A" else 0.480))
+	var eye_scale := Vector3(0.155, 0.155, 0.105)
+	if _GelProfiles.v8_3_enabled():
+		# Embed smaller marks into the continuous skin. The former protruding eye
+		# spheres could escape the silhouette at 3/4 view and read as loose cells.
+		# The R6 inset keeps their front face only a thin mark above the membrane.
+		eye_x = 0.175 if family_id == "M" else 0.165
+		eye_z = (
+			0.475 if family_id == "M"
+			else (0.445 if family_id == "A" else (0.442 if family_id == "N" else 0.438))
+		)
+		eye_scale = Vector3(0.132, 0.132, 0.040)
 	if _GelProfiles.motion_truth_enabled():
 		# Body-space origin/scale are per material instance. Keep one instance per
 		# eye so the right eye can never inherit the left eye's deformation frame.
 		_add_sphere(
-			"EyeL", Vector3(-eye_x, eye_y, eye_z), Vector3(0.155, 0.155, 0.105),
+			"EyeL", Vector3(-eye_x, eye_y, eye_z), eye_scale,
 			eye.duplicate() as Material, 64, 32
 		)
 		_add_sphere(
-			"EyeR", Vector3(eye_x, eye_y, eye_z), Vector3(0.155, 0.155, 0.105),
+			"EyeR", Vector3(eye_x, eye_y, eye_z), eye_scale,
 			eye.duplicate() as Material, 64, 32
 		)
 	else:
-		_add_sphere("EyeL", Vector3(-eye_x, eye_y, eye_z), Vector3(0.155, 0.155, 0.105), eye, 64, 32)
-		_add_sphere("EyeR", Vector3(eye_x, eye_y, eye_z), Vector3(0.155, 0.155, 0.105), eye, 64, 32)
+		_add_sphere("EyeL", Vector3(-eye_x, eye_y, eye_z), eye_scale, eye, 64, 32)
+		_add_sphere("EyeR", Vector3(eye_x, eye_y, eye_z), eye_scale, eye, 64, 32)
 	if not _GelProfiles.gummy_glass_enabled():
 		_add_face_ring("EyeRimL", Vector3(-eye_x, eye_y, eye_z + 0.047), 0.073, 0.087, gel)
 		_add_face_ring("EyeRimR", Vector3(eye_x, eye_y, eye_z + 0.047), 0.073, 0.087, gel)
@@ -322,7 +363,10 @@ func _build_face(gel: Material, cavity_color: Color) -> void:
 		# path; zero studio strength preserves the authored dark cavity read.
 		var wet_cavity := ShaderMaterial.new()
 		wet_cavity.shader = _EYE_SHADER
-		wet_cavity.set_shader_parameter(&"eye_color", cavity_color)
+		wet_cavity.set_shader_parameter(
+			&"eye_color",
+			cavity_color.darkened(0.42) if _GelProfiles.v8_3_enabled() else cavity_color
+		)
 		wet_cavity.set_shader_parameter(&"studio_strength", 0.0)
 		wet_cavity.set_shader_parameter(&"surface_roughness", 0.18)
 		cavity = wet_cavity
@@ -335,8 +379,9 @@ func _build_face(gel: Material, cavity_color: Color) -> void:
 		# Two nested horizontal capsules produce the concept's short pill-shaped
 		# mouth with a coloured gel lip instead of an O-mouth.
 		var n_mouth_z := 0.508 if _GelProfiles.gummy_glass_enabled() else 0.443
-		var n_cavity_z := 0.532 if _GelProfiles.gummy_glass_enabled() else 0.466
-		_add_capsule("MouthRim", Vector3(0.0, 0.40, n_mouth_z), 0.047, 0.19, Vector3(1.0, 1.0, 0.42), Vector3(0.0, 0.0, 90.0), gel)
+		var n_cavity_z := 0.492 if _GelProfiles.v8_3_enabled() else (0.532 if _GelProfiles.gummy_glass_enabled() else 0.466)
+		if not _GelProfiles.v8_3_enabled():
+			_add_capsule("MouthRim", Vector3(0.0, 0.40, n_mouth_z), 0.047, 0.19, Vector3(1.0, 1.0, 0.42), Vector3(0.0, 0.0, 90.0), gel)
 		_add_capsule("MouthCavity", Vector3(0.0, 0.40, n_cavity_z), 0.032, 0.15, Vector3(1.0, 1.0, 0.34), Vector3(0.0, 0.0, 90.0), cavity)
 		return
 	var mouth_y := 0.44 if family_id == "M" else (0.39 if family_id == "A" else 0.38)
@@ -344,9 +389,14 @@ func _build_face(gel: Material, cavity_color: Color) -> void:
 	if _GelProfiles.gummy_glass_enabled():
 		mouth_y = 0.43 if family_id == "M" else (0.37 if family_id == "A" else 0.365)
 		mouth_z = 0.545 if family_id == "M" else (0.515 if family_id == "A" else 0.505)
-	_add_sphere("MouthCavity", Vector3(0.0, mouth_y, mouth_z), Vector3(0.185, 0.205, 0.048), cavity, 64, 32)
+	var mouth_scale := Vector3(0.185, 0.205, 0.048)
+	if _GelProfiles.v8_3_enabled():
+		mouth_z = 0.515 if family_id == "M" else (0.480 if family_id == "A" else 0.480)
+		mouth_scale = Vector3(0.170, 0.190, 0.026)
+	_add_sphere("MouthCavity", Vector3(0.0, mouth_y, mouth_z), mouth_scale, cavity, 64, 32)
 	var mouth_inner := 0.102 if _GelProfiles.gummy_glass_enabled() else 0.092
-	_add_face_ring("MouthRim", Vector3(0.0, mouth_y, mouth_z + 0.025), mouth_inner, 0.114, gel)
+	if not _GelProfiles.v8_3_enabled():
+		_add_face_ring("MouthRim", Vector3(0.0, mouth_y, mouth_z + 0.025), mouth_inner, 0.114, gel)
 
 
 func _add_face_ring(name_: String, pos: Vector3, inner_radius: float, outer_radius: float, gel: Material) -> void:

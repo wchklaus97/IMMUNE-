@@ -701,6 +701,12 @@ func _request_basic_fire_action(
 		"target": weakref(target),
 		"cadence": cadence,
 	}
+	# V8.3 may release a scheduled basic token synchronously while a stronger
+	# active/hit/duty pose stays on screen. Reserve cadence before that signal can
+	# re-enter this node; rejected requests restore the ready state below.
+	var cadence_reserved := _GelProfiles.v8_3_enabled()
+	if cadence_reserved:
+		_fire_cd = cadence
 	var accepted := _player.request_combat_action(
 		request_id,
 		COMBAT_ACTION_BASIC,
@@ -709,10 +715,13 @@ func _request_basic_fire_action(
 	)
 	if not accepted or not _pending_combat_actions.has(request_id):
 		_pending_combat_actions.erase(request_id)
+		if not accepted and cadence_reserved:
+			_fire_cd = 0.0
 		return
 	# Consume cadence only after the presentation arbiter accepts the request.
 	# A later pre-release cancellation restores it in the signal handler.
-	_fire_cd = cadence
+	if not cadence_reserved:
+		_fire_cd = cadence
 
 
 func _release_basic_fire(payload: Dictionary) -> bool:
@@ -950,7 +959,7 @@ func _on_core_hit(hp: int, max_hp: int) -> void:
 		_shake_camera(0.22)
 		# V8.2 turns core damage into a visible shock on the playable body. This is
 		# presentation-only: the core's HP and all damage resolution stay untouched.
-		if _GelProfiles.v8_2_enabled() and _player != null:
+		if _GelProfiles.living_volume_enabled() and _player != null:
 			_player.play_hit()
 	_refresh_hud()
 	if hp <= 0:
@@ -1402,7 +1411,7 @@ func _settle_player_motion(delta: float, terminal: bool = false) -> void:
 func _enter_player_terminal(result: StringName) -> void:
 	const TERMINAL_DELTA := 1.0 / 60.0
 	if (
-		_GelProfiles.v8_2_enabled()
+		_GelProfiles.living_volume_enabled()
 		and _player != null
 		and _player.enter_terminal(result, TERMINAL_DELTA)
 	):

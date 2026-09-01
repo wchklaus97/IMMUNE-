@@ -466,6 +466,48 @@ const V8_2_FAMILY: Dictionary = {
 	},
 }
 
+# V8.3 keeps the accepted V8.2 living core but removes every detail that can
+# read as a loose cell, pellet, or fragment. Topology is handled by the matching
+# single-mass body branch; these values make the optical volume equally clean.
+const V8_3_SINGLE_MASS: Dictionary = {
+	&"bubble_enabled": false,
+	&"bubble_density": 0.0,
+	&"bubble_depth": 0.0,
+	&"bubble_thinness": 0.0,
+	&"bubble_shell_shadow": 0.0,
+	&"bubble_emission": 0.0,
+	&"bubble_shell_emission": 0.0,
+	&"microbubble_enabled": false,
+	&"microbubble_density": 0.0,
+	&"microbubble_depth": 0.0,
+	&"microbubble_thinness": 0.0,
+	&"microbubble_shell_shadow": 0.0,
+	&"microbubble_emission": 0.0,
+	&"microbubble_shell_emission": 0.0,
+	&"inclusion_enabled": false,
+	&"inclusion_depth": 0.0,
+	&"inclusion_emission": 0.0,
+	&"authored_fleck_strength": 0.0,
+	&"authored_fleck_budget": 0.0,
+	&"authored_inclusion_strength": 0.0,
+	&"authored_inclusion_budget": 0.0,
+	&"authored_caustic_strength": 0.08,
+	&"authored_caustic_budget": 0.018,
+	&"authored_fiber_strength": 0.12,
+	&"authored_fiber_budget": 0.026,
+	&"authored_height_depth": 0.0008,
+	&"detail_emission_scale": 0.06,
+	&"liquid_flow_emission": 0.26,
+	&"liquid_flow_budget": 0.046,
+	&"liquid_body_deform_strength": 0.64,
+	&"membrane_face_alpha": 0.0022,
+	&"membrane_edge_alpha": 0.56,
+	&"membrane_edge_power": 2.30,
+	&"membrane_roughness": 0.015,
+	&"membrane_rim_emission": 0.32,
+	&"membrane_thickness": 0.018,
+}
+
 # Historical Fizzy/V5 base values retained as the reversible material control.
 # V6 overrides its production-facing response after this dictionary is merged;
 # legacy look-dev callers can still request these values directly.
@@ -629,12 +671,15 @@ static func options(family: String, overrides: Dictionary = {}) -> Dictionary:
 		var v8_family_values: Dictionary = V8_FAMILY.get(family, {})
 		for key in v8_family_values:
 			merged[key] = v8_family_values[key]
-	if v8_2_enabled():
+	if living_volume_enabled():
 		for key in V8_2_LIVING_VOLUME:
 			merged[key] = V8_2_LIVING_VOLUME[key]
 		var v8_2_family_values: Dictionary = V8_2_FAMILY.get(family, {})
 		for key in v8_2_family_values:
 			merged[key] = v8_2_family_values[key]
+	if v8_3_enabled():
+		for key in V8_3_SINGLE_MASS:
+			merged[key] = V8_3_SINGLE_MASS[key]
 	for key in overrides:
 		merged[key] = overrides[key]
 	return merged
@@ -662,29 +707,32 @@ static func with_v5_surface(values: Dictionary, family: String = "") -> Dictiona
 		var v8_family_values: Dictionary = V8_FAMILY.get(family, {})
 		for key in v8_family_values:
 			merged[key] = v8_family_values[key]
-	if v8_2_enabled():
+	if living_volume_enabled():
 		for key in V8_2_LIVING_VOLUME:
 			merged[key] = V8_2_LIVING_VOLUME[key]
 		var v8_2_family_values: Dictionary = V8_2_FAMILY.get(family, {})
 		for key in v8_2_family_values:
 			merged[key] = v8_2_family_values[key]
+	if v8_3_enabled():
+		for key in V8_3_SINGLE_MASS:
+			merged[key] = V8_3_SINGLE_MASS[key]
 	return merged
 
 
 static func selected_look() -> String:
 	var override := OS.get_environment("IMMUNE_GEL_LOOK").strip_edges().to_lower()
-	if override in ["v5", "v6", "v7", "v8", "v8_1", "v8_2"]:
+	if override in ["v5", "v6", "v7", "v8", "v8_1", "v8_2", "v8_3"]:
 		return override
 	var configured := str(ProjectSettings.get_setting("immune/visual/gel_look", "v6")).strip_edges().to_lower()
-	return configured if configured in ["v5", "v6", "v7", "v8", "v8_1", "v8_2"] else "v6"
+	return configured if configured in ["v5", "v6", "v7", "v8", "v8_1", "v8_2", "v8_3"] else "v6"
 
 
 static func banner_match_enabled() -> bool:
-	return selected_look() in ["v6", "v7", "v8", "v8_1", "v8_2"]
+	return selected_look() in ["v6", "v7", "v8", "v8_1", "v8_2", "v8_3"]
 
 
 static func gummy_glass_enabled() -> bool:
-	return selected_look() in ["v7", "v8", "v8_1", "v8_2"]
+	return selected_look() in ["v7", "v8", "v8_1", "v8_2", "v8_3"]
 
 
 static func v7_enabled() -> bool:
@@ -692,7 +740,7 @@ static func v7_enabled() -> bool:
 
 
 static func v8_enabled() -> bool:
-	return selected_look() in ["v8", "v8_1", "v8_2"]
+	return selected_look() in ["v8", "v8_1", "v8_2", "v8_3"]
 
 
 ## V8.1 inherits the accepted V8 material and clip foundation, then enables the
@@ -706,13 +754,25 @@ static func v8_2_enabled() -> bool:
 	return selected_look() == "v8_2"
 
 
+static func v8_3_enabled() -> bool:
+	return selected_look() == "v8_3"
+
+
+## V8.3 inherits V8.2's fourteen-clip and living-volume foundation while the
+## exact v8_2_enabled() selector remains available for rollback assertions.
+static func living_volume_enabled() -> bool:
+	return selected_look() in ["v8_2", "v8_3"]
+
+
 ## V8.2 inherits V8.1's shared-coordinate attachment and release hardening while
 ## v8_1_enabled() remains an exact rollback selector for material/smoke checks.
 static func motion_truth_enabled() -> bool:
-	return selected_look() in ["v8_1", "v8_2"]
+	return selected_look() in ["v8_1", "v8_2", "v8_3"]
 
 
 static func profile_name(family: String) -> StringName:
+	if v8_3_enabled():
+		return &"single_mass_clean"
 	if family == "B":
 		return &"round_bubbles"
 	if family == "T":

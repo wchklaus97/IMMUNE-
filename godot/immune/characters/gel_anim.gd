@@ -94,7 +94,7 @@ static func build_library(host: Node3D, lift: float = 0.0) -> AnimationLibrary:
 	var names := NAMES.duplicate()
 	if _GelProfiles.motion_truth_enabled():
 		names.append_array(V8_1_NAMES)
-	if _GelProfiles.v8_2_enabled():
+	if _GelProfiles.living_volume_enabled():
 		names.append_array(V8_2_NAMES)
 	for anim_name in names:
 		lib.add_animation(StringName(anim_name), build(String(anim_name), ctx))
@@ -139,7 +139,12 @@ static func build(anim_name: String, ctx: Dictionary) -> Animation:
 		"victory":
 			return _bake(1.30, false, "", ctx, _victory_channels(), "keys")
 		"defeat":
-			return _bake(1.18, false, "", ctx, _defeat_channels(), "keys")
+			var defeat_channels := (
+				_defeat_single_mass_channels()
+				if _GelProfiles.v8_3_enabled()
+				else _defeat_channels()
+			)
+			return _bake(1.18, false, "", ctx, defeat_channels, "keys")
 	return _bake(1.0, false, "", ctx, {}, "keys")
 
 
@@ -587,6 +592,45 @@ static func _defeat_channels() -> Dictionary:
 	}
 
 
+## V8.3 keeps the failure read without crushing or sharply pitching the unified
+## surface. The character loses support and settles off-axis, but retains enough
+## height that an integrated side lobe never rotates into a torn-looking spike.
+## V8.2 continues using the original terminal pose above for exact rollback.
+static func _defeat_single_mass_channels() -> Dictionary:
+	return {
+		"sy": [
+			[0.00, 1.000, "snap"], [0.09, 1.100, "out"], [0.27, 0.860, "lin"],
+			[0.36, 0.860, "out"], [0.54, 0.960, "io"], [0.76, 0.880, "io"],
+			[0.98, 0.920, "io"], [1.18, 0.900, "lin"],
+		],
+		"py": [
+			[0.00, 0.000, "snap"], [0.09, 0.030, "out"], [0.27, -0.008, "lin"],
+			[0.36, -0.006, "out"], [0.58, 0.006, "io"], [0.82, -0.002, "io"],
+			[1.18, 0.000, "lin"],
+		],
+		"pz": [
+			[0.00, 0.000, "snap"], [0.10, -0.035, "out"], [0.30, 0.045, "lin"],
+			[0.48, 0.038, "out"], [0.76, 0.024, "io"], [1.18, 0.018, "lin"],
+		],
+		"rx": [
+			[0.00, 0.0, "snap"], [0.10, -5.0, "out"], [0.30, 8.0, "lin"],
+			[0.44, 7.0, "out"], [0.72, 4.5, "io"], [1.18, 3.5, "lin"],
+		],
+		"rz": [
+			[0.00, 0.0, "snap"], [0.10, -3.0, "out"], [0.30, 6.0, "lin"],
+			[0.44, 5.5, "out"], [0.72, 4.5, "io"], [1.18, 4.0, "lin"],
+		],
+		"spread": [
+			[0.00, 1.000, "snap"], [0.10, 0.970, "out"], [0.28, 1.095, "lin"],
+			[0.40, 1.090, "out"], [0.64, 1.070, "io"], [1.18, 1.080, "lin"],
+		],
+		"lag": [
+			[0.00, 0.000, "snap"], [0.10, -0.022, "out"], [0.30, 0.032, "lin"],
+			[0.48, 0.028, "out"], [0.76, 0.018, "io"], [1.18, 0.014, "lin"],
+		],
+	}
+
+
 ## The one that is on screen 90% of the time. Built analytically instead of
 ## keyed so it loops seamlessly: every term is periodic over the clip length.
 ## Three unrelated frequencies plus a phase warp keep it from reading as a
@@ -654,8 +698,12 @@ static func _bake(length: float, loop: bool, kit_path: String, ctx: Dictionary, 
 		else:
 			pose = _keyed_pose(channels, t)
 
-		var sy := clampf(float(pose.get("sy", 1.0)), SQUASH_MIN, STRETCH_MAX)
+		var squash_min := 0.82 if _GelProfiles.v8_3_enabled() else SQUASH_MIN
+		var stretch_max := 1.18 if _GelProfiles.v8_3_enabled() else STRETCH_MAX
+		var sy := clampf(float(pose.get("sy", 1.0)), squash_min, stretch_max)
 		var zb := float(pose.get("zb", 1.0))
+		if _GelProfiles.v8_3_enabled():
+			zb = clampf(zb, 0.90, 1.12)
 		var lateral := pow(sy, -0.5 * VOLUME_K)
 		var squash := Vector3(lateral / zb, sy, lateral * zb)
 
