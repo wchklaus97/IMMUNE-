@@ -42,6 +42,18 @@ function makePck(paths, payload = "", version = 3) {
   return Buffer.concat([header, payloadBuffer, directory]);
 }
 
+function authoredPckPaths() {
+  return [
+    ".godot/uid_cache.bin",
+    "characters/authored_jelly_body.gdc",
+    "characters/base_b/reference_body.tscn.remap",
+    "characters/base_t/reference_body.tscn.remap",
+    ...Array.from({ length: 6 }, (_, index) => (
+      `.godot/exported/fixture/export-${String(index + 1).padStart(2, "0")}-reference_body.scn`
+    )),
+  ];
+}
+
 test("readiness CLI rejects unknown, empty, and duplicate inputs", () => {
   assert.deepEqual(readinessArguments(["--artifacts=build/releases"]), { artifacts: "build/releases" });
   assert.throws(() => readinessArguments(["--wat=yes"]), /Unknown/u);
@@ -53,30 +65,31 @@ test("readiness CLI rejects unknown, empty, and duplicate inputs", () => {
 });
 
 test("PCK policy audits resource entries instead of matching UID-cache payload text", () => {
-  const paths = [
-    ".godot/uid_cache.bin",
-    "characters/authored_jelly_body.gdc",
-    "characters/base_b/reference_body.scn",
-    "characters/base_t/reference_body.scn",
-  ];
+  const paths = authoredPckPaths();
   for (const version of [2, 3, 4]) {
     const pck = makePck(paths, "CHAR-BASE-M-meshy-t2 CHAR-BASE-T-fix.glb", version);
     assert.deepEqual(parsePckResourcePaths(pck), paths);
-    assert.deepEqual(validatePckResourcePolicyBuffer(pck), { files: 4 });
+    assert.deepEqual(validatePckResourcePolicyBuffer(pck), { files: 10 });
   }
 });
 
 test("PCK policy rejects an excluded directory entry and a missing shipping entry", () => {
   const leaked = makePck([
-    "characters/authored_jelly_body.gdc",
-    "characters/base_b/reference_body.scn",
-    "characters/base_t/reference_body.scn",
+    ...authoredPckPaths(),
     ".godot/imported/CHAR-BASE-M-meshy-t2.glb-example.scn",
   ]);
   assert.throws(() => validatePckResourcePolicyBuffer(leaked), /Excluded source resource leaked/u);
   assert.throws(
     () => validatePckResourcePolicyBuffer(makePck(["project.binary"])),
     /Required authored character resource is missing/u,
+  );
+  assert.throws(
+    () => validatePckResourcePolicyBuffer(makePck([
+      "characters/authored_jelly_body.gdc",
+      "characters/base_b/reference_body.tscn.remap",
+      "characters/base_t/reference_body.tscn.remap",
+    ])),
+    /Required compiled reference bodies are missing/u,
   );
 });
 

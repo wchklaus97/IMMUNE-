@@ -40,9 +40,10 @@ const EXCLUDED_PCK_MARKERS = [
 ];
 const REQUIRED_PCK_MARKERS = [
   "characters/authored_jelly_body.gdc",
-  "characters/base_b/reference_body.scn",
-  "characters/base_t/reference_body.scn",
+  "characters/base_b/reference_body.tscn.remap",
+  "characters/base_t/reference_body.tscn.remap",
 ];
+const REQUIRED_COMPILED_REFERENCE_BODIES = 6;
 const PCK_DIRECTORY_ENCRYPTED = 1;
 const PCK_SPARSE_BUNDLE = 4;
 const MAX_PCK_RESOURCE_COUNT = 100_000;
@@ -254,6 +255,14 @@ export function validatePckResourcePolicyBuffer(buffer) {
     if (!paths.some((path) => path.includes(marker))) {
       throw new Error(`Required authored character resource is missing from PCK: ${marker}`);
     }
+  }
+  const compiledReferenceBodies = paths.filter((path) => (
+    /^\.godot\/exported\/[^/]+\/export-[0-9a-f]+-reference_body\.scn$/u.test(path)
+  ));
+  if (compiledReferenceBodies.length < REQUIRED_COMPILED_REFERENCE_BODIES) {
+    throw new Error(
+      `Required compiled reference bodies are missing from PCK: expected ${REQUIRED_COMPILED_REFERENCE_BODIES}, got ${compiledReferenceBodies.length}`,
+    );
   }
   return { files: paths.length };
 }
