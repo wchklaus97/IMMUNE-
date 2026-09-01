@@ -350,6 +350,15 @@ uniform float liquid_slime_scale : hint_range(0.2, 3.0) = 0.85;
 uniform float liquid_slime_threshold : hint_range(0.1, 0.9) = 0.50;
 uniform float liquid_slime_softness : hint_range(0.02, 0.3) = 0.12;
 uniform float liquid_slime_thinness : hint_range(0.0, 0.3) = 0.0;
+// V8.2 lets the broad analytic slime mass affect ordinary reflected light as
+// well as the bounded emissive cue. Both controls are zero by default so the
+// accepted V5-V8.1 response takes the exact pre-V8.2 branch.
+uniform float liquid_core_color_mix : hint_range(0.0, 1.0) = 0.0;
+uniform float liquid_core_roughness_mix : hint_range(0.0, 1.0) = 0.0;
+// Macro bubbles used to be fixed in each primitive's local space. V8.2 opts
+// them into the same shared, advected body coordinate as the cohesive liquid;
+// zero retains the historical local-space distribution byte-for-byte.
+uniform float liquid_bubble_advection : hint_range(0.0, 1.0) = 0.0;
 // Runtime-owned values. CharacterRoot eases these instead of switching them, so
 // stopping, turning, and resuming never reset the TIME-driven idle circulation.
 uniform float liquid_flow_motion_mix : hint_range(0.0, 1.0) = 0.0;
@@ -1025,8 +1034,18 @@ void fragment() {
 		|| bubble_thinness > 0.001
 		|| bubble_emission > 0.001
 		|| bubble_shell_emission > 0.001)) {
+		vec3 bubble_position = v_obj_pos;
+		if (liquid_bubble_advection > 0.001) {
+			// Shared body space prevents the procedural field restarting at every
+			// overlapping primitive. Blending toward the already-computed advected
+			// coordinate makes the pockets circulate continuously in idle and move.
+			bubble_position = mix(
+				liquid_field_position,
+				liquid_sample_position,
+				clamp(liquid_bubble_advection, 0.0, 1.0));
+		}
 		bubble = bubble_volume_at(
-			v_obj_pos * bubble_scale,
+			bubble_position * bubble_scale,
 			bubble_density,
 			bubble_radius_min,
 			bubble_radius_max,
@@ -1119,6 +1138,23 @@ void fragment() {
 	body *= 1.0 - (
 		bubble.y * bubble_shell_shadow
 		+ microbubble.y * microbubble_shell_shadow) * gel_mask;
+	float liquid_core_mask = clamp(
+		liquid_slime_volume * 0.84 + liquid_slime_ridge * 0.16,
+		0.0,
+		1.0) * gel_mask;
+	if (liquid_core_color_mix > 0.001) {
+		// This is a bounded optical-density proxy, not a second transparent
+		// volume. It keeps the opaque Compatibility core stable while letting the
+		// moving inner mass read under ordinary lighting instead of bloom alone.
+		vec3 liquid_core_target = mix(
+			body,
+			deep_color.rgb * albedo_gain,
+			0.72);
+		body = mix(
+			body,
+			liquid_core_target,
+			liquid_core_mask * clamp(liquid_core_color_mix, 0.0, 1.0));
+	}
 	v_surface_color = mix(body, ink_color.rgb, ink);
 	ALBEDO = vec3(1.0);
 	METALLIC = 0.0;
@@ -1126,6 +1162,12 @@ void fragment() {
 		body_roughness,
 		max(body_roughness * 0.72, 0.04),
 		max(bubble.x, microbubble.x));
+	if (liquid_core_roughness_mix > 0.001) {
+		gel_roughness = mix(
+			gel_roughness,
+			max(body_roughness * 0.58, 0.04),
+			liquid_core_mask * clamp(liquid_core_roughness_mix, 0.0, 1.0));
+	}
 	gel_roughness = clamp(gel_roughness, 0.04, 1.0);
 	ROUGHNESS = mix(gel_roughness, ink_roughness, ink);
 	SPECULAR = env_specular;

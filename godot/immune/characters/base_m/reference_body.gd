@@ -204,7 +204,7 @@ func _ready() -> void:
 	if gel == null:
 		push_error("m_reference_match.gd: failed to create gel material")
 		return
-	var shell := _make_shell(variant)
+	var shell := _make_shell(variant, material_options)
 	_build_body(gel, shell)
 	_build_face(gel)
 	print("M_REFERENCE_MATCH variant=%s" % variant)
@@ -229,16 +229,32 @@ func _build_body(gel: Material, shell: Material) -> void:
 	_add_gel_sphere("FootR", Vector3(0.28, 0.11, 0.06), Vector3(0.48, 0.32, 0.49), gel, shell)
 
 
-func _make_shell(variant: String) -> ShaderMaterial:
+func _make_shell(variant: String, material_options: Dictionary) -> ShaderMaterial:
 	var shell := ShaderMaterial.new()
 	shell.shader = _SHELL_SHADER
 	_Gel.apply_v5_shell_bounds(shell)
 	shell.set_shader_parameter(&"shell_color", Color(0.90, 0.74, 1.0, 1.0))
-	shell.set_shader_parameter(&"face_alpha", 0.008 if variant != "gummy" else 0.004)
-	shell.set_shader_parameter(&"edge_alpha", 0.48 if variant == "clear" else (0.46 if variant == "fizzy" else 0.38))
-	shell.set_shader_parameter(&"edge_power", 2.4)
-	shell.set_shader_parameter(&"shell_roughness", 0.025 if variant != "gummy" else 0.050)
-	shell.set_shader_parameter(&"rim_emission", 0.34 if variant != "gummy" else 0.24)
+	if _GelProfiles.v8_2_enabled():
+		# The retained M reference scene shares the production V8.2 shell contract;
+		# it changes parameters only and does not add another transparent pass.
+		shell.set_shader_parameter(
+			&"face_alpha", material_options.get(&"membrane_face_alpha", 0.0028))
+		shell.set_shader_parameter(
+			&"edge_alpha", material_options.get(&"membrane_edge_alpha", 0.58))
+		shell.set_shader_parameter(
+			&"edge_power", material_options.get(&"membrane_edge_power", 2.20))
+		shell.set_shader_parameter(
+			&"shell_roughness", material_options.get(&"membrane_roughness", 0.014))
+		shell.set_shader_parameter(
+			&"rim_emission", material_options.get(&"membrane_rim_emission", 0.36))
+		shell.set_shader_parameter(
+			&"shell_thickness", material_options.get(&"membrane_thickness", 0.020))
+	else:
+		shell.set_shader_parameter(&"face_alpha", 0.008 if variant != "gummy" else 0.004)
+		shell.set_shader_parameter(&"edge_alpha", 0.48 if variant == "clear" else (0.46 if variant == "fizzy" else 0.38))
+		shell.set_shader_parameter(&"edge_power", 2.4)
+		shell.set_shader_parameter(&"shell_roughness", 0.025 if variant != "gummy" else 0.050)
+		shell.set_shader_parameter(&"rim_emission", 0.34 if variant != "gummy" else 0.24)
 	shell.render_priority = 1
 	return shell
 

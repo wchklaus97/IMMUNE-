@@ -234,7 +234,7 @@ func _realize_imported_mesh() -> void:
 
 func _process(delta: float) -> void:
 	if not _liquid_materials.is_empty():
-		if _GelProfiles.v8_1_enabled():
+		if _GelProfiles.motion_truth_enabled():
 			if not _motion_truth_received:
 				# Preview and lineup scenes do not own a physics controller. Until the
 				# first authoritative sample arrives, retain the V8 velocity fallback.
@@ -263,7 +263,7 @@ func submit_motion_truth(
 	contact_normal: Vector3,
 	physics_delta: float
 ) -> void:
-	if not _GelProfiles.v8_1_enabled():
+	if not _GelProfiles.motion_truth_enabled():
 		return
 	_motion_truth_received = true
 	_motion_truth_physics_frame = Engine.get_physics_frames()
@@ -285,7 +285,7 @@ func _motion_truth_is_stale() -> bool:
 func settle_motion(physics_delta: float = 1.0 / 60.0, terminal: bool = false) -> void:
 	velocity = Vector3.ZERO
 	submit_motion_truth(Vector3.ZERO, Vector3.ZERO, Vector3.ZERO, physics_delta)
-	if terminal and _GelProfiles.v8_1_enabled():
+	if terminal and _GelProfiles.motion_truth_enabled():
 		_terminal_animation = true
 		cancel_combat_action(&"terminal")
 		_animation_priority = _ANIM_TERMINAL
@@ -300,6 +300,33 @@ func settle_motion(physics_delta: float = 1.0 / 60.0, terminal: bool = false) ->
 		elif animation_player != null:
 			_managed_animation = &""
 			animation_player.stop()
+
+
+## Starts a V8.2 terminal one-shot and permanently reserves the presentation
+## lane for its authored final pose. Gameplay state remains owned by CombatLane;
+## this method only freezes motion, cancels unreleased presentation requests and
+## selects the matching terminal animation.
+func enter_terminal(result: StringName, physics_delta: float = 1.0 / 60.0) -> bool:
+	if (
+		not _GelProfiles.v8_2_enabled()
+		or (result != &"victory" and result != &"defeat")
+		or animation_player == null
+		or not animation_player.has_animation(result)
+	):
+		return false
+	if _terminal_animation:
+		return _managed_animation == result
+	velocity = Vector3.ZERO
+	submit_motion_truth(Vector3.ZERO, Vector3.ZERO, Vector3.ZERO, physics_delta)
+	_terminal_animation = true
+	cancel_combat_action(&"terminal")
+	_buffered_combat_request.clear()
+	_pending_duty = &""
+	_liquid_locomotion_active = false
+	_liquid_locomotion_state = &"idle"
+	return _request_managed_animation(
+		result, _ANIM_TERMINAL, _KIND_TERMINAL, 0.08
+	)
 
 
 ## Smoothly overlays movement onto the shader's uninterrupted TIME-driven idle
@@ -323,7 +350,7 @@ func update_liquid_flow(world_velocity: Vector3, delta: float) -> void:
 	var local_velocity := global_transform.basis.orthonormalized().inverse() * world_velocity
 	if speed > _LIQUID_SPEED_FLOOR:
 		var target_direction := local_velocity.normalized()
-		if _GelProfiles.v8_1_enabled():
+		if _GelProfiles.motion_truth_enabled():
 			_liquid_flow_direction = _steer_liquid_direction(
 				_liquid_flow_direction, target_direction, safe_delta
 			)
@@ -336,7 +363,7 @@ func update_liquid_flow(world_velocity: Vector3, delta: float) -> void:
 				else blended_direction.normalized()
 			)
 	_update_viscous_body(local_velocity, target_motion, safe_delta)
-	if _GelProfiles.v8_1_enabled():
+	if _GelProfiles.motion_truth_enabled():
 		_update_v8_1_responses(local_velocity, target_motion, safe_delta)
 		_update_v8_1_locomotion_state(speed)
 	else:
@@ -376,7 +403,7 @@ func _update_viscous_body(local_velocity: Vector3, target_motion: float, delta: 
 	var planar_velocity := Vector3(local_velocity.x, 0.0, local_velocity.z)
 	var target_lag := Vector3.ZERO
 	if planar_velocity.length() > _LIQUID_SPEED_FLOOR:
-		var lag_distance := 0.10 if _GelProfiles.v8_1_enabled() and family_id == &"A" and duty == &"relay" else _VISCOUS_LAG_DISTANCE
+		var lag_distance := 0.10 if _GelProfiles.motion_truth_enabled() and family_id == &"A" and duty == &"relay" else _VISCOUS_LAG_DISTANCE
 		target_lag = -planar_velocity.normalized() * lag_distance * target_motion
 	var spring_delta := minf(delta, 0.05)
 	var spring_acceleration := (
@@ -570,11 +597,11 @@ func liquid_flow_direction() -> Vector3:
 
 
 func liquid_body_lag() -> Vector3:
-	return _liquid_effective_lag if _GelProfiles.v8_1_enabled() else _viscous_body_lag
+	return _liquid_effective_lag if _GelProfiles.motion_truth_enabled() else _viscous_body_lag
 
 
 func liquid_body_squash() -> float:
-	return _liquid_effective_squash if _GelProfiles.v8_1_enabled() else _viscous_body_squash
+	return _liquid_effective_squash if _GelProfiles.motion_truth_enabled() else _viscous_body_squash
 
 
 func liquid_shell_material_count() -> int:
@@ -651,7 +678,7 @@ func _cache_liquid_materials() -> void:
 	_liquid_last_sent_contact_normal = Vector3(99.0, 99.0, 99.0)
 	if not _GelProfiles.v8_enabled():
 		return
-	if _GelProfiles.v8_1_enabled():
+	if _GelProfiles.motion_truth_enabled():
 		_configure_v8_1_visual_anchors()
 	_collect_liquid_materials(self)
 	_apply_liquid_runtime_uniforms(true)
@@ -683,9 +710,9 @@ func _append_liquid_material(material: Material, owner_mesh: MeshInstance3D) -> 
 			_liquid_materials.append(shader_material)
 		elif shader_path.ends_with(_GEL_SHELL_SHADER_SUFFIX):
 			_liquid_shell_materials.append(shader_material)
-		elif _GelProfiles.v8_1_enabled() and shader_path.ends_with(_GEL_EYE_SHADER_SUFFIX):
+		elif _GelProfiles.motion_truth_enabled() and shader_path.ends_with(_GEL_EYE_SHADER_SUFFIX):
 			_liquid_attachment_materials.append(shader_material)
-		if _GelProfiles.v8_1_enabled() and (
+		if _GelProfiles.motion_truth_enabled() and (
 			shader_path.ends_with(_WET_GEL_SHADER_SUFFIX)
 			or shader_path.ends_with(_GEL_SHELL_SHADER_SUFFIX)
 			or shader_path.ends_with(_GEL_EYE_SHADER_SUFFIX)
@@ -761,7 +788,7 @@ func _register_visual_anchor(anchor: Node3D, lag_weight: float, scale_weight: fl
 
 
 func _apply_visual_anchor_deformation() -> void:
-	if not _GelProfiles.v8_1_enabled():
+	if not _GelProfiles.motion_truth_enabled():
 		return
 	var turn_axis := Vector3(-_liquid_flow_direction.z, 0.0, _liquid_flow_direction.x)
 	if turn_axis.length_squared() > 0.000001:
@@ -785,8 +812,8 @@ func _apply_visual_anchor_deformation() -> void:
 
 
 func _apply_liquid_runtime_uniforms(force: bool = false) -> void:
-	var runtime_lag := _liquid_effective_lag if _GelProfiles.v8_1_enabled() else _viscous_body_lag
-	var runtime_squash := _liquid_effective_squash if _GelProfiles.v8_1_enabled() else _viscous_body_squash
+	var runtime_lag := _liquid_effective_lag if _GelProfiles.motion_truth_enabled() else _viscous_body_lag
+	var runtime_squash := _liquid_effective_squash if _GelProfiles.motion_truth_enabled() else _viscous_body_squash
 	if (
 		not force
 		and absf(_liquid_motion_mix - _liquid_last_sent_motion) < 0.001
@@ -824,13 +851,13 @@ func _apply_viscous_material_uniforms(material: ShaderMaterial) -> void:
 	material.set_shader_parameter(&"liquid_body_deform_strength", _VISCOUS_DEFORM_STRENGTH)
 	material.set_shader_parameter(
 		&"liquid_body_lag",
-		_liquid_effective_lag if _GelProfiles.v8_1_enabled() else _viscous_body_lag
+		_liquid_effective_lag if _GelProfiles.motion_truth_enabled() else _viscous_body_lag
 	)
 	material.set_shader_parameter(
 		&"liquid_body_squash",
-		_liquid_effective_squash if _GelProfiles.v8_1_enabled() else _viscous_body_squash
+		_liquid_effective_squash if _GelProfiles.motion_truth_enabled() else _viscous_body_squash
 	)
-	if _GelProfiles.v8_1_enabled():
+	if _GelProfiles.motion_truth_enabled():
 		material.set_shader_parameter(&"liquid_turn_shear", _liquid_turn_shear)
 		material.set_shader_parameter(&"liquid_contact_amount", _liquid_contact_amount)
 		material.set_shader_parameter(&"liquid_contact_normal", _liquid_contact_normal)
@@ -861,7 +888,7 @@ func transform_duty(new_duty: StringName) -> void:
 		new_duty = &"relay"
 	if new_duty == duty:
 		return
-	if _GelProfiles.v8_1_enabled():
+	if _GelProfiles.motion_truth_enabled():
 		if _terminal_animation:
 			return
 		if _animation_priority > _ANIM_DUTY and _animation_kind != _KIND_REST:
@@ -889,7 +916,7 @@ func transform_duty(new_duty: StringName) -> void:
 	else:
 		duty_animation = &"uproot"
 		uprooted.emit()
-	if _GelProfiles.v8_1_enabled():
+	if _GelProfiles.motion_truth_enabled():
 		_request_managed_animation(duty_animation, _ANIM_DUTY, _KIND_DUTY, 0.06)
 	else:
 		animation_player.play(duty_animation)
@@ -926,7 +953,7 @@ func request_combat_action(
 	visual_id: StringName,
 	cadence_seconds: float = 0.0
 ) -> bool:
-	if not _GelProfiles.v8_1_enabled() or _terminal_animation or request_id <= 0:
+	if not _GelProfiles.motion_truth_enabled() or _terminal_animation or request_id <= 0:
 		return false
 	if action_kind != _KIND_BASIC and action_kind != _KIND_ACTIVE:
 		return false
@@ -1030,7 +1057,7 @@ func _on_combat_release_marker() -> void:
 
 ## Reactive squash, ~0.3 s. Safe to spam; it always resolves back to rest.
 func play_hit() -> void:
-	if _GelProfiles.v8_1_enabled():
+	if _GelProfiles.motion_truth_enabled():
 		if _animation_kind == _KIND_ACTIVE and not bool(_combat_request.get("released", false)):
 			return
 		if _animation_kind == _KIND_BASIC:
@@ -1042,7 +1069,7 @@ func play_hit() -> void:
 
 ## Wind-up and release. The projectile itself is VfxLibrary's job.
 func play_attack() -> void:
-	if _GelProfiles.v8_1_enabled():
+	if _GelProfiles.motion_truth_enabled():
 		_request_managed_animation(&"attack", _ANIM_BASIC, _KIND_BASIC, 0.06)
 	else:
 		_play_once(&"attack")
@@ -1058,7 +1085,7 @@ func play_rest() -> void:
 ## Call this after swapping CoreMesh, since the squash pivot is measured from
 ## the mesh bounds.
 func rebuild_gel_anims() -> void:
-	if _GelProfiles.v8_1_enabled():
+	if _GelProfiles.motion_truth_enabled():
 		cancel_combat_action(&"animation_rebuild")
 		_animation_priority = _ANIM_REST
 		_animation_kind = _KIND_REST
@@ -1074,7 +1101,7 @@ func rebuild_gel_anims() -> void:
 	# advance crosses both. Explicit V5-V8 restores the scene's original mode.
 	animation_player.callback_mode_method = (
 		AnimationMixer.ANIMATION_CALLBACK_MODE_METHOD_IMMEDIATE
-		if _GelProfiles.v8_1_enabled()
+		if _GelProfiles.motion_truth_enabled()
 		else _method_callback_mode_before_v8_1
 	)
 	# Undo any static hover offset so the rest pose is read clean on a re-bake.
@@ -1091,6 +1118,7 @@ func rebuild_gel_anims() -> void:
 		# V8.1 cannot leave V8.1-only clips behind.
 		var generated_names := _GelAnim.NAMES.duplicate()
 		generated_names.append_array(_GelAnim.V8_1_NAMES)
+		generated_names.append_array(_GelAnim.V8_2_NAMES)
 		for generated_name in generated_names:
 			if existing.has_animation(generated_name):
 				existing.remove_animation(generated_name)
@@ -1104,7 +1132,7 @@ func rebuild_gel_anims() -> void:
 
 
 func _rest_anim() -> StringName:
-	if _GelProfiles.v8_1_enabled():
+	if _GelProfiles.motion_truth_enabled():
 		if _can_visually_locomote() and _liquid_locomotion_active:
 			if family_id == &"A" and duty == &"relay" and animation_player.has_animation(&"relay_glide"):
 				return &"relay_glide"
@@ -1118,13 +1146,13 @@ func _rest_anim() -> StringName:
 func _play_rest() -> void:
 	if animation_player == null:
 		return
-	if _GelProfiles.v8_1_enabled() and (
+	if _GelProfiles.motion_truth_enabled() and (
 		_terminal_animation or _animation_priority > _ANIM_REST
 	):
 		return
 	var rest := _rest_anim()
 	if animation_player.has_animation(rest):
-		if _GelProfiles.v8_1_enabled():
+		if _GelProfiles.motion_truth_enabled():
 			_animation_priority = _ANIM_REST
 			_animation_kind = _KIND_REST
 			_managed_animation = rest
@@ -1181,7 +1209,7 @@ func _play_once(anim_name: StringName) -> void:
 
 
 func _on_animation_finished(anim_name: StringName) -> void:
-	if not _GelProfiles.v8_1_enabled():
+	if not _GelProfiles.motion_truth_enabled():
 		if anim_name == &"idle" or anim_name == &"move":
 			return
 		_play_rest()
@@ -1193,6 +1221,11 @@ func _on_animation_finished(anim_name: StringName) -> void:
 	if anim_name != _managed_animation:
 		return
 	var finished_kind := _animation_kind
+	# Terminal clips are non-looping, but their final sample is the intended end
+	# state. Keep priority and ownership latched so no idle/duty/combat request can
+	# replace that pose after AnimationPlayer emits animation_finished.
+	if finished_kind == _KIND_TERMINAL:
+		return
 	if finished_kind == _KIND_BASIC or finished_kind == _KIND_ACTIVE:
 		if not _combat_request.is_empty() and not bool(_combat_request.get("released", false)):
 			push_warning(

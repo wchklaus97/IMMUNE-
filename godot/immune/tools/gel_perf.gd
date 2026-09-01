@@ -1,25 +1,37 @@
 extends Node3D
 
-## GPU cost check for the wet-gel material. Renders N copies of the T mesh filling
-## the frame and reports measured GPU time per frame, so the combat budget claim is
-## measured rather than asserted.
+## GPU cost check for the production wet-gel character. Renders N copies of the
+## selected authored runtime scene and reports measured render time per frame.
 ##
 ## Run (needs a real window, same as the shot harness):
 ##   godot --path <proj> --resolution 1280x720 res://tools/gel_perf.tscn -- \
-##     --count=10 [--frames=240] [--material=gel|standard|none]
+##     --count=10 [--frames=240] [--family=T] [--source=character|reference] \
+##     [--material=gel|standard]
 ##
-## `--material=standard` renders the same meshes with the old StandardMaterial3D
-## jelly look, and `none` leaves the imported GLB material, which together give the
-## comparison the gel number is only meaningful against.
+## `--source=character` is the default and includes the exact production body,
+## animation/runtime bridge, and duty kit. `reference` isolates its authored body.
+## Excluded Meshy/Tripo GLBs are never auto-selected: inspecting one requires both
+## `--source=legacy-glb` and an explicit whitelisted `--mesh=...`. `none` is valid
+## only in that diagnostic mode; production comparisons use gel or standard.
 
 const _Look := preload("res://characters/family_look.gd")
 const _Gel := preload("res://characters/gel/gel_look.gd")
 const _GelProfiles := preload("res://characters/gel/gel_profiles.gd")
 const _LightContract := preload("res://characters/gel/light_contract.gd")
 
-## Clean mesh first, same reasoning as tools/gel_preview.gd: a published cost number
-## should not have been measured on a mesh with holes torn through the eyes.
-const MESH_CANDIDATES: Dictionary = {
+const FAMILIES: PackedStringArray = ["T", "B", "M", "N", "A", "D"]
+const VALID_SOURCES: PackedStringArray = ["character", "reference", "legacy-glb"]
+const REFERENCE_SCENES := {
+	"T": "res://characters/base_t/reference_body.tscn",
+	"B": "res://characters/base_b/reference_body.tscn",
+	"M": "res://characters/base_m/authored_body.tscn",
+	"N": "res://characters/base_n/reference_body.tscn",
+	"A": "res://characters/base_a/reference_body.tscn",
+	"D": "res://characters/base_d/reference_body.tscn",
+}
+## These excluded assets remain available only as explicitly named diagnostics.
+## There is deliberately no first-existing-candidate fallback.
+const LEGACY_GLB_SCENES: Dictionary = {
 	"T": [
 		"res://characters/base_t/CHAR-BASE-T-tripo-5k.glb",
 		"res://characters/base_t/CHAR-BASE-T-fix.glb",
@@ -37,9 +49,11 @@ const MESH_CANDIDATES: Dictionary = {
 const WARMUP_FRAMES := 60
 
 const ALLOWED_ARGS: Array[String] = [
-	"count", "frames", "material", "family", "sync", "out", "set", "save-path",
+	"count", "frames", "material", "family", "source", "mesh", "sync", "out",
+	"set", "save-path",
 ]
 const VALID_MATERIALS: Array[String] = ["gel", "standard", "none"]
+const EYE_SHADER_PATH := "res://characters/gel/gel_eye.gdshader"
 const MEMBRANE_SET_ALIASES: Dictionary = {
 	"membrane_face_alpha": "face_alpha",
 	"membrane_edge_alpha": "edge_alpha",
@@ -50,14 +64,34 @@ const MEMBRANE_SET_ALIASES: Dictionary = {
 }
 const QA_STARTUP_FAILURE_EXIT_CODE := 74
 const REPORT_TRANSACTION_ATTEMPTS := 32
+const RUNTIME_MANAGED_CONTROLS: PackedStringArray = [
+	"liquid_flow_motion_mix",
+	"liquid_flow_direction",
+	"liquid_body_deform_strength",
+	"liquid_body_lag",
+	"liquid_body_squash",
+	"liquid_turn_shear",
+	"liquid_contact_amount",
+	"liquid_contact_normal",
+]
 
 var _count := 10
 var _frames := 240
 var _mode := "gel"
 var _family := "T"
+var _source := "character"
+var _subject_path := ""
+var _mesh_path := ""
 var _force_sync := false
 var _out_path := ""
 var _opts := {}
+var _material_stats := {
+	"visible_mesh_instances": 0,
+	"wet_materials": 0,
+	"shell_materials": 0,
+	"eye_materials": 0,
+	"standard_replacements": 0,
+}
 
 
 func _ready() -> void:
@@ -109,8 +143,16 @@ func _configure(args: Dictionary) -> bool:
 		push_error("gel_perf.gd: --material must be gel, standard, or none")
 		return false
 	_family = String(args.get("family", "T")).strip_edges().to_upper()
-	if not MESH_CANDIDATES.has(_family):
+	if _family not in FAMILIES:
 		push_error("gel_perf.gd: unsupported family %s" % _family)
+		return false
+	if not _configure_subject_source(args):
+		return false
+	if _mode == "none" and _source != "legacy-glb":
+		push_error(
+			"gel_perf.gd: --material=none is legacy diagnostic-only; "
+			+ "production sources require gel or standard"
+		)
 		return false
 	var sync_value := String(args.get("sync", "false")).strip_edges().to_lower()
 	if sync_value not in ["true", "false"]:
@@ -158,6 +200,14 @@ func _configure(args: Dictionary) -> bool:
 		if not bool(parsed_value.get("ok", false)):
 			return false
 		_opts[key] = parsed_value["value"]
+	if _source == "character":
+		for control in RUNTIME_MANAGED_CONTROLS:
+			if _opts.has(control):
+				push_error(
+					"gel_perf.gd: --set control '%s' is runtime-managed in " % control
+					+ "--source=character; use --source=reference for a static ablation"
+				)
+				return false
 	var effective_options := _GelProfiles.options(_family, _opts)
 	if (
 		float(effective_options.get("microbubble_radius_max", 0.0))
@@ -176,6 +226,45 @@ func _configure(args: Dictionary) -> bool:
 					% alias
 				)
 				return false
+	return true
+
+
+func _configure_subject_source(args: Dictionary) -> bool:
+	_source = String(args.get("source", "character")).strip_edges().to_lower()
+	if _source not in VALID_SOURCES:
+		push_error("gel_perf.gd: --source must be character, reference, or legacy-glb")
+		return false
+	_mesh_path = String(args.get("mesh", "")).strip_edges()
+	if _source == "legacy-glb":
+		if _mesh_path.is_empty():
+			push_error(
+				"gel_perf.gd: --source=legacy-glb requires "
+				+ "--mesh=<known excluded GLB>"
+			)
+			return false
+		var allowed_legacy: Array = LEGACY_GLB_SCENES.get(_family, [])
+		if _mesh_path not in allowed_legacy:
+			push_error(
+				"gel_perf.gd: --mesh is not an approved %s legacy diagnostic GLB"
+				% _family
+			)
+			return false
+		_subject_path = _mesh_path
+	else:
+		if args.has("mesh"):
+			push_error(
+				"gel_perf.gd: --mesh is valid only with --source=legacy-glb; "
+				+ "production scene identity is family-locked"
+			)
+			return false
+		_subject_path = (
+			String(_Look.SCENE_PATH[_family])
+			if _source == "character"
+			else String(REFERENCE_SCENES[_family])
+		)
+	if not ResourceLoader.exists(_subject_path):
+		push_error("gel_perf.gd: measured subject does not exist: %s" % _subject_path)
+		return false
 	return true
 
 
@@ -318,17 +407,9 @@ func _build_stage() -> void:
 ## Grid laid out to roughly fill the frame: the material is fragment-bound, so a
 ## count that covers little screen area would flatter it.
 func _spawn() -> bool:
-	var path := ""
-	for candidate in MESH_CANDIDATES[_family]:
-		if ResourceLoader.exists(candidate):
-			path = candidate
-			break
-	if path.is_empty():
-		push_error("gel_perf.gd: no mesh found")
-		return false
-	var packed := load(path) as PackedScene
+	var packed := load(_subject_path) as PackedScene
 	if packed == null:
-		push_error("gel_perf.gd: cannot load %s" % path)
+		push_error("gel_perf.gd: cannot load %s" % _subject_path)
 		return false
 
 	var cols := int(ceil(sqrt(float(_count))))
@@ -337,8 +418,9 @@ func _spawn() -> bool:
 	for i in _count:
 		var node := packed.instantiate() as Node3D
 		if node == null:
-			push_error("gel_perf.gd: %s is not a Node3D scene" % path)
+			push_error("gel_perf.gd: %s is not a Node3D scene" % _subject_path)
 			return false
+		node.name = "MeasuredSubject%03d" % i
 		node.position = Vector3(
 			(float(i % cols) - float(cols - 1) * 0.5) * step,
 			(float(i / cols) - float(rows - 1) * 0.5) * step,
@@ -346,14 +428,39 @@ func _spawn() -> bool:
 		add_child(node)
 		match _mode:
 			"gel":
-				var materials := _Look.apply_gel(node, _family, _opts)
-				if not _applied_options_match(materials):
+				if _source == "legacy-glb":
+					var materials := _Look.apply_gel(node, _family, _opts)
+					if not _legacy_options_match(materials):
+						return false
+					_record_material_stats(
+						node,
+						materials,
+						_shader_materials(node, _Gel.MEMBRANE_SHADER_PATH),
+						[],
+						0
+					)
+				elif not _prepare_production_gel(node):
 					return false
 			"standard":
-				for mi in _mesh_instances(node):
-					mi.material_override = _Look.jelly_material(_family)
+				if _source == "legacy-glb":
+					var legacy_replacements := _replace_legacy_with_standard(node)
+					_record_material_stats(node, [], [], [], legacy_replacements)
+				else:
+					var wet := _shader_materials(node, _Gel.SHADER_PATH)
+					var shells := _shader_materials(node, _Gel.MEMBRANE_SHADER_PATH)
+					var eyes := _shader_materials(node, EYE_SHADER_PATH)
+					if wet.is_empty():
+						push_error(
+							"gel_perf.gd: production subject exposed no wet-gel materials"
+						)
+						return false
+					var replacements := _replace_production_gel_with_standard(node)
+					if replacements == 0:
+						push_error("gel_perf.gd: standard control replaced no gel materials")
+						return false
+					_record_material_stats(node, wet, shells, eyes, replacements)
 			_:
-				pass
+				_record_material_stats(node, [], [], [], 0)
 
 	var camera := Camera3D.new()
 	camera.current = true
@@ -363,9 +470,159 @@ func _spawn() -> bool:
 	return true
 
 
-func _applied_options_match(materials: Array[ShaderMaterial]) -> bool:
+func _prepare_production_gel(node: Node) -> bool:
+	var wet := _shader_materials(node, _Gel.SHADER_PATH)
+	var shells := _shader_materials(node, _Gel.MEMBRANE_SHADER_PATH)
+	var eyes := _shader_materials(node, EYE_SHADER_PATH)
+	if wet.is_empty():
+		push_error("gel_perf.gd: production subject exposed no wet-gel materials")
+		return false
+	if not _apply_production_options(node, wet, shells):
+		return false
+	_record_material_stats(node, wet, shells, eyes, 0)
+	return true
+
+
+func _apply_production_options(
+	node: Node,
+	wet: Array[ShaderMaterial],
+	shells: Array[ShaderMaterial]
+) -> bool:
+	var shell_meshes := _mesh_instances_using_shader(node, _Gel.MEMBRANE_SHADER_PATH)
+	if _opts.has("membrane_enabled"):
+		var enabled := bool(_opts["membrane_enabled"])
+		if enabled:
+			if not _production_membrane_enabled(wet, shell_meshes):
+				push_error(
+					"gel_perf.gd: membrane_enabled=true requested, but the production "
+					+ "subject has no membrane"
+				)
+				return false
+		else:
+			_set_production_membrane_enabled(wet, shell_meshes, false)
+
+	for raw_key in _opts:
+		var key := String(raw_key)
+		if key == "membrane_enabled":
+			continue
+		var targets: Array[ShaderMaterial] = wet
+		var shader_name := String(key)
+		if MEMBRANE_SET_ALIASES.has(key):
+			targets = shells
+			shader_name = String(MEMBRANE_SET_ALIASES[key])
+		if targets.is_empty():
+			push_error("gel_perf.gd: --set control '%s' has no production target" % key)
+			return false
+		var applied := 0
+		for material in targets:
+			if material.get_shader_parameter(shader_name) == null:
+				continue
+			material.set_shader_parameter(shader_name, _opts[raw_key])
+			if not _option_values_equal(
+				material.get_shader_parameter(shader_name), _opts[raw_key]
+			):
+				push_error(
+					"gel_perf.gd: production --set control '%s' did not survive application"
+					% key
+				)
+				return false
+			applied += 1
+		if applied == 0:
+			push_error(
+				"gel_perf.gd: --set control '%s' is not exposed by production materials"
+				% key
+			)
+			return false
+	if _opts.has("membrane_enabled"):
+		if (
+			_production_membrane_enabled(wet, shell_meshes)
+			!= bool(_opts["membrane_enabled"])
+		):
+			push_error("gel_perf.gd: applied production membrane_enabled does not match request")
+			return false
+	return true
+
+
+func _set_production_membrane_enabled(
+	wet: Array[ShaderMaterial],
+	shell_meshes: Array[MeshInstance3D],
+	enabled: bool
+) -> void:
+	for mesh in shell_meshes:
+		mesh.visible = enabled
+	if enabled:
+		return
+	for material in wet:
+		if _material_uses_shader(material.next_pass, _Gel.MEMBRANE_SHADER_PATH):
+			material.next_pass = null
+
+
+func _production_membrane_enabled(
+	wet: Array[ShaderMaterial],
+	shell_meshes: Array[MeshInstance3D]
+) -> bool:
+	for mesh in shell_meshes:
+		if mesh.is_visible_in_tree():
+			return true
+	for material in wet:
+		if _material_uses_shader(material.next_pass, _Gel.MEMBRANE_SHADER_PATH):
+			return true
+	return false
+
+
+func _replace_legacy_with_standard(node: Node) -> int:
+	var replacements := 0
+	for mesh in _mesh_instances(node):
+		if mesh.mesh == null:
+			continue
+		mesh.material_override = _Look.jelly_material(_family)
+		replacements += 1
+	return replacements
+
+
+func _replace_production_gel_with_standard(node: Node) -> int:
+	var replacements := 0
+	for mesh in _mesh_instances(node):
+		var override_replaced := false
+		if _material_is_production_gel(mesh.material_override):
+			mesh.material_override = _Look.jelly_material(_family)
+			replacements += 1
+			override_replaced = true
+		if _material_is_production_gel(mesh.material_overlay):
+			mesh.material_overlay = _Look.jelly_material(_family)
+			replacements += 1
+		if override_replaced or mesh.mesh == null:
+			continue
+		for surface in mesh.mesh.get_surface_count():
+			if _material_is_production_gel(mesh.get_active_material(surface)):
+				mesh.set_surface_override_material(surface, _Look.jelly_material(_family))
+				replacements += 1
+	return replacements
+
+
+func _record_material_stats(
+	node: Node,
+	wet: Array,
+	shells: Array,
+	eyes: Array,
+	standard_replacements: int
+) -> void:
+	_material_stats["wet_materials"] = int(_material_stats["wet_materials"]) + wet.size()
+	_material_stats["shell_materials"] = int(_material_stats["shell_materials"]) + shells.size()
+	_material_stats["eye_materials"] = int(_material_stats["eye_materials"]) + eyes.size()
+	_material_stats["standard_replacements"] = (
+		int(_material_stats["standard_replacements"]) + standard_replacements
+	)
+	for mesh in _mesh_instances(node):
+		if mesh.mesh != null and mesh.is_visible_in_tree():
+			_material_stats["visible_mesh_instances"] = (
+				int(_material_stats["visible_mesh_instances"]) + 1
+			)
+
+
+func _legacy_options_match(materials: Array[ShaderMaterial]) -> bool:
 	if materials.is_empty():
-		push_error("gel_perf.gd: gel application produced no measurable materials")
+		push_error("gel_perf.gd: legacy gel application produced no measurable materials")
 		return false
 	for material in materials:
 		for key in _opts:
@@ -396,6 +653,77 @@ func _applied_options_match(materials: Array[ShaderMaterial]) -> bool:
 	return true
 
 
+func _option_values_equal(actual: Variant, expected: Variant) -> bool:
+	if expected is bool:
+		return actual is bool and bool(actual) == bool(expected)
+	return (
+		typeof(actual) in [TYPE_INT, TYPE_FLOAT]
+		and typeof(expected) in [TYPE_INT, TYPE_FLOAT]
+		and is_equal_approx(float(actual), float(expected))
+	)
+
+
+func _shader_materials(root: Node, shader_path: String) -> Array[ShaderMaterial]:
+	var out: Array[ShaderMaterial] = []
+	var seen := {}
+	for mesh in _mesh_instances(root):
+		_append_shader_material(mesh.material_override, shader_path, out, seen)
+		_append_shader_material(mesh.material_overlay, shader_path, out, seen)
+		if mesh.mesh == null:
+			continue
+		for surface in mesh.mesh.get_surface_count():
+			_append_shader_material(mesh.get_active_material(surface), shader_path, out, seen)
+	return out
+
+
+func _append_shader_material(
+	material: Material,
+	shader_path: String,
+	out: Array[ShaderMaterial],
+	seen: Dictionary
+) -> void:
+	if material == null:
+		return
+	var instance_id := material.get_instance_id()
+	if seen.has(instance_id):
+		return
+	seen[instance_id] = true
+	if _material_uses_shader(material, shader_path):
+		out.append(material as ShaderMaterial)
+	_append_shader_material(material.next_pass, shader_path, out, seen)
+
+
+func _mesh_instances_using_shader(root: Node, shader_path: String) -> Array[MeshInstance3D]:
+	var out: Array[MeshInstance3D] = []
+	for mesh in _mesh_instances(root):
+		var direct := _material_uses_shader(mesh.material_override, shader_path)
+		direct = direct or _material_uses_shader(mesh.material_overlay, shader_path)
+		if not direct and mesh.mesh != null:
+			for surface in mesh.mesh.get_surface_count():
+				if _material_uses_shader(mesh.get_active_material(surface), shader_path):
+					direct = true
+					break
+		if direct:
+			out.append(mesh)
+	return out
+
+
+func _material_is_production_gel(material: Material) -> bool:
+	return (
+		_material_uses_shader(material, _Gel.SHADER_PATH)
+		or _material_uses_shader(material, _Gel.MEMBRANE_SHADER_PATH)
+		or _material_uses_shader(material, EYE_SHADER_PATH)
+	)
+
+
+func _material_uses_shader(material: Material, shader_path: String) -> bool:
+	return (
+		material is ShaderMaterial
+		and (material as ShaderMaterial).shader != null
+		and (material as ShaderMaterial).shader.resource_path == shader_path
+	)
+
+
 func _measure() -> bool:
 	var vp := get_viewport().get_viewport_rid()
 	RenderingServer.viewport_set_measure_render_time(vp, true)
@@ -420,14 +748,19 @@ func _measure() -> bool:
 	var wall_summary := _summary(wall_samples)
 	var gpu_timer_available := float(gpu_summary.get("max_ms", 0.0)) > 0.0
 	var report := {
-		"schema_version": 1,
+		"schema_version": 2,
 		"godot_version": String(Engine.get_version_info().get("string", "unknown")),
 		"platform": OS.get_name(),
 		"display_server": DisplayServer.get_name(),
 		"renderer": RenderingServer.get_current_rendering_driver_name(),
 		"family": _family,
+		"source": _source,
+		"subject_scene": _subject_path,
+		"production_authored": _source != "legacy-glb",
+		"legacy_diagnostic": _source == "legacy-glb",
 		"material": _mode,
 		"count": _count,
+		"material_stats": _material_stats.duplicate(true),
 		"viewport": {
 			"width": int(get_viewport().get_visible_rect().size.x),
 			"height": int(get_viewport().get_visible_rect().size.y),
@@ -447,8 +780,10 @@ func _measure() -> bool:
 		"wall": wall_summary,
 		"options": _opts,
 	}
-	print("GEL_PERF family=%s mode=%s count=%d viewport=%s sync=%s gpu=%s cpu=%s wall=%s opts=%s" % [
+	print("GEL_PERF family=%s source=%s scene=%s mode=%s count=%d viewport=%s sync=%s gpu=%s cpu=%s wall=%s opts=%s" % [
 		_family,
+		_source,
+		_subject_path,
 		_mode,
 		_count,
 		str(get_viewport().get_visible_rect().size),
@@ -811,24 +1146,66 @@ func _verify_report_file(path: String, expected_text: String = "") -> bool:
 func _report_schema_error(report: Dictionary) -> String:
 	var required_fields: PackedStringArray = [
 		"schema_version", "godot_version", "platform", "display_server", "renderer",
-		"family", "material", "count", "viewport", "frames", "warmup_frames",
+		"family", "source", "subject_scene", "production_authored",
+		"legacy_diagnostic", "material", "count", "material_stats", "viewport",
+		"frames", "warmup_frames",
 		"sample_count", "sync_mode", "gpu_timer_available", "gpu_timer_note",
 		"gpu", "cpu", "wall", "options",
 	]
 	for field: String in required_fields:
 		if not report.has(field):
 			return "missing required gel report field %s" % field
-	if not _json_integer_equals(report["schema_version"], 1):
-		return "schema_version must equal 1"
+	if not _json_integer_equals(report["schema_version"], 2):
+		return "schema_version must equal 2"
 	for field: String in ["godot_version", "platform", "display_server", "renderer"]:
 		if report[field] is not String or String(report[field]).is_empty():
 			return "%s must be a non-empty string" % field
-	if report["family"] is not String or not MESH_CANDIDATES.has(String(report["family"])):
-		return "family must name a supported measured mesh"
+	if report["family"] is not String or String(report["family"]) not in FAMILIES:
+		return "family must name a supported production family"
+	var family := String(report["family"])
+	if report["source"] is not String or String(report["source"]) not in VALID_SOURCES:
+		return "source must be character, reference, or legacy-glb"
+	var source := String(report["source"])
+	if report["subject_scene"] is not String or String(report["subject_scene"]).is_empty():
+		return "subject_scene must be a non-empty string"
+	var subject_scene := String(report["subject_scene"])
+	if source == "character" and subject_scene != String(_Look.SCENE_PATH[family]):
+		return "character source must name the family-locked production scene"
+	if source == "reference" and subject_scene != String(REFERENCE_SCENES[family]):
+		return "reference source must name the family-locked authored body"
+	if source == "legacy-glb":
+		var allowed_legacy: Array = LEGACY_GLB_SCENES.get(family, [])
+		if subject_scene not in allowed_legacy:
+			return "legacy source must name an explicitly approved diagnostic GLB"
+	if report["production_authored"] is not bool or report["legacy_diagnostic"] is not bool:
+		return "production/legacy identity flags must be booleans"
+	if bool(report["production_authored"]) != (source != "legacy-glb"):
+		return "production_authored is inconsistent with source"
+	if bool(report["legacy_diagnostic"]) != (source == "legacy-glb"):
+		return "legacy_diagnostic is inconsistent with source"
 	if report["material"] is not String or String(report["material"]) not in VALID_MATERIALS:
 		return "material must be gel, standard, or none"
+	if String(report["material"]) == "none" and source != "legacy-glb":
+		return "material none is valid only for a legacy diagnostic"
 	if not _json_integer_in_range(report["count"], 1, 200):
 		return "count must be a bounded integer"
+	if report["material_stats"] is not Dictionary:
+		return "material_stats must be a dictionary"
+	var material_stats := report["material_stats"] as Dictionary
+	for field: String in [
+		"visible_mesh_instances", "wet_materials", "shell_materials",
+		"eye_materials", "standard_replacements",
+	]:
+		if not material_stats.has(field):
+			return "material_stats is missing %s" % field
+		if not _json_integer_in_range(material_stats[field], 0, 10000000):
+			return "material_stats %s must be a non-negative bounded integer" % field
+	if int(material_stats["visible_mesh_instances"]) == 0:
+		return "measured subject must expose at least one visible mesh"
+	if String(report["material"]) == "gel" and int(material_stats["wet_materials"]) == 0:
+		return "gel measurement must expose at least one wet-gel material"
+	if String(report["material"]) == "standard" and int(material_stats["standard_replacements"]) == 0:
+		return "standard comparison must replace at least one measured material"
 	if not _json_integer_in_range(report["frames"], 30, 4000):
 		return "frames must be a bounded integer"
 	var frame_count := int(report["frames"])

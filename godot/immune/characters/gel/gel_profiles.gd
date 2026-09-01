@@ -340,6 +340,132 @@ const V8_FAMILY: Dictionary = {
 	"D": {&"liquid_flow_phase": 4.61},
 }
 
+# V8.2 is an additive optical-volume slice over the exact V8.1 foundation. It
+# reuses one existing eight-cell bubble field and the existing analytic slime;
+# no screen read, raymarch, microbubble field, or extra transparent material is
+# introduced. T/B start strongest because they are the reference vertical slice,
+# while every family receives a bounded core and a distinct phase/density tune.
+const V8_2_LIVING_VOLUME: Dictionary = {
+	# Calm the old suspended-detail layer so the broad moving mass, rather than a
+	# field of bright fragments, owns the interior read. Surface height stays on.
+	&"authored_fleck_strength": 0.10,
+	&"authored_fleck_budget": 0.035,
+	&"authored_inclusion_strength": 0.16,
+	&"authored_inclusion_budget": 0.045,
+	&"authored_caustic_strength": 0.12,
+	&"authored_caustic_budget": 0.025,
+	&"authored_fiber_strength": 0.18,
+	&"authored_fiber_budget": 0.045,
+	&"liquid_core_color_mix": 0.42,
+	&"liquid_core_roughness_mix": 0.40,
+	&"liquid_bubble_advection": 0.82,
+	&"liquid_flow_emission": 0.30,
+	&"liquid_flow_budget": 0.052,
+	&"bubble_enabled": true,
+	# A few broad pockets remain trackable through motion; the former denser field
+	# read as noisy texture and competed with the reference's smooth optical core.
+	&"bubble_scale": 4.8,
+	&"bubble_density": 0.12,
+	&"bubble_radius_min": 0.15,
+	&"bubble_radius_max": 0.30,
+	&"bubble_jitter": 0.14,
+	&"bubble_softness": 0.12,
+	&"bubble_depth": 0.0004,
+	&"bubble_thinness": 0.06,
+	&"bubble_shell_shadow": 0.012,
+	&"bubble_emission": 0.0,
+	&"bubble_shell_emission": 0.012,
+	# One macro field is the V8.2 inclusion budget. Keeping the second field off
+	# avoids another eight hashes per fragment and distance-scale fizz.
+	&"microbubble_enabled": false,
+	&"microbubble_depth": 0.0,
+	&"microbubble_thinness": 0.0,
+	&"microbubble_shell_shadow": 0.0,
+	&"microbubble_emission": 0.0,
+	&"microbubble_shell_emission": 0.0,
+	# Thin face alpha exposes the moving core; a narrow Fresnel edge and the
+	# existing bounded studio cards retain the distinct wet outer membrane.
+	&"membrane_face_alpha": 0.0028,
+	&"membrane_edge_alpha": 0.58,
+	&"membrane_edge_power": 2.20,
+	&"membrane_roughness": 0.014,
+	&"membrane_rim_emission": 0.36,
+	&"membrane_thickness": 0.020,
+}
+
+const V8_2_FAMILY: Dictionary = {
+	"T": {
+		&"liquid_flow_phase": 0.43,
+		&"liquid_core_color_mix": 0.70,
+		&"liquid_core_roughness_mix": 0.55,
+		&"liquid_bubble_advection": 0.90,
+		&"bubble_scale": 4.8,
+		&"bubble_density": 0.14,
+		&"bubble_radius_min": 0.15,
+		&"bubble_radius_max": 0.32,
+		&"bubble_depth": 0.0004,
+		&"bubble_thinness": 0.07,
+		&"bubble_shell_shadow": 0.012,
+		&"bubble_shell_emission": 0.012,
+		&"membrane_face_alpha": 0.0018,
+		&"membrane_edge_alpha": 0.62,
+		&"membrane_edge_power": 2.30,
+		&"membrane_roughness": 0.012,
+		&"membrane_thickness": 0.021,
+	},
+	"B": {
+		&"liquid_flow_phase": 1.31,
+		&"liquid_core_color_mix": 0.78,
+		&"liquid_core_roughness_mix": 0.60,
+		&"liquid_bubble_advection": 0.92,
+		&"bubble_scale": 4.6,
+		&"bubble_density": 0.12,
+		&"bubble_radius_min": 0.16,
+		&"bubble_radius_max": 0.34,
+		&"bubble_depth": 0.0004,
+		&"bubble_thinness": 0.06,
+		&"bubble_shell_shadow": 0.012,
+		&"bubble_shell_emission": 0.012,
+		&"membrane_face_alpha": 0.0018,
+		&"membrane_edge_alpha": 0.61,
+		&"membrane_edge_power": 2.25,
+		&"membrane_roughness": 0.013,
+		&"membrane_thickness": 0.021,
+	},
+	"M": {
+		&"liquid_flow_phase": 2.17,
+		&"liquid_core_color_mix": 0.50,
+		&"liquid_core_roughness_mix": 0.44,
+		&"liquid_bubble_advection": 0.80,
+		&"bubble_scale": 4.8,
+		&"bubble_density": 0.11,
+	},
+	"N": {
+		&"liquid_flow_phase": 3.07,
+		&"liquid_core_color_mix": 0.42,
+		&"liquid_core_roughness_mix": 0.38,
+		&"liquid_bubble_advection": 0.76,
+		&"bubble_scale": 5.2,
+		&"bubble_density": 0.10,
+	},
+	"A": {
+		&"liquid_flow_phase": 3.91,
+		&"liquid_core_color_mix": 0.46,
+		&"liquid_core_roughness_mix": 0.40,
+		&"liquid_bubble_advection": 0.78,
+		&"bubble_scale": 5.0,
+		&"bubble_density": 0.11,
+	},
+	"D": {
+		&"liquid_flow_phase": 4.83,
+		&"liquid_core_color_mix": 0.52,
+		&"liquid_core_roughness_mix": 0.45,
+		&"liquid_bubble_advection": 0.82,
+		&"bubble_scale": 4.7,
+		&"bubble_density": 0.13,
+	},
+}
+
 # Historical Fizzy/V5 base values retained as the reversible material control.
 # V6 overrides its production-facing response after this dictionary is merged;
 # legacy look-dev callers can still request these values directly.
@@ -503,6 +629,12 @@ static func options(family: String, overrides: Dictionary = {}) -> Dictionary:
 		var v8_family_values: Dictionary = V8_FAMILY.get(family, {})
 		for key in v8_family_values:
 			merged[key] = v8_family_values[key]
+	if v8_2_enabled():
+		for key in V8_2_LIVING_VOLUME:
+			merged[key] = V8_2_LIVING_VOLUME[key]
+		var v8_2_family_values: Dictionary = V8_2_FAMILY.get(family, {})
+		for key in v8_2_family_values:
+			merged[key] = v8_2_family_values[key]
 	for key in overrides:
 		merged[key] = overrides[key]
 	return merged
@@ -530,23 +662,29 @@ static func with_v5_surface(values: Dictionary, family: String = "") -> Dictiona
 		var v8_family_values: Dictionary = V8_FAMILY.get(family, {})
 		for key in v8_family_values:
 			merged[key] = v8_family_values[key]
+	if v8_2_enabled():
+		for key in V8_2_LIVING_VOLUME:
+			merged[key] = V8_2_LIVING_VOLUME[key]
+		var v8_2_family_values: Dictionary = V8_2_FAMILY.get(family, {})
+		for key in v8_2_family_values:
+			merged[key] = v8_2_family_values[key]
 	return merged
 
 
 static func selected_look() -> String:
 	var override := OS.get_environment("IMMUNE_GEL_LOOK").strip_edges().to_lower()
-	if override in ["v5", "v6", "v7", "v8", "v8_1"]:
+	if override in ["v5", "v6", "v7", "v8", "v8_1", "v8_2"]:
 		return override
 	var configured := str(ProjectSettings.get_setting("immune/visual/gel_look", "v6")).strip_edges().to_lower()
-	return configured if configured in ["v5", "v6", "v7", "v8", "v8_1"] else "v6"
+	return configured if configured in ["v5", "v6", "v7", "v8", "v8_1", "v8_2"] else "v6"
 
 
 static func banner_match_enabled() -> bool:
-	return selected_look() in ["v6", "v7", "v8", "v8_1"]
+	return selected_look() in ["v6", "v7", "v8", "v8_1", "v8_2"]
 
 
 static func gummy_glass_enabled() -> bool:
-	return selected_look() in ["v7", "v8", "v8_1"]
+	return selected_look() in ["v7", "v8", "v8_1", "v8_2"]
 
 
 static func v7_enabled() -> bool:
@@ -554,7 +692,7 @@ static func v7_enabled() -> bool:
 
 
 static func v8_enabled() -> bool:
-	return selected_look() in ["v8", "v8_1"]
+	return selected_look() in ["v8", "v8_1", "v8_2"]
 
 
 ## V8.1 inherits the accepted V8 material and clip foundation, then enables the
@@ -562,6 +700,16 @@ static func v8_enabled() -> bool:
 ## this selector separate makes IMMUNE_GEL_LOOK=v8 an exact rollback.
 static func v8_1_enabled() -> bool:
 	return selected_look() == "v8_1"
+
+
+static func v8_2_enabled() -> bool:
+	return selected_look() == "v8_2"
+
+
+## V8.2 inherits V8.1's shared-coordinate attachment and release hardening while
+## v8_1_enabled() remains an exact rollback selector for material/smoke checks.
+static func motion_truth_enabled() -> bool:
+	return selected_look() in ["v8_1", "v8_2"]
 
 
 static func profile_name(family: String) -> StringName:

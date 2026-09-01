@@ -158,18 +158,34 @@ func _ready() -> void:
 	if gel == null:
 		push_error("authored_jelly_body.gd: failed to create %s gel material" % family_id)
 		return
-	var shell := _make_shell(profile[&"shell_color"])
+	var shell := _make_shell(profile[&"shell_color"], options)
 	_build_body(gel, shell)
 	_build_face(gel, profile[&"cavity_color"])
 	print("AUTHORED_JELLY_BODY family=%s profile=fizzy-zero-credit" % family_id)
 
 
-func _make_shell(shell_color: Color) -> ShaderMaterial:
+func _make_shell(shell_color: Color, options: Dictionary) -> ShaderMaterial:
 	var shell := ShaderMaterial.new()
 	shell.shader = _SHELL_SHADER
 	_Gel.apply_v5_shell_bounds(shell)
 	shell.set_shader_parameter(&"shell_color", shell_color)
-	if _GelProfiles.gummy_glass_enabled():
+	if _GelProfiles.v8_2_enabled():
+		# V8.2 keeps the production topology at one explicit Body membrane. These
+		# family/profile values sharpen the dielectric edge while lowering face
+		# alpha enough for the moving optical core to remain legible underneath.
+		shell.set_shader_parameter(
+			&"face_alpha", options.get(&"membrane_face_alpha", 0.0028))
+		shell.set_shader_parameter(
+			&"edge_alpha", options.get(&"membrane_edge_alpha", 0.58))
+		shell.set_shader_parameter(
+			&"edge_power", options.get(&"membrane_edge_power", 2.20))
+		shell.set_shader_parameter(
+			&"shell_roughness", options.get(&"membrane_roughness", 0.014))
+		shell.set_shader_parameter(
+			&"rim_emission", options.get(&"membrane_rim_emission", 0.36))
+		shell.set_shader_parameter(
+			&"shell_thickness", options.get(&"membrane_thickness", 0.020))
+	elif _GelProfiles.gummy_glass_enabled():
 		shell.set_shader_parameter(&"face_alpha", 0.003)
 		shell.set_shader_parameter(&"edge_alpha", 0.55)
 		shell.set_shader_parameter(&"edge_power", 1.95)
@@ -281,7 +297,7 @@ func _build_face(gel: Material, cavity_color: Color) -> void:
 		eye_x = 0.20 if family_id != "M" else 0.215
 		eye_y = 0.61 if family_id == "N" else (0.68 if family_id == "M" else (0.63 if family_id == "A" else 0.60))
 		eye_z = 0.475 if family_id == "N" else (0.515 if family_id == "M" else (0.490 if family_id == "A" else 0.480))
-	if _GelProfiles.v8_1_enabled():
+	if _GelProfiles.motion_truth_enabled():
 		# Body-space origin/scale are per material instance. Keep one instance per
 		# eye so the right eye can never inherit the left eye's deformation frame.
 		_add_sphere(
@@ -300,8 +316,8 @@ func _build_face(gel: Material, cavity_color: Color) -> void:
 		_add_face_ring("EyeRimR", Vector3(eye_x, eye_y, eye_z + 0.047), 0.073, 0.087, gel)
 
 	var cavity: Material
-	if _GelProfiles.v8_1_enabled():
-		# V8.1 treats the mouth interior as part of the same viscous visual mass.
+	if _GelProfiles.motion_truth_enabled():
+		# V8.1+ treats the mouth interior as part of the same viscous visual mass.
 		# The shared eye shader keeps it deformable without adding a new material
 		# path; zero studio strength preserves the authored dark cavity read.
 		var wet_cavity := ShaderMaterial.new()

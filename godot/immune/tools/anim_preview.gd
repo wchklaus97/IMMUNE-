@@ -7,15 +7,17 @@ extends Node3D
 ## Run through the shared harness:
 ##   godot --path <proj> --resolution 1024x1024 res://tools/shot.tscn -- \
 ##     --scene=res://tools/anim_preview.tscn --out=<abs dir> --tag=t-anim \
-##     --anim=idle --frames=12 [--family=T] [--body=mesh|blockout] [--ground=0]
+##     --anim=idle --frames=12 [--family=T] \
+##     [--body=production|legacy-glb] [--duty=fixed|mobile|relay] [--ground=0]
 ##
-## `--body=mesh` (default) puts the sculpted GLB under CoreMesh and hides the
-## blockout face and limbs, so the strip shows what the head marks actually do
-## under squash. `--body=blockout` keeps the primitive stand-in.
+## `--body=production` (default) reviews the same authored body used by gameplay.
+## `--body=legacy-glb` explicitly opts into the retired T-family GLB comparison.
 
 const _Look := preload("res://characters/family_look.gd")
 
-const GLB_CANDIDATES := {
+const VALID_BODY_MODES: PackedStringArray = ["production", "legacy-glb"]
+
+const LEGACY_GLB_CANDIDATES := {
 	"T": [
 		"res://characters/base_t/CHAR-BASE-T-tripo-5k.glb",
 		"res://characters/base_t/CHAR-BASE-T-fix.glb",
@@ -29,25 +31,33 @@ const BODY_BOTTOM := -0.45
 
 var _args := {}
 var _character: Node3D
+var _load_error := ""
 
 
 func _ready() -> void:
 	_parse_args()
-	var family := String(_args.get("family", "T"))
-	var scene_path := String(_Look.SCENE_PATH.get(family, _Look.SCENE_PATH["T"]))
+	var family := String(_args.get("family", "T")).strip_edges().to_upper()
+	var body_mode := String(_args.get("body", "production")).strip_edges().to_lower()
+	var contract_error := selection_error(family, body_mode)
+	if not contract_error.is_empty():
+		_fail(contract_error)
+		return
+	var scene_path := String(_Look.SCENE_PATH[family])
 	var packed := load(scene_path) as PackedScene
 	if packed == null:
-		push_error("anim_preview: cannot load %s" % scene_path)
+		_fail("cannot load %s" % scene_path)
 		return
 	_character = packed.instantiate() as Node3D
 	if _character == null:
-		push_error("anim_preview: %s is not a Node3D" % scene_path)
+		_fail("%s is not a Node3D" % scene_path)
 		return
 	# add_child runs the character's _ready synchronously, so the blockout and
 	# the first animation bake are done before anything below touches nodes.
 	add_child(_character)
-	if String(_args.get("body", "mesh")) == "mesh":
-		_swap_in_sculpt(family)
+	if body_mode == "legacy-glb":
+		if not _swap_in_legacy_glb(family):
+			_fail("failed to load the approved legacy GLB for %s" % family)
+			return
 	_match_duty()
 	if String(_args.get("ground", "1")) == "1":
 		_add_ground()
@@ -58,11 +68,19 @@ func _ready() -> void:
 func _match_duty() -> void:
 	if not _character.has_method("transform_duty"):
 		return
+	var requested := String(_args.get("duty", ""))
+	if requested == "fixed" or requested == "mobile" or requested == "relay":
+		_character.call("transform_duty", StringName(requested))
+		return
+	# Inferred duty makes every generated loop/edge/transform clip reviewable
+	# without extra flags; combat and terminal one-shots keep the default fixed kit.
 	match String(_args.get("anim", "")):
-		"uproot", "move":
+		"uproot", "move_start", "move", "move_stop":
 			_character.call("transform_duty", &"mobile")
-		"relay_open":
+		"relay_open", "relay_glide":
 			_character.call("transform_duty", &"relay")
+		"plant", "relay_close":
+			_character.call("transform_duty", &"fixed")
 
 
 func _parse_args() -> void:
@@ -74,20 +92,45 @@ func _parse_args() -> void:
 			_args[pair[0]] = "1"
 
 
+static func selection_error(family: String, body_mode: String) -> String:
+	var normalized_family := family.strip_edges().to_upper()
+	var normalized_body := body_mode.strip_edges().to_lower()
+	if not _Look.SCENE_PATH.has(normalized_family):
+		return "unsupported family '%s'" % family
+	if normalized_body not in VALID_BODY_MODES:
+		return "unsupported body mode '%s'" % body_mode
+	if normalized_body != "legacy-glb":
+		return ""
+	if not LEGACY_GLB_CANDIDATES.has(normalized_family):
+		return "no approved legacy GLB exists for family %s" % normalized_family
+	for path in LEGACY_GLB_CANDIDATES[normalized_family]:
+		if ResourceLoader.exists(String(path)):
+			return ""
+	return "approved legacy GLB assets are unavailable for family %s" % normalized_family
+
+
+func _fail(message: String) -> void:
+	_load_error = "anim_preview: %s" % message
+	push_error(_load_error)
+	if _character != null:
+		_character.queue_free()
+		_character = null
+	get_tree().quit(2)
+
+
 ## Parks the sculpted mesh under CoreMesh rather than replacing the node, so the
 ## rig keeps driving a node path the duty system and smoke test still expect.
 ##
 ## The GLB keeps its own imported material. The blockout's flat jelly override
 ## would erase the painted eyes and frown, and those are exactly what this
 ## preview exists to judge under squash. The gel surface look is P2's piece.
-func _swap_in_sculpt(family: String) -> void:
+func _swap_in_legacy_glb(family: String) -> bool:
 	var core := _character.get_node_or_null("CoreMesh") as MeshInstance3D
 	if core == null:
-		return
+		return false
 	var sculpt := _load_sculpt(family)
 	if sculpt == null:
-		push_warning("anim_preview: no GLB for %s, staying on the blockout body" % family)
-		return
+		return false
 	# Blockout stand-ins for marks the sculpt already has: interior bubbles,
 	# stubby limbs and the primitive face would all read as artefacts on it.
 	for child in core.get_children():
@@ -107,10 +150,11 @@ func _swap_in_sculpt(family: String) -> void:
 	if _character.has_method("rebuild_gel_anims"):
 		_character.call("rebuild_gel_anims")
 		_character.call("play_rest")
+	return true
 
 
 func _load_sculpt(family: String) -> Node3D:
-	for path in GLB_CANDIDATES.get(family, []):
+	for path in LEGACY_GLB_CANDIDATES.get(family, []):
 		if not ResourceLoader.exists(path):
 			continue
 		var packed := load(path) as PackedScene

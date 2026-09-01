@@ -2,11 +2,14 @@ extends Node3D
 
 const _LightContract := preload("res://characters/gel/light_contract.gd")
 const _GelStudio := preload("res://characters/gel/gel_studio_environment.gd")
+const _AnimPreview := preload("res://tools/anim_preview.gd")
 
 ## Headed screenshot rig for character review.
 ## Run: godot --path <proj> --resolution 1024x1024 res://tools/shot.tscn -- --scene=<res path> --out=<abs dir> [--tag=name] [--anim=idle] [--frames=8]
 ## Living-liquid review: replace --frames with
 ## [--flow-seconds=0.25,1.0,1.75,2.5] [--flow-velocity=3,0,0].
+## A real turn/reversal strip can instead provide one velocity per sample:
+## [--flow-velocity-sequence="3,0,0;-3,0,0;-3,0,0;-3,0,0"].
 ## Look-dev: add [--height-scale=0.75] [--height-depth=0.016]
 ## and/or [--yaw-sequence=0,0.5,1.0] for deterministic full-body yaw samples.
 ## Renders 3/4, front, side, back, plus a face close-up so a reviewer can judge
@@ -15,10 +18,10 @@ const _GelStudio := preload("res://characters/gel/gel_studio_environment.gd")
 const ALLOWED_ARGS: Array[String] = [
 	# Harness-owned controls.
 	"scene", "out", "tag", "anim", "frames", "height-scale", "height-depth",
-	"yaw-sequence", "flow-seconds", "flow-velocity", "save-path",
+	"yaw-sequence", "flow-seconds", "flow-velocity", "flow-velocity-sequence", "save-path",
 	# Intentional subject passthrough documented by gel_preview, anim_preview, and
 	# the accepted M reference-body review scene.
-	"family", "mesh", "set", "body", "ground", "variant",
+	"family", "source", "mesh", "set", "body", "duty", "ground", "variant",
 ]
 const QA_STARTUP_FAILURE_EXIT_CODE := 74
 const VALID_PREVIEW_FAMILIES: Array[String] = ["T", "B", "M", "N", "A", "D"]
@@ -29,7 +32,7 @@ const M_REFERENCE_SCENES: Array[String] = [
 	"res://characters/base_m/reference_body.tscn",
 ]
 const SUBJECT_PASSTHROUGH_ARGS: Array[String] = [
-	"family", "mesh", "set", "body", "ground", "variant",
+	"family", "source", "mesh", "set", "body", "duty", "ground", "variant",
 ]
 const IMAGE_SAMPLE_GRID := 16
 const IMAGE_MIN_VISIBLE_SAMPLES := 16
@@ -60,6 +63,7 @@ var _height_overrides := {}
 var _animation_frames := 8
 var _flow_seconds: Array[float] = []
 var _flow_velocity := Vector3.ZERO
+var _flow_velocity_sequence: Array[Vector3] = []
 
 
 func _ready() -> void:
@@ -189,6 +193,32 @@ func _validate_lookdev_args() -> bool:
 				return false
 			velocity_values.append(float(parsed_component["value"]))
 		_flow_velocity = Vector3(velocity_values[0], velocity_values[1], velocity_values[2])
+	if _args.has("flow-velocity-sequence"):
+		if _flow_seconds.is_empty():
+			push_error("shot.gd: --flow-velocity-sequence requires --flow-seconds")
+			return false
+		if _args.has("flow-velocity"):
+			push_error("shot.gd: choose --flow-velocity or --flow-velocity-sequence, not both")
+			return false
+		var raw_velocities := String(_args["flow-velocity-sequence"]).split(";", true)
+		if raw_velocities.size() != _flow_seconds.size():
+			push_error("shot.gd: --flow-velocity-sequence requires one x,y,z vector per flow sample")
+			return false
+		for velocity_index in raw_velocities.size():
+			var components := String(raw_velocities[velocity_index]).split(",", true)
+			if components.size() != 3:
+				push_error("shot.gd: --flow-velocity-sequence[%d] requires x,y,z" % velocity_index)
+				return false
+			var values: Array[float] = []
+			for component_index in components.size():
+				var parsed_component := _parse_finite_float(
+					"flow-velocity-sequence[%d][%d]" % [velocity_index, component_index],
+					String(components[component_index]).strip_edges()
+				)
+				if not bool(parsed_component.get("ok", false)):
+					return false
+				values.append(float(parsed_component["value"]))
+			_flow_velocity_sequence.append(Vector3(values[0], values[1], values[2]))
 	if not _validate_subject_passthrough_args():
 		return false
 
@@ -252,9 +282,9 @@ func _validate_subject_passthrough_args() -> bool:
 
 	var supported: Array[String] = []
 	if scene_path == GEL_PREVIEW_SCENE:
-		supported = ["family", "mesh", "set"]
+		supported = ["family", "source", "mesh", "set"]
 	elif scene_path == ANIM_PREVIEW_SCENE:
-		supported = ["family", "body", "ground"]
+		supported = ["family", "body", "duty", "ground"]
 	elif scene_path in M_REFERENCE_SCENES:
 		supported = ["variant"]
 	else:
@@ -271,8 +301,14 @@ func _validate_subject_passthrough_args() -> bool:
 	if _args.has("family") and String(_args["family"]) not in VALID_PREVIEW_FAMILIES:
 		push_error("shot.gd: --family must be one of T, B, M, N, A, D")
 		return false
-	if _args.has("body") and String(_args["body"]) not in ["mesh", "blockout"]:
-		push_error("shot.gd: --body must be mesh or blockout")
+	if _args.has("source") and String(_args["source"]) not in ["reference", "character", "legacy-glb"]:
+		push_error("shot.gd: --source must be reference, character, or legacy-glb")
+		return false
+	if _args.has("body") and String(_args["body"]) not in ["production", "legacy-glb"]:
+		push_error("shot.gd: --body must be production or legacy-glb")
+		return false
+	if _args.has("duty") and String(_args["duty"]) not in ["fixed", "mobile", "relay"]:
+		push_error("shot.gd: --duty must be fixed, mobile, or relay")
 		return false
 	if _args.has("ground") and String(_args["ground"]) not in ["0", "1"]:
 		push_error("shot.gd: --ground must be 0 or 1")
@@ -280,6 +316,11 @@ func _validate_subject_passthrough_args() -> bool:
 	if _args.has("variant") and String(_args["variant"]) not in ["clear", "fizzy", "gummy"]:
 		push_error("shot.gd: --variant must be clear, fizzy, or gummy")
 		return false
+	if scene_path == ANIM_PREVIEW_SCENE:
+		var selection_error := anim_preview_selection_error(_args)
+		if not selection_error.is_empty():
+			push_error("shot.gd: anim preview selection rejected: %s" % selection_error)
+			return false
 	if _args.has("set") and String(_args["set"]).strip_edges().is_empty():
 		push_error("shot.gd: --set requires a non-empty gel-preview override list")
 		return false
@@ -292,6 +333,13 @@ func _validate_subject_passthrough_args() -> bool:
 			push_error("shot.gd: --mesh is not a PackedScene: %s" % mesh_path)
 			return false
 	return true
+
+
+static func anim_preview_selection_error(args: Dictionary) -> String:
+	return _AnimPreview.selection_error(
+		String(args.get("family", "T")),
+		String(args.get("body", "production"))
+	)
 
 
 func _is_safe_tag(value: String) -> bool:
@@ -312,13 +360,14 @@ func _is_safe_tag(value: String) -> bool:
 
 
 func _abort_for_qa_startup_failure() -> bool:
-	if not ResearchState.has_method("qa_startup_failed"):
+	var research_state := get_tree().root.get_node_or_null("ResearchState")
+	if research_state == null or not research_state.has_method("qa_startup_failed"):
 		return false
-	if not bool(ResearchState.call("qa_startup_failed")):
+	if not bool(research_state.call("qa_startup_failed")):
 		return false
 	var exit_code := QA_STARTUP_FAILURE_EXIT_CODE
-	if ResearchState.has_method("qa_startup_failure_exit_code"):
-		exit_code = int(ResearchState.call("qa_startup_failure_exit_code"))
+	if research_state.has_method("qa_startup_failure_exit_code"):
+		exit_code = int(research_state.call("qa_startup_failure_exit_code"))
 	get_tree().quit(exit_code)
 	return true
 
@@ -414,6 +463,9 @@ func _subject_readiness_error(scene_path: String) -> String:
 		if gel_materials is not Array or gel_materials.is_empty():
 			return "gel_preview subject did not apply any gel materials"
 	elif scene_path == ANIM_PREVIEW_SCENE:
+		var preview_error := String(_subject.get("_load_error"))
+		if not preview_error.is_empty():
+			return preview_error
 		var character: Variant = _subject.get("_character")
 		if character is not Node3D:
 			return "anim_preview subject did not finish loading its character"
@@ -588,13 +640,22 @@ func _run_anim(anim_name: String) -> bool:
 	if not player.has_animation(anim_name):
 		push_error("shot.gd: no animation '%s' (have: %s)" % [anim_name, ", ".join(player.get_animation_list())])
 		return false
-	var length := player.get_animation(anim_name).length
+	var animation := player.get_animation(anim_name)
+	var length := animation.length
 	_pivot.rotation_degrees = Vector3(0.0, 35.0, 0.0)
 	_place_camera(false)
 	player.play(anim_name)
 	var all_saved := true
+	# One-shots include their authored terminal sample. Loops exclude the duplicate
+	# endpoint so a strip still represents one continuous cycle without a repeated
+	# first/last frame.
+	var sample_divisor := float(
+		_animation_frames
+		if animation.loop_mode != Animation.LOOP_NONE
+		else maxi(_animation_frames - 1, 1)
+	)
 	for i in _animation_frames:
-		var t := length * float(i) / float(_animation_frames)
+		var t := length * float(i) / sample_divisor
 		player.seek(t, true, true)
 		all_saved = (await _save("%s-%s-%02d.png" % [_tag, anim_name, i]) == OK) and all_saved
 	return all_saved
@@ -613,13 +674,16 @@ func _run_flow_sequence(anim_name: String) -> bool:
 	if character == null:
 		push_error("shot.gd: flow sequence requires an ImmuneCharacter subject")
 		return false
-	character.velocity = _flow_velocity
+	if _flow_velocity_sequence.is_empty():
+		character.velocity = _flow_velocity
 	_pivot.rotation_degrees = Vector3(0.0, 35.0, 0.0)
 	_place_camera(false)
 	player.play(anim_name)
 	var all_saved := true
 	var elapsed := 0.0
 	for index in _flow_seconds.size():
+		if not _flow_velocity_sequence.is_empty():
+			character.velocity = _flow_velocity_sequence[index]
 		var target_second := _flow_seconds[index]
 		var wait_seconds := target_second - elapsed
 		if wait_seconds > 0.0:
@@ -630,7 +694,7 @@ func _run_flow_sequence(anim_name: String) -> bool:
 		if save_error == OK:
 			print(
 				"SHOT_FLOW index=%d seconds=%.3f speed=%.3f file=%s"
-				% [index, target_second, _flow_velocity.length(), file_name]
+				% [index, target_second, character.velocity.length(), file_name]
 			)
 		else:
 			all_saved = false

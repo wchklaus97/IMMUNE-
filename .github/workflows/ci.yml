@@ -77,8 +77,54 @@ jobs:
           set -o pipefail
           smoke_dir="$(mktemp -d)"
           godot --headless --path godot/immune --script res://tools/smoke.gd -- --save-path="$smoke_dir/state.json" 2>&1 | tee godot-smoke.log
-          grep -F "SMOKE_OK missions=6 families=6 save=v2 audio=ready gamepad=ready active_skills=6 encounters=6 touch=ready signatures=T+B traits=enrage+regen authored_jelly=T+B+M+N+A+D gel_fizzy=T+B+M+N+A+D gel_look=v8_1" godot-smoke.log
+          grep -F "SMOKE_OK missions=6 families=6 save=v2 audio=ready gamepad=ready active_skills=6 encounters=6 touch=ready signatures=T+B traits=enrage+regen authored_jelly=T+B+M+N+A+D gel_fizzy=T+B+M+N+A+D gel_look=v8_2" godot-smoke.log
           if grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" godot-smoke.log; then exit 1; fi
+
+      - name: Run preserved gel selector smoke matrix
+        run: |
+          set -o pipefail
+          for gel_look in v5 v6 v7 v8 v8_1; do
+            smoke_dir="$(mktemp -d)"
+            IMMUNE_GEL_LOOK="$gel_look" godot --headless --path godot/immune \
+              --script res://tools/smoke.gd -- --save-path="$smoke_dir/state.json" \
+              2>&1 | tee "godot-smoke-$gel_look.log"
+            grep -F "SMOKE_OK missions=6 families=6 save=v2 audio=ready gamepad=ready active_skills=6 encounters=6 touch=ready signatures=T+B traits=enrage+regen authored_jelly=T+B+M+N+A+D gel_fizzy=T+B+M+N+A+D gel_look=$gel_look" \
+              "godot-smoke-$gel_look.log"
+            if grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" \
+              "godot-smoke-$gel_look.log"; then exit 1; fi
+          done
+
+      - name: Validate screenshot and preview provenance contracts
+        run: |
+          set -o pipefail
+          contract_dir="$(mktemp -d)"
+          godot --headless --path godot/immune --script res://tools/shot_contract.gd -- \
+            --save-path="$contract_dir/state.json" 2>&1 | tee godot-shot-contract.log
+          grep -F "SHOT_CONTRACT_OK scalar=3,-0.5,1 sequence=forward+reverse preview=fail-closed" \
+            godot-shot-contract.log
+          if grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" \
+            godot-shot-contract.log; then exit 1; fi
+          set +e
+          godot --headless --path godot/immune res://tools/shot.tscn -- \
+            --scene=res://tools/anim_preview.tscn --out="$contract_dir/rejected-shot" \
+            --tag=rejected --family=B --body=legacy-glb \
+            --save-path="$contract_dir/rejected-shot-state.json" \
+            >godot-shot-rejected.log 2>&1
+          rejected_shot_status=$?
+          godot --headless --path godot/immune res://tools/anim_preview.tscn -- \
+            --family=B --body=legacy-glb \
+            --save-path="$contract_dir/rejected-direct-state.json" \
+            >godot-anim-preview-rejected.log 2>&1
+          rejected_direct_status=$?
+          set -e
+          if [[ "$rejected_shot_status" -ne 2 || "$rejected_direct_status" -ne 2 ]]; then
+            cat godot-shot-rejected.log godot-anim-preview-rejected.log
+            exit 1
+          fi
+          grep -F "no approved legacy GLB exists for family B" godot-shot-rejected.log
+          grep -F "no approved legacy GLB exists for family B" godot-anim-preview-rejected.log
+          if grep -E "SCRIPT ERROR|Parse Error|Compile Error" \
+            godot-shot-rejected.log godot-anim-preview-rejected.log; then exit 1; fi
 
       - name: Run bounded campaign balance regression
         run: |

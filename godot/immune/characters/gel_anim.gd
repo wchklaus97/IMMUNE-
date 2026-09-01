@@ -65,6 +65,7 @@ const NAMES: PackedStringArray = [
 	"idle", "plant", "uproot", "move", "hit", "attack", "relay_open", "relay_close",
 ]
 const V8_1_NAMES: PackedStringArray = ["move_start", "move_stop", "relay_glide", "skill_cast"]
+const V8_2_NAMES: PackedStringArray = ["victory", "defeat"]
 
 
 ## Snapshot of the rest pose. Must be taken before any other system offsets the
@@ -91,8 +92,10 @@ static func build_library(host: Node3D, lift: float = 0.0) -> AnimationLibrary:
 	var ctx := make_context(host, lift)
 	var lib := AnimationLibrary.new()
 	var names := NAMES.duplicate()
-	if _GelProfiles.v8_1_enabled():
+	if _GelProfiles.motion_truth_enabled():
 		names.append_array(V8_1_NAMES)
+	if _GelProfiles.v8_2_enabled():
+		names.append_array(V8_2_NAMES)
 	for anim_name in names:
 		lib.add_animation(StringName(anim_name), build(String(anim_name), ctx))
 	return lib
@@ -126,13 +129,17 @@ static func build(anim_name: String, ctx: Dictionary) -> Animation:
 			return _bake(0.36, false, "", ctx, _hit_channels(), "keys")
 		"attack":
 			var attack := _bake(0.78, false, "", ctx, _attack_channels(), "keys")
-			if _GelProfiles.v8_1_enabled():
+			if _GelProfiles.motion_truth_enabled():
 				_add_method_key(attack, 0.345, &"_on_combat_release_marker")
 			return attack
 		"skill_cast":
 			var cast := _bake(0.96, false, "", ctx, _skill_cast_channels(), "keys")
 			_add_method_key(cast, 0.48, &"_on_combat_release_marker")
 			return cast
+		"victory":
+			return _bake(1.30, false, "", ctx, _victory_channels(), "keys")
+		"defeat":
+			return _bake(1.18, false, "", ctx, _defeat_channels(), "keys")
 	return _bake(1.0, false, "", ctx, {}, "keys")
 
 
@@ -500,6 +507,82 @@ static func _skill_cast_channels() -> Dictionary:
 		"lag": [
 			[0.00, 0.000, "in"], [0.28, -0.036, "out"], [0.48, 0.058, "lin"],
 			[0.62, 0.045, "out"], [0.78, -0.018, "io"], [0.96, 0.000, "lin"],
+		],
+	}
+
+
+## V8.2 terminal success beat. A grounded gather releases into a buoyant crest,
+## then resolves into a deliberately non-neutral hero pose. AnimationPlayer
+## holds the last authored sample after the non-loop clip finishes.
+static func _victory_channels() -> Dictionary:
+	return {
+		"sy": [
+			[0.00, 1.000, "in"], [0.14, 0.875, "out"], [0.34, 1.220, "lin"],
+			[0.42, 1.215, "out"], [0.61, 0.820, "lin"], [0.68, 0.825, "out"],
+			[0.84, 1.135, "io"], [1.04, 0.970, "io"], [1.30, 1.060, "lin"],
+		],
+		"py": [
+			[0.00, 0.000, "in"], [0.14, -0.018, "out"], [0.34, 0.205, "lin"],
+			[0.42, 0.215, "out"], [0.61, -0.025, "lin"], [0.68, -0.020, "out"],
+			[0.84, 0.095, "io"], [1.04, 0.035, "io"], [1.30, 0.055, "lin"],
+		],
+		"pz": [
+			[0.00, 0.000, "in"], [0.14, -0.045, "out"], [0.36, 0.055, "io"],
+			[0.62, -0.025, "out"], [0.86, 0.025, "io"], [1.30, 0.018, "lin"],
+		],
+		"rx": [
+			[0.00, 0.0, "in"], [0.14, -6.0, "out"], [0.36, 5.0, "io"],
+			[0.62, 7.0, "out"], [0.84, -3.5, "io"], [1.30, -2.0, "lin"],
+		],
+		"rz": [
+			[0.00, 0.0, "in"], [0.16, -4.0, "out"], [0.38, 5.5, "io"],
+			[0.62, -5.0, "out"], [0.86, 4.0, "io"], [1.30, 2.8, "lin"],
+		],
+		"spread": [
+			[0.00, 1.000, "in"], [0.14, 1.100, "out"], [0.36, 0.930, "io"],
+			[0.62, 1.155, "out"], [0.86, 0.980, "io"], [1.30, 1.060, "lin"],
+		],
+		"lag": [
+			[0.00, 0.000, "in"], [0.16, -0.028, "out"], [0.38, 0.034, "io"],
+			[0.64, -0.025, "out"], [0.88, 0.014, "io"], [1.30, -0.010, "lin"],
+		],
+	}
+
+
+## V8.2 terminal failure beat. The mass recoils, loses vertical support, then
+## drains into a broad side-slumped contact patch. The final pose is authored
+## away from neutral so a terminal hold cannot be mistaken for returning idle.
+static func _defeat_channels() -> Dictionary:
+	return {
+		"sy": [
+			[0.00, 1.000, "snap"], [0.09, 1.145, "out"], [0.27, 0.760, "lin"],
+			[0.36, 0.760, "out"], [0.54, 0.920, "io"], [0.76, 0.790, "io"],
+			[0.98, 0.830, "io"], [1.18, 0.790, "lin"],
+		],
+		"py": [
+			[0.00, 0.000, "snap"], [0.09, 0.040, "out"], [0.27, -0.012, "lin"],
+			[0.36, -0.010, "out"], [0.58, 0.010, "io"], [0.82, -0.004, "io"],
+			[1.18, 0.000, "lin"],
+		],
+		"pz": [
+			[0.00, 0.000, "snap"], [0.10, -0.055, "out"], [0.30, 0.075, "lin"],
+			[0.48, 0.060, "out"], [0.76, 0.038, "io"], [1.18, 0.030, "lin"],
+		],
+		"rx": [
+			[0.00, 0.0, "snap"], [0.10, -8.0, "out"], [0.30, 13.0, "lin"],
+			[0.44, 12.0, "out"], [0.72, 7.0, "io"], [1.18, 6.0, "lin"],
+		],
+		"rz": [
+			[0.00, 0.0, "snap"], [0.10, -4.0, "out"], [0.30, 10.5, "lin"],
+			[0.44, 10.0, "out"], [0.72, 8.5, "io"], [1.18, 8.0, "lin"],
+		],
+		"spread": [
+			[0.00, 1.000, "snap"], [0.10, 0.950, "out"], [0.28, 1.175, "lin"],
+			[0.40, 1.170, "out"], [0.64, 1.125, "io"], [1.18, 1.150, "lin"],
+		],
+		"lag": [
+			[0.00, 0.000, "snap"], [0.10, -0.035, "out"], [0.30, 0.055, "lin"],
+			[0.48, 0.050, "out"], [0.76, 0.030, "io"], [1.18, 0.025, "lin"],
 		],
 	}
 

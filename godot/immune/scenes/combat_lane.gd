@@ -286,7 +286,7 @@ func _toggle_duty() -> void:
 	else:
 		_player.transform_duty(requested_duty)
 		_set_status(tr("STATUS_DUTY_FIXED"))
-	if _GelProfiles.v8_1_enabled():
+	if _GelProfiles.motion_truth_enabled():
 		# V8.1 may queue the request behind an authored combat pose. The actual
 		# state signal owns HUD/touch/QA publication when the duty really applies.
 		return
@@ -301,7 +301,7 @@ func _toggle_duty() -> void:
 
 
 func _on_player_duty_changed(new_duty: StringName) -> void:
-	if not _GelProfiles.v8_1_enabled():
+	if not _GelProfiles.motion_truth_enabled():
 		return
 	_set_status(
 		tr("STATUS_DUTY_FIXED") if new_duty == &"fixed" else tr("STATUS_DUTY_MOBILE")
@@ -349,7 +349,7 @@ func _move_player(delta: float) -> void:
 	if _player.duty == &"fixed":
 		_player.velocity = Vector3.ZERO
 		_player.global_position.y = PLAYER_HOME.y
-		if _GelProfiles.v8_1_enabled():
+		if _GelProfiles.motion_truth_enabled():
 			_player.submit_motion_truth(Vector3.ZERO, Vector3.ZERO, Vector3.ZERO, delta)
 		return
 	var move_input: Vector2 = _playtest_move_input() if playtest_autopilot else Input.get_vector(
@@ -364,7 +364,7 @@ func _move_player(delta: float) -> void:
 	_player.velocity = requested_velocity
 	var start_position := _player.global_position
 	_player.move_and_slide()
-	if not _GelProfiles.v8_1_enabled():
+	if not _GelProfiles.motion_truth_enabled():
 		_player.global_position.y = PLAYER_HOME.y
 		_player.global_position.x = clampf(_player.global_position.x, -STRAFE_LIMIT, STRAFE_LIMIT)
 		_player.global_position.z = clampf(_player.global_position.z, REAR_LIMIT, FRONT_LIMIT)
@@ -497,10 +497,10 @@ func _request_active_skill() -> void:
 
 func _on_active_skill_requested(profile: FamilyActiveSkillProfile) -> void:
 	if _over or _player == null:
-		if _GelProfiles.v8_1_enabled() and _active_skill_controller != null:
+		if _GelProfiles.motion_truth_enabled() and _active_skill_controller != null:
 			_active_skill_controller.reset()
 		return
-	if _GelProfiles.v8_1_enabled():
+	if _GelProfiles.motion_truth_enabled():
 		_request_active_skill_action(profile)
 		return
 	var targets := _active_skill_targets(profile)
@@ -663,11 +663,11 @@ func _try_fire(delta: float) -> void:
 	_fire_cd -= delta
 	if _fire_cd > 0.0 or _player == null:
 		return
-	if _GelProfiles.v8_1_enabled() and _has_pending_combat_action(COMBAT_ACTION_BASIC):
+	if _GelProfiles.motion_truth_enabled() and _has_pending_combat_action(COMBAT_ACTION_BASIC):
 		return
 	var target := (
 		_nearest_owned_bacterium()
-		if _GelProfiles.v8_1_enabled()
+		if _GelProfiles.motion_truth_enabled()
 		else _nearest_bacterium()
 	)
 	if target == null:
@@ -680,7 +680,7 @@ func _try_fire(delta: float) -> void:
 	var base_cd := _family_profile.fixed_fire_cooldown if _player.duty == &"fixed" else _family_profile.mobile_fire_cooldown
 	var speed := 1.0 + ResearchState.global_stat("attackSpeed", _player.duty)
 	var cadence := base_cd / maxf(speed, 0.25)
-	if _GelProfiles.v8_1_enabled():
+	if _GelProfiles.motion_truth_enabled():
 		_request_basic_fire_action(target, horizontal_aim, cadence)
 		return
 	_fire_cd = cadence
@@ -948,6 +948,10 @@ func _on_core_hit(hp: int, max_hp: int) -> void:
 	if took_damage:
 		AudioDirector.play_sfx(&"core_hit")
 		_shake_camera(0.22)
+		# V8.2 turns core damage into a visible shock on the playable body. This is
+		# presentation-only: the core's HP and all damage resolution stay untouched.
+		if _GelProfiles.v8_2_enabled() and _player != null:
+			_player.play_hit()
 	_refresh_hud()
 	if hp <= 0:
 		_defeat()
@@ -1006,7 +1010,7 @@ func _defeat() -> void:
 
 func _finish_victory() -> void:
 	_over = true
-	_settle_player_motion(1.0 / 60.0, true)
+	_enter_player_terminal(&"victory")
 	if _telemetry != null:
 		_telemetry.finish(true)
 	if not _rewarded:
@@ -1030,7 +1034,7 @@ func _finish_victory() -> void:
 
 func _finish_defeat() -> void:
 	_over = true
-	_settle_player_motion(1.0 / 60.0, true)
+	_enter_player_terminal(&"defeat")
 	if _telemetry != null:
 		_telemetry.finish(false)
 	_show_result(tr("RESULT_DEFEAT_TITLE"), tr("RESULT_DEFEAT_BODY") % tr(mission_data.title))
@@ -1379,7 +1383,7 @@ func _spawn_player() -> void:
 		return
 	_player.position = PLAYER_HOME
 	add_child(_player)
-	if _GelProfiles.v8_1_enabled():
+	if _GelProfiles.motion_truth_enabled():
 		_player.duty_changed.connect(_on_player_duty_changed)
 		_player.combat_action_released.connect(_on_combat_action_released)
 		_player.combat_action_cancelled.connect(_on_combat_action_cancelled)
@@ -1387,12 +1391,25 @@ func _spawn_player() -> void:
 
 
 func _settle_player_motion(delta: float, terminal: bool = false) -> void:
-	if not _GelProfiles.v8_1_enabled():
+	if not _GelProfiles.motion_truth_enabled():
 		return
 	if _player != null:
 		_player.settle_motion(delta, terminal)
 	if terminal:
 		_pending_combat_actions.clear()
+
+
+func _enter_player_terminal(result: StringName) -> void:
+	const TERMINAL_DELTA := 1.0 / 60.0
+	if (
+		_GelProfiles.v8_2_enabled()
+		and _player != null
+		and _player.enter_terminal(result, TERMINAL_DELTA)
+	):
+		_pending_combat_actions.clear()
+		return
+	# V8.1 keeps its exact 12-clip terminal settle; older profiles remain no-op.
+	_settle_player_motion(TERMINAL_DELTA, true)
 
 
 func _sync_touch_movement_state() -> void:
