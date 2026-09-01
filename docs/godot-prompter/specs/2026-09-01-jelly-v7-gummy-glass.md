@@ -96,7 +96,7 @@ The ignored local evidence root is `outputs/v7-gummy-glass/`:
 - `web-qa/`: exported-Web reports and research/mission/combat/pause captures.
 
 The separate local Web export is
-`godot/immune/build/releases/web-v7/`. The existing
+`godot/immune/build/history/web-v7/`. The existing
 `godot/immune/build/releases/web/` directory was not overwritten.
 
 ## Performance sentinel
@@ -134,7 +134,7 @@ sentinel only, not GPU parity or lower-end-hardware evidence.
 | UI production build | pass; optional Sharp JPEG previews skipped |
 | Research overflow | zh_HK/en pass at 1920x1080, real 390x844, and real 1280x720 |
 | Steam repository checks | 17 assets/6 screenshots pass; 7 external gate groups correctly remain open |
-| Web export | official Godot 4.7.2 release export passes in separate `web-v7/` |
+| Web export | official Godot 4.7.2 release export passes in separate historical `web-v7/` |
 | Real-browser lifecycle | Metal and SwiftShader complete all 8 ordered events |
 
 The exported-Web baseline measured `60.002` mean / `59.88` p05 FPS on ANGLE
@@ -164,9 +164,9 @@ IMMUNE_GEL_LOOK=v6 godot --headless --path godot/immune \
 IMMUNE_GEL_LOOK=v5 godot --headless --path godot/immune \
   --script res://tools/smoke.gd
 godot --headless --path godot/immune --export-release "Web" \
-  build/releases/web-v7/index.html
+  build/history/web-v7/index.html
 npm run test:web-release -- \
-  --artifacts=godot/immune/build/releases/web-v7 \
+  --artifacts=godot/immune/build/history/web-v7 \
   --out=outputs/v7-gummy-glass/web-qa --duration-ms=6000
 ```
 

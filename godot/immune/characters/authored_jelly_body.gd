@@ -281,15 +281,40 @@ func _build_face(gel: Material, cavity_color: Color) -> void:
 		eye_x = 0.20 if family_id != "M" else 0.215
 		eye_y = 0.61 if family_id == "N" else (0.68 if family_id == "M" else (0.63 if family_id == "A" else 0.60))
 		eye_z = 0.475 if family_id == "N" else (0.515 if family_id == "M" else (0.490 if family_id == "A" else 0.480))
-	_add_sphere("EyeL", Vector3(-eye_x, eye_y, eye_z), Vector3(0.155, 0.155, 0.105), eye, 64, 32)
-	_add_sphere("EyeR", Vector3(eye_x, eye_y, eye_z), Vector3(0.155, 0.155, 0.105), eye, 64, 32)
+	if _GelProfiles.v8_1_enabled():
+		# Body-space origin/scale are per material instance. Keep one instance per
+		# eye so the right eye can never inherit the left eye's deformation frame.
+		_add_sphere(
+			"EyeL", Vector3(-eye_x, eye_y, eye_z), Vector3(0.155, 0.155, 0.105),
+			eye.duplicate() as Material, 64, 32
+		)
+		_add_sphere(
+			"EyeR", Vector3(eye_x, eye_y, eye_z), Vector3(0.155, 0.155, 0.105),
+			eye.duplicate() as Material, 64, 32
+		)
+	else:
+		_add_sphere("EyeL", Vector3(-eye_x, eye_y, eye_z), Vector3(0.155, 0.155, 0.105), eye, 64, 32)
+		_add_sphere("EyeR", Vector3(eye_x, eye_y, eye_z), Vector3(0.155, 0.155, 0.105), eye, 64, 32)
 	if not _GelProfiles.gummy_glass_enabled():
 		_add_face_ring("EyeRimL", Vector3(-eye_x, eye_y, eye_z + 0.047), 0.073, 0.087, gel)
 		_add_face_ring("EyeRimR", Vector3(eye_x, eye_y, eye_z + 0.047), 0.073, 0.087, gel)
 
-	var cavity := StandardMaterial3D.new()
-	cavity.albedo_color = cavity_color
-	cavity.roughness = 0.18
+	var cavity: Material
+	if _GelProfiles.v8_1_enabled():
+		# V8.1 treats the mouth interior as part of the same viscous visual mass.
+		# The shared eye shader keeps it deformable without adding a new material
+		# path; zero studio strength preserves the authored dark cavity read.
+		var wet_cavity := ShaderMaterial.new()
+		wet_cavity.shader = _EYE_SHADER
+		wet_cavity.set_shader_parameter(&"eye_color", cavity_color)
+		wet_cavity.set_shader_parameter(&"studio_strength", 0.0)
+		wet_cavity.set_shader_parameter(&"surface_roughness", 0.18)
+		cavity = wet_cavity
+	else:
+		var standard_cavity := StandardMaterial3D.new()
+		standard_cavity.albedo_color = cavity_color
+		standard_cavity.roughness = 0.18
+		cavity = standard_cavity
 	if family_id == "N":
 		# Two nested horizontal capsules produce the concept's short pill-shaped
 		# mouth with a coloured gel lip instead of an O-mouth.

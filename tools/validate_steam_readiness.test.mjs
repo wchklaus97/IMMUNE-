@@ -4,10 +4,41 @@ import path from "node:path";
 import test from "node:test";
 
 import {
+  parsePckResourcePaths,
   readinessArguments,
+  validatePckResourcePolicyBuffer,
   validatePublisherInputs,
   validateSteamReadiness,
 } from "./validate_steam_readiness.mjs";
+
+function makePck(paths, payload = "", version = 3) {
+  const payloadBuffer = Buffer.from(payload);
+  const entries = paths.map((path) => {
+    const encodedPath = Buffer.from(path);
+    const entry = Buffer.alloc(40 + encodedPath.length);
+    entry.writeUInt32LE(encodedPath.length, 0);
+    encodedPath.copy(entry, 4);
+    return entry;
+  });
+  const fileCount = Buffer.alloc(4);
+  fileCount.writeUInt32LE(paths.length, 0);
+  const directory = Buffer.concat([fileCount, ...entries]);
+  const headerSize = version === 2 ? 96 : 40;
+  const header = Buffer.alloc(headerSize);
+  header.write("GDPC", 0, "ascii");
+  header.writeUInt32LE(version, 4);
+  header.writeUInt32LE(4, 8);
+  header.writeUInt32LE(6, 12);
+  header.writeUInt32LE(1, 16);
+  header.writeUInt32LE(2, 20);
+  if (version === 2) {
+    header.writeBigUInt64LE(BigInt(headerSize + directory.length), 24);
+    return Buffer.concat([header, directory, payloadBuffer]);
+  }
+  header.writeBigUInt64LE(BigInt(headerSize), 24);
+  header.writeBigUInt64LE(BigInt(headerSize + payloadBuffer.length), 32);
+  return Buffer.concat([header, payloadBuffer, directory]);
+}
 
 test("readiness CLI rejects unknown, empty, and duplicate inputs", () => {
   assert.deepEqual(readinessArguments(["--artifacts=build/releases"]), { artifacts: "build/releases" });
@@ -17,6 +48,46 @@ test("readiness CLI rejects unknown, empty, and duplicate inputs", () => {
     () => readinessArguments(["--artifacts=one", "--artifacts=two"]),
     /Duplicate/u,
   );
+});
+
+test("PCK policy audits resource entries instead of matching UID-cache payload text", () => {
+  const paths = [
+    ".godot/uid_cache.bin",
+    ".godot/imported/CHAR-BASE-T-tripo-5k.glb-example.scn",
+  ];
+  for (const version of [2, 3, 4]) {
+    const pck = makePck(paths, "CHAR-BASE-M-meshy-t2 CHAR-BASE-T-fix.glb", version);
+    assert.deepEqual(parsePckResourcePaths(pck), paths);
+    assert.deepEqual(validatePckResourcePolicyBuffer(pck), { files: 2 });
+  }
+});
+
+test("PCK policy rejects an excluded directory entry and a missing shipping entry", () => {
+  const leaked = makePck([
+    ".godot/imported/CHAR-BASE-T-tripo-5k.glb-example.scn",
+    ".godot/imported/CHAR-BASE-M-meshy-t2.glb-example.scn",
+  ]);
+  assert.throws(() => validatePckResourcePolicyBuffer(leaked), /Excluded source resource leaked/u);
+  assert.throws(
+    () => validatePckResourcePolicyBuffer(makePck(["project.binary"])),
+    /Shipping T resource is missing/u,
+  );
+});
+
+test("PCK parser fails closed on encrypted, truncated, and out-of-bounds packs", () => {
+  const encrypted = makePck([".godot/imported/CHAR-BASE-T-tripo-5k.glb-example.scn"]);
+  encrypted.writeUInt32LE(3, 20);
+  assert.throws(() => parsePckResourcePaths(encrypted), /encrypted directories/u);
+
+  const truncated = makePck([".godot/imported/CHAR-BASE-T-tripo-5k.glb-example.scn"]);
+  assert.throws(() => parsePckResourcePaths(truncated.subarray(0, 12)), /file bounds/u);
+
+  const invalidPayload = makePck([".godot/imported/CHAR-BASE-T-tripo-5k.glb-example.scn"]);
+  const directoryOffset = Number(invalidPayload.readBigUInt64LE(32));
+  const pathLength = invalidPayload.readUInt32LE(directoryOffset + 4);
+  const sizeOffset = directoryOffset + 4 + 4 + pathLength + 8;
+  invalidPayload.writeBigUInt64LE(BigInt(invalidPayload.length), sizeOffset);
+  assert.throws(() => parsePckResourcePaths(invalidPayload), /file payload 0 exceeds file bounds/u);
 });
 
 test("passes the repository-controlled Steam readiness preflight", async () => {

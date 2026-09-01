@@ -64,6 +64,7 @@ const KIT_FOR := {
 const NAMES: PackedStringArray = [
 	"idle", "plant", "uproot", "move", "hit", "attack", "relay_open", "relay_close",
 ]
+const V8_1_NAMES: PackedStringArray = ["move_start", "move_stop", "relay_glide", "skill_cast"]
 
 
 ## Snapshot of the rest pose. Must be taken before any other system offsets the
@@ -89,7 +90,10 @@ static func make_context(host: Node3D, lift: float = 0.0) -> Dictionary:
 static func build_library(host: Node3D, lift: float = 0.0) -> AnimationLibrary:
 	var ctx := make_context(host, lift)
 	var lib := AnimationLibrary.new()
-	for anim_name in NAMES:
+	var names := NAMES.duplicate()
+	if _GelProfiles.v8_1_enabled():
+		names.append_array(V8_1_NAMES)
+	for anim_name in names:
 		lib.add_animation(StringName(anim_name), build(String(anim_name), ctx))
 	return lib
 
@@ -112,10 +116,23 @@ static func build(anim_name: String, ctx: Dictionary) -> Animation:
 			if _GelProfiles.v8_enabled():
 				return _bake(1.12, true, "", ctx, _move_slime_channels(), "keys")
 			return _bake(0.92, true, "", ctx, _move_channels(), "keys")
+		"move_start":
+			return _bake(0.28, false, "", ctx, _move_start_channels(), "keys")
+		"move_stop":
+			return _bake(0.52, false, "", ctx, _move_stop_channels(), "keys")
+		"relay_glide":
+			return _bake(1.60, true, "", ctx, {}, "relay")
 		"hit":
 			return _bake(0.36, false, "", ctx, _hit_channels(), "keys")
 		"attack":
-			return _bake(0.78, false, "", ctx, _attack_channels(), "keys")
+			var attack := _bake(0.78, false, "", ctx, _attack_channels(), "keys")
+			if _GelProfiles.v8_1_enabled():
+				_add_method_key(attack, 0.345, &"_on_combat_release_marker")
+			return attack
+		"skill_cast":
+			var cast := _bake(0.96, false, "", ctx, _skill_cast_channels(), "keys")
+			_add_method_key(cast, 0.48, &"_on_combat_release_marker")
+			return cast
 	return _bake(1.0, false, "", ctx, {}, "keys")
 
 
@@ -206,6 +223,68 @@ static func _uproot_channels() -> Dictionary:
 		"kit": [
 			[0.00, 0.250, "in"], [0.30, 0.600, "out"], [0.50, 1.110, "io"],
 			[0.70, 0.955, "io"], [0.88, 1.020, "io"], [1.00, 1.000, "lin"],
+		],
+	}
+
+
+## V8.1 adhesion pull. The base grips the floor before the upper mass catches
+## up, then resolves exactly to the locomotion loop's neutral frame.
+static func _move_start_channels() -> Dictionary:
+	return {
+		"sy": [
+			[0.000, 1.000, "in"], [0.075, 0.900, "out"], [0.160, 1.075, "io"],
+			[0.230, 0.985, "io"], [0.280, 1.000, "lin"],
+		],
+		"py": [
+			[0.000, 0.000, "in"], [0.075, -0.018, "out"], [0.160, 0.024, "io"],
+			[0.230, -0.004, "io"], [0.280, 0.000, "lin"],
+		],
+		"pz": [
+			[0.000, 0.000, "in"], [0.075, -0.020, "out"], [0.160, 0.028, "io"],
+			[0.230, 0.008, "io"], [0.280, 0.000, "lin"],
+		],
+		"rx": [
+			[0.000, 0.0, "in"], [0.075, -3.8, "out"], [0.160, 2.2, "io"],
+			[0.230, -0.6, "io"], [0.280, 0.0, "lin"],
+		],
+		"spread": [
+			[0.000, 1.000, "in"], [0.075, 1.100, "out"], [0.160, 0.965, "io"],
+			[0.280, 1.000, "lin"],
+		],
+		"lag": [
+			[0.000, 0.000, "in"], [0.080, -0.020, "out"], [0.200, 0.012, "io"],
+			[0.280, 0.000, "lin"],
+		],
+	}
+
+
+## V8.1 viscous braking. Forward inertia arrives before the contact patch and
+## decays through three deliberately uneven settling beats.
+static func _move_stop_channels() -> Dictionary:
+	return {
+		"sy": [
+			[0.000, 1.000, "in"], [0.075, 0.890, "out"], [0.170, 1.065, "io"],
+			[0.290, 0.965, "io"], [0.410, 1.018, "io"], [0.520, 1.000, "lin"],
+		],
+		"py": [
+			[0.000, 0.000, "in"], [0.075, -0.022, "out"], [0.170, 0.018, "io"],
+			[0.290, -0.008, "io"], [0.410, 0.003, "io"], [0.520, 0.000, "lin"],
+		],
+		"pz": [
+			[0.000, 0.000, "in"], [0.065, 0.065, "out"], [0.170, -0.025, "io"],
+			[0.300, 0.012, "io"], [0.480, 0.000, "lin"], [0.520, 0.000, "lin"],
+		],
+		"rx": [
+			[0.000, 0.0, "in"], [0.075, 5.0, "out"], [0.170, -2.8, "io"],
+			[0.290, 1.4, "io"], [0.410, -0.5, "io"], [0.520, 0.0, "lin"],
+		],
+		"spread": [
+			[0.000, 1.000, "in"], [0.075, 1.120, "out"], [0.170, 0.970, "io"],
+			[0.290, 1.045, "io"], [0.520, 1.000, "lin"],
+		],
+		"lag": [
+			[0.000, 0.000, "in"], [0.075, 0.030, "out"], [0.170, -0.018, "io"],
+			[0.300, 0.008, "io"], [0.520, 0.000, "lin"],
 		],
 	}
 
@@ -382,6 +461,49 @@ static func _attack_channels() -> Dictionary:
 	}
 
 
+## Active skills carry a longer readable gather and a broader release than the
+## compact basic shot. The gameplay payload is emitted by the method key at 0.48 s.
+static func _skill_cast_channels() -> Dictionary:
+	return {
+		"zb": [
+			[0.00, 1.000, "in"], [0.24, 0.900, "out"], [0.40, 1.210, "lin"],
+			[0.48, 1.225, "out"], [0.62, 0.950, "io"], [0.78, 1.055, "io"],
+			[0.96, 1.000, "lin"],
+		],
+		"sy": [
+			[0.00, 1.000, "in"], [0.20, 1.105, "out"], [0.30, 1.100, "in"],
+			[0.44, 0.820, "lin"], [0.48, 0.825, "out"], [0.64, 1.095, "io"],
+			[0.80, 0.970, "io"], [0.96, 1.000, "lin"],
+		],
+		"rx": [
+			[0.00, 0.0, "in"], [0.22, -13.0, "out"], [0.32, -12.5, "in"],
+			[0.48, 16.0, "lin"], [0.56, 15.0, "out"], [0.70, -5.0, "io"],
+			[0.84, 1.8, "io"], [0.96, 0.0, "lin"],
+		],
+		"rz": [
+			[0.00, 0.0, "in"], [0.26, 5.2, "out"], [0.48, -6.0, "lin"],
+			[0.58, -5.4, "out"], [0.74, 2.0, "io"], [0.96, 0.0, "lin"],
+		],
+		"pz": [
+			[0.00, 0.000, "in"], [0.24, -0.105, "out"], [0.32, -0.100, "in"],
+			[0.48, 0.145, "lin"], [0.58, 0.132, "out"], [0.72, -0.038, "io"],
+			[0.96, 0.000, "lin"],
+		],
+		"py": [
+			[0.00, 0.000, "in"], [0.24, 0.058, "out"], [0.48, -0.040, "lin"],
+			[0.62, 0.020, "io"], [0.80, -0.006, "io"], [0.96, 0.000, "lin"],
+		],
+		"spread": [
+			[0.00, 1.000, "in"], [0.26, 0.930, "out"], [0.48, 1.105, "lin"],
+			[0.62, 1.085, "out"], [0.78, 0.980, "io"], [0.96, 1.000, "lin"],
+		],
+		"lag": [
+			[0.00, 0.000, "in"], [0.28, -0.036, "out"], [0.48, 0.058, "lin"],
+			[0.62, 0.045, "out"], [0.78, -0.018, "io"], [0.96, 0.000, "lin"],
+		],
+	}
+
+
 ## The one that is on screen 90% of the time. Built analytically instead of
 ## keyed so it loops seamlessly: every term is periodic over the clip length.
 ## Three unrelated frequencies plus a phase warp keep it from reading as a
@@ -398,6 +520,20 @@ static func _idle_pose(t: float, length: float) -> Dictionary:
 		"rx": 1.30 * sin(ph + 2.15),
 		"spread": 1.0 + 0.030 * sin(ph + 1.9),
 		"lag": -0.024 * sin(ph - 0.95),
+	}
+
+
+## A's relay state translates as a suspended dish-and-gel assembly. The loop is
+## deliberately quieter than the grounded compression wave and never plants feet.
+static func _relay_pose(t: float, length: float) -> Dictionary:
+	var ph := TAU * t / length
+	return {
+		"sy": 1.0 + 0.018 * sin(ph) + 0.006 * sin(2.0 * ph + 1.2),
+		"py": 0.032 * sin(ph + 0.4),
+		"rx": 1.4 * sin(ph + 2.0),
+		"rz": 1.2 * sin(ph + 0.9),
+		"spread": 1.0 + 0.012 * sin(2.0 * ph),
+		"lag": -0.012 * sin(ph - 0.7),
 	}
 
 
@@ -427,7 +563,13 @@ static func _bake(length: float, loop: bool, kit_path: String, ctx: Dictionary, 
 	var steps := int(ceil(length * SAMPLE_HZ))
 	for i in steps + 1:
 		var t: float = minf(float(i) / SAMPLE_HZ, length)
-		var pose: Dictionary = _idle_pose(t, length) if mode == "idle" else _keyed_pose(channels, t)
+		var pose: Dictionary
+		if mode == "idle":
+			pose = _idle_pose(t, length)
+		elif mode == "relay":
+			pose = _relay_pose(t, length)
+		else:
+			pose = _keyed_pose(channels, t)
 
 		var sy := clampf(float(pose.get("sy", 1.0)), SQUASH_MIN, STRETCH_MAX)
 		var zb := float(pose.get("zb", 1.0))
@@ -492,6 +634,12 @@ static func _add_track(anim: Animation, path: String) -> int:
 	anim.track_set_interpolation_type(idx, Animation.INTERPOLATION_LINEAR)
 	anim.value_track_set_update_mode(idx, Animation.UPDATE_CONTINUOUS)
 	return idx
+
+
+static func _add_method_key(anim: Animation, time: float, method: StringName) -> void:
+	var idx := anim.add_track(Animation.TYPE_METHOD)
+	anim.track_set_path(idx, NodePath("."))
+	anim.track_insert_key(idx, time, {"method": method, "args": []})
 
 
 static func _keyed_pose(channels: Dictionary, t: float) -> Dictionary:

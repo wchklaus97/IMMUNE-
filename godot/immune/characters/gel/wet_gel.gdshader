@@ -359,6 +359,15 @@ uniform vec3 liquid_flow_direction = vec3(0.0, 0.0, -1.0);
 uniform float liquid_body_deform_strength : hint_range(0.0, 1.0) = 0.0;
 uniform vec3 liquid_body_lag = vec3(0.0);
 uniform float liquid_body_squash : hint_range(0.0, 0.2) = 0.0;
+// V8.1 maps every authored primitive into one shared character space before
+// deforming it. Defaults deliberately select the preserved V8 local-space path.
+uniform float liquid_body_space_enabled : hint_range(0.0, 1.0) = 0.0;
+uniform vec3 liquid_part_origin = vec3(0.0);
+uniform vec3 liquid_part_scale = vec3(1.0);
+uniform mat3 liquid_part_basis = mat3(1.0);
+uniform float liquid_turn_shear : hint_range(-0.2, 0.2) = 0.0;
+uniform float liquid_contact_amount : hint_range(-1.0, 1.0) = 0.0;
+uniform vec3 liquid_contact_normal = vec3(0.0);
 
 group_uniforms v5_readability;
 // Pulls direct body light below the ACES shoulder. V4 sat close to 1.0 linear
@@ -413,6 +422,10 @@ uniform float tex_tint_mix : hint_range(0.0, 1.0) = 0.0;
 
 varying vec3 v_obj_pos;
 varying vec3 v_obj_normal;
+// V8.1-only shared character coordinate. Unlike v_obj_pos, this does not restart
+// at the origin of every authored sphere/capsule, so advected interior fields join
+// cleanly across overlapping body, limb, foot, crown, and facial primitives.
+varying vec3 v_liquid_body_pos;
 // fragment -> light handoff
 varying float v_ink;
 varying vec3 v_filter;
@@ -718,24 +731,82 @@ float spec_lobe(vec3 n, vec3 v, vec3 l, float rough) {
 
 
 void vertex() {
-	float body_squash = liquid_body_squash * liquid_body_deform_strength;
-	float vertical_scale = max(1.0 - body_squash, 0.8);
-	float lateral_scale = 1.0 + body_squash * 0.55;
-	VERTEX.y *= vertical_scale;
-	VERTEX.xz *= lateral_scale;
-	vec2 move_direction = liquid_flow_direction.xz;
-	if (length(move_direction) > 0.001) {
-		move_direction = normalize(move_direction);
-		float along = dot(VERTEX.xz, move_direction);
-		VERTEX.xz += move_direction * along
-			* liquid_flow_motion_mix * liquid_body_deform_strength * 0.035;
+	// Keep the reviewed V5-V8 deformation instruction-for-instruction when the
+	// V8.1 body-space switch is off. This also avoids changing imported bodies
+	// whose material does not receive authored primitive metadata.
+	if (liquid_body_space_enabled < 0.5) {
+		float body_squash = liquid_body_squash * liquid_body_deform_strength;
+		float vertical_scale = max(1.0 - body_squash, 0.8);
+		float lateral_scale = 1.0 + body_squash * 0.55;
+		VERTEX.y *= vertical_scale;
+		VERTEX.xz *= lateral_scale;
+		vec2 move_direction = liquid_flow_direction.xz;
+		if (length(move_direction) > 0.001) {
+			move_direction = normalize(move_direction);
+			float along = dot(VERTEX.xz, move_direction);
+			VERTEX.xz += move_direction * along
+				* liquid_flow_motion_mix * liquid_body_deform_strength * 0.035;
+		}
+		float upper_mass = smoothstep(-0.48, 0.56, VERTEX.y);
+		VERTEX += liquid_body_lag * upper_mass * liquid_body_deform_strength;
+		NORMAL = normalize(vec3(
+			NORMAL.x / lateral_scale,
+			NORMAL.y / vertical_scale,
+			NORMAL.z / lateral_scale));
+		v_liquid_body_pos = VERTEX;
+	} else {
+		vec3 safe_part_scale = max(abs(liquid_part_scale), vec3(0.0001));
+		mat3 body_to_part = transpose(liquid_part_basis);
+		vec3 body_position = liquid_part_origin
+			+ liquid_part_basis * (VERTEX * safe_part_scale);
+		vec3 original_body_position = body_position;
+		vec3 body_normal = normalize(
+			liquid_part_basis * (NORMAL / safe_part_scale));
+
+		float body_squash = liquid_body_squash * liquid_body_deform_strength;
+		float vertical_scale = max(1.0 - body_squash, 0.8);
+		float lateral_scale = 1.0 + body_squash * 0.55;
+		body_position.y *= vertical_scale;
+		body_position.xz *= lateral_scale;
+
+		vec2 move_direction = liquid_flow_direction.xz;
+		if (length(move_direction) > 0.001) {
+			move_direction = normalize(move_direction);
+			float along = dot(body_position.xz, move_direction);
+			body_position.xz += move_direction * along
+				* liquid_flow_motion_mix * liquid_body_deform_strength * 0.035;
+		}
+
+		float upper_mass = smoothstep(0.0, 1.10, body_position.y);
+		body_position += liquid_body_lag * upper_mass * liquid_body_deform_strength;
+
+		vec3 turn_axis = vec3(-liquid_flow_direction.z, 0.0, liquid_flow_direction.x);
+		if (length(turn_axis) > 0.001) {
+			turn_axis = normalize(turn_axis);
+			body_position += turn_axis * liquid_turn_shear * upper_mass;
+			// Approximate the inverse-transpose of the height-dependent shear so
+			// wet highlights bend with the mass instead of sliding over it.
+			body_normal.y -= dot(body_normal, turn_axis) * liquid_turn_shear * 0.91;
+		}
+
+		vec3 contact_normal = liquid_contact_normal;
+		float positive_contact = max(liquid_contact_amount, 0.0);
+		if (positive_contact > 0.001 && length(contact_normal) > 0.001) {
+			contact_normal = normalize(contact_normal);
+			float contact_side = smoothstep(
+				-0.08, 0.62, dot(body_position, -contact_normal));
+			body_position += contact_normal * positive_contact * 0.055 * contact_side;
+		}
+
+		body_normal = normalize(vec3(
+			body_normal.x / lateral_scale,
+			body_normal.y / vertical_scale,
+			body_normal.z / lateral_scale));
+		VERTEX += (body_to_part * (body_position - original_body_position))
+			/ safe_part_scale;
+		NORMAL = normalize((body_to_part * body_normal) * safe_part_scale);
+		v_liquid_body_pos = body_position;
 	}
-	float upper_mass = smoothstep(-0.48, 0.56, VERTEX.y);
-	VERTEX += liquid_body_lag * upper_mass * liquid_body_deform_strength;
-	NORMAL = normalize(vec3(
-		NORMAL.x / lateral_scale,
-		NORMAL.y / vertical_scale,
-		NORMAL.z / lateral_scale));
 	v_obj_pos = VERTEX;
 	v_obj_normal = NORMAL;
 }
@@ -759,6 +830,12 @@ void fragment() {
 	// slow vertical drift therefore remains continuous; velocity only tilts and
 	// accelerates the bounded swirl layered over it. The dynamic direction never
 	// multiplies unbounded time, avoiding a pop when the player turns late in a run.
+	// V8.1 selects the interpolated shared-character coordinate; the explicit branch
+	// keeps V5-V8 sampling the original v_obj_pos path exactly.
+	vec3 liquid_field_position = v_obj_pos;
+	if (liquid_body_space_enabled >= 0.5) {
+		liquid_field_position = v_liquid_body_pos;
+	}
 	float liquid_motion = clamp(liquid_flow_motion_mix, 0.0, 1.0);
 	float liquid_phase = TIME * (
 		liquid_flow_idle_speed + liquid_flow_move_boost * liquid_motion)
@@ -779,25 +856,25 @@ void fragment() {
 		liquid_motion * 0.78));
 	vec3 liquid_side = normalize(cross(liquid_axis, vec3(1.0, 0.0, 0.0)));
 	vec3 liquid_curl = normalize(cross(liquid_side, liquid_axis));
-	vec3 liquid_sample_position = v_obj_pos;
+	vec3 liquid_sample_position = liquid_field_position;
 	float liquid_pulse = 0.5;
 	if (liquid_flow_strength > 0.001) {
 		float side_wave = sin(
-			liquid_phase * 1.17 + dot(v_obj_pos, liquid_side) * 3.4);
+			liquid_phase * 1.17 + dot(liquid_field_position, liquid_side) * 3.4);
 		float curl_wave = cos(
-			liquid_phase * 0.83 + dot(v_obj_pos, liquid_curl) * 4.1);
+			liquid_phase * 0.83 + dot(liquid_field_position, liquid_curl) * 4.1);
 		float travel_wave = sin(
-			liquid_phase * 1.41 + dot(v_obj_pos, liquid_direction) * 3.0);
+			liquid_phase * 1.41 + dot(liquid_field_position, liquid_direction) * 3.0);
 		vec3 idle_drift = liquid_idle_axis * liquid_phase * liquid_flow_advection;
 		vec3 circulation = (
 			liquid_side * side_wave + liquid_curl * curl_wave * 0.72)
 			* liquid_flow_warp * (1.0 + liquid_motion * 0.65);
 		vec3 travel_overlay = liquid_direction * travel_wave
 			* liquid_flow_advection * liquid_motion * 0.42;
-		liquid_sample_position = v_obj_pos - (
+		liquid_sample_position = liquid_field_position - (
 			idle_drift + circulation + travel_overlay) * liquid_flow_strength;
 		liquid_pulse = 0.5 + 0.5 * sin(
-			liquid_phase * 1.63 + dot(v_obj_pos, liquid_axis) * 4.8);
+			liquid_phase * 1.63 + dot(liquid_field_position, liquid_axis) * 4.8);
 	}
 	float liquid_slime_volume = 0.0;
 	float liquid_slime_ridge = 0.0;
@@ -839,7 +916,7 @@ void fragment() {
 	// was already sampled for inclusions in V4; reusing it adds no texture fetch
 	// and no second noise evaluation on production Fizzy profiles. At a coarse
 	// pixel footprint it converges toward 0.5, preventing gameplay-distance shimmer.
-	vec3 inclusion_coord = v_obj_pos * inclusion_scale
+	vec3 inclusion_coord = liquid_field_position * inclusion_scale
 		+ vec3(inclusion_seed, inclusion_seed * 1.31, inclusion_seed * 2.17);
 	float coord_footprint = max(
 		length(dFdx(inclusion_coord)),

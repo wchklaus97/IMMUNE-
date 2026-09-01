@@ -47,7 +47,7 @@ locale/translations=PackedStringArray("res://translations/game.zh_HK.translation
 
 [immune]
 
-visual/gel_look="v8"
+visual/gel_look="v8_1"
 
 [input]
 

@@ -52,7 +52,7 @@ new output locations:
 - `outputs/v8-liquid-motion/gameplay-b/`: real combat and portrait captures;
 - `outputs/v8-liquid-motion/perf/`: order-varied V7/V8 performance reports;
 - `outputs/v8-liquid-motion/web-qa/`: exported-Web lifecycle report;
-- `godot/immune/build/releases/web-v8/`: separate ignored V8 Web export.
+- `godot/immune/build/history/web-v8/`: separate ignored V8 Web export.
 
 No previous capture, generated model, source checkpoint, or release directory
 was removed or overwritten. No Meshy generation was submitted and no paid
@@ -164,7 +164,7 @@ or minimum-spec hardware evidence.
 
 The first export attempt failed before writing because Godot does not create a
 new target directory. The workflow stopped, diagnosed the exact error, created
-only `build/releases/web-v8/`, and reran the same export successfully. Future
+only `build/history/web-v8/`, and reran the same export successfully. Future
 new-version exports should pre-create their target directory.
 
 The exported V8 Web build completes all eight ordered events from engine ready
@@ -217,11 +217,11 @@ godot --path godot/immune --resolution 1024x1024 res://tools/shot.tscn -- \
   --anim=move --flow-seconds=0.25,1.0,1.75,2.5 \
   --flow-velocity=3,0,0 --family=B --body=blockout --ground=0
 
-mkdir -p godot/immune/build/releases/web-v8
+mkdir -p godot/immune/build/history/web-v8
 godot --headless --path godot/immune --export-release Web \
-  build/releases/web-v8/index.html
+  build/history/web-v8/index.html
 npm run test:web-release -- \
-  --artifacts=godot/immune/build/releases/web-v8 \
+  --artifacts=godot/immune/build/history/web-v8 \
   --out=outputs/v8-liquid-motion/web-qa \
   --duration-ms=4000 --gate-mode=compatibility-only
 ```

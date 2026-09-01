@@ -27,6 +27,7 @@ const _ActiveSkillController := preload("res://combat/active_skill_controller.gd
 const _EncounterDirector := preload("res://combat/combat_encounter_director.gd")
 const _TouchControls := preload("res://ui/combat_touch_controls.gd")
 const _GelStudio := preload("res://characters/gel/gel_studio_environment.gd")
+const _GelProfiles := preload("res://characters/gel/gel_profiles.gd")
 
 const MISSION_SELECT_SCENE := "res://ui/mission_select/mission_select.tscn"
 const NODE_FIXED := &"BASE-T-03"
@@ -53,6 +54,8 @@ const PORTRAIT_SCALE := {
 }
 const PORTRAIT_Y := -0.12
 const HUD_BASE_FONT_SIZE := 16
+const COMBAT_ACTION_BASIC := &"basic"
+const COMBAT_ACTION_ACTIVE := &"active"
 
 @export var mission_data: ImmuneMissionData
 @export var auto_spawn: bool = true
@@ -119,6 +122,8 @@ var _touch_controls: CombatTouchControls
 var _encounter_spawn_multiplier: float = 1.0
 var _resolving_active_skill: bool = false
 var _core_last_hp: int = _Core.MAX_HP
+var _next_combat_action_id: int = 1
+var _pending_combat_actions: Dictionary = {}
 
 
 func _ready() -> void:
@@ -167,6 +172,7 @@ func _assert_jelly_light_contract() -> void:
 func _exit_tree() -> void:
 	if get_viewport() != null and get_viewport().size_changed.is_connected(_on_viewport_size_changed):
 		get_viewport().size_changed.disconnect(_on_viewport_size_changed)
+	_pending_combat_actions.clear()
 	_shutdown_combat_portrait()
 
 
@@ -231,7 +237,7 @@ func _physics_process(delta: float) -> void:
 	if _over or _onboarding_open or get_tree().paused:
 		return
 	_update_playtest_autopilot()
-	_move_player()
+	_move_player(delta)
 	if _active_skill_controller != null:
 		_active_skill_controller.tick(delta)
 	if _encounter_director != null:
@@ -273,12 +279,17 @@ func _toggle_duty() -> void:
 	if _family_profile.family_id == &"T" and not ResearchState.is_completed(NODE_MOBILE):
 		_set_status(tr("STATUS_T_MOBILE_REQUIRED") % SettingsState.prompt(&"demo_research"))
 		return
-	if _player.duty == &"fixed":
-		_player.transform_duty(&"mobile")
+	var requested_duty := &"mobile" if _player.duty == &"fixed" else &"fixed"
+	if requested_duty == &"mobile":
+		_player.transform_duty(requested_duty)
 		_set_status(tr("STATUS_DUTY_MOBILE"))
 	else:
-		_player.transform_duty(&"fixed")
+		_player.transform_duty(requested_duty)
 		_set_status(tr("STATUS_DUTY_FIXED"))
+	if _GelProfiles.v8_1_enabled():
+		# V8.1 may queue the request behind an authored combat pose. The actual
+		# state signal owns HUD/touch/QA publication when the duty really applies.
+		return
 	_sync_combat_portrait_duty()
 	_sync_touch_movement_state()
 	AudioDirector.play_sfx(&"duty")
@@ -286,6 +297,22 @@ func _toggle_duty() -> void:
 	WebQaBridge.publish(&"duty_changed", {
 		"family": String(_family_profile.family_id),
 		"duty": String(_player.duty),
+	})
+
+
+func _on_player_duty_changed(new_duty: StringName) -> void:
+	if not _GelProfiles.v8_1_enabled():
+		return
+	_set_status(
+		tr("STATUS_DUTY_FIXED") if new_duty == &"fixed" else tr("STATUS_DUTY_MOBILE")
+	)
+	_sync_combat_portrait_duty()
+	_sync_touch_movement_state()
+	AudioDirector.play_sfx(&"duty")
+	_refresh_hud()
+	WebQaBridge.publish(&"duty_changed", {
+		"family": String(_family_profile.family_id),
+		"duty": String(new_duty),
 	})
 
 
@@ -316,12 +343,14 @@ func _research_t_chain() -> void:
 	_set_status(tr("STATUS_T_MOBILE_OWNED"))
 
 
-func _move_player() -> void:
+func _move_player(delta: float) -> void:
 	if _player == null:
 		return
 	if _player.duty == &"fixed":
 		_player.velocity = Vector3.ZERO
 		_player.global_position.y = PLAYER_HOME.y
+		if _GelProfiles.v8_1_enabled():
+			_player.submit_motion_truth(Vector3.ZERO, Vector3.ZERO, Vector3.ZERO, delta)
 		return
 	var move_input: Vector2 = _playtest_move_input() if playtest_autopilot else Input.get_vector(
 		&"demo_move_left", &"demo_move_right", &"demo_move_back", &"demo_move_forward"
@@ -331,11 +360,85 @@ func _move_player() -> void:
 		if not touch_input.is_zero_approx():
 			move_input = touch_input
 	var move_speed := _family_profile.move_speed * (1.0 + ResearchState.global_stat("moveSpeed"))
-	_player.velocity = Vector3(move_input.x, 0.0, move_input.y) * move_speed
+	var requested_velocity := Vector3(move_input.x, 0.0, move_input.y) * move_speed
+	_player.velocity = requested_velocity
+	var start_position := _player.global_position
 	_player.move_and_slide()
-	_player.global_position.y = PLAYER_HOME.y
-	_player.global_position.x = clampf(_player.global_position.x, -STRAFE_LIMIT, STRAFE_LIMIT)
-	_player.global_position.z = clampf(_player.global_position.z, REAR_LIMIT, FRONT_LIMIT)
+	if not _GelProfiles.v8_1_enabled():
+		_player.global_position.y = PLAYER_HOME.y
+		_player.global_position.x = clampf(_player.global_position.x, -STRAFE_LIMIT, STRAFE_LIMIT)
+		_player.global_position.z = clampf(_player.global_position.z, REAR_LIMIT, FRONT_LIMIT)
+		return
+
+	var contact_normal := _strongest_player_slide_normal(requested_velocity)
+	var clamped_position := _player.global_position
+	clamped_position.y = PLAYER_HOME.y
+	if clamped_position.x < -STRAFE_LIMIT:
+		clamped_position.x = -STRAFE_LIMIT
+		contact_normal = _stronger_contact_normal(
+			contact_normal, Vector3.RIGHT, requested_velocity
+		)
+	elif clamped_position.x > STRAFE_LIMIT:
+		clamped_position.x = STRAFE_LIMIT
+		contact_normal = _stronger_contact_normal(
+			contact_normal, Vector3.LEFT, requested_velocity
+		)
+	if clamped_position.z < REAR_LIMIT:
+		clamped_position.z = REAR_LIMIT
+		contact_normal = _stronger_contact_normal(
+			contact_normal, Vector3.BACK, requested_velocity
+		)
+	elif clamped_position.z > FRONT_LIMIT:
+		clamped_position.z = FRONT_LIMIT
+		contact_normal = _stronger_contact_normal(
+			contact_normal, Vector3.FORWARD, requested_velocity
+		)
+	_player.global_position = clamped_position
+	var resolved_velocity := (
+		(_player.global_position - start_position) / maxf(delta, 0.000001)
+	)
+	# The lane controller is planar. Correcting hover height back to PLAYER_HOME
+	# must never masquerade as vertical locomotion in the liquid presentation.
+	resolved_velocity.y = 0.0
+	_player.submit_motion_truth(
+		requested_velocity, resolved_velocity, contact_normal, delta
+	)
+
+
+func _strongest_player_slide_normal(requested_velocity: Vector3) -> Vector3:
+	var strongest := Vector3.ZERO
+	for collision_index in _player.get_slide_collision_count():
+		var collision := _player.get_slide_collision(collision_index)
+		if collision == null:
+			continue
+		var normal := collision.get_normal()
+		var planar_normal := Vector3(normal.x, 0.0, normal.z)
+		if planar_normal.is_zero_approx():
+			continue
+		strongest = _stronger_contact_normal(
+			strongest, planar_normal.normalized(), requested_velocity
+		)
+	return strongest
+
+
+func _stronger_contact_normal(
+	current: Vector3,
+	candidate: Vector3,
+	requested_velocity: Vector3
+) -> Vector3:
+	var planar_candidate := Vector3(candidate.x, 0.0, candidate.z)
+	if planar_candidate.is_zero_approx():
+		return current
+	planar_candidate = planar_candidate.normalized()
+	if current.is_zero_approx():
+		return planar_candidate
+	var planar_request := Vector3(requested_velocity.x, 0.0, requested_velocity.z)
+	if planar_request.is_zero_approx():
+		return current
+	var direction := planar_request.normalized()
+	var current_score := -direction.dot(current.normalized())
+	var candidate_score := -direction.dot(planar_candidate)
+	return planar_candidate if candidate_score > current_score else current
 
 
 func _update_playtest_autopilot() -> void:
@@ -394,9 +497,46 @@ func _request_active_skill() -> void:
 
 func _on_active_skill_requested(profile: FamilyActiveSkillProfile) -> void:
 	if _over or _player == null:
+		if _GelProfiles.v8_1_enabled() and _active_skill_controller != null:
+			_active_skill_controller.reset()
+		return
+	if _GelProfiles.v8_1_enabled():
+		_request_active_skill_action(profile)
 		return
 	var targets := _active_skill_targets(profile)
 	_player.fire_skill(StringName("SKILL-%s-ACTIVE" % String(_family_profile.family_id)))
+	_commit_active_skill(profile, targets)
+
+
+func _request_active_skill_action(profile: FamilyActiveSkillProfile) -> void:
+	var request_id := _allocate_combat_action_id()
+	_pending_combat_actions[request_id] = {
+		"kind": COMBAT_ACTION_ACTIVE,
+		"profile": profile,
+	}
+	var accepted := _player.request_combat_action(
+		request_id,
+		COMBAT_ACTION_ACTIVE,
+		StringName("SKILL-%s-ACTIVE" % String(_family_profile.family_id))
+	)
+	# A failed animation request can cancel synchronously. Store first so that
+	# the cancellation signal always has a payload to retire.
+	if not accepted or not _pending_combat_actions.has(request_id):
+		_pending_combat_actions.erase(request_id)
+		if _active_skill_controller != null:
+			_active_skill_controller.reset()
+
+
+func _release_active_skill(profile: FamilyActiveSkillProfile) -> void:
+	if _over or _player == null or profile == null:
+		return
+	_commit_active_skill(profile, _active_skill_targets(profile))
+
+
+func _commit_active_skill(
+	profile: FamilyActiveSkillProfile,
+	targets: Array[Node3D]
+) -> void:
 	_resolving_active_skill = true
 	var hits := 0
 	for target in targets:
@@ -523,7 +663,13 @@ func _try_fire(delta: float) -> void:
 	_fire_cd -= delta
 	if _fire_cd > 0.0 or _player == null:
 		return
-	var target := _nearest_bacterium()
+	if _GelProfiles.v8_1_enabled() and _has_pending_combat_action(COMBAT_ACTION_BASIC):
+		return
+	var target := (
+		_nearest_owned_bacterium()
+		if _GelProfiles.v8_1_enabled()
+		else _nearest_bacterium()
+	)
 	if target == null:
 		return
 	var from := _muzzle()
@@ -533,9 +679,82 @@ func _try_fire(delta: float) -> void:
 		return
 	var base_cd := _family_profile.fixed_fire_cooldown if _player.duty == &"fixed" else _family_profile.mobile_fire_cooldown
 	var speed := 1.0 + ResearchState.global_stat("attackSpeed", _player.duty)
-	_fire_cd = base_cd / maxf(speed, 0.25)
+	var cadence := base_cd / maxf(speed, 0.25)
+	if _GelProfiles.v8_1_enabled():
+		_request_basic_fire_action(target, horizontal_aim, cadence)
+		return
+	_fire_cd = cadence
 	_player.look_at(_player.global_position + horizontal_aim, Vector3.UP, true)
 	_player.fire_skill(StringName("SKILL-%s-ACTIVE" % String(_family_profile.family_id)))
+	_spawn_basic_bolt(from, aim)
+
+
+func _request_basic_fire_action(
+	target: Node3D,
+	horizontal_aim: Vector3,
+	cadence: float
+) -> void:
+	_player.look_at(_player.global_position + horizontal_aim, Vector3.UP, true)
+	var request_id := _allocate_combat_action_id()
+	_pending_combat_actions[request_id] = {
+		"kind": COMBAT_ACTION_BASIC,
+		"target": weakref(target),
+		"cadence": cadence,
+	}
+	var accepted := _player.request_combat_action(
+		request_id,
+		COMBAT_ACTION_BASIC,
+		StringName("BASIC-%s" % String(_family_profile.family_id)),
+		cadence
+	)
+	if not accepted or not _pending_combat_actions.has(request_id):
+		_pending_combat_actions.erase(request_id)
+		return
+	# Consume cadence only after the presentation arbiter accepts the request.
+	# A later pre-release cancellation restores it in the signal handler.
+	_fire_cd = cadence
+
+
+func _release_basic_fire(payload: Dictionary) -> bool:
+	if _over or _player == null:
+		return false
+	var target: Node3D = null
+	var target_reference := payload.get("target") as WeakRef
+	if target_reference != null:
+		target = target_reference.get_ref() as Node3D
+	if not _basic_fire_target_is_valid(target):
+		target = _nearest_owned_bacterium()
+	if not _basic_fire_target_is_valid(target):
+		return false
+	var from := _muzzle()
+	var aim := target.global_position - from
+	var horizontal_aim := Vector3(aim.x, 0.0, aim.z)
+	if aim.is_zero_approx() or horizontal_aim.length() > _family_profile.fire_range:
+		# The remembered target can leave range during wind-up. Reacquire once at
+		# the authored release pose so a valid nearby pathogen still receives it.
+		target = _nearest_owned_bacterium()
+		if not _basic_fire_target_is_valid(target):
+			return false
+		from = _muzzle()
+		aim = target.global_position - from
+		horizontal_aim = Vector3(aim.x, 0.0, aim.z)
+		if aim.is_zero_approx() or horizontal_aim.length() > _family_profile.fire_range:
+			return false
+	_player.look_at(_player.global_position + horizontal_aim, Vector3.UP, true)
+	_spawn_basic_bolt(from, aim)
+	return true
+
+
+func _basic_fire_target_is_valid(target: Node3D) -> bool:
+	return (
+		is_instance_valid(target)
+		and not target.is_queued_for_deletion()
+		and target.is_in_group("bacterium")
+		and is_ancestor_of(target)
+	)
+
+
+func _spawn_basic_bolt(from: Vector3, aim: Vector3) -> void:
 	var bolt: _Bolt = _Bolt.new()
 	bolt.configure(
 		_family_profile.projectile_damage,
@@ -557,6 +776,61 @@ func _try_fire(delta: float) -> void:
 	AudioDirector.play_sfx(&"shot", randf_range(0.96, 1.04), -2.0)
 
 
+func _allocate_combat_action_id() -> int:
+	var request_id := _next_combat_action_id
+	_next_combat_action_id += 1
+	if _next_combat_action_id >= 2147483647:
+		_next_combat_action_id = 1
+	while _pending_combat_actions.has(request_id):
+		request_id = _next_combat_action_id
+		_next_combat_action_id += 1
+	return request_id
+
+
+func _has_pending_combat_action(action_kind: StringName) -> bool:
+	for request_id: int in _pending_combat_actions:
+		var payload: Dictionary = _pending_combat_actions[request_id]
+		if StringName(payload.get("kind", &"")) == action_kind:
+			return true
+	return false
+
+
+func _on_combat_action_released(request_id: int, action_kind: StringName) -> void:
+	if not _pending_combat_actions.has(request_id):
+		return
+	var payload: Dictionary = _pending_combat_actions.get(request_id, {})
+	_pending_combat_actions.erase(request_id)
+	var expected_kind := StringName(payload.get("kind", &""))
+	if expected_kind != action_kind:
+		push_warning(
+			"CombatLane: release kind mismatch for action %d (%s != %s)"
+			% [request_id, String(action_kind), String(expected_kind)]
+		)
+		return
+	match action_kind:
+		COMBAT_ACTION_BASIC:
+			_release_basic_fire(payload)
+		COMBAT_ACTION_ACTIVE:
+			var profile := payload.get("profile") as FamilyActiveSkillProfile
+			_release_active_skill(profile)
+
+
+func _on_combat_action_cancelled(
+	request_id: int,
+	action_kind: StringName,
+	reason: StringName
+) -> void:
+	if not _pending_combat_actions.has(request_id):
+		return
+	_pending_combat_actions.erase(request_id)
+	if reason == &"terminal" or _over:
+		return
+	if action_kind == COMBAT_ACTION_BASIC:
+		_fire_cd = 0.0
+	elif action_kind == COMBAT_ACTION_ACTIVE and _active_skill_controller != null:
+		_active_skill_controller.reset()
+
+
 func _muzzle() -> Vector3:
 	if _player != null and _player.weapon_socket != null:
 		return _player.weapon_socket.global_position
@@ -573,6 +847,18 @@ func _nearest_bacterium() -> Node3D:
 		var distance := _muzzle().distance_to(body.global_position)
 		if distance < best_d:
 			best_d = distance
+			best = body
+	return best
+
+
+func _nearest_owned_bacterium() -> Node3D:
+	var best: Node3D = null
+	var best_distance := INF
+	var muzzle := _muzzle()
+	for body in _owned_enemies():
+		var distance := muzzle.distance_to(body.global_position)
+		if distance < best_distance:
+			best_distance = distance
 			best = body
 	return best
 
@@ -720,6 +1006,7 @@ func _defeat() -> void:
 
 func _finish_victory() -> void:
 	_over = true
+	_settle_player_motion(1.0 / 60.0, true)
 	if _telemetry != null:
 		_telemetry.finish(true)
 	if not _rewarded:
@@ -743,6 +1030,7 @@ func _finish_victory() -> void:
 
 func _finish_defeat() -> void:
 	_over = true
+	_settle_player_motion(1.0 / 60.0, true)
 	if _telemetry != null:
 		_telemetry.finish(false)
 	_show_result(tr("RESULT_DEFEAT_TITLE"), tr("RESULT_DEFEAT_BODY") % tr(mission_data.title))
@@ -1091,7 +1379,20 @@ func _spawn_player() -> void:
 		return
 	_player.position = PLAYER_HOME
 	add_child(_player)
+	if _GelProfiles.v8_1_enabled():
+		_player.duty_changed.connect(_on_player_duty_changed)
+		_player.combat_action_released.connect(_on_combat_action_released)
+		_player.combat_action_cancelled.connect(_on_combat_action_cancelled)
 	_sync_touch_movement_state()
+
+
+func _settle_player_motion(delta: float, terminal: bool = false) -> void:
+	if not _GelProfiles.v8_1_enabled():
+		return
+	if _player != null:
+		_player.settle_motion(delta, terminal)
+	if terminal:
+		_pending_combat_actions.clear()
 
 
 func _sync_touch_movement_state() -> void:

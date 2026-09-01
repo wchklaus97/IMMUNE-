@@ -18,8 +18,18 @@ const REGULAR_SMOKE_ALLOWED_ARGS: Array[String] = ["save-path"]
 const JELLY_PROBE_SHARE_MIN := 0.09
 const JELLY_PROBE_SHARE_MAX := 0.105
 const QA_STARTUP_FAILURE_EXIT_CODE := 74
+const GEL_LEGACY_ANIMATIONS: PackedStringArray = [
+	"idle", "plant", "uproot", "move", "hit", "attack", "relay_open", "relay_close",
+]
+const GEL_V8_1_ANIMATIONS: PackedStringArray = [
+	"move_start", "move_stop", "relay_glide", "skill_cast",
+]
+const GEL_V8_1_BASIC_RELEASE_TIME := 0.345
+const GEL_V8_1_ACTIVE_RELEASE_TIME := 0.48
 
 var _jelly_probe_args := {}
+var _v8_1_release_events: Array[Dictionary] = []
+var _v8_1_cancel_events: Array[Dictionary] = []
 
 
 func _init() -> void:
@@ -188,6 +198,13 @@ func _run() -> void:
 				push_error("%s missing %s duty animation" % [unit.get("family_id"), animation_name])
 				quit(1)
 				return
+		var selector_animation_error := _gel_selector_animation_error(
+			unit, animator, str(unit.get("family_id"))
+		)
+		if not selector_animation_error.is_empty():
+			push_error(selector_animation_error)
+			quit(1)
+			return
 		var move_animation := animator.get_animation(&"move")
 		var expected_move_length := 1.12 if _GelProfiles.v8_enabled() else 0.92
 		if not is_equal_approx(move_animation.length, expected_move_length):
@@ -285,12 +302,21 @@ func _run() -> void:
 					push_error("CHAR-BASE-A RelayDish must not cast oversized world shadows")
 					quit(1)
 					return
-				var a_relay_ring := a_relay.get_node_or_null("RelayRing") as MeshInstance3D
+				var a_relay_ring := a_relay.find_child("RelayRing", true, false) as MeshInstance3D
 				var a_relay_material := a_relay_ring.material_override as StandardMaterial3D if a_relay_ring != null else null
 				if a_relay_material == null or a_relay_material.transparency != BaseMaterial3D.TRANSPARENCY_DISABLED:
 					push_error("CHAR-BASE-A RelayRing must use the Compatibility-safe relay material")
 					quit(1)
 					return
+	var hardened_motion_error := ""
+	if _GelProfiles.v8_1_enabled():
+		hardened_motion_error = _gel_v8_1_runtime_error(by_family)
+	elif _GelProfiles.selected_look() == "v8":
+		hardened_motion_error = _gel_v8_preservation_error(by_family)
+	if not hardened_motion_error.is_empty():
+		push_error(hardened_motion_error)
+		quit(1)
+		return
 	# Do not leave the two-light lineup stage alive while later combat and mission
 	# scenes use the same main viewport. A subtree-only audit would miss those
 	# sibling lights and silently test an unsupported four-light composite.
@@ -709,6 +735,19 @@ func _run() -> void:
 	var active_target_hp := int(active_target.get("hp"))
 	combat.call("_request_active_skill")
 	await process_frame
+	if _GelProfiles.v8_1_enabled():
+		# V8.1 commits gameplay at the authored 0.48 s release pose. Advance the
+		# live presentation deterministically after the controller's requested
+		# signal has reached CombatLane. Production uses immediate method callbacks;
+		# the following frame lets the released gameplay payload settle in the scene.
+		var combat_player := combat.get("_player") as Node
+		var combat_animator := combat_player.get_node_or_null("AnimationPlayer") as AnimationPlayer if combat_player != null else null
+		if combat_animator == null:
+			push_error("Combat V8.1 active-skill integration requires the live animator")
+			quit(1)
+			return
+		combat_animator.advance(GEL_V8_1_ACTIVE_RELEASE_TIME + 0.01)
+		await process_frame
 	var combat_active_controller := combat.get("_active_skill_controller") as Node
 	if combat_active_controller == null or float(combat_active_controller.call("remaining_seconds")) <= 0.0:
 		push_error("Combat lane did not consume the active-skill cooldown")
@@ -1634,6 +1673,452 @@ func _has_gamepad_event(action: StringName) -> bool:
 	return false
 
 
+func _gel_selector_animation_error(
+	unit: Node, animator: AnimationPlayer, family: String
+) -> String:
+	if animator == null:
+		return "CHAR-BASE-%s missing its generated gel AnimationPlayer" % family
+	for animation_name in GEL_LEGACY_ANIMATIONS:
+		if not animator.has_animation(StringName(animation_name)):
+			return "CHAR-BASE-%s selector %s lost legacy animation %s" % [
+				family, _GelProfiles.selected_look(), animation_name,
+			]
+	var attack := animator.get_animation(&"attack")
+	if _GelProfiles.v8_1_enabled():
+		for animation_name in GEL_V8_1_ANIMATIONS:
+			if not animator.has_animation(StringName(animation_name)):
+				return "CHAR-BASE-%s V8.1 missing animation %s" % [family, animation_name]
+		if animator.get_animation_list().size() != GEL_LEGACY_ANIMATIONS.size() + GEL_V8_1_ANIMATIONS.size():
+			return "CHAR-BASE-%s V8.1 animation set must be additive and exact" % family
+		var expected_lengths := {
+			&"move_start": 0.28,
+			&"move_stop": 0.52,
+			&"relay_glide": 1.60,
+			&"skill_cast": 0.96,
+		}
+		for animation_name in expected_lengths:
+			var animation := animator.get_animation(animation_name)
+			if not is_equal_approx(animation.length, float(expected_lengths[animation_name])):
+				return "CHAR-BASE-%s V8.1 %s timing drifted" % [family, animation_name]
+		if animator.get_animation(&"relay_glide").loop_mode != Animation.LOOP_LINEAR:
+			return "CHAR-BASE-%s V8.1 relay glide must remain a loop" % family
+		var basic_markers := _animation_method_marker_times(
+			attack, &"_on_combat_release_marker"
+		)
+		var active_markers := _animation_method_marker_times(
+			animator.get_animation(&"skill_cast"), &"_on_combat_release_marker"
+		)
+		if basic_markers.size() != 1 or not is_equal_approx(
+			basic_markers[0], GEL_V8_1_BASIC_RELEASE_TIME
+		):
+			return "CHAR-BASE-%s V8.1 basic attack must release once at 0.345 s" % family
+		if active_markers.size() != 1 or not is_equal_approx(
+			active_markers[0], GEL_V8_1_ACTIVE_RELEASE_TIME
+		):
+			return "CHAR-BASE-%s V8.1 active skill must release once at 0.48 s" % family
+		return ""
+
+	# V8 is a named rollback path, not an alias for the hardened controller.
+	# Its clip set and method-free attack are kept byte-for-behaviour compatible.
+	if _GelProfiles.selected_look() == "v8":
+		if animator.get_animation_list().size() != GEL_LEGACY_ANIMATIONS.size():
+			return "CHAR-BASE-%s explicit V8 must retain exactly eight legacy clips" % family
+		for animation_name in GEL_V8_1_ANIMATIONS:
+			if animator.has_animation(StringName(animation_name)):
+				return "CHAR-BASE-%s explicit V8 must not inherit V8.1 clip %s" % [
+					family, animation_name,
+				]
+		if _animation_method_track_count(attack) != 0:
+			return "CHAR-BASE-%s explicit V8 attack must remain method-track free" % family
+	return ""
+
+
+func _animation_method_marker_times(
+	animation: Animation, method_name: StringName
+) -> PackedFloat32Array:
+	var times := PackedFloat32Array()
+	if animation == null:
+		return times
+	for track_index in animation.get_track_count():
+		if animation.track_get_type(track_index) != Animation.TYPE_METHOD:
+			continue
+		if animation.track_get_path(track_index) != NodePath("."):
+			continue
+		for key_index in animation.track_get_key_count(track_index):
+			var value: Variant = animation.track_get_key_value(track_index, key_index)
+			if value is Dictionary and StringName(value.get("method", &"")) == method_name:
+				times.append(animation.track_get_key_time(track_index, key_index))
+	return times
+
+
+func _animation_method_track_count(animation: Animation) -> int:
+	var count := 0
+	if animation == null:
+		return count
+	for track_index in animation.get_track_count():
+		if animation.track_get_type(track_index) == Animation.TYPE_METHOD:
+			count += 1
+	return count
+
+
+func _gel_v8_1_runtime_error(by_family: Dictionary) -> String:
+	var unit := by_family.get("T") as Node
+	var relay_unit := by_family.get("A") as Node
+	if unit == null or relay_unit == null:
+		return "V8.1 runtime contract requires representative T and A characters"
+	var animator := unit.get_node_or_null("AnimationPlayer") as AnimationPlayer
+	var relay_animator := relay_unit.get_node_or_null("AnimationPlayer") as AnimationPlayer
+	if animator == null or relay_animator == null:
+		return "V8.1 runtime contract requires both representative animators"
+	# The lineup loop has just requested the mobile/relay duty. Resolve those
+	# authored one-shots before exercising the combat and locomotion lanes.
+	animator.advance(2.0)
+	relay_animator.advance(2.0)
+
+	var release_error := _gel_v8_1_release_timing_error(unit, animator)
+	if not release_error.is_empty():
+		return release_error
+	var locomotion_error := _gel_v8_1_locomotion_error(unit, animator)
+	if not locomotion_error.is_empty():
+		return locomotion_error
+	var low_render_error := _gel_v8_1_low_render_motion_truth_error(unit)
+	if not low_render_error.is_empty():
+		return low_render_error
+	var contact_error := _gel_v8_1_contact_error(unit)
+	if not contact_error.is_empty():
+		return contact_error
+	var reversal_error := _gel_v8_1_reversal_error(unit)
+	if not reversal_error.is_empty():
+		return reversal_error
+	var relay_error := _gel_v8_1_relay_error(relay_unit, relay_animator)
+	if not relay_error.is_empty():
+		return relay_error
+	return _gel_v8_1_attachment_error(unit)
+
+
+func _gel_v8_1_release_timing_error(unit: Node, animator: AnimationPlayer) -> String:
+	_v8_1_release_events.clear()
+	_v8_1_cancel_events.clear()
+	# Release markers are gameplay boundaries, so production V8.1 must process a
+	# marker before animation_finished even when one low-FPS advance crosses both.
+	if animator.callback_mode_method != AnimationMixer.ANIMATION_CALLBACK_MODE_METHOD_IMMEDIATE:
+		return "CHAR-BASE-T V8.1 production method callbacks must be immediate"
+	var release_callable := Callable(self, "_capture_v8_1_release")
+	var cancel_callable := Callable(self, "_capture_v8_1_cancel")
+	if not unit.is_connected("combat_action_released", release_callable):
+		unit.connect("combat_action_released", release_callable)
+	if not unit.is_connected("combat_action_cancelled", cancel_callable):
+		unit.connect("combat_action_cancelled", cancel_callable)
+	if not bool(unit.call("request_combat_action", 8101, &"basic", &"BASIC-T", 0.0)):
+		return "CHAR-BASE-T V8.1 rejected an idle basic-action presentation token"
+	animator.advance(0.0)
+	animator.advance(GEL_V8_1_BASIC_RELEASE_TIME - 0.002)
+	if not _v8_1_release_events.is_empty():
+		return "CHAR-BASE-T V8.1 basic gameplay released before its authored pose"
+	animator.advance(0.004)
+	if _v8_1_release_events.size() != 1:
+		return "CHAR-BASE-T V8.1 basic gameplay did not release exactly once at its pose"
+	var basic_event: Dictionary = _v8_1_release_events[0]
+	if int(basic_event.get("id", 0)) != 8101 or StringName(basic_event.get("kind", &"")) != &"basic":
+		return "CHAR-BASE-T V8.1 basic release token lost its request identity"
+	animator.advance(1.0)
+	if _v8_1_release_events.size() != 1:
+		return "CHAR-BASE-T V8.1 basic method track double-released"
+
+	_v8_1_release_events.clear()
+	if not bool(unit.call("request_combat_action", 8102, &"active", &"SKILL-T-ACTIVE", 0.0)):
+		return "CHAR-BASE-T V8.1 rejected an idle active-skill presentation token"
+	animator.advance(0.0)
+	animator.advance(GEL_V8_1_ACTIVE_RELEASE_TIME - 0.002)
+	if not _v8_1_release_events.is_empty():
+		return "CHAR-BASE-T V8.1 active gameplay released before its authored pose"
+	animator.advance(0.004)
+	if _v8_1_release_events.size() != 1:
+		return "CHAR-BASE-T V8.1 active gameplay did not release exactly once at its pose"
+	var active_event: Dictionary = _v8_1_release_events[0]
+	if int(active_event.get("id", 0)) != 8102 or StringName(active_event.get("kind", &"")) != &"active":
+		return "CHAR-BASE-T V8.1 active release token lost its request identity"
+	animator.advance(1.0)
+	if _v8_1_release_events.size() != 1 or not _v8_1_cancel_events.is_empty():
+		return "CHAR-BASE-T V8.1 completed combat actions must neither duplicate nor cancel"
+
+	# One production-mode advance crosses both the authored marker and clip end.
+	# The release must win deterministically; animation_finished must not observe
+	# an unreleased request and manufacture a missing_release cancellation.
+	_v8_1_release_events.clear()
+	_v8_1_cancel_events.clear()
+	if not bool(unit.call("request_combat_action", 8103, &"basic", &"BASIC-T", 0.0)):
+		return "CHAR-BASE-T V8.1 rejected the low-render release-order token"
+	animator.advance(0.0)
+	animator.advance(animator.get_animation(&"attack").length + 0.05)
+	if _v8_1_release_events.size() != 1:
+		return "CHAR-BASE-T V8.1 low-render advance did not release exactly once"
+	var crossed_event: Dictionary = _v8_1_release_events[0]
+	if int(crossed_event.get("id", 0)) != 8103 or StringName(crossed_event.get("kind", &"")) != &"basic":
+		return "CHAR-BASE-T V8.1 low-render release lost its request identity"
+	if not _v8_1_cancel_events.is_empty():
+		var crossed_cancel: Dictionary = _v8_1_cancel_events[0]
+		return "CHAR-BASE-T V8.1 low-render release was cancelled as %s" % String(
+			crossed_cancel.get("reason", &"")
+		)
+	return ""
+
+
+func _capture_v8_1_release(request_id: int, action_kind: StringName) -> void:
+	_v8_1_release_events.append({"id": request_id, "kind": action_kind})
+
+
+func _capture_v8_1_cancel(
+	request_id: int, action_kind: StringName, reason: StringName
+) -> void:
+	_v8_1_cancel_events.append({"id": request_id, "kind": action_kind, "reason": reason})
+
+
+func _gel_v8_1_locomotion_error(unit: Node, animator: AnimationPlayer) -> String:
+	unit.set("duty", &"mobile")
+	unit.call("_apply_duty", &"mobile")
+	unit.call("settle_motion", 1.0 / 60.0, false)
+	unit.call("_cache_liquid_materials")
+	animator.play(&"idle")
+	animator.advance(0.0)
+	unit.call("submit_motion_truth", Vector3(2.4, 0.0, 0.0), Vector3(2.4, 0.0, 0.0), Vector3.ZERO, 1.0 / 60.0)
+	if StringName(unit.call("liquid_locomotion_state")) != &"idle":
+		return "CHAR-BASE-T V8.1 locomotion must debounce the first moving frame"
+	unit.call("submit_motion_truth", Vector3(2.4, 0.0, 0.0), Vector3(2.4, 0.0, 0.0), Vector3.ZERO, 1.0 / 60.0)
+	if StringName(unit.call("liquid_locomotion_state")) != &"starting" or animator.current_animation != &"move_start":
+		return "CHAR-BASE-T V8.1 locomotion must enter its viscous start clip after two frames"
+	animator.advance(0.30)
+	if StringName(unit.call("liquid_locomotion_state")) != &"moving" or animator.current_animation != &"move":
+		return "CHAR-BASE-T V8.1 start clip must hand off to the grounded move loop"
+	var release_anchor := unit.get_node_or_null("WeaponSocket/LiquidReleaseAnchor") as Node3D
+	if release_anchor == null:
+		return "CHAR-BASE-T V8.1 must expose a deformation-aware release anchor"
+	var anchor_home := release_anchor.transform
+	for frame in 30:
+		unit.call("submit_motion_truth", Vector3(2.4, 0.0, 0.0), Vector3(2.4, 0.0, 0.0), Vector3.ZERO, 1.0 / 60.0)
+	if release_anchor.transform.origin.distance_to(anchor_home.origin) < 0.004:
+		return "CHAR-BASE-T V8.1 release anchor must follow the viscous presentation mass"
+	for frame in 3:
+		unit.call("submit_motion_truth", Vector3.ZERO, Vector3.ZERO, Vector3.ZERO, 1.0 / 60.0)
+	if StringName(unit.call("liquid_locomotion_state")) != &"stopping" or animator.current_animation != &"move_stop":
+		return "CHAR-BASE-T V8.1 locomotion must enter its three-frame stop edge"
+	animator.advance(0.55)
+	if StringName(unit.call("liquid_locomotion_state")) != &"idle" or animator.current_animation != &"idle":
+		return "CHAR-BASE-T V8.1 stop clip must settle into idle"
+	return ""
+
+
+func _gel_v8_1_low_render_motion_truth_error(unit: Node) -> String:
+	var original_duty := StringName(unit.get("duty"))
+	unit.set("duty", &"fixed")
+	unit.call("_apply_duty", &"fixed")
+	unit.call("_cache_liquid_materials")
+	var moving_velocity := Vector3(2.4, 0.0, 0.0)
+	# Normal 60 Hz post-physics submissions precede a deliberately slow 100 ms
+	# render frame. Render delta alone must never expire the latest physics truth.
+	for physics_tick in 6:
+		unit.call(
+			"submit_motion_truth",
+			moving_velocity,
+			moving_velocity,
+			Vector3.ZERO,
+			1.0 / 60.0
+		)
+	var motion_before_render := float(unit.call("liquid_motion_mix"))
+	unit.call("_process", 0.10)
+	var resolved_after_render := unit.call("resolved_motion_velocity") as Vector3
+	var motion_after_render := float(unit.call("liquid_motion_mix"))
+	unit.call("settle_motion", 1.0 / 60.0, false)
+	unit.set("duty", original_duty)
+	unit.call("_apply_duty", original_duty)
+	unit.call("_cache_liquid_materials")
+	if resolved_after_render.distance_to(moving_velocity) > 0.001:
+		return "CHAR-BASE-T V8.1 expired fresh physics truth on a 100 ms render frame"
+	if motion_after_render + 0.0001 < motion_before_render:
+		return "CHAR-BASE-T V8.1 low render FPS incorrectly decayed fresh locomotion"
+	return ""
+
+
+func _gel_v8_1_contact_error(unit: Node) -> String:
+	var collision := unit.get_node_or_null("CollisionShape3D") as CollisionShape3D
+	if collision == null or collision.shape == null:
+		return "CHAR-BASE-T V8.1 wall-contact test requires stable gameplay collision"
+	var collision_transform := collision.transform
+	var collision_shape := collision.shape
+	unit.set("duty", &"mobile")
+	unit.call("_apply_duty", &"mobile")
+	unit.call("_cache_liquid_materials")
+	# Requested motion presses into the wall while resolved displacement is zero.
+	# Locomotion follows the latter; the former drives only the contact envelope.
+	for frame in 5:
+		unit.call("submit_motion_truth", Vector3(3.0, 0.0, 0.0), Vector3.ZERO, Vector3(-1.0, 0.0, 0.0), 1.0 / 60.0)
+	if StringName(unit.call("liquid_locomotion_state")) != &"idle":
+		return "CHAR-BASE-T V8.1 must not walk in place while resolved against a wall"
+	if float(unit.call("liquid_motion_mix")) > 0.01:
+		return "CHAR-BASE-T V8.1 wall pressure leaked requested speed into locomotion"
+	if float(unit.call("liquid_contact_amount")) <= 0.05:
+		return "CHAR-BASE-T V8.1 wall contact did not produce a readable viscous response"
+	for frame in 120:
+		unit.call("submit_motion_truth", Vector3.ZERO, Vector3.ZERO, Vector3.ZERO, 1.0 / 60.0)
+	if absf(float(unit.call("liquid_contact_amount"))) > 0.002:
+		return "CHAR-BASE-T V8.1 wall-contact envelope did not return to zero"
+	if (unit.call("liquid_body_lag") as Vector3).length() > 0.012 or float(unit.call("liquid_body_squash")) > 0.008:
+		return "CHAR-BASE-T V8.1 wall response retained visible residual deformation"
+	if not collision.transform.is_equal_approx(collision_transform) or collision.shape != collision_shape:
+		return "CHAR-BASE-T V8.1 visual contact must never deform gameplay collision"
+	return ""
+
+
+func _gel_v8_1_reversal_error(unit: Node) -> String:
+	var original_duty := StringName(unit.get("duty"))
+	unit.set("duty", &"fixed")
+	unit.call("_apply_duty", &"fixed")
+	var samples: Array[Vector3] = []
+	for fps in [30, 60, 120]:
+		unit.call("_cache_liquid_materials")
+		var delta := 1.0 / float(fps)
+		for frame in int(round(0.50 * fps)):
+			unit.call("submit_motion_truth", Vector3(2.4, 0.0, 0.0), Vector3(2.4, 0.0, 0.0), Vector3.ZERO, delta)
+		for frame in int(round(0.20 * fps)):
+			unit.call("submit_motion_truth", Vector3(-2.4, 0.0, 0.0), Vector3(-2.4, 0.0, 0.0), Vector3.ZERO, delta)
+		var direction := unit.call("liquid_flow_direction") as Vector3
+		if direction.length() < 0.999:
+			return "CHAR-BASE-T V8.1 180-degree reversal collapsed its flow direction at %d Hz" % fps
+		samples.append(direction)
+	unit.set("duty", original_duty)
+	unit.call("_apply_duty", original_duty)
+	unit.call("_cache_liquid_materials")
+	if samples[0].distance_to(samples[1]) > 0.035 or samples[1].distance_to(samples[2]) > 0.035:
+		return "CHAR-BASE-T V8.1 reversal steering drifted across 30/60/120 Hz"
+	return ""
+
+
+func _gel_v8_1_relay_error(unit: Node, animator: AnimationPlayer) -> String:
+	unit.set("duty", &"relay")
+	unit.call("_apply_duty", &"relay")
+	unit.call("settle_motion", 1.0 / 60.0, false)
+	unit.call("_cache_liquid_materials")
+	animator.play(&"idle")
+	animator.advance(0.0)
+	for frame in 2:
+		unit.call("submit_motion_truth", Vector3(2.4, 0.0, 0.0), Vector3(2.4, 0.0, 0.0), Vector3.ZERO, 1.0 / 60.0)
+	if animator.current_animation != &"move_start":
+		return "CHAR-BASE-A V8.1 relay travel must retain the viscous start edge"
+	animator.advance(0.30)
+	if StringName(unit.call("liquid_locomotion_state")) != &"moving" or animator.current_animation != &"relay_glide":
+		return "CHAR-BASE-A V8.1 relay travel must hand off to relay_glide"
+	if not animator.get_animation(&"relay_glide").loop_mode == Animation.LOOP_LINEAR:
+		return "CHAR-BASE-A V8.1 relay_glide must remain an analytic loop"
+	return ""
+
+
+func _gel_v8_1_attachment_error(unit: Node) -> String:
+	if not unit.has_method("liquid_attachment_material_count") or int(unit.call("liquid_attachment_material_count")) < 3:
+		return "CHAR-BASE-T V8.1 must bind both eyes and the mouth cavity to body-space deformation"
+	var release_anchor := unit.get_node_or_null("WeaponSocket/LiquidReleaseAnchor") as Node3D
+	if release_anchor == null or unit.get("weapon_socket") != release_anchor:
+		return "CHAR-BASE-T V8.1 gameplay VFX must emit from the liquid release anchor"
+	var real_mesh := unit.get_node_or_null("CoreMesh/RealMesh") as Node3D
+	var cavity := real_mesh.get_node_or_null("MouthCavity") as MeshInstance3D if real_mesh != null else null
+	var cavity_material := cavity.material_override as ShaderMaterial if cavity != null else null
+	if cavity_material == null or cavity_material.shader == null or not cavity_material.shader.resource_path.ends_with("gel_eye.gdshader"):
+		return "CHAR-BASE-T V8.1 mouth cavity must use the coherent gel attachment shader"
+	var materials := _shader_materials_with_suffix(unit, [
+		"wet_gel.gdshader", "jelly_shell.gdshader", "gel_eye.gdshader",
+	])
+	if materials.size() < 5:
+		return "CHAR-BASE-T V8.1 coherent-material audit found too few gel parts"
+	var expected_lag := unit.call("liquid_body_lag") as Vector3
+	var expected_squash := float(unit.call("liquid_body_squash"))
+	var expected_turn := float(unit.call("liquid_turn_shear"))
+	var expected_contact := float(unit.call("liquid_contact_amount"))
+	for material in materials:
+		if float(material.get_shader_parameter("liquid_body_space_enabled")) < 0.99:
+			return "CHAR-BASE-T V8.1 gel attachment escaped shared body-space deformation"
+		if not (material.get_shader_parameter("liquid_body_lag") as Vector3).is_equal_approx(expected_lag):
+			return "CHAR-BASE-T V8.1 wet core, shell and attachments disagree on body lag"
+		if not is_equal_approx(float(material.get_shader_parameter("liquid_body_squash")), expected_squash):
+			return "CHAR-BASE-T V8.1 wet core, shell and attachments disagree on squash"
+		if not is_equal_approx(float(material.get_shader_parameter("liquid_turn_shear")), expected_turn):
+			return "CHAR-BASE-T V8.1 wet core, shell and attachments disagree on turn shear"
+		if not is_equal_approx(float(material.get_shader_parameter("liquid_contact_amount")), expected_contact):
+			return "CHAR-BASE-T V8.1 wet core, shell and attachments disagree on contact"
+	return ""
+
+
+func _shader_materials_with_suffix(node: Node, suffixes: Array[String]) -> Array[ShaderMaterial]:
+	var materials: Array[ShaderMaterial] = []
+	var seen := {}
+	_shader_materials_with_suffix_recursive(node, suffixes, materials, seen)
+	return materials
+
+
+func _shader_materials_with_suffix_recursive(
+	node: Node,
+	suffixes: Array[String],
+	materials: Array[ShaderMaterial],
+	seen: Dictionary
+) -> void:
+	if node is MeshInstance3D:
+		var mesh_instance := node as MeshInstance3D
+		_append_matching_shader_material(mesh_instance.material_override, suffixes, materials, seen)
+		if mesh_instance.mesh != null:
+			for surface in mesh_instance.mesh.get_surface_count():
+				_append_matching_shader_material(mesh_instance.get_surface_override_material(surface), suffixes, materials, seen)
+				_append_matching_shader_material(mesh_instance.mesh.surface_get_material(surface), suffixes, materials, seen)
+	for child in node.get_children():
+		_shader_materials_with_suffix_recursive(child, suffixes, materials, seen)
+
+
+func _append_matching_shader_material(
+	material: Material,
+	suffixes: Array[String],
+	materials: Array[ShaderMaterial],
+	seen: Dictionary
+) -> void:
+	var current := material
+	while current != null:
+		var shader_material := current as ShaderMaterial
+		if shader_material != null and shader_material.shader != null:
+			var instance_id := shader_material.get_instance_id()
+			if not seen.has(instance_id):
+				for suffix in suffixes:
+					if shader_material.shader.resource_path.ends_with(suffix):
+						seen[instance_id] = true
+						materials.append(shader_material)
+						break
+		current = current.next_pass
+
+
+func _gel_v8_preservation_error(by_family: Dictionary) -> String:
+	var unit := by_family.get("T") as Node
+	if unit == null:
+		return "Explicit V8 rollback contract requires CHAR-BASE-T"
+	var animator := unit.get_node_or_null("AnimationPlayer") as AnimationPlayer
+	if animator != null and animator.callback_mode_method != AnimationMixer.ANIMATION_CALLBACK_MODE_METHOD_DEFERRED:
+		return "Explicit V8 must preserve the scene's deferred method callback mode"
+	if bool(unit.call("request_combat_action", 8001, &"basic", &"BASIC-T", 0.0)):
+		return "Explicit V8 must not enable V8.1 tokenized combat presentation"
+	if int(unit.call("liquid_attachment_material_count")) != 0:
+		return "Explicit V8 must not bind V8.1 attachment deformation materials"
+	if unit.get_node_or_null("WeaponSocket/LiquidReleaseAnchor") != null:
+		return "Explicit V8 must preserve the legacy WeaponSocket hierarchy"
+	var materials := _shader_materials_with_suffix(unit, [
+		"wet_gel.gdshader", "jelly_shell.gdshader", "gel_eye.gdshader",
+	])
+	for material in materials:
+		var body_space: Variant = material.get_shader_parameter("liquid_body_space_enabled")
+		var turn: Variant = material.get_shader_parameter("liquid_turn_shear")
+		var contact: Variant = material.get_shader_parameter("liquid_contact_amount")
+		if body_space != null and not is_zero_approx(float(body_space)):
+			return "Explicit V8 must keep V8.1 body-space attachment deformation disabled"
+		if turn != null and not is_zero_approx(float(turn)):
+			return "Explicit V8 must keep V8.1 turn shear disabled"
+		if contact != null and not is_zero_approx(float(contact)):
+			return "Explicit V8 must keep V8.1 contact response disabled"
+	return ""
+
+
 func _has_wet_gel_mesh(node: Node) -> bool:
 	return _find_wet_gel_material(node) != null
 
@@ -2168,7 +2653,13 @@ func _authored_jelly_error(unit: Node, family: String) -> String:
 	var limbs := unit.get_node_or_null("LimbKit") as Node3D
 	if face == null or face.visible or limbs == null or limbs.visible:
 		return "CHAR-BASE-%s authored body must replace the procedural face and limbs" % family
-	if unit.get_node_or_null("WeaponSocket").get_child_count() != 0:
+	var weapon_socket := unit.get_node_or_null("WeaponSocket") as Node3D
+	if weapon_socket == null:
+		return "CHAR-BASE-%s authored body missing WeaponSocket" % family
+	if _GelProfiles.v8_1_enabled():
+		if weapon_socket.get_child_count() != 1 or weapon_socket.get_node_or_null("LiquidReleaseAnchor") == null:
+			return "CHAR-BASE-%s V8.1 WeaponSocket must contain only its liquid release anchor" % family
+	elif weapon_socket.get_child_count() != 0:
 		return "CHAR-BASE-%s authored body must replace procedural identity props" % family
 	if unit.get_node_or_null("CoreMesh/Bubble0") != null:
 		return "CHAR-BASE-%s authored body must replace procedural bubble geometry" % family

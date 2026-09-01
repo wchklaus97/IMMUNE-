@@ -535,18 +535,18 @@ static func with_v5_surface(values: Dictionary, family: String = "") -> Dictiona
 
 static func selected_look() -> String:
 	var override := OS.get_environment("IMMUNE_GEL_LOOK").strip_edges().to_lower()
-	if override in ["v5", "v6", "v7", "v8"]:
+	if override in ["v5", "v6", "v7", "v8", "v8_1"]:
 		return override
 	var configured := str(ProjectSettings.get_setting("immune/visual/gel_look", "v6")).strip_edges().to_lower()
-	return configured if configured in ["v5", "v6", "v7", "v8"] else "v6"
+	return configured if configured in ["v5", "v6", "v7", "v8", "v8_1"] else "v6"
 
 
 static func banner_match_enabled() -> bool:
-	return selected_look() in ["v6", "v7", "v8"]
+	return selected_look() in ["v6", "v7", "v8", "v8_1"]
 
 
 static func gummy_glass_enabled() -> bool:
-	return selected_look() in ["v7", "v8"]
+	return selected_look() in ["v7", "v8", "v8_1"]
 
 
 static func v7_enabled() -> bool:
@@ -554,7 +554,14 @@ static func v7_enabled() -> bool:
 
 
 static func v8_enabled() -> bool:
-	return selected_look() == "v8"
+	return selected_look() in ["v8", "v8_1"]
+
+
+## V8.1 inherits the accepted V8 material and clip foundation, then enables the
+## motion-truth, release-timing and attachment-coherence hardening layer. Keeping
+## this selector separate makes IMMUNE_GEL_LOOK=v8 an exact rollback.
+static func v8_1_enabled() -> bool:
+	return selected_look() == "v8_1"
 
 
 static func profile_name(family: String) -> StringName:

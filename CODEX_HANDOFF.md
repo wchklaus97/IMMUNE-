@@ -7,7 +7,7 @@ Updated: 2026-09-01
 V8 is implemented and preserved at local source checkpoint
 `884198eaf28a6370363e74af8c155122d828da40`. It is an additive visual version
 over the V7 gummy-glass foundation: V5.1, V6, V7, their selectors/checkpoints,
-earlier r1/r2 captures, generated models, and the existing `web/` / `web-v7/`
+earlier r1/r2 captures, generated models, and the existing `web/` / historical `web-v7/`
 builds remain intact. V8 is now the project default; `IMMUNE_GEL_LOOK=v5`, `v6`,
 `v7`, and `v8` all pass content smoke. No Meshy task was submitted and no
 generation credit was consumed.
@@ -24,7 +24,7 @@ Preserved/current verification evidence lives under
 `outputs/v8-liquid-motion/`: r1, slime-r2, current slime-r3 idle/move strips,
 real B gameplay/portrait captures, two order-varied V7/V8 ten-body performance
 pairs, and exported-Web QA. The V8 Web build is separate at
-`godot/immune/build/releases/web-v8/`. The first export correctly stopped when
+`godot/immune/build/history/web-v8/`. The first export correctly stopped when
 that new directory did not exist; pre-creating only the V8 target fixed the
 workflow without touching older builds.
 
@@ -51,12 +51,12 @@ submission occurred.
 ## V7 exact local candidate and blinded-preference handoff
 
 V7 is now rebuilt sequentially for Windows, Linux, macOS, and Web into the new
-non-overwriting directory `godot/immune/build/releases/v7-exact-5747a52/`.
+non-overwriting directory `godot/immune/build/history/v7-exact-5747a52/`.
 All 14 files are bound to exact documentation checkpoint
 `5747a52c5c0466a12b5ff3fdd5e9c2fc92bab906`, whose game source is the preserved
 V7 checkpoint `f9cb6609ec00f483cb33fda2223fe6d52ea1f379`. The later V6 hash correction
 `b97888119a4d1512830a55aaf8b555f9f016a21a` is documentation-only. Older V5,
-V6, `web/`, `web-v7/`, model, capture, and evidence versions remain intact.
+V6, current `web/`, historical `web-v7/`, model, capture, and evidence versions remain intact.
 
 The exact release contract passes for version `0.4.0`, four presets, and the
 unpublished state. The extracted universal macOS app passes deep/strict ad-hoc
@@ -124,7 +124,7 @@ contact strip and 36 family views, B motion strip, 6/6 mission previews, B
 fixed/mobile/boss and portrait lifecycle, V6 rollback captures, real 390x844
 and 1280x720 bilingual overflow checks, two V6/V7 performance pairs, and
 exported-Web browser evidence. V7 Web was exported separately to
-`godot/immune/build/releases/web-v7/`; the older `web/` export remains intact.
+`godot/immune/build/history/web-v7/`; the older current-slot `web/` export remains intact.
 
 Two official Godot 4.7.2 imports are clean. Default V7, explicit V6, and
 explicit V5 smoke pass. Root tools pass 55/55, Web UI 53/53, Meshy offline

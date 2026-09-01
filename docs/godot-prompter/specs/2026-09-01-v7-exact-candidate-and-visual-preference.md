@@ -14,9 +14,9 @@ Godot `4.7.2.stable.official.ed1daf0bf` and matching templates.
 
 The exact artifact root is:
 
-`godot/immune/build/releases/v7-exact-5747a52/`
+`godot/immune/build/history/v7-exact-5747a52/`
 
-The older `build/releases/web/`, `build/releases/web-v7/`, V5/V6 outputs,
+The current `build/releases/web/`, historical `build/history/web-v7/`, V5/V6 outputs,
 generated models, look selectors, and ignored evidence remain intact. No push,
 tag, GitHub Release, notarization, Steam upload, or public distribution was
 performed.
@@ -157,15 +157,15 @@ not counted as a human response, and cannot be used to select a winning look.
 
 ```sh
 godot --headless --path godot/immune --export-release "Windows Desktop" \
-  build/releases/v7-exact-5747a52/IMMUNE-windows.exe
+  build/history/v7-exact-5747a52/IMMUNE-windows.exe
 godot --headless --path godot/immune --export-release "Linux/X11" \
-  build/releases/v7-exact-5747a52/IMMUNE-linux.x86_64
+  build/history/v7-exact-5747a52/IMMUNE-linux.x86_64
 godot --headless --path godot/immune --export-release "macOS" \
-  build/releases/v7-exact-5747a52/IMMUNE-macOS.zip
+  build/history/v7-exact-5747a52/IMMUNE-macOS.zip
 godot --headless --path godot/immune --export-release "Web" \
-  build/releases/v7-exact-5747a52/web/index.html
+  build/history/v7-exact-5747a52/web/index.html
 node tools/validate_release_contract.mjs \
-  --artifacts=godot/immune/build/releases/v7-exact-5747a52
+  --artifacts=godot/immune/build/history/v7-exact-5747a52
 node tools/create_visual_preference_campaign.mjs \
   --verify=outputs/visual-preference-campaigns/immune-v0.4.0-v5-v6-v7-5747a52
 npm run test:tools

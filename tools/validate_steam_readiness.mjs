@@ -33,6 +33,9 @@ const NETWORK_TOKENS = [
 ];
 const EXCLUDED_PCK_MARKERS = ["CHAR-BASE-M-meshy-t2", "CHAR-BASE-T-fix.glb"];
 const REQUIRED_PCK_MARKER = "CHAR-BASE-T-tripo-5k";
+const PCK_DIRECTORY_ENCRYPTED = 1;
+const PCK_SPARSE_BUNDLE = 4;
+const MAX_PCK_RESOURCE_COUNT = 100_000;
 const RIGHTS_BOUND_FILES = {
   "godot/immune/characters/base_b/CHAR-BASE-B-meshy-t2.glb": "c57cbf701c6ec66dfca69715e82ffe9339bc5ebf121fa05251f54157bab3100e",
   "godot/immune/characters/base_t/CHAR-BASE-T-tripo-5k.glb": "4b969a424da09aad9dfb80b810e7ec6b7ce08db61cb54da7febc482b259dd105",
@@ -145,15 +148,99 @@ async function validateRightsBoundFiles(root) {
   return Object.keys(RIGHTS_BOUND_FILES).length;
 }
 
-async function validatePckResourcePolicy(artifacts) {
-  const pckPath = join(artifacts, "IMMUNE-linux.pck");
-  const buffer = await readFile(pckPath);
-  for (const marker of EXCLUDED_PCK_MARKERS) {
-    if (buffer.includes(Buffer.from(marker))) throw new Error(`Excluded source resource leaked into PCK: ${marker}`);
+export function parsePckResourcePaths(input) {
+  const buffer = Buffer.isBuffer(input) ? input : Buffer.from(input);
+  let cursor = 0;
+  const fail = (message) => {
+    throw new Error(`Invalid Godot PCK: ${message}`);
+  };
+  const requireBytes = (count, label) => {
+    if (!Number.isSafeInteger(count) || count < 0 || cursor + count > buffer.length) {
+      fail(`${label} exceeds file bounds`);
+    }
+  };
+  const readU32 = (label) => {
+    requireBytes(4, label);
+    const value = buffer.readUInt32LE(cursor);
+    cursor += 4;
+    return value;
+  };
+  const readU64 = (label) => {
+    requireBytes(8, label);
+    const value = buffer.readBigUInt64LE(cursor);
+    cursor += 8;
+    if (value > BigInt(Number.MAX_SAFE_INTEGER)) fail(`${label} is too large`);
+    return Number(value);
+  };
+
+  requireBytes(4, "magic");
+  const magic = buffer.subarray(cursor, cursor + 4).toString("ascii");
+  cursor += 4;
+  if (magic !== "GDPC") fail(`expected GDPC magic, got ${JSON.stringify(magic)}`);
+  const version = readU32("pack version");
+  if (![2, 3, 4].includes(version)) fail(`unsupported pack version ${version}`);
+  readU32("engine major version");
+  readU32("engine minor version");
+  readU32("engine patch version");
+  const flags = readU32("pack flags");
+  const fileBase = readU64("file base");
+  if ((flags & PCK_DIRECTORY_ENCRYPTED) !== 0) {
+    fail("encrypted directories cannot be audited without the release key");
   }
-  if (!buffer.includes(Buffer.from(REQUIRED_PCK_MARKER))) {
+
+  if (version === 3 || version === 4) {
+    const directoryOffset = readU64("directory offset");
+    if (directoryOffset >= buffer.length) fail("directory offset exceeds file bounds");
+    cursor = directoryOffset;
+  } else {
+    requireBytes(16 * 4, "version 2 reserved header");
+    cursor += 16 * 4;
+  }
+
+  const fileCount = readU32("file count");
+  if (fileCount > MAX_PCK_RESOURCE_COUNT) fail(`implausible file count ${fileCount}`);
+  const paths = [];
+  for (let index = 0; index < fileCount; index += 1) {
+    const pathLength = readU32(`path length ${index}`);
+    requireBytes(pathLength, `path ${index}`);
+    const path = buffer.subarray(cursor, cursor + pathLength).toString("utf8").replace(/\0+$/u, "");
+    cursor += pathLength;
+    if (!path) fail(`path ${index} is empty`);
+    const fileOffset = readU64(`file offset ${index}`);
+    const fileSize = readU64(`file size ${index}`);
+    if ((flags & PCK_SPARSE_BUNDLE) === 0) {
+      const payloadStart = fileBase + fileOffset;
+      if (!Number.isSafeInteger(payloadStart) || payloadStart > buffer.length) {
+        fail(`file payload ${index} starts outside file bounds`);
+      }
+      if (fileSize > buffer.length - payloadStart) {
+        fail(`file payload ${index} exceeds file bounds`);
+      }
+    }
+    requireBytes(16, `file digest ${index}`);
+    cursor += 16;
+    readU32(`file flags ${index}`);
+    paths.push(path);
+  }
+  return paths;
+}
+
+export function validatePckResourcePolicyBuffer(buffer) {
+  const paths = parsePckResourcePaths(buffer);
+  for (const marker of EXCLUDED_PCK_MARKERS) {
+    if (paths.some((path) => path.includes(marker))) {
+      throw new Error(`Excluded source resource leaked into PCK: ${marker}`);
+    }
+  }
+  if (!paths.some((path) => path.includes(REQUIRED_PCK_MARKER))) {
     throw new Error(`Shipping T resource is missing from PCK: ${REQUIRED_PCK_MARKER}`);
   }
+  return { files: paths.length };
+}
+
+async function validatePckResourcePolicy(artifacts) {
+  const pckPath = join(artifacts, "IMMUNE-linux.pck");
+  validatePckResourcePolicyBuffer(await readFile(pckPath));
 }
 
 function presentText(value) {
