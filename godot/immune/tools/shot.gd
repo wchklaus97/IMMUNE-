@@ -1,6 +1,7 @@
 extends Node3D
 
 const _LightContract := preload("res://characters/gel/light_contract.gd")
+const _GelStudio := preload("res://characters/gel/gel_studio_environment.gd")
 
 ## Headed screenshot rig for character review.
 ## Run: godot --path <proj> --resolution 1024x1024 res://tools/shot.tscn -- --scene=<res path> --out=<abs dir> [--tag=name] [--anim=idle] [--frames=8]
@@ -293,6 +294,7 @@ func _build_stage() -> void:
 	env.glow_enabled = true
 	env.glow_intensity = 0.5
 	env.glow_bloom = 0.12
+	_GelStudio.apply_banner_preview(env)
 	world.environment = env
 	add_child(world)
 

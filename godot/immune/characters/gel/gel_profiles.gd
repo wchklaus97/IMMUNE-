@@ -94,11 +94,120 @@ const V5_SURFACE: Dictionary = {
 	&"inclusion_emission": 0.0,
 }
 
-# The production Fizzy language already approved on M/N/A/D: a smooth clear
-# coat, softened absorption, three readable interior scales, and no directional
-# triplanar dimples. T and B still keep their own sculpt, face texture, colour,
-# bubble scale, and seeds; this layer only makes their material response belong
-# to the same poured-gel family.
+# Banner-match production profile. The project selects it by default after the
+# six-family, mission-preview, combat-portrait, motion, and performance gates.
+# IMMUNE_GEL_LOOK=v5 remains a reversible A/B control for regression diagnosis.
+#
+# V6 does not bring back the rejected procedural bubble/island normals. Its visual
+# change comes from a darker optical core, a broader transmitted edge, a clearer
+# dielectric membrane, and bounded analytic studio reflections in wet_gel.gdshader.
+const V6_BANNER_MATCH: Dictionary = {
+	&"albedo_gain": 0.84,
+	&"body_exposure_scale": 0.82,
+	&"body_roughness": 0.26,
+	&"direct_light_budget_share": 0.10,
+	&"core_glow": 0.22,
+	&"interior_budget": 0.38,
+	&"thin_budget_scale": 0.82,
+	&"thickness_contrast": 0.24,
+	&"thickness_power": 0.90,
+	&"body_absorb": 0.99,
+	&"light_wrap": 0.13,
+	&"sss_amount": 0.62,
+	&"thin_power": 1.15,
+	&"thin_fresnel": 1.0,
+	&"thin_floor": 0.04,
+	&"transmit_strength": 1.42,
+	&"transmit_tint": 0.34,
+	&"thin_glow": 0.58,
+	&"thin_bias": 1.90,
+	&"glow_power": 1.15,
+	&"rim_power": 6.0,
+	&"rim_energy": 0.18,
+	&"rim_budget": 0.10,
+	&"coat_roughness": 0.038,
+	&"coat_strength": 1.52,
+	&"spec_energy": 0.24,
+	&"wet_spec_breakup": 0.065,
+	&"coat_tint": 0.06,
+	&"detail_emission_scale": 0.28,
+	&"bubble_enabled": true,
+	&"bubble_depth": 0.0,
+	&"bubble_thinness": 0.0,
+	&"bubble_shell_shadow": 0.0,
+	&"bubble_emission": 0.0,
+	&"bubble_shell_emission": 0.0,
+	&"authored_fleck_strength": 0.56,
+	&"authored_fleck_threshold": 0.31,
+	&"authored_fleck_softness": 0.012,
+	&"authored_fleck_budget": 0.14,
+	&"authored_inclusion_strength": 0.34,
+	&"authored_inclusion_scale": 0.13,
+	&"authored_inclusion_threshold": 0.23,
+	&"authored_inclusion_softness": 0.015,
+	&"authored_inclusion_thinness": 0.08,
+	&"authored_inclusion_budget": 0.085,
+	&"authored_inclusion_lod_bias": 0.18,
+	&"authored_caustic_strength": 0.58,
+	&"authored_caustic_threshold": 0.255,
+	&"authored_caustic_width": 0.020,
+	&"authored_caustic_budget": 0.095,
+	&"studio_reflection_strength": 0.66,
+	&"studio_reflection_budget": 0.28,
+	&"studio_reflection_edge_share": 0.62,
+	&"studio_key_color": Color(0.90, 0.97, 1.0, 1.0),
+	&"studio_cool_color": Color(0.24, 0.48, 1.0, 1.0),
+	&"studio_warm_color": Color(1.0, 0.28, 0.16, 1.0),
+	&"membrane_face_alpha": 0.006,
+	&"membrane_edge_alpha": 0.58,
+	&"membrane_edge_power": 2.05,
+	&"membrane_roughness": 0.020,
+	&"membrane_rim_emission": 0.38,
+	&"membrane_thickness": 0.018,
+}
+
+const V6_FAMILY: Dictionary = {
+	"T": {
+		&"body_color": Color(0.92, 0.20, 0.005, 1.0),
+		&"deep_color": Color(0.54, 0.055, 0.002, 1.0),
+		&"transmit_color": Color(1.0, 0.62, 0.16, 1.0),
+		&"rim_color": Color(1.0, 0.75, 0.28, 1.0),
+	},
+	"B": {
+		&"body_color": Color(0.42, 0.025, 0.74, 1.0),
+		&"deep_color": Color(0.115, 0.006, 0.29, 1.0),
+		&"transmit_color": Color(0.70, 0.42, 1.0, 1.0),
+		&"rim_color": Color(0.84, 0.66, 1.0, 1.0),
+	},
+	"M": {
+		&"body_color": Color(0.38, 0.10, 0.68, 1.0),
+		&"deep_color": Color(0.12, 0.018, 0.29, 1.0),
+		&"transmit_color": Color(0.72, 0.56, 1.0, 1.0),
+		&"rim_color": Color(0.88, 0.78, 1.0, 1.0),
+	},
+	"N": {
+		&"body_color": Color(0.34, 0.70, 0.018, 1.0),
+		&"deep_color": Color(0.06, 0.23, 0.002, 1.0),
+		&"transmit_color": Color(0.70, 1.0, 0.22, 1.0),
+		&"rim_color": Color(0.84, 1.0, 0.38, 1.0),
+	},
+	"A": {
+		&"body_color": Color(0.94, 0.43, 0.008, 1.0),
+		&"deep_color": Color(0.47, 0.10, 0.001, 1.0),
+		&"transmit_color": Color(1.0, 0.76, 0.20, 1.0),
+		&"rim_color": Color(1.0, 0.88, 0.38, 1.0),
+	},
+	"D": {
+		&"body_color": Color(0.94, 0.24, 0.004, 1.0),
+		&"deep_color": Color(0.50, 0.045, 0.001, 1.0),
+		&"transmit_color": Color(1.0, 0.58, 0.12, 1.0),
+		&"rim_color": Color(1.0, 0.72, 0.24, 1.0),
+	},
+}
+
+# Historical Fizzy/V5 base values retained as the reversible material control.
+# V6 overrides its production-facing response after this dictionary is merged;
+# legacy look-dev callers can still request these values directly.
 const FIZZY: Dictionary = {
 	&"albedo_gain": 0.90,
 	&"body_roughness": 0.17,
@@ -241,16 +350,35 @@ static func options(family: String, overrides: Dictionary = {}) -> Dictionary:
 		merged[key] = family_values[key]
 	for key in V5_SURFACE:
 		merged[key] = V5_SURFACE[key]
+	if banner_match_enabled():
+		for key in V6_BANNER_MATCH:
+			merged[key] = V6_BANNER_MATCH[key]
+		var v6_family_values: Dictionary = V6_FAMILY.get(family, {})
+		for key in v6_family_values:
+			merged[key] = v6_family_values[key]
 	for key in overrides:
 		merged[key] = overrides[key]
 	return merged
 
 
-static func with_v5_surface(values: Dictionary) -> Dictionary:
+static func with_v5_surface(values: Dictionary, family: String = "") -> Dictionary:
 	var merged := values.duplicate(true)
 	for key in V5_SURFACE:
 		merged[key] = V5_SURFACE[key]
+	if banner_match_enabled():
+		for key in V6_BANNER_MATCH:
+			merged[key] = V6_BANNER_MATCH[key]
+		var v6_family_values: Dictionary = V6_FAMILY.get(family, {})
+		for key in v6_family_values:
+			merged[key] = v6_family_values[key]
 	return merged
+
+
+static func banner_match_enabled() -> bool:
+	var override := OS.get_environment("IMMUNE_GEL_LOOK").strip_edges().to_lower()
+	if override in ["v5", "v6"]:
+		return override == "v6"
+	return str(ProjectSettings.get_setting("immune/visual/gel_look", "v6")).to_lower() == "v6"
 
 
 static func profile_name(family: String) -> StringName:

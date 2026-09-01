@@ -45,6 +45,10 @@ theme/custom_font="res://fonts/NotoSansHK-VF.ttf"
 
 locale/translations=PackedStringArray("res://translations/game.zh_HK.translation", "res://translations/game.en.translation", "res://translations/research_catalog.zh_HK.translation", "res://translations/research_catalog.en.translation")
 
+[immune]
+
+visual/gel_look="v6"
+
 [input]
 
 demo_move_forward={

@@ -199,7 +199,7 @@ func _ready() -> void:
 	var variant := _variant()
 	var material_options: Dictionary = VARIANTS[variant]
 	if variant == "fizzy":
-		material_options = _GelProfiles.with_v5_surface(material_options)
+		material_options = _GelProfiles.with_v5_surface(material_options, "M")
 	var gel := _Gel.make_material(Color(0.62, 0.28, 0.92), material_options)
 	if gel == null:
 		push_error("m_reference_match.gd: failed to create gel material")

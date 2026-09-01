@@ -26,6 +26,7 @@ const _Responsive := preload("res://ui/responsive_layout.gd")
 const _ActiveSkillController := preload("res://combat/active_skill_controller.gd")
 const _EncounterDirector := preload("res://combat/combat_encounter_director.gd")
 const _TouchControls := preload("res://ui/combat_touch_controls.gd")
+const _GelStudio := preload("res://characters/gel/gel_studio_environment.gd")
 
 const MISSION_SELECT_SCENE := "res://ui/mission_select/mission_select.tscn"
 const NODE_FIXED := &"BASE-T-03"
@@ -43,16 +44,14 @@ const PORTRAIT_BOTTOM_CLEARANCE := 108.0
 const PORTRAIT_MIN_VIEWPORT := Vector2(1200.0, 620.0)
 const PORTRAIT_MIN_ASPECT := 1.45
 const PORTRAIT_SCALE := {
-	"T": 1.72,
-	"B": 1.58,
-	"M": 1.32,
-	"N": 1.62,
-	"A": 1.32,
+	"T": 1.52,
+	"B": 1.48,
+	"M": 1.34,
+	"N": 1.50,
+	"A": 1.40,
 	"D": 1.36,
 }
-const PORTRAIT_Y := {
-	"B": 0.64,
-}
+const PORTRAIT_Y := -0.12
 const HUD_BASE_FONT_SIZE := 16
 
 @export var mission_data: ImmuneMissionData
@@ -1153,6 +1152,7 @@ func _build_combat_portrait() -> void:
 	environment.ambient_light_color = Color(0.46, 0.58, 0.72)
 	environment.ambient_light_energy = 0.46
 	environment.tonemap_mode = Environment.TONE_MAPPER_ACES
+	_GelStudio.apply_banner_preview(environment)
 	env.environment = environment
 	_portrait_stage.add_child(env)
 	var key := DirectionalLight3D.new()
@@ -1205,7 +1205,7 @@ func _spawn_combat_portrait_character() -> void:
 		push_warning("CombatLane: portrait scene did not instantiate ImmuneCharacter")
 		return
 	_portrait_character.name = "CombatHeroCharacter"
-	_portrait_character.position = Vector3(0.0, float(PORTRAIT_Y.get(family, -0.12)), 0.0)
+	_portrait_character.position = Vector3(0.0, PORTRAIT_Y, 0.0)
 	_portrait_character.rotation_degrees.y = -18.0
 	_portrait_character.scale = Vector3.ONE * float(PORTRAIT_SCALE.get(family, 1.45))
 	_portrait_stage.add_child(_portrait_character)

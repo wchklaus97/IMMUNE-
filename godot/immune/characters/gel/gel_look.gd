@@ -11,6 +11,7 @@ extends RefCounted
 const SHADER_PATH := "res://characters/gel/wet_gel.gdshader"
 const MEMBRANE_SHADER_PATH := "res://characters/gel/jelly_shell.gdshader"
 const AUTHORED_HEIGHT_PATH := "res://characters/gel/jelly_micro_height.png"
+const _Profiles := preload("res://characters/gel/gel_profiles.gd")
 
 ## Uniforms that carry family identity. Everything else is shared look tuning.
 ## All four are derived from the one palette entry, so a family is one Color.
@@ -36,6 +37,19 @@ const SHELL_V5_BOUNDS: Dictionary = {
 	&"shell_specular_level": 0.48,
 	&"shell_emission_limit": 0.025,
 	&"shell_alpha_limit": 0.28,
+}
+
+const SHELL_V6_BOUNDS: Dictionary = {
+	&"shell_energy_scale": 0.68,
+	&"shell_diffuse_strength": 0.07,
+	&"shell_specular_level": 0.78,
+	&"shell_emission_limit": 0.065,
+	&"shell_alpha_limit": 0.40,
+	&"shell_white_mix": 0.28,
+	&"shell_thickness": 0.014,
+	&"studio_reflection_strength": 0.42,
+	&"studio_reflection_alpha": 0.045,
+	&"studio_reflection_budget": 0.065,
 }
 
 ## How far the palette colour's saturation is pushed for the body albedo. A gel
@@ -409,8 +423,9 @@ static func _make_membrane(jelly: Color, opts: Dictionary) -> ShaderMaterial:
 static func apply_v5_shell_bounds(shell: ShaderMaterial) -> void:
 	if shell == null:
 		return
-	for key in SHELL_V5_BOUNDS:
-		shell.set_shader_parameter(key, SHELL_V5_BOUNDS[key])
+	var bounds := SHELL_V6_BOUNDS if _Profiles.banner_match_enabled() else SHELL_V5_BOUNDS
+	for key in bounds:
+		shell.set_shader_parameter(key, bounds[key])
 
 
 static func make_material(jelly: Color, opts: Dictionary = {}) -> ShaderMaterial:

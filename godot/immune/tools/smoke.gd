@@ -3,6 +3,7 @@ extends SceneTree
 ## Headless check: six base scenes load and A has no walk kit.
 
 const _LightContract := preload("res://characters/gel/light_contract.gd")
+const _GelProfiles := preload("res://characters/gel/gel_profiles.gd")
 const JELLY_DIRECT_LIGHT_LIMIT := 3
 const JELLY_SHADOWED_DIRECT_LIGHT_LIMIT := 1
 const JELLY_DIRECT_LIGHT_RIG_SOURCES := [
@@ -155,138 +156,7 @@ func _run() -> void:
 			push_error("%s missing grounded feet" % unit.get("family_id"))
 			quit(1)
 			return
-		if str(unit.get("family_id")) == "T":
-			var t_runtime_gel := _find_wet_gel_material(unit)
-			if t_runtime_gel == null or t_runtime_gel.get_shader_parameter("bubble_enabled") != true:
-				push_error("CHAR-BASE-T runtime body must receive its Fizzy bubble profile")
-				quit(1)
-				return
-			if t_runtime_gel.get_shader_parameter("authored_height_enabled") != true:
-				push_error("CHAR-BASE-T V5.1 runtime profile must keep the mipmapped authored height")
-				quit(1)
-				return
-			var t_runtime_surface_error := _gel_surface_noise_error(t_runtime_gel)
-			if not t_runtime_surface_error.is_empty():
-				push_error("CHAR-BASE-T runtime %s" % t_runtime_surface_error)
-				quit(1)
-				return
-			var t_runtime_membrane_error := _gel_membrane_error(t_runtime_gel)
-			if not t_runtime_membrane_error.is_empty():
-				push_error("CHAR-BASE-T runtime %s" % t_runtime_membrane_error)
-				quit(1)
-				return
-		if str(unit.get("family_id")) == "B":
-			var b_real_mesh := unit.get_node_or_null("CoreMesh/RealMesh")
-			if b_real_mesh == null or unit.get("real_mesh") == null:
-				push_error("CHAR-BASE-B must realize its imported Meshy T2 body")
-				quit(1)
-				return
-			var b_face := unit.get_node_or_null("Face") as Node3D
-			var b_limbs := unit.get_node_or_null("LimbKit") as Node3D
-			if b_face == null or not b_face.visible or b_limbs == null or b_limbs.visible:
-				push_error("CHAR-BASE-B must overlay its ink face and replace procedural limbs")
-				quit(1)
-				return
-			var b_mouth := unit.get_node_or_null("Face/Mouth") as Node3D
-			if b_mouth == null or not b_mouth.visible or b_mouth.scale.x < 2.0:
-				push_error("CHAR-BASE-B must align its readable ink mouth with the sculpted cavity")
-				quit(1)
-				return
-			var b_runtime_gel := _find_wet_gel_material(b_real_mesh)
-			if b_runtime_gel == null or b_runtime_gel.get_shader_parameter("bubble_enabled") != true:
-				push_error("CHAR-BASE-B imported body must receive its round-bubble runtime profile")
-				quit(1)
-				return
-			if b_runtime_gel.get_shader_parameter("authored_height_enabled") != true:
-				push_error("CHAR-BASE-B V5.1 runtime profile must keep the mipmapped authored height")
-				quit(1)
-				return
-			var b_runtime_surface_error := _gel_surface_noise_error(b_runtime_gel)
-			if not b_runtime_surface_error.is_empty():
-				push_error("CHAR-BASE-B runtime %s" % b_runtime_surface_error)
-				quit(1)
-				return
-			var b_runtime_membrane_error := _gel_membrane_error(b_runtime_gel)
-			if not b_runtime_membrane_error.is_empty():
-				push_error("CHAR-BASE-B runtime %s" % b_runtime_membrane_error)
-				quit(1)
-				return
-		elif str(unit.get("family_id")) == "M":
-			var m_real_mesh := unit.get_node_or_null("CoreMesh/RealMesh")
-			if m_real_mesh == null or unit.get("real_mesh") == null:
-				push_error("CHAR-BASE-M must realize its accepted reference body")
-				quit(1)
-				return
-			var m_face := unit.get_node_or_null("Face") as Node3D
-			var m_limbs := unit.get_node_or_null("LimbKit") as Node3D
-			if m_face == null or m_face.visible:
-				push_error("CHAR-BASE-M accepted body must replace the procedural face")
-				quit(1)
-				return
-			if m_limbs == null or m_limbs.visible:
-				push_error("CHAR-BASE-M accepted body must replace procedural base limbs")
-				quit(1)
-				return
-			if unit.get_node_or_null("WeaponSocket").get_child_count() != 0:
-				push_error("CHAR-BASE-M accepted body must replace procedural identity props")
-				quit(1)
-				return
-			if unit.get_node_or_null("CoreMesh/Bubble0") != null:
-				push_error("CHAR-BASE-M accepted body must replace procedural bubble geometry")
-				quit(1)
-				return
-			var m_base := unit.get_node_or_null("DutyKits/BaseKit") as Node3D
-			if m_base == null or m_base.get_child_count() != 0:
-				push_error("CHAR-BASE-M fused feet must replace the procedural fixed kit")
-				quit(1)
-				return
-			var m_body := m_real_mesh.get_node_or_null("Body") as MeshInstance3D
-			var m_shell := m_real_mesh.get_node_or_null("BodyShell") as MeshInstance3D
-			if m_body == null or m_shell == null:
-				push_error("CHAR-BASE-M accepted body must expose Body and BodyShell")
-				quit(1)
-				return
-			var m_mesh_error := _shared_authored_sphere_error(
-				m_body, m_shell, "CHAR-BASE-M body and membrane"
-			)
-			if not m_mesh_error.is_empty():
-				push_error(m_mesh_error)
-				quit(1)
-				return
-			for authored_path in ["EyeL", "EyeR", "MouthCavity"]:
-				if m_real_mesh.get_node_or_null(authored_path) == null:
-					push_error("CHAR-BASE-M accepted body missing %s" % authored_path)
-					quit(1)
-					return
-			var m_runtime_gel := m_body.material_override as ShaderMaterial
-			if m_runtime_gel == null or m_runtime_gel.get_shader_parameter("bubble_enabled") != true:
-				push_error("CHAR-BASE-M accepted body must keep its authored bubble material")
-				quit(1)
-				return
-			if m_runtime_gel.get_shader_parameter("authored_height_enabled") != true:
-				push_error("CHAR-BASE-M V5.1 profile must keep the mipmapped authored height")
-				quit(1)
-				return
-			var m_noise_error := _gel_surface_noise_error(m_runtime_gel)
-			if not m_noise_error.is_empty():
-				push_error("CHAR-BASE-M %s" % m_noise_error)
-				quit(1)
-				return
-			var m_shell_material := m_shell.material_override as ShaderMaterial
-			if m_shell_material == null or m_shell_material.shader == null or not m_shell_material.shader.resource_path.ends_with("jelly_shell.gdshader"):
-				push_error("CHAR-BASE-M accepted body must keep its authored clear membrane")
-				quit(1)
-				return
-			var m_shell_error := _gel_shell_energy_error(m_shell_material)
-			if not m_shell_error.is_empty():
-				push_error("CHAR-BASE-M %s" % m_shell_error)
-				quit(1)
-				return
-			if not bool(unit.get("imported_preserves_materials")) or str(unit.get("imported_model_path")) != "res://characters/base_m/reference_body.tscn":
-				push_error("CHAR-BASE-M scene must lock the accepted fizzy production adapter")
-				quit(1)
-				return
-		elif str(unit.get("family_id")) in ["N", "A", "D"]:
+		if str(unit.get("family_id")) in ["T", "B", "M", "N", "A", "D"]:
 			var authored_error := _authored_jelly_error(unit, str(unit.get("family_id")))
 			if not authored_error.is_empty():
 				push_error(authored_error)
@@ -1192,12 +1062,11 @@ func _run() -> void:
 		mission_desk.call("_select_family", i)
 		await process_frame
 		var preview := mission_desk.get("_preview") as Node3D
-		var expected_duty: StringName = &"relay" if family_ids[i] == "A" else &"mobile"
 		if preview == null or preview.get_parent() != preview_stage:
 			push_error("Mission desk preview escaped its frame for family %s" % family_ids[i])
 			quit(1)
 			return
-		if StringName(preview.get("family_id")) != StringName(family_ids[i]) or StringName(preview.get("duty")) != expected_duty:
+		if StringName(preview.get("family_id")) != StringName(family_ids[i]) or StringName(preview.get("duty")) != &"fixed":
 			push_error("Mission desk preview state mismatch for family %s" % family_ids[i])
 			quit(1)
 			return
@@ -1208,7 +1077,7 @@ func _run() -> void:
 	if requested_save_path.is_empty():
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(active_save_path))
 	research_state.call("seed_demo")
-	print("SMOKE_OK missions=6 families=6 save=v2 audio=ready gamepad=ready active_skills=6 encounters=6 touch=ready signatures=T+B traits=enrage+regen meshy=B authored_jelly=M+N+A+D gel_fizzy=T+B+M+N+A+D")
+	print("SMOKE_OK missions=6 families=6 save=v2 audio=ready gamepad=ready active_skills=6 encounters=6 touch=ready signatures=T+B traits=enrage+regen authored_jelly=T+B+M+N+A+D gel_fizzy=T+B+M+N+A+D")
 	var audio_director := root.get_node_or_null("AudioDirector")
 	if audio_director != null:
 		audio_director.call("stop_all")
@@ -1754,6 +1623,8 @@ func _gel_membrane_error(gel: ShaderMaterial) -> String:
 
 
 func _gel_shell_energy_error(shell: ShaderMaterial) -> String:
+	if _GelProfiles.banner_match_enabled():
+		return _gel_banner_shell_error(shell)
 	for required_parameter in [
 		"shell_energy_scale",
 		"shell_diffuse_strength",
@@ -1781,7 +1652,44 @@ func _gel_shell_energy_error(shell: ShaderMaterial) -> String:
 	return ""
 
 
+func _gel_banner_shell_error(shell: ShaderMaterial) -> String:
+	for required_parameter in [
+		"shell_energy_scale",
+		"shell_diffuse_strength",
+		"shell_specular_level",
+		"shell_emission_limit",
+		"shell_alpha_limit",
+		"shell_white_mix",
+		"studio_reflection_strength",
+		"studio_reflection_alpha",
+		"studio_reflection_budget",
+	]:
+		if shell.get_shader_parameter(required_parameter) == null:
+			return "V6 clear membrane must expose its banner-match energy controls"
+	if not is_equal_approx(float(shell.get_shader_parameter("shell_energy_scale")), 0.68):
+		return "V6 clear membrane energy must remain at the reviewed banner-match value"
+	if not is_equal_approx(float(shell.get_shader_parameter("shell_diffuse_strength")), 0.07):
+		return "V6 clear membrane diffuse tint must remain subordinate to reflection"
+	if not is_equal_approx(float(shell.get_shader_parameter("shell_specular_level")), 0.78):
+		return "V6 clear membrane specular must preserve the wet dielectric response"
+	if not is_equal_approx(float(shell.get_shader_parameter("shell_emission_limit")), 0.065):
+		return "V6 clear membrane emission must keep its Compatibility-safe ceiling"
+	if not is_equal_approx(float(shell.get_shader_parameter("shell_alpha_limit")), 0.40):
+		return "V6 clear membrane alpha must keep the reviewed silhouette boundary"
+	if not is_equal_approx(float(shell.get_shader_parameter("shell_white_mix")), 0.28):
+		return "V6 clear membrane must retain the colourless outer-film cue"
+	if not is_equal_approx(float(shell.get_shader_parameter("studio_reflection_strength")), 0.42):
+		return "V6 clear membrane must retain its analytic softbox reflection"
+	if not is_equal_approx(float(shell.get_shader_parameter("studio_reflection_alpha")), 0.045):
+		return "V6 clear membrane softbox alpha drifted"
+	if not is_equal_approx(float(shell.get_shader_parameter("studio_reflection_budget")), 0.065):
+		return "V6 clear membrane softbox energy exceeded its reviewed budget"
+	return ""
+
+
 func _gel_surface_noise_error(gel: ShaderMaterial) -> String:
+	if _GelProfiles.banner_match_enabled():
+		return _gel_banner_surface_error(gel)
 	var light_semantics_error := _gel_light_semantics_error(gel)
 	if not light_semantics_error.is_empty():
 		return light_semantics_error
@@ -1890,6 +1798,98 @@ func _gel_surface_noise_error(gel: ShaderMaterial) -> String:
 	return ""
 
 
+func _gel_banner_surface_error(gel: ShaderMaterial) -> String:
+	var light_semantics_error := _gel_light_semantics_error(gel)
+	if not light_semantics_error.is_empty():
+		return light_semantics_error
+	for required_parameter in [
+		"body_exposure_scale",
+		"core_glow",
+		"interior_budget",
+		"thickness_contrast",
+		"studio_reflection_strength",
+		"studio_reflection_budget",
+		"authored_fleck_strength",
+		"authored_fleck_threshold",
+		"authored_fleck_budget",
+		"authored_inclusion_strength",
+		"authored_inclusion_scale",
+		"authored_inclusion_threshold",
+		"authored_inclusion_thinness",
+		"authored_inclusion_budget",
+		"authored_caustic_strength",
+		"authored_caustic_threshold",
+		"authored_caustic_width",
+		"authored_caustic_budget",
+	]:
+		if gel.get_shader_parameter(required_parameter) == null:
+			return "must expose the V6 banner-match body controls"
+	if not is_equal_approx(float(gel.get_shader_parameter("body_exposure_scale")), 0.82):
+		return "V6 body exposure must preserve the reviewed deep-core separation"
+	if not is_equal_approx(float(gel.get_shader_parameter("core_glow")), 0.22):
+		return "V6 core fill must remain below the self-lit V5 look"
+	if not is_equal_approx(float(gel.get_shader_parameter("interior_budget")), 0.38):
+		return "V6 interior budget drifted from the reviewed banner match"
+	if not is_equal_approx(float(gel.get_shader_parameter("thickness_contrast")), 0.24):
+		return "V6 macro thickness must retain its deeper optical core"
+	if not is_equal_approx(float(gel.get_shader_parameter("studio_reflection_strength")), 0.66):
+		return "V6 body must retain its analytic softbox reflection"
+	if not is_equal_approx(float(gel.get_shader_parameter("studio_reflection_budget")), 0.28):
+		return "V6 body softbox reflection exceeded its reviewed budget"
+	if not is_equal_approx(float(gel.get_shader_parameter("authored_fleck_strength")), 0.56):
+		return "V6 fine internal flecks drifted from the reviewed density"
+	if not is_equal_approx(float(gel.get_shader_parameter("authored_fleck_threshold")), 0.31):
+		return "V6 fine internal fleck threshold drifted"
+	if not is_equal_approx(float(gel.get_shader_parameter("authored_fleck_budget")), 0.14):
+		return "V6 fine internal flecks exceeded their energy budget"
+	if not is_equal_approx(float(gel.get_shader_parameter("authored_inclusion_strength")), 0.34):
+		return "V6 coarse inclusions drifted from the reviewed strength"
+	if not is_equal_approx(float(gel.get_shader_parameter("authored_inclusion_scale")), 0.13):
+		return "V6 coarse inclusion scale drifted"
+	if not is_equal_approx(float(gel.get_shader_parameter("authored_inclusion_threshold")), 0.23):
+		return "V6 coarse inclusion threshold drifted"
+	if not is_equal_approx(float(gel.get_shader_parameter("authored_inclusion_thinness")), 0.08):
+		return "V6 coarse inclusions must continue to reveal optical depth"
+	if not is_equal_approx(float(gel.get_shader_parameter("authored_inclusion_budget")), 0.085):
+		return "V6 coarse inclusions exceeded their energy budget"
+	if not is_equal_approx(float(gel.get_shader_parameter("authored_caustic_strength")), 0.58):
+		return "V6 folded internal caustic cue drifted from the reviewed strength"
+	if not is_equal_approx(float(gel.get_shader_parameter("authored_caustic_threshold")), 0.255):
+		return "V6 internal caustic threshold drifted"
+	if not is_equal_approx(float(gel.get_shader_parameter("authored_caustic_width")), 0.020):
+		return "V6 internal caustic width must remain motion-stable"
+	if not is_equal_approx(float(gel.get_shader_parameter("authored_caustic_budget")), 0.095):
+		return "V6 internal caustics exceeded their energy budget"
+	if gel.get_shader_parameter("authored_height_enabled") != true:
+		return "V6 must keep the mipmapped authored texture source"
+	var authored_height := gel.get_shader_parameter("authored_height_tex") as Texture2D
+	if authored_height == null or authored_height.resource_path != "res://characters/gel/jelly_micro_height.png":
+		return "V6 must use the reproducible authored height resource"
+	var authored_image := authored_height.get_image()
+	if authored_image == null or not authored_image.has_mipmaps():
+		return "V6 authored detail texture must retain generated mipmaps"
+	for retired_parameter in [
+		"bubble_depth",
+		"bubble_emission",
+		"bubble_shell_emission",
+		"microbubble_depth",
+		"microbubble_emission",
+		"microbubble_shell_emission",
+		"inclusion_depth",
+		"inclusion_emission",
+	]:
+		if not is_zero_approx(float(gel.get_shader_parameter(retired_parameter))):
+			return "V6 must not re-enable rejected circular procedural stamps"
+	var shader_source := gel.shader.code
+	if not shader_source.contains("authored_inclusion_signal"):
+		return "V6 must retain the mip-stable coarse inclusion signal"
+	if not shader_source.contains("authored_caustic_glow"):
+		return "V6 must retain the object-space folded caustic cue"
+	if not shader_source.contains("studio_reflection_strength"):
+		return "V6 must retain the Compatibility-safe analytic softbox"
+	return ""
+
+
 func _gel_light_semantics_error(gel: ShaderMaterial) -> String:
 	if gel == null or gel.shader == null:
 		return "must expose the wet-gel shader for the V5 light contract"
@@ -1966,6 +1966,8 @@ func _authored_jelly_error(unit: Node, family: String) -> String:
 	if not shell_error.is_empty():
 		return "CHAR-BASE-%s %s" % [family, shell_error]
 	var expected_path := "res://characters/base_%s/reference_body.tscn" % family.to_lower()
+	if family == "M":
+		expected_path = "res://characters/base_m/authored_body.tscn"
 	if not bool(unit.get("imported_preserves_materials")) or str(unit.get("imported_model_path")) != expected_path:
 		return "CHAR-BASE-%s scene must lock its authored production adapter" % family
 	for replacement_flag in ["imported_replaces_limbs", "imported_replaces_identity", "imported_replaces_bubbles", "imported_replaces_fixed_kit"]:

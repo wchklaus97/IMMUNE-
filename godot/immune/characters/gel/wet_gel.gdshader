@@ -66,6 +66,18 @@ uniform float spec_f0 : hint_range(0.0, 0.3) = 0.06;
 // all the reflection this material needs.
 uniform float env_specular : hint_range(0.0, 1.0) = 0.0;
 
+group_uniforms studio_reflection;
+// Compatibility/Web cannot depend on screen-texture refraction or a desktop-only
+// reflection pipeline. These three bounded view-space softboxes recreate the broad
+// white/cyan/warm environment streaks that make the key art read as wet dielectric
+// gel. Strength defaults to zero so V5 remains an exact visual control.
+uniform float studio_reflection_strength : hint_range(0.0, 1.0) = 0.0;
+uniform float studio_reflection_budget : hint_range(0.0, 0.6) = 0.16;
+uniform float studio_reflection_edge_share : hint_range(0.0, 1.0) = 0.70;
+uniform vec4 studio_key_color : source_color = vec4(0.90, 0.97, 1.0, 1.0);
+uniform vec4 studio_cool_color : source_color = vec4(0.24, 0.48, 1.0, 1.0);
+uniform vec4 studio_warm_color : source_color = vec4(1.0, 0.28, 0.16, 1.0);
+
 group_uniforms gel;
 // Diffuse wrap: how far light creeps past the terminator.
 uniform float light_wrap : hint_range(0.0, 0.95) = 0.60;
@@ -279,6 +291,29 @@ uniform float authored_height_blend : hint_range(1.0, 4.0) = 2.0;
 // Positive bias intentionally selects a slightly coarser mip. It trades tiny
 // close-up sparkle for stable detail during half-degree turns and minification.
 uniform float authored_height_lod_bias : hint_range(0.0, 1.25) = 0.35;
+// Stable bright inclusions reuse the already-filtered authored height sample.
+// They add no texture fetch and fade through the same mip chain during motion.
+uniform float authored_fleck_strength : hint_range(0.0, 1.0) = 0.0;
+uniform float authored_fleck_threshold : hint_range(0.0, 1.0) = 0.57;
+uniform float authored_fleck_softness : hint_range(0.005, 0.25) = 0.04;
+uniform float authored_fleck_budget : hint_range(0.0, 0.3) = 0.0;
+// A second, lower-frequency read of the same licensed/mipmapped source gives V6
+// irregular internal inclusions without the circular sphere stamps of the retired
+// procedural bubble normal. Strength zero removes all extra texture work in V5.
+uniform float authored_inclusion_strength : hint_range(0.0, 1.0) = 0.0;
+uniform float authored_inclusion_scale : hint_range(0.02, 0.5) = 0.13;
+uniform float authored_inclusion_threshold : hint_range(0.0, 1.0) = 0.55;
+uniform float authored_inclusion_softness : hint_range(0.005, 0.25) = 0.045;
+uniform float authored_inclusion_thinness : hint_range(0.0, 0.6) = 0.0;
+uniform float authored_inclusion_budget : hint_range(0.0, 0.3) = 0.0;
+uniform float authored_inclusion_lod_bias : hint_range(0.0, 1.25) = 0.18;
+// Thin, broken contour bands from that low-frequency signal approximate the
+// folded internal caustics in the key art. They are object-space and mip-filtered,
+// so unlike a screen-space sparkle pass they stay attached during motion.
+uniform float authored_caustic_strength : hint_range(0.0, 1.0) = 0.0;
+uniform float authored_caustic_threshold : hint_range(0.0, 1.0) = 0.255;
+uniform float authored_caustic_width : hint_range(0.005, 0.15) = 0.020;
+uniform float authored_caustic_budget : hint_range(0.0, 0.3) = 0.0;
 
 group_uniforms v5_readability;
 // Pulls direct body light below the ACES shoulder. V4 sat close to 1.0 linear
@@ -559,15 +594,20 @@ float cell_triplanar(vec3 p, vec3 n) {
 // Soft triplanar blending avoids UV seams and the cracked borders of the retired
 // Voronoi path. Each plane uses the same periodic texture with decorrelated offsets;
 // implicit texture derivatives select mip levels during motion and minification.
-float authored_height_triplanar(vec3 obj_pos, vec3 obj_normal) {
+float authored_texture_triplanar(
+	vec3 obj_pos,
+	vec3 obj_normal,
+	float sample_scale,
+	vec3 sample_offset,
+	float lod_bias
+) {
 	vec3 p = membrane_cell_frame(
-		obj_pos * authored_height_scale
-		+ vec3(inclusion_seed * 0.017, inclusion_seed * 0.029, inclusion_seed * 0.043));
+		obj_pos * sample_scale + sample_offset);
 	vec3 n = normalize(membrane_cell_frame(obj_normal));
 	vec3 w = pow(abs(n), vec3(authored_height_blend));
 	w /= max(w.x + w.y + w.z, 1e-4);
-	vec3 dx = dFdx(p) * exp2(authored_height_lod_bias);
-	vec3 dy = dFdy(p) * exp2(authored_height_lod_bias);
+	vec3 dx = dFdx(p) * exp2(lod_bias);
+	vec3 dy = dFdy(p) * exp2(lod_bias);
 	float hx = textureGrad(
 		authored_height_tex, p.zy + vec2(0.173, 0.619), dx.zy, dy.zy).r;
 	float hy = textureGrad(
@@ -579,6 +619,16 @@ float authored_height_triplanar(vec3 obj_pos, vec3 obj_normal) {
 		inversesqrt(max(dot(w, w), 0.3333)),
 		1.35);
 	return 0.5 + (height - 0.5) * variance_gain;
+}
+
+
+float authored_height_triplanar(vec3 obj_pos, vec3 obj_normal) {
+	return authored_texture_triplanar(
+		obj_pos,
+		obj_normal,
+		authored_height_scale,
+		vec3(inclusion_seed * 0.017, inclusion_seed * 0.029, inclusion_seed * 0.043),
+		authored_height_lod_bias);
 }
 
 
@@ -681,6 +731,8 @@ void fragment() {
 	// --- cellular dimples + volumetric round bubbles ----------------------
 	vec3 n = base_n;
 	float authored_height_signal = 0.5;
+	float authored_inclusion_signal = 0.5;
+	float authored_inclusion = 0.0;
 	if (authored_height_enabled && authored_height_depth > 0.0001) {
 		authored_height_signal = authored_height_triplanar(
 			v_obj_pos,
@@ -700,13 +752,35 @@ void fragment() {
 			authored_height_depth * authored_grazing * gel_mask
 				/ max(authored_height_scale, 0.001));
 	}
+	if (authored_height_enabled && authored_inclusion_strength > 0.001) {
+		authored_inclusion_signal = authored_texture_triplanar(
+			v_obj_pos,
+			normalize(v_obj_normal),
+			authored_inclusion_scale,
+			vec3(
+				inclusion_seed * 0.071 + 0.37,
+				inclusion_seed * 0.053 + 0.61,
+				inclusion_seed * 0.097 + 0.83),
+			authored_inclusion_lod_bias);
+		float authored_inclusion_width = max(
+			authored_inclusion_softness,
+			fwidth(authored_inclusion_signal) * 1.5);
+		authored_inclusion = smoothstep(
+			authored_inclusion_threshold - authored_inclusion_width,
+			authored_inclusion_threshold + authored_inclusion_width,
+			authored_inclusion_signal) * authored_inclusion_strength;
+	}
 	if (dimple_depth > 0.001) {
 		float height = cell_triplanar(v_obj_pos * dimple_scale, normalize(v_obj_normal));
 		float strength = dimple_depth * gel_mask / max(dimple_scale, 0.001);
 		n = bump_normal(n, VERTEX, height, strength);
 	}
 	vec2 bubble = vec2(0.0);
-	if (bubble_enabled && bubble_depth > 0.001 && bubble_density > 0.001) {
+	if (bubble_enabled && bubble_density > 0.001 && (
+		bubble_depth > 0.001
+		|| bubble_thinness > 0.001
+		|| bubble_emission > 0.001
+		|| bubble_shell_emission > 0.001)) {
 		bubble = bubble_volume_at(
 			v_obj_pos * bubble_scale,
 			bubble_density,
@@ -787,7 +861,8 @@ void fragment() {
 	float local_thickness = clamp(
 		1.0 - thin
 		- bubble.x * bubble_thinness
-		- microbubble.x * microbubble_thinness,
+		- microbubble.x * microbubble_thinness
+		- authored_inclusion * authored_inclusion_thinness,
 		0.0,
 		1.0);
 	vec3 through = gel_throughput(local_thickness);
@@ -849,9 +924,74 @@ void fragment() {
 		+ microbubble_shell_emission * microbubble.y
 		+ inclusion_emission * inclusion) * (0.25 + 0.75 * fres)
 		* detail_emission_scale;
+	float authored_fleck_width = max(
+		authored_fleck_softness,
+		fwidth(authored_height_signal) * 1.5);
+	float authored_fleck = authored_height_enabled
+		? smoothstep(
+			authored_fleck_threshold - authored_fleck_width,
+			authored_fleck_threshold + authored_fleck_width,
+			authored_height_signal) * authored_fleck_strength
+		: 0.0;
+	vec3 fleck_glow = mix(
+		transmit_color.rgb,
+		studio_key_color.rgb,
+		0.58) * authored_fleck * (0.22 + 0.78 * fres) * gel_mask;
+	vec3 authored_inclusion_glow = mix(
+		transmit_color.rgb,
+		studio_key_color.rgb,
+		0.42) * authored_inclusion * (0.35 + 0.65 * fres) * gel_mask;
+	float authored_caustic_aa = max(
+		authored_caustic_width,
+		fwidth(authored_inclusion_signal) * 1.5);
+	float authored_caustic = authored_height_enabled
+		? (1.0 - smoothstep(
+			authored_caustic_width,
+			authored_caustic_width + authored_caustic_aa,
+			abs(authored_inclusion_signal - authored_caustic_threshold)))
+			* mix(
+				0.18,
+				1.0,
+				smoothstep(0.20, 0.34, authored_height_signal))
+			* authored_caustic_strength
+		: 0.0;
+	vec3 authored_caustic_glow = mix(
+		transmit_color.rgb,
+		studio_key_color.rgb,
+		0.70) * authored_caustic * (0.18 + 0.82 * fres) * gel_mask;
+	// A fixed studio light-card rig in view space. Unlike screen-space refraction it
+	// is deterministic on Compatibility/Web, follows the surface normal during motion,
+	// and is independently energy-limited before it reaches the display transform.
+	vec3 reflection_vector = reflect(-normalize(VIEW), normalize(n));
+	float studio_front = smoothstep(-0.18, 0.62, reflection_vector.z);
+	vec2 key_delta = reflection_vector.xy - vec2(-0.38, 0.42);
+	vec2 cool_delta = reflection_vector.xy - vec2(0.62, 0.02);
+	vec2 warm_delta = reflection_vector.xy - vec2(-0.08, -0.72);
+	float studio_key = exp(-(
+		key_delta.x * key_delta.x * 4.0 + key_delta.y * key_delta.y * 13.0))
+		* studio_front;
+	float studio_cool = exp(-(
+		cool_delta.x * cool_delta.x * 16.0 + cool_delta.y * cool_delta.y * 3.5))
+		* studio_front;
+	float studio_warm = exp(-(
+		warm_delta.x * warm_delta.x * 5.0 + warm_delta.y * warm_delta.y * 14.0))
+		* studio_front;
+	float studio_edge = mix(
+		1.0 - studio_reflection_edge_share,
+		1.0,
+		pow(fres, 1.35));
+	vec3 studio = (
+		studio_key_color.rgb * studio_key
+		+ studio_cool_color.rgb * studio_cool * 0.72
+		+ studio_warm_color.rgb * studio_warm * 0.32
+	) * studio_reflection_strength * studio_edge * mix(0.34, 1.0, gel_mask);
 	EMISSION = (
 		peak_limit(inner + bubble_glow, interior_budget)
-		+ peak_limit(rim, rim_budget)) * gel_mask;
+		+ peak_limit(rim, rim_budget)) * gel_mask
+		+ peak_limit(studio, studio_reflection_budget)
+		+ peak_limit(fleck_glow, authored_fleck_budget)
+		+ peak_limit(authored_inclusion_glow, authored_inclusion_budget)
+		+ peak_limit(authored_caustic_glow, authored_caustic_budget);
 
 	v_ink = ink;
 	v_hot = hot;

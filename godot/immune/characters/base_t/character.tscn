@@ -1,16 +1,32 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://characters/character_root.gd" id="1"]
-[ext_resource type="PackedScene" path="res://characters/base_t/CHAR-BASE-T-tripo-5k.glb" id="2"]
+
+[sub_resource type="SphereMesh" id="SphereMesh_core"]
+radius = 0.5
+height = 1.0
+
+[sub_resource type="SphereShape3D" id="SphereShape_body"]
+radius = 0.54
 
 [node name="Character" type="CharacterBody3D"]
 script = ExtResource("1")
 family_id = &"T"
 character_id = &"CHAR-BASE-T"
+imported_model_path = "res://characters/base_t/reference_body.tscn"
+imported_face_overlay = false
+imported_replaces_limbs = true
+imported_replaces_identity = true
+imported_replaces_bubbles = true
+imported_replaces_fixed_kit = true
+imported_preserves_materials = true
 
-[node name="CoreMesh" type="Node3D" parent="."]
+[node name="CoreMesh" type="MeshInstance3D" parent="."]
+mesh = SubResource("SphereMesh_core")
 
-[node name="RealMesh" parent="CoreMesh" instance=ExtResource("2")]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+position = Vector3(0, 0.51, 0)
+shape = SubResource("SphereShape_body")
 
 [node name="Face" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 0.4)

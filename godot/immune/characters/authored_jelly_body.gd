@@ -1,19 +1,21 @@
 extends Node3D
 
-## Zero-credit authored jelly bodies for CHAR-BASE-N, CHAR-BASE-A, and CHAR-BASE-D.
+## Zero-credit authored jelly bodies for the round BASE-cell silhouettes.
 ##
 ## These forms are assembled from high-resolution primitives at runtime so the
 ## silhouettes stay editable in source control and never depend on a paid asset
 ## generation call. Each family keeps its locked concept identity while sharing
-## the approved Fizzy material language: wet coloured core, shallow CC0
-## micro-height variation, and a compatibility-safe clear outer membrane.
+## the selected material language: a wet coloured core, deterministic CC0
+## internal detail, and a compatibility-safe clear outer membrane. The project
+## setting decides whether that resolves to the V5 control or V6 banner match.
 
 const _Gel := preload("res://characters/gel/gel_look.gd")
 const _GelProfiles := preload("res://characters/gel/gel_profiles.gd")
 const _PrimitiveMeshes := preload("res://characters/primitive_mesh_cache.gd")
 const _SHELL_SHADER := preload("res://characters/gel/jelly_shell.gdshader")
+const _EYE_SHADER := preload("res://characters/gel/gel_eye.gdshader")
 
-@export_enum("N", "A", "D") var family_id := "N"
+@export_enum("T", "B", "M", "N", "A", "D") var family_id := "N"
 
 const _FIZZY_BASE := {
 	&"albedo_gain": 0.88,
@@ -70,6 +72,42 @@ const _FIZZY_BASE := {
 }
 
 const _FAMILY_LOOK := {
+	"T": {
+		&"jelly": Color(1.0, 0.48, 0.16, 1.0),
+		&"body_color": Color(1.0, 0.30, 0.008, 1.0),
+		&"deep_color": Color(0.58, 0.07, 0.002, 1.0),
+		&"transmit_color": Color(1.0, 0.68, 0.18, 1.0),
+		&"rim_color": Color(1.0, 0.78, 0.30, 1.0),
+		&"shell_color": Color(1.0, 0.68, 0.22, 1.0),
+		&"cavity_color": Color(0.34, 0.065, 0.006, 1.0),
+		&"bubble_seed": 101.0,
+		&"microbubble_seed": 103.0,
+		&"inclusion_seed": 107.0,
+	},
+	"B": {
+		&"jelly": Color(0.62, 0.22, 0.86, 1.0),
+		&"body_color": Color(0.54, 0.07, 0.82, 1.0),
+		&"deep_color": Color(0.18, 0.012, 0.36, 1.0),
+		&"transmit_color": Color(0.76, 0.50, 1.0, 1.0),
+		&"rim_color": Color(0.88, 0.72, 1.0, 1.0),
+		&"shell_color": Color(0.76, 0.48, 1.0, 1.0),
+		&"cavity_color": Color(0.16, 0.018, 0.27, 1.0),
+		&"bubble_seed": 109.0,
+		&"microbubble_seed": 113.0,
+		&"inclusion_seed": 127.0,
+	},
+	"M": {
+		&"jelly": Color(0.62, 0.28, 0.92, 1.0),
+		&"body_color": Color(0.48, 0.18, 0.82, 1.0),
+		&"deep_color": Color(0.16, 0.025, 0.36, 1.0),
+		&"transmit_color": Color(0.76, 0.60, 1.0, 1.0),
+		&"rim_color": Color(0.90, 0.80, 1.0, 1.0),
+		&"shell_color": Color(0.82, 0.66, 1.0, 1.0),
+		&"cavity_color": Color(0.18, 0.035, 0.34, 1.0),
+		&"bubble_seed": 131.0,
+		&"microbubble_seed": 137.0,
+		&"inclusion_seed": 139.0,
+	},
 	"N": {
 		&"jelly": Color(0.56, 0.86, 0.035, 1.0),
 		&"body_color": Color(0.68, 0.86, 0.045, 1.0),
@@ -115,7 +153,7 @@ func _ready() -> void:
 	for key in profile:
 		if key != &"jelly" and key != &"shell_color" and key != &"cavity_color":
 			options[key] = profile[key]
-	options = _GelProfiles.with_v5_surface(options)
+	options = _GelProfiles.with_v5_surface(options, family_id)
 	var gel := _Gel.make_material(profile[&"jelly"], options)
 	if gel == null:
 		push_error("authored_jelly_body.gd: failed to create %s gel material" % family_id)
@@ -142,6 +180,12 @@ func _make_shell(shell_color: Color) -> ShaderMaterial:
 
 func _build_body(gel: Material, shell: Material) -> void:
 	match family_id:
+		"M":
+			_add_gel_sphere("Body", Vector3(0.0, 0.58, 0.0), Vector3(1.12, 1.14, 1.00), gel, shell)
+			_add_gel_sphere("ArmL", Vector3(-0.59, 0.48, 0.0), Vector3(0.27, 0.31, 0.27), gel, shell)
+			_add_gel_sphere("ArmR", Vector3(0.59, 0.48, 0.0), Vector3(0.27, 0.31, 0.27), gel, shell)
+			_add_gel_sphere("FootL", Vector3(-0.28, 0.11, 0.06), Vector3(0.48, 0.32, 0.49), gel, shell)
+			_add_gel_sphere("FootR", Vector3(0.28, 0.11, 0.06), Vector3(0.48, 0.32, 0.49), gel, shell)
 		"A":
 			# A is the only base cell without planted feet. Its Character root adds
 			# the gameplay hover lift and routes mobile duty to RelayDish.
@@ -176,13 +220,20 @@ func _build_d_crown(gel: Material, shell: Material) -> void:
 
 
 func _build_face(gel: Material, cavity_color: Color) -> void:
-	var eye := StandardMaterial3D.new()
-	eye.albedo_color = Color(0.004, 0.003, 0.006)
-	eye.roughness = 0.055
-	eye.metallic = 0.0
+	var eye: Material
+	if _GelProfiles.banner_match_enabled():
+		var wet_eye := ShaderMaterial.new()
+		wet_eye.shader = _EYE_SHADER
+		eye = wet_eye
+	else:
+		var standard_eye := StandardMaterial3D.new()
+		standard_eye.albedo_color = Color(0.004, 0.003, 0.006)
+		standard_eye.roughness = 0.055
+		standard_eye.metallic = 0.0
+		eye = standard_eye
 	var eye_x := 0.18 if family_id == "N" else 0.19
-	var eye_y := 0.60 if family_id == "N" else (0.64 if family_id == "A" else 0.61)
-	var eye_z := 0.420 if family_id == "N" else (0.445 if family_id == "A" else 0.435)
+	var eye_y := 0.60 if family_id == "N" else (0.68 if family_id == "M" else (0.64 if family_id == "A" else 0.61))
+	var eye_z := 0.420 if family_id == "N" else (0.475 if family_id == "M" else (0.445 if family_id == "A" else 0.435))
 	_add_sphere("EyeL", Vector3(-eye_x, eye_y, eye_z), Vector3(0.155, 0.155, 0.105), eye, 64, 32)
 	_add_sphere("EyeR", Vector3(eye_x, eye_y, eye_z), Vector3(0.155, 0.155, 0.105), eye, 64, 32)
 	_add_face_ring("EyeRimL", Vector3(-eye_x, eye_y, eye_z + 0.047), 0.073, 0.087, gel)
@@ -197,8 +248,8 @@ func _build_face(gel: Material, cavity_color: Color) -> void:
 		_add_capsule("MouthRim", Vector3(0.0, 0.40, 0.443), 0.047, 0.19, Vector3(1.0, 1.0, 0.42), Vector3(0.0, 0.0, 90.0), gel)
 		_add_capsule("MouthCavity", Vector3(0.0, 0.40, 0.466), 0.032, 0.15, Vector3(1.0, 1.0, 0.34), Vector3(0.0, 0.0, 90.0), cavity)
 		return
-	var mouth_y := 0.39 if family_id == "A" else 0.38
-	var mouth_z := 0.465 if family_id == "A" else 0.455
+	var mouth_y := 0.44 if family_id == "M" else (0.39 if family_id == "A" else 0.38)
+	var mouth_z := 0.505 if family_id == "M" else (0.465 if family_id == "A" else 0.455)
 	_add_sphere("MouthCavity", Vector3(0.0, mouth_y, mouth_z), Vector3(0.185, 0.205, 0.048), cavity, 64, 32)
 	_add_face_ring("MouthRim", Vector3(0.0, mouth_y, mouth_z + 0.025), 0.092, 0.114, gel)
 
@@ -236,7 +287,12 @@ func _add_capsule(
 
 func _add_gel_sphere(name_: String, pos: Vector3, scale_: Vector3, gel: Material, shell: Material) -> void:
 	_add_sphere(name_, pos, scale_, gel.duplicate(), 96, 48)
-	_add_sphere("%sShell" % name_, pos, scale_ * 1.006, shell.duplicate(), 96, 48)
+	# Intersecting transparent shells produce dark contour seams where separate
+	# primitive limbs meet. The opaque gel core already gives appendages their wet
+	# rim; keep the explicit clear membrane on the main mass (and D crown lobes)
+	# where it can read as one continuous outer envelope.
+	if name_ == "Body" or name_.begins_with("Crown"):
+		_add_sphere("%sShell" % name_, pos, scale_ * 1.006, shell.duplicate(), 96, 48)
 
 
 func _add_sphere(
