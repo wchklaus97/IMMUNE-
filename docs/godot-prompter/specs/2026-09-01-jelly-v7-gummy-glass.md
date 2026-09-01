@@ -32,7 +32,7 @@ scattering, or volumetric light transport.
 | Look | Preservation mechanism | Runtime selection |
 |---|---|---|
 | V5 | Historical source/checkpoints, unchanged V5 branch and assets | `IMMUNE_GEL_LOOK=v5` |
-| V6 | Immutable local source checkpoint `c45c3eb90c97018bfcae7c56e21f377572ef4170`; unchanged V6 values/geometry branch | `IMMUNE_GEL_LOOK=v6` |
+| V6 | Immutable local source checkpoint `c45c3eb07e8a944c9205dcf14d13ca4b3260c0df`; unchanged V6 values/geometry branch | `IMMUNE_GEL_LOOK=v6` |
 | V7 | Immutable local source checkpoint `f9cb6609ec00f483cb33fda2223fe6d52ea1f379`; additive profile, controls, and silhouette branch | project default or `IMMUNE_GEL_LOOK=v7` |
 
 All V7 shader uniforms default to zero, so the new fiber and streak paths are

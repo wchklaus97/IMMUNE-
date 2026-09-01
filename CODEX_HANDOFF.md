@@ -8,7 +8,7 @@ V7 is implemented, promoted as the project default, and preserved at exact
 local source checkpoint `f9cb6609ec00f483cb33fda2223fe6d52ea1f379`.
 No push, tag, public release, notarization, or Steam upload was performed. The
 previous V6 source remains immutable at
-`c45c3eb90c97018bfcae7c56e21f377572ef4170`; V5/V6 source, generated GLBs,
+`c45c3eb07e8a944c9205dcf14d13ca4b3260c0df`; V5/V6 source, generated GLBs,
 selectors, exports, and ignored evidence were not removed or overwritten.
 
 `immune/visual/gel_look="v7"` is the new default. `IMMUNE_GEL_LOOK=v5`, `v6`,
@@ -58,7 +58,7 @@ owner authorization remain open.
 ## V6 working-tree handoff — banner-match visual convergence
 
 V6 is implemented, verified, and preserved at source checkpoint
-`c45c3eb90c97018bfcae7c56e21f377572ef4170`. It is not the checksum-locked V5.4
+`c45c3eb07e8a944c9205dcf14d13ca4b3260c0df`. It is not the checksum-locked V5.4
 artifact candidate described below, and no release artifact or Steam submission
 should be labelled V6 until every platform is rebuilt from this exact source
 checkpoint. The later handoff/documentation commit does not change game source.
