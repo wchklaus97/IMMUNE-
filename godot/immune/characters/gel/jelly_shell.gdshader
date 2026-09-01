@@ -24,6 +24,8 @@ uniform float shell_white_mix : hint_range(0.0, 1.0) = 0.0;
 uniform float studio_reflection_strength : hint_range(0.0, 1.0) = 0.0;
 uniform float studio_reflection_alpha : hint_range(0.0, 0.3) = 0.0;
 uniform float studio_reflection_budget : hint_range(0.0, 0.2) = 0.0;
+// V7 adds a long diagonal card. Zero preserves the V5/V6 shell exactly.
+uniform float studio_streak_strength : hint_range(0.0, 1.0) = 0.0;
 // Zero preserves the separately scaled authored M/N/A/D shell meshes. Imported
 // T/B bodies use this shader as a next pass and opt into a small normal-space
 // expansion, avoiding z-fighting without duplicating their mesh hierarchy.
@@ -46,10 +48,21 @@ void fragment() {
 	float studio_cool = exp(-(
 		cool_delta.x * cool_delta.x * 16.0 + cool_delta.y * cool_delta.y * 3.5))
 		* studio_front;
-	float studio_mask = clamp(studio_key + studio_cool * 0.72, 0.0, 1.0);
+	vec2 streak_delta = reflection_vector.xy - vec2(-0.08, 0.06);
+	float streak_across = dot(streak_delta, vec2(0.78, -0.63));
+	float streak_along = dot(streak_delta, vec2(0.63, 0.78));
+	float studio_streak = exp(-(
+		streak_across * streak_across * 42.0
+		+ streak_along * streak_along * 2.4))
+		* studio_front * studio_streak_strength;
+	float studio_mask = clamp(
+		studio_key + studio_cool * 0.72 + studio_streak,
+		0.0,
+		1.0);
 	vec3 studio = (
 		vec3(0.90, 0.97, 1.0) * studio_key
 		+ vec3(0.24, 0.48, 1.0) * studio_cool * 0.72
+		+ vec3(0.94, 0.98, 1.0) * studio_streak
 	) * studio_reflection_strength;
 	vec3 clear_shell_color = mix(shell_color.rgb, vec3(1.0), shell_white_mix);
 	ALBEDO = clear_shell_color * shell_diffuse_strength;

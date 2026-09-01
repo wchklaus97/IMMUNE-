@@ -169,16 +169,26 @@ func _make_shell(shell_color: Color) -> ShaderMaterial:
 	shell.shader = _SHELL_SHADER
 	_Gel.apply_v5_shell_bounds(shell)
 	shell.set_shader_parameter(&"shell_color", shell_color)
-	shell.set_shader_parameter(&"face_alpha", 0.008)
-	shell.set_shader_parameter(&"edge_alpha", 0.46)
-	shell.set_shader_parameter(&"edge_power", 2.4)
-	shell.set_shader_parameter(&"shell_roughness", 0.025)
-	shell.set_shader_parameter(&"rim_emission", 0.34)
+	if _GelProfiles.v7_enabled():
+		shell.set_shader_parameter(&"face_alpha", 0.003)
+		shell.set_shader_parameter(&"edge_alpha", 0.55)
+		shell.set_shader_parameter(&"edge_power", 1.95)
+		shell.set_shader_parameter(&"shell_roughness", 0.016)
+		shell.set_shader_parameter(&"rim_emission", 0.40)
+	else:
+		shell.set_shader_parameter(&"face_alpha", 0.008)
+		shell.set_shader_parameter(&"edge_alpha", 0.46)
+		shell.set_shader_parameter(&"edge_power", 2.4)
+		shell.set_shader_parameter(&"shell_roughness", 0.025)
+		shell.set_shader_parameter(&"rim_emission", 0.34)
 	shell.render_priority = 1
 	return shell
 
 
 func _build_body(gel: Material, shell: Material) -> void:
+	if _GelProfiles.v7_enabled():
+		_build_v7_body(gel, shell)
+		return
 	match family_id:
 		"M":
 			_add_gel_sphere("Body", Vector3(0.0, 0.58, 0.0), Vector3(1.12, 1.14, 1.00), gel, shell)
@@ -205,6 +215,39 @@ func _build_body(gel: Material, shell: Material) -> void:
 			_add_gel_sphere("ArmR", Vector3(0.53, 0.45, 0.0), Vector3(0.24, 0.28, 0.24), gel, shell)
 			_add_gel_sphere("FootL", Vector3(-0.24, 0.085, 0.06), Vector3(0.41, 0.28, 0.42), gel, shell)
 			_add_gel_sphere("FootR", Vector3(0.24, 0.085, 0.06), Vector3(0.41, 0.28, 0.42), gel, shell)
+
+
+func _build_v7_body(gel: Material, shell: Material) -> void:
+	# V7 is a separate silhouette branch. The preserved V5/V6 body values above
+	# remain untouched and are selected again with IMMUNE_GEL_LOOK=v5/v6.
+	match family_id:
+		"M":
+			_add_gel_sphere("Body", Vector3(0.0, 0.56, 0.0), Vector3(1.18, 1.10, 1.08), gel, shell)
+			_add_gel_sphere("ArmL", Vector3(-0.60, 0.47, 0.0), Vector3(0.26, 0.30, 0.25), gel, shell)
+			_add_gel_sphere("ArmR", Vector3(0.60, 0.47, 0.0), Vector3(0.26, 0.30, 0.25), gel, shell)
+			_add_gel_sphere("FootL", Vector3(-0.30, 0.10, 0.07), Vector3(0.47, 0.30, 0.46), gel, shell)
+			_add_gel_sphere("FootR", Vector3(0.30, 0.10, 0.07), Vector3(0.47, 0.30, 0.46), gel, shell)
+		"A":
+			_add_gel_sphere("Body", Vector3(0.0, 0.53, 0.0), Vector3(1.10, 1.02, 1.01), gel, shell)
+			_add_gel_sphere("ArmL", Vector3(-0.55, 0.47, 0.0), Vector3(0.23, 0.27, 0.23), gel, shell)
+			_add_gel_sphere("ArmR", Vector3(0.55, 0.47, 0.0), Vector3(0.23, 0.27, 0.23), gel, shell)
+			# The banner gives A two small lower lobes. They remain cosmetic and do
+			# not change A's hover movement, collision, or Relay duty.
+			_add_gel_sphere("FootL", Vector3(-0.24, 0.085, 0.06), Vector3(0.33, 0.21, 0.32), gel, shell)
+			_add_gel_sphere("FootR", Vector3(0.24, 0.085, 0.06), Vector3(0.33, 0.21, 0.32), gel, shell)
+		"D":
+			_add_gel_sphere("Body", Vector3(0.0, 0.51, 0.0), Vector3(1.08, 1.01, 1.00), gel, shell)
+			_add_gel_sphere("ArmL", Vector3(-0.54, 0.44, 0.0), Vector3(0.23, 0.27, 0.23), gel, shell)
+			_add_gel_sphere("ArmR", Vector3(0.54, 0.44, 0.0), Vector3(0.23, 0.27, 0.23), gel, shell)
+			_add_gel_sphere("FootL", Vector3(-0.26, 0.085, 0.06), Vector3(0.42, 0.27, 0.42), gel, shell)
+			_add_gel_sphere("FootR", Vector3(0.26, 0.085, 0.06), Vector3(0.42, 0.27, 0.42), gel, shell)
+			_build_d_crown(gel, shell)
+		_:
+			_add_gel_sphere("Body", Vector3(0.0, 0.50, 0.0), Vector3(1.07, 1.00, 1.00), gel, shell)
+			_add_gel_sphere("ArmL", Vector3(-0.53, 0.43, 0.0), Vector3(0.23, 0.27, 0.23), gel, shell)
+			_add_gel_sphere("ArmR", Vector3(0.53, 0.43, 0.0), Vector3(0.23, 0.27, 0.23), gel, shell)
+			_add_gel_sphere("FootL", Vector3(-0.25, 0.080, 0.06), Vector3(0.41, 0.27, 0.41), gel, shell)
+			_add_gel_sphere("FootR", Vector3(0.25, 0.080, 0.06), Vector3(0.41, 0.27, 0.41), gel, shell)
 
 
 func _build_d_crown(gel: Material, shell: Material) -> void:
@@ -234,10 +277,15 @@ func _build_face(gel: Material, cavity_color: Color) -> void:
 	var eye_x := 0.18 if family_id == "N" else 0.19
 	var eye_y := 0.60 if family_id == "N" else (0.68 if family_id == "M" else (0.64 if family_id == "A" else 0.61))
 	var eye_z := 0.420 if family_id == "N" else (0.475 if family_id == "M" else (0.445 if family_id == "A" else 0.435))
+	if _GelProfiles.v7_enabled():
+		eye_x = 0.20 if family_id != "M" else 0.215
+		eye_y = 0.61 if family_id == "N" else (0.68 if family_id == "M" else (0.63 if family_id == "A" else 0.60))
+		eye_z = 0.475 if family_id == "N" else (0.515 if family_id == "M" else (0.490 if family_id == "A" else 0.480))
 	_add_sphere("EyeL", Vector3(-eye_x, eye_y, eye_z), Vector3(0.155, 0.155, 0.105), eye, 64, 32)
 	_add_sphere("EyeR", Vector3(eye_x, eye_y, eye_z), Vector3(0.155, 0.155, 0.105), eye, 64, 32)
-	_add_face_ring("EyeRimL", Vector3(-eye_x, eye_y, eye_z + 0.047), 0.073, 0.087, gel)
-	_add_face_ring("EyeRimR", Vector3(eye_x, eye_y, eye_z + 0.047), 0.073, 0.087, gel)
+	if not _GelProfiles.v7_enabled():
+		_add_face_ring("EyeRimL", Vector3(-eye_x, eye_y, eye_z + 0.047), 0.073, 0.087, gel)
+		_add_face_ring("EyeRimR", Vector3(eye_x, eye_y, eye_z + 0.047), 0.073, 0.087, gel)
 
 	var cavity := StandardMaterial3D.new()
 	cavity.albedo_color = cavity_color
@@ -245,13 +293,19 @@ func _build_face(gel: Material, cavity_color: Color) -> void:
 	if family_id == "N":
 		# Two nested horizontal capsules produce the concept's short pill-shaped
 		# mouth with a coloured gel lip instead of an O-mouth.
-		_add_capsule("MouthRim", Vector3(0.0, 0.40, 0.443), 0.047, 0.19, Vector3(1.0, 1.0, 0.42), Vector3(0.0, 0.0, 90.0), gel)
-		_add_capsule("MouthCavity", Vector3(0.0, 0.40, 0.466), 0.032, 0.15, Vector3(1.0, 1.0, 0.34), Vector3(0.0, 0.0, 90.0), cavity)
+		var n_mouth_z := 0.508 if _GelProfiles.v7_enabled() else 0.443
+		var n_cavity_z := 0.532 if _GelProfiles.v7_enabled() else 0.466
+		_add_capsule("MouthRim", Vector3(0.0, 0.40, n_mouth_z), 0.047, 0.19, Vector3(1.0, 1.0, 0.42), Vector3(0.0, 0.0, 90.0), gel)
+		_add_capsule("MouthCavity", Vector3(0.0, 0.40, n_cavity_z), 0.032, 0.15, Vector3(1.0, 1.0, 0.34), Vector3(0.0, 0.0, 90.0), cavity)
 		return
 	var mouth_y := 0.44 if family_id == "M" else (0.39 if family_id == "A" else 0.38)
 	var mouth_z := 0.505 if family_id == "M" else (0.465 if family_id == "A" else 0.455)
+	if _GelProfiles.v7_enabled():
+		mouth_y = 0.43 if family_id == "M" else (0.37 if family_id == "A" else 0.365)
+		mouth_z = 0.545 if family_id == "M" else (0.515 if family_id == "A" else 0.505)
 	_add_sphere("MouthCavity", Vector3(0.0, mouth_y, mouth_z), Vector3(0.185, 0.205, 0.048), cavity, 64, 32)
-	_add_face_ring("MouthRim", Vector3(0.0, mouth_y, mouth_z + 0.025), 0.092, 0.114, gel)
+	var mouth_inner := 0.102 if _GelProfiles.v7_enabled() else 0.092
+	_add_face_ring("MouthRim", Vector3(0.0, mouth_y, mouth_z + 0.025), mouth_inner, 0.114, gel)
 
 
 func _add_face_ring(name_: String, pos: Vector3, inner_radius: float, outer_radius: float, gel: Material) -> void:

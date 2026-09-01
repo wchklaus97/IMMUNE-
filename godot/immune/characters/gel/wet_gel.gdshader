@@ -77,6 +77,9 @@ uniform float studio_reflection_edge_share : hint_range(0.0, 1.0) = 0.70;
 uniform vec4 studio_key_color : source_color = vec4(0.90, 0.97, 1.0, 1.0);
 uniform vec4 studio_cool_color : source_color = vec4(0.24, 0.48, 1.0, 1.0);
 uniform vec4 studio_warm_color : source_color = vec4(1.0, 0.28, 0.16, 1.0);
+// V7-only long diagonal reflection. Zero leaves the preserved V5/V6 cards
+// unchanged while the new profile can approach the stretched key-art streaks.
+uniform float studio_streak_strength : hint_range(0.0, 1.0) = 0.0;
 
 group_uniforms gel;
 // Diffuse wrap: how far light creeps past the terminator.
@@ -314,6 +317,16 @@ uniform float authored_caustic_strength : hint_range(0.0, 1.0) = 0.0;
 uniform float authored_caustic_threshold : hint_range(0.0, 1.0) = 0.255;
 uniform float authored_caustic_width : hint_range(0.005, 0.15) = 0.020;
 uniform float authored_caustic_budget : hint_range(0.0, 0.3) = 0.0;
+// V7-only anisotropic internal strand. It is another mip-filtered read from the
+// existing licensed texture, rotated and stretched in object space. This avoids
+// the even circular-dot read without introducing screen-space shimmer.
+uniform float authored_fiber_strength : hint_range(0.0, 1.0) = 0.0;
+uniform float authored_fiber_scale : hint_range(0.02, 0.6) = 0.18;
+uniform float authored_fiber_threshold : hint_range(0.0, 1.0) = 0.255;
+uniform float authored_fiber_width : hint_range(0.005, 0.15) = 0.016;
+uniform float authored_fiber_thinness : hint_range(0.0, 0.3) = 0.0;
+uniform float authored_fiber_budget : hint_range(0.0, 0.3) = 0.0;
+uniform float authored_fiber_lod_bias : hint_range(0.0, 1.25) = 0.22;
 
 group_uniforms v5_readability;
 // Pulls direct body light below the ACES shoulder. V4 sat close to 1.0 linear
@@ -733,6 +746,8 @@ void fragment() {
 	float authored_height_signal = 0.5;
 	float authored_inclusion_signal = 0.5;
 	float authored_inclusion = 0.0;
+	float authored_fiber_signal = 0.5;
+	float authored_fiber = 0.0;
 	if (authored_height_enabled && authored_height_depth > 0.0001) {
 		authored_height_signal = authored_height_triplanar(
 			v_obj_pos,
@@ -769,6 +784,43 @@ void fragment() {
 			authored_inclusion_threshold - authored_inclusion_width,
 			authored_inclusion_threshold + authored_inclusion_width,
 			authored_inclusion_signal) * authored_inclusion_strength;
+	}
+	if (authored_height_enabled && authored_fiber_strength > 0.001) {
+		// Fixed orthonormal-ish basis keeps the direction deterministic per object.
+		// Stretching the rotated frame before triplanar sampling produces long,
+		// broken inclusions rather than a second field of round stamps.
+		vec3 fiber_position = vec3(
+			dot(v_obj_pos, vec3(0.819, 0.242, 0.521)),
+			dot(v_obj_pos, vec3(0.000, 0.907, -0.421)),
+			dot(v_obj_pos, vec3(-0.574, 0.346, 0.745))
+		) * vec3(1.85, 0.46, 1.20);
+		vec3 fiber_normal = normalize(vec3(
+			dot(v_obj_normal, vec3(0.819, 0.242, 0.521)),
+			dot(v_obj_normal, vec3(0.000, 0.907, -0.421)),
+			dot(v_obj_normal, vec3(-0.574, 0.346, 0.745))
+		));
+		authored_fiber_signal = authored_texture_triplanar(
+			fiber_position,
+			fiber_normal,
+			authored_fiber_scale,
+			vec3(
+				inclusion_seed * 0.113 + 0.19,
+				inclusion_seed * 0.067 + 0.47,
+				inclusion_seed * 0.149 + 0.73),
+			authored_fiber_lod_bias);
+		float authored_fiber_aa = max(
+			authored_fiber_width,
+			fwidth(authored_fiber_signal) * 1.35);
+		float fiber_fill = smoothstep(
+			authored_fiber_threshold - authored_fiber_aa,
+			authored_fiber_threshold + authored_fiber_aa,
+			authored_fiber_signal);
+		float coarse_gate = mix(
+			0.30,
+			1.0,
+			smoothstep(0.18, 0.34, authored_inclusion_signal));
+		authored_fiber = pow(fiber_fill, 1.35)
+			* coarse_gate * authored_fiber_strength;
 	}
 	if (dimple_depth > 0.001) {
 		float height = cell_triplanar(v_obj_pos * dimple_scale, normalize(v_obj_normal));
@@ -862,7 +914,8 @@ void fragment() {
 		1.0 - thin
 		- bubble.x * bubble_thinness
 		- microbubble.x * microbubble_thinness
-		- authored_inclusion * authored_inclusion_thinness,
+		- authored_inclusion * authored_inclusion_thinness
+		- authored_fiber * authored_fiber_thinness,
 		0.0,
 		1.0);
 	vec3 through = gel_throughput(local_thickness);
@@ -959,6 +1012,10 @@ void fragment() {
 		transmit_color.rgb,
 		studio_key_color.rgb,
 		0.70) * authored_caustic * (0.18 + 0.82 * fres) * gel_mask;
+	vec3 authored_fiber_glow = mix(
+		transmit_color.rgb,
+		studio_key_color.rgb,
+		0.76) * authored_fiber * (0.24 + 0.76 * fres) * gel_mask;
 	// A fixed studio light-card rig in view space. Unlike screen-space refraction it
 	// is deterministic on Compatibility/Web, follows the surface normal during motion,
 	// and is independently energy-limited before it reaches the display transform.
@@ -976,6 +1033,14 @@ void fragment() {
 	float studio_warm = exp(-(
 		warm_delta.x * warm_delta.x * 5.0 + warm_delta.y * warm_delta.y * 14.0))
 		* studio_front;
+	vec2 streak_delta = reflection_vector.xy - vec2(-0.08, 0.06);
+	float streak_across = dot(streak_delta, vec2(0.78, -0.63));
+	float streak_along = dot(streak_delta, vec2(0.63, 0.78));
+	float studio_streak = exp(-(
+		streak_across * streak_across * 42.0
+		+ streak_along * streak_along * 2.4))
+		* studio_front * studio_streak_strength
+		* mix(0.72, 1.0, smoothstep(0.18, 0.40, authored_height_signal));
 	float studio_edge = mix(
 		1.0 - studio_reflection_edge_share,
 		1.0,
@@ -984,6 +1049,7 @@ void fragment() {
 		studio_key_color.rgb * studio_key
 		+ studio_cool_color.rgb * studio_cool * 0.72
 		+ studio_warm_color.rgb * studio_warm * 0.32
+		+ studio_key_color.rgb * studio_streak
 	) * studio_reflection_strength * studio_edge * mix(0.34, 1.0, gel_mask);
 	EMISSION = (
 		peak_limit(inner + bubble_glow, interior_budget)
@@ -991,7 +1057,8 @@ void fragment() {
 		+ peak_limit(studio, studio_reflection_budget)
 		+ peak_limit(fleck_glow, authored_fleck_budget)
 		+ peak_limit(authored_inclusion_glow, authored_inclusion_budget)
-		+ peak_limit(authored_caustic_glow, authored_caustic_budget);
+		+ peak_limit(authored_caustic_glow, authored_caustic_budget)
+		+ peak_limit(authored_fiber_glow, authored_fiber_budget);
 
 	v_ink = ink;
 	v_hot = hot;

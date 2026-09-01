@@ -714,7 +714,8 @@ func _run() -> void:
 		push_error("Wet-gel rim is above the anti-neon limit")
 		quit(1)
 		return
-	if float(gel_material.get_shader_parameter("coat_strength")) > 1.6:
+	var coat_limit := 1.75 if _GelProfiles.v7_enabled() else 1.6
+	if float(gel_material.get_shader_parameter("coat_strength")) > coat_limit:
 		push_error("Wet-gel coat is too strong for the soft reference")
 		quit(1)
 		return
@@ -1077,7 +1078,12 @@ func _run() -> void:
 	if requested_save_path.is_empty():
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(active_save_path))
 	research_state.call("seed_demo")
-	print("SMOKE_OK missions=6 families=6 save=v2 audio=ready gamepad=ready active_skills=6 encounters=6 touch=ready signatures=T+B traits=enrage+regen authored_jelly=T+B+M+N+A+D gel_fizzy=T+B+M+N+A+D")
+	print(
+		"SMOKE_OK missions=6 families=6 save=v2 audio=ready gamepad=ready "
+		+ "active_skills=6 encounters=6 touch=ready signatures=T+B traits=enrage+regen "
+		+ "authored_jelly=T+B+M+N+A+D gel_fizzy=T+B+M+N+A+D gel_look=%s"
+		% _GelProfiles.selected_look()
+	)
 	var audio_director := root.get_node_or_null("AudioDirector")
 	if audio_director != null:
 		audio_director.call("stop_all")
@@ -1623,6 +1629,8 @@ func _gel_membrane_error(gel: ShaderMaterial) -> String:
 
 
 func _gel_shell_energy_error(shell: ShaderMaterial) -> String:
+	if _GelProfiles.v7_enabled():
+		return _gel_v7_shell_error(shell)
 	if _GelProfiles.banner_match_enabled():
 		return _gel_banner_shell_error(shell)
 	for required_parameter in [
@@ -1649,6 +1657,33 @@ func _gel_shell_energy_error(shell: ShaderMaterial) -> String:
 		return "clear membrane emission must stay in the accepted V5.3 anti-neon window"
 	if shell_alpha < 0.27 or shell_alpha > 0.29:
 		return "clear membrane alpha must stay in the accepted V5.3 boundary window"
+	return ""
+
+
+func _gel_v7_shell_error(shell: ShaderMaterial) -> String:
+	var expected := {
+		"shell_energy_scale": 0.74,
+		"shell_diffuse_strength": 0.045,
+		"shell_specular_level": 0.86,
+		"shell_emission_limit": 0.075,
+		"shell_alpha_limit": 0.46,
+		"shell_white_mix": 0.38,
+		"studio_reflection_strength": 0.52,
+		"studio_reflection_alpha": 0.055,
+		"studio_reflection_budget": 0.075,
+		"studio_streak_strength": 0.62,
+	}
+	for parameter in expected:
+		if shell.get_shader_parameter(parameter) == null:
+			return "V7 clear membrane must expose %s" % parameter
+		if not is_equal_approx(float(shell.get_shader_parameter(parameter)), float(expected[parameter])):
+			return "V7 clear membrane %s drifted from its additive profile" % parameter
+	var face_alpha := float(shell.get_shader_parameter("face_alpha"))
+	if face_alpha < 0.0029 or face_alpha > 0.0041:
+		return "V7 authored membrane face alpha must preserve the clear core"
+	var edge_alpha := float(shell.get_shader_parameter("edge_alpha"))
+	if edge_alpha < 0.549 or edge_alpha > 0.561:
+		return "V7 authored membrane edge alpha drifted"
 	return ""
 
 
@@ -1688,6 +1723,8 @@ func _gel_banner_shell_error(shell: ShaderMaterial) -> String:
 
 
 func _gel_surface_noise_error(gel: ShaderMaterial) -> String:
+	if _GelProfiles.v7_enabled():
+		return _gel_v7_surface_error(gel)
 	if _GelProfiles.banner_match_enabled():
 		return _gel_banner_surface_error(gel)
 	var light_semantics_error := _gel_light_semantics_error(gel)
@@ -1795,6 +1832,65 @@ func _gel_surface_noise_error(gel: ShaderMaterial) -> String:
 	]:
 		if not is_zero_approx(float(gel.get_shader_parameter(retired_parameter))):
 			return "V5.1 retired circular/island detail must remain disabled"
+	return ""
+
+
+func _gel_v7_surface_error(gel: ShaderMaterial) -> String:
+	var light_semantics_error := _gel_light_semantics_error(gel)
+	if not light_semantics_error.is_empty():
+		return light_semantics_error
+	var expected := {
+		"body_exposure_scale": 0.76,
+		"core_glow": 0.14,
+		"interior_budget": 0.30,
+		"thickness_contrast": 0.32,
+		"authored_fleck_strength": 0.38,
+		"authored_inclusion_strength": 0.44,
+		"authored_caustic_strength": 0.32,
+		"authored_caustic_width": 0.014,
+		"authored_fiber_strength": 0.58,
+		"authored_fiber_scale": 0.18,
+		"authored_fiber_threshold": 0.30,
+		"authored_fiber_width": 0.016,
+		"authored_fiber_thinness": 0.055,
+		"authored_fiber_budget": 0.105,
+		"authored_fiber_lod_bias": 0.22,
+		"studio_reflection_strength": 0.74,
+		"studio_reflection_budget": 0.32,
+		"studio_streak_strength": 0.72,
+	}
+	for parameter in expected:
+		if gel.get_shader_parameter(parameter) == null:
+			return "V7 gummy-glass body must expose %s" % parameter
+		if not is_equal_approx(float(gel.get_shader_parameter(parameter)), float(expected[parameter])):
+			return "V7 gummy-glass body %s drifted from its additive profile" % parameter
+	if gel.get_shader_parameter("authored_height_enabled") != true:
+		return "V7 must retain the mipmapped authored texture source"
+	var authored_height := gel.get_shader_parameter("authored_height_tex") as Texture2D
+	if authored_height == null or authored_height.resource_path != "res://characters/gel/jelly_micro_height.png":
+		return "V7 must reuse the reproducible CC0 authored height resource"
+	var authored_image := authored_height.get_image()
+	if authored_image == null or not authored_image.has_mipmaps():
+		return "V7 authored detail must retain generated mipmaps"
+	for retired_parameter in [
+		"bubble_depth",
+		"bubble_emission",
+		"bubble_shell_emission",
+		"microbubble_depth",
+		"microbubble_emission",
+		"microbubble_shell_emission",
+		"inclusion_depth",
+		"inclusion_emission",
+	]:
+		if not is_zero_approx(float(gel.get_shader_parameter(retired_parameter))):
+			return "V7 must not re-enable retired procedural sphere/island relief"
+	var shader_source := gel.shader.code
+	if not shader_source.contains("authored_fiber_signal"):
+		return "V7 must retain the anisotropic object-space fiber signal"
+	if not shader_source.contains("studio_streak_strength"):
+		return "V7 must retain the Compatibility-safe long reflection card"
+	if shader_source.contains("hint_screen_texture"):
+		return "V7 must remain independent of screen-texture refraction"
 	return ""
 
 
@@ -1976,8 +2072,11 @@ func _authored_jelly_error(unit: Node, family: String) -> String:
 	if not _all_geometry_shadows_disabled(real_mesh):
 		return "CHAR-BASE-%s authored body must not cast internal primitive shadows" % family
 	if family == "A":
-		if real_mesh.get_node_or_null("FootL") != null or real_mesh.get_node_or_null("FootR") != null:
-			return "CHAR-BASE-A authored body must preserve its footless hover silhouette"
+		if _GelProfiles.v7_enabled():
+			if real_mesh.get_node_or_null("FootL") == null or real_mesh.get_node_or_null("FootR") == null:
+				return "CHAR-BASE-A V7 body must preserve its banner lower lobes"
+		elif real_mesh.get_node_or_null("FootL") != null or real_mesh.get_node_or_null("FootR") != null:
+			return "CHAR-BASE-A V5/V6 body must preserve its footless hover silhouette"
 	else:
 		if real_mesh.get_node_or_null("FootL") == null or real_mesh.get_node_or_null("FootR") == null:
 			return "CHAR-BASE-%s authored body must preserve its grounded feet" % family

@@ -52,6 +52,20 @@ const SHELL_V6_BOUNDS: Dictionary = {
 	&"studio_reflection_budget": 0.065,
 }
 
+const SHELL_V7_BOUNDS: Dictionary = {
+	&"shell_energy_scale": 0.74,
+	&"shell_diffuse_strength": 0.045,
+	&"shell_specular_level": 0.86,
+	&"shell_emission_limit": 0.075,
+	&"shell_alpha_limit": 0.46,
+	&"shell_white_mix": 0.38,
+	&"shell_thickness": 0.018,
+	&"studio_reflection_strength": 0.52,
+	&"studio_reflection_alpha": 0.055,
+	&"studio_reflection_budget": 0.075,
+	&"studio_streak_strength": 0.62,
+}
+
 ## How far the palette colour's saturation is pushed for the body albedo. A gel
 ## absorbs its complement, so the channel opposite the family hue must sit AT
 ## zero, not merely near it -- every lamp in the scene multiplies whatever is left
@@ -423,7 +437,11 @@ static func _make_membrane(jelly: Color, opts: Dictionary) -> ShaderMaterial:
 static func apply_v5_shell_bounds(shell: ShaderMaterial) -> void:
 	if shell == null:
 		return
-	var bounds := SHELL_V6_BOUNDS if _Profiles.banner_match_enabled() else SHELL_V5_BOUNDS
+	var bounds := SHELL_V5_BOUNDS
+	if _Profiles.v7_enabled():
+		bounds = SHELL_V7_BOUNDS
+	elif _Profiles.banner_match_enabled():
+		bounds = SHELL_V6_BOUNDS
 	for key in bounds:
 		shell.set_shader_parameter(key, bounds[key])
 

@@ -205,6 +205,99 @@ const V6_FAMILY: Dictionary = {
 	},
 }
 
+# V7 is an additive refinement over the preserved V6 checkpoint. It keeps the
+# V6 optical model, then replaces the evenly dotted read with anisotropic
+# object-space strands and a longer broken reflection card. Every new shader
+# control defaults to zero, so selecting v5 or v6 retains the earlier response.
+const V7_GUMMY_GLASS: Dictionary = {
+	&"albedo_gain": 0.88,
+	&"body_exposure_scale": 0.76,
+	&"body_roughness": 0.22,
+	&"core_glow": 0.14,
+	&"interior_budget": 0.30,
+	&"thickness_contrast": 0.32,
+	&"body_absorb": 1.0,
+	&"transmit_strength": 1.56,
+	&"thin_glow": 0.64,
+	&"rim_energy": 0.20,
+	&"rim_budget": 0.11,
+	&"coat_roughness": 0.032,
+	&"coat_strength": 1.70,
+	&"spec_energy": 0.27,
+	&"wet_spec_breakup": 0.055,
+	&"detail_emission_scale": 0.26,
+	&"authored_fleck_strength": 0.38,
+	&"authored_fleck_threshold": 0.325,
+	&"authored_fleck_softness": 0.014,
+	&"authored_fleck_budget": 0.105,
+	&"authored_inclusion_strength": 0.44,
+	&"authored_inclusion_scale": 0.12,
+	&"authored_inclusion_threshold": 0.225,
+	&"authored_inclusion_softness": 0.016,
+	&"authored_inclusion_thinness": 0.10,
+	&"authored_inclusion_budget": 0.105,
+	&"authored_caustic_strength": 0.32,
+	&"authored_caustic_threshold": 0.255,
+	&"authored_caustic_width": 0.014,
+	&"authored_caustic_budget": 0.055,
+	&"authored_fiber_strength": 0.58,
+	&"authored_fiber_scale": 0.18,
+	&"authored_fiber_threshold": 0.30,
+	&"authored_fiber_width": 0.016,
+	&"authored_fiber_thinness": 0.055,
+	&"authored_fiber_budget": 0.105,
+	&"authored_fiber_lod_bias": 0.22,
+	&"studio_reflection_strength": 0.74,
+	&"studio_reflection_budget": 0.32,
+	&"studio_reflection_edge_share": 0.54,
+	&"studio_streak_strength": 0.72,
+	&"membrane_face_alpha": 0.004,
+	&"membrane_edge_alpha": 0.56,
+	&"membrane_edge_power": 1.90,
+	&"membrane_roughness": 0.016,
+	&"membrane_rim_emission": 0.42,
+	&"membrane_thickness": 0.020,
+}
+
+const V7_FAMILY: Dictionary = {
+	"T": {
+		&"body_color": Color(0.98, 0.20, 0.002, 1.0),
+		&"deep_color": Color(0.43, 0.028, 0.001, 1.0),
+		&"transmit_color": Color(1.0, 0.64, 0.13, 1.0),
+		&"rim_color": Color(1.0, 0.78, 0.30, 1.0),
+	},
+	"B": {
+		&"body_color": Color(0.56, 0.006, 0.74, 1.0),
+		&"deep_color": Color(0.11, 0.001, 0.22, 1.0),
+		&"transmit_color": Color(0.68, 0.40, 1.0, 1.0),
+		&"rim_color": Color(0.86, 0.70, 1.0, 1.0),
+	},
+	"M": {
+		&"body_color": Color(0.32, 0.10, 0.72, 1.0),
+		&"deep_color": Color(0.065, 0.010, 0.24, 1.0),
+		&"transmit_color": Color(0.66, 0.53, 1.0, 1.0),
+		&"rim_color": Color(0.84, 0.77, 1.0, 1.0),
+	},
+	"N": {
+		&"body_color": Color(0.44, 0.78, 0.004, 1.0),
+		&"deep_color": Color(0.04, 0.20, 0.001, 1.0),
+		&"transmit_color": Color(0.72, 1.0, 0.16, 1.0),
+		&"rim_color": Color(0.86, 1.0, 0.35, 1.0),
+	},
+	"A": {
+		&"body_color": Color(0.98, 0.47, 0.002, 1.0),
+		&"deep_color": Color(0.42, 0.075, 0.001, 1.0),
+		&"transmit_color": Color(1.0, 0.76, 0.16, 1.0),
+		&"rim_color": Color(1.0, 0.89, 0.39, 1.0),
+	},
+	"D": {
+		&"body_color": Color(0.98, 0.27, 0.002, 1.0),
+		&"deep_color": Color(0.46, 0.030, 0.001, 1.0),
+		&"transmit_color": Color(1.0, 0.59, 0.10, 1.0),
+		&"rim_color": Color(1.0, 0.74, 0.25, 1.0),
+	},
+}
+
 # Historical Fizzy/V5 base values retained as the reversible material control.
 # V6 overrides its production-facing response after this dictionary is merged;
 # legacy look-dev callers can still request these values directly.
@@ -356,6 +449,12 @@ static func options(family: String, overrides: Dictionary = {}) -> Dictionary:
 		var v6_family_values: Dictionary = V6_FAMILY.get(family, {})
 		for key in v6_family_values:
 			merged[key] = v6_family_values[key]
+	if v7_enabled():
+		for key in V7_GUMMY_GLASS:
+			merged[key] = V7_GUMMY_GLASS[key]
+		var v7_family_values: Dictionary = V7_FAMILY.get(family, {})
+		for key in v7_family_values:
+			merged[key] = v7_family_values[key]
 	for key in overrides:
 		merged[key] = overrides[key]
 	return merged
@@ -371,14 +470,29 @@ static func with_v5_surface(values: Dictionary, family: String = "") -> Dictiona
 		var v6_family_values: Dictionary = V6_FAMILY.get(family, {})
 		for key in v6_family_values:
 			merged[key] = v6_family_values[key]
+	if v7_enabled():
+		for key in V7_GUMMY_GLASS:
+			merged[key] = V7_GUMMY_GLASS[key]
+		var v7_family_values: Dictionary = V7_FAMILY.get(family, {})
+		for key in v7_family_values:
+			merged[key] = v7_family_values[key]
 	return merged
 
 
-static func banner_match_enabled() -> bool:
+static func selected_look() -> String:
 	var override := OS.get_environment("IMMUNE_GEL_LOOK").strip_edges().to_lower()
-	if override in ["v5", "v6"]:
-		return override == "v6"
-	return str(ProjectSettings.get_setting("immune/visual/gel_look", "v6")).to_lower() == "v6"
+	if override in ["v5", "v6", "v7"]:
+		return override
+	var configured := str(ProjectSettings.get_setting("immune/visual/gel_look", "v6")).strip_edges().to_lower()
+	return configured if configured in ["v5", "v6", "v7"] else "v6"
+
+
+static func banner_match_enabled() -> bool:
+	return selected_look() in ["v6", "v7"]
+
+
+static func v7_enabled() -> bool:
+	return selected_look() == "v7"
 
 
 static func profile_name(family: String) -> StringName:
