@@ -2,7 +2,55 @@
 
 Updated: 2026-09-01
 
-## V7 current handoff — additive gummy-glass refinement
+## V7 exact local candidate and blinded-preference handoff
+
+V7 is now rebuilt sequentially for Windows, Linux, macOS, and Web into the new
+non-overwriting directory `godot/immune/build/releases/v7-exact-5747a52/`.
+All 14 files are bound to exact documentation checkpoint
+`5747a52c5c0466a12b5ff3fdd5e9c2fc92bab906`, whose game source is the preserved
+V7 checkpoint `f9cb6609ec00f483cb33fda2223fe6d52ea1f379`. The later V6 hash correction
+`b97888119a4d1512830a55aaf8b555f9f016a21a` is documentation-only. Older V5,
+V6, `web/`, `web-v7/`, model, capture, and evidence versions remain intact.
+
+The exact release contract passes for version `0.4.0`, four presets, and the
+unpublished state. The extracted universal macOS app passes deep/strict ad-hoc
+signature, bundle/version/icon/entitlement checks and a real launch ending in
+`RELEASE_SMOKE_OK platform=macOS nodes=200`. Exact exported-Web QA completes
+the eight ordered research-to-pause events at `60.002/59.524` mean/p05 FPS on
+ANGLE Metal and `12/10` under 4x CPU plus SwiftShader. SwiftShader remains
+compatibility stress, not real minimum-spec hardware evidence. Windows and
+Linux still require runtime smoke on their native target platforms.
+
+A new atomic, non-overwriting V5.1/V6/V7 visual-preference tool and campaign
+are ready. Campaign `visual-preference-bc2edd0017f5e93c` contains six anonymous
+participant kits, all six order permutations, balanced candidate positions,
+and 53 checksum entries under
+`outputs/visual-preference-campaigns/immune-v0.4.0-v5-v6-v7-5747a52/`.
+Participant files expose no version labels or commits; the mapping remains in a
+facilitator-only answer key. The first front-only comparison was held back
+because historical character scale could bias texture judgement. The accepted
+stimulus preserves that strip and adds a second row of equal-detail face
+close-ups.
+
+Desktop and 390x844 in-app-browser QA loads every image, keeps page-level
+overflow off, validates responsive one-column controls, blocks an incomplete
+export, completes all 18 score fields and 26 required controls, and downloads a
+valid anonymous local JSON report with no console warning/error or version
+leak. The synthetic report is QA only: the campaign still contains zero human
+results. Root tools now pass `58/58`; Web UI `53/53` plus build, Meshy offline
+safety `6/6`, catalog/translation, Steam assets/readiness, and the exact release
+contract all pass. Full hashes, browser workflow, failure diagnosis, and
+reproduction are in
+`docs/godot-prompter/specs/2026-09-01-v7-exact-candidate-and-visual-preference.md`.
+
+V7 is therefore an exact, locally verified candidate and a ready-to-run human
+study, not a completed public Steam release. Independent adult preference
+results, native Windows/Linux smoke, real minimum-spec Windows/Deck/phone
+evidence, final storefront approval, rights/IDs, signing/notarization,
+Steamworks/Valve review, and owner-authorized publishing remain open. No push,
+tag, release, public upload, notarization, or storefront submission occurred.
+
+## V7 source checkpoint handoff — additive gummy-glass refinement
 
 V7 is implemented, promoted as the project default, and preserved at exact
 local source checkpoint `f9cb6609ec00f483cb33fda2223fe6d52ea1f379`.
@@ -49,11 +97,12 @@ zero, so no GPU-parity claim is made. Full rationale, rejected-prototype
 history, hashes, evidence, and reproduction are in
 `docs/godot-prompter/specs/2026-09-01-jelly-v7-gummy-glass.md`.
 
-V7 is a source-complete local visual version, not a public Steam-ready release.
-Human preference, exact cross-platform rebuilds, real minimum-spec Windows,
-Steam Deck and physical-phone tests, refreshed owner-approved storefront
-captures, rights/IDs, signing/notarization, Steamworks/Valve review, and final
-owner authorization remain open.
+At this source checkpoint V7 was a source-complete local visual version, not a
+public Steam-ready release. The newer exact handoff above closes the local
+cross-platform rebuild and creates the blinded study, while human preference,
+native target/minimum hardware, refreshed owner-approved storefront captures,
+rights/IDs, signing/notarization, Steamworks/Valve review, and final owner
+authorization remain open.
 
 ## V6 working-tree handoff — banner-match visual convergence
 
@@ -1331,8 +1380,8 @@ Remaining work is:
 These are explicit external/product gates, not hidden broken demo work.
 
 【交接狀態】
-- CODEX_HANDOFF.md 是否已更新：是；V7 additive gummy-glass source checkpoint, V5/V6 preservation, accepted evidence, rejected prototype, performance, Web QA, and honest limits are recorded above V6.
-- 本次修改檔案：V7 additive gel profile/body/shell shaders, separate authored silhouette branch, three-version selector/smoke contracts, project default, V7 spec, and this handoff; no prior version or asset was removed.
-- 測試結果：55/55 tools, 53/53 UI, 6/6 Meshy, dual clean import, V7+V6+V5 smoke, 6/6 visual/mission gates, B motion/gameplay/lifecycle, real portrait/compact overflow, UI build, Steam repository checks, Web export, and two-profile browser lifecycle pass.
-- 目前風險：V7 has only a same-tree local Web export, not an exact rebuilt cross-platform candidate; true refraction, GPU/minimum-spec/human preference, refreshed storefront captures, rights/IDs, signing/notarization, Steamworks/Valve review, and owner authorization remain open.
-- 下一個最安全任務：run the preserved V5/V6/V7 builds through a six-family human preference test, then rebuild all four platforms from an explicitly approved exact V7 release commit without overwriting historical artifacts.
+- CODEX_HANDOFF.md 是否已更新：是；exact V7 four-platform artifacts, native/Web evidence, blinded V5.1/V6/V7 campaign, browser QA, provenance correction, preservation, and honest publisher limits are recorded above the earlier V7 handoff.
+- 本次修改檔案：added the atomic visual-preference campaign generator and tests, package command, exact-candidate/preference spec, and this handoff; existing V5/V6/V7 source, artifacts, captures, generated models, and ignored evidence were not removed or overwritten.
+- 測試結果：58/58 tools, 53/53 UI plus production build, 6/6 Meshy safety, catalog/translation/playtest-template checks, 14-file exact release contract, native macOS smoke, two-profile exported-Web lifecycle, Steam repository checks, six-permutation campaign verification, and desktop/mobile participant-browser export all pass.
+- 目前風險：human preference remains 0 real reports; Windows/Linux native runtime, real minimum-spec Windows/Deck/phone performance, final storefront approval, rights/IDs, Developer ID/required signing, notarization, Steamworks/Valve review, and owner authorization remain open.
+- 下一個最安全任務：give the six blinded participant folders to independent adult testers, collect at least three complete anonymous reports, decode only after collection, then run the exact approved look on native target/minimum hardware before any owner-authorized signing or publishing action.
