@@ -2,6 +2,59 @@
 
 Updated: 2026-09-01
 
+## V7 current handoff — additive gummy-glass refinement
+
+V7 is implemented, promoted as the project default, and preserved at exact
+local source checkpoint `f9cb6609ec00f483cb33fda2223fe6d52ea1f379`.
+No push, tag, public release, notarization, or Steam upload was performed. The
+previous V6 source remains immutable at
+`c45c3eb90c97018bfcae7c56e21f377572ef4170`; V5/V6 source, generated GLBs,
+selectors, exports, and ignored evidence were not removed or overwritten.
+
+`immune/visual/gel_look="v7"` is the new default. `IMMUNE_GEL_LOOK=v5`, `v6`,
+and `v7` are all tested selectors. Every V7-only shader control defaults to
+zero, and V7 geometry lives in a separate branch, so the earlier two paths do
+not inherit the new fiber, reflection streak, eye, or proportion changes.
+
+V7 keeps V6's Web-safe pseudo-translucent response while adding rounder body
+proportions, cleaner black eyes, a clearer membrane, a longer studio highlight,
+and irregular filled internal strands. A receives two small cosmetic lower
+lobes without changing hover movement, collision, Relay duty, or combat. The
+first B prototype produced excessive contour rings; generation stopped, the
+failure was diagnosed, and the accepted second prototype replaced the rings
+with stretched mip-filtered object-space fibers before the six-family batch.
+No Meshy task was submitted and no generation credit was consumed.
+
+Accepted ignored evidence is under `outputs/v7-gummy-glass/`: the six-family
+contact strip and 36 family views, B motion strip, 6/6 mission previews, B
+fixed/mobile/boss and portrait lifecycle, V6 rollback captures, real 390x844
+and 1280x720 bilingual overflow checks, two V6/V7 performance pairs, and
+exported-Web browser evidence. V7 Web was exported separately to
+`godot/immune/build/releases/web-v7/`; the older `web/` export remains intact.
+
+Two official Godot 4.7.2 imports are clean. Default V7, explicit V6, and
+explicit V5 smoke pass. Root tools pass 55/55, Web UI 53/53, Meshy offline
+safety 6/6, catalog/localization 200 nodes and 628 rows, UI build, Steam asset
+and repository readiness checks, character/mission/gameplay/motion gates,
+responsive overflow, and Web export all pass. Real-browser QA completes all
+eight research-to-pause events on ANGLE Metal (`60.002/59.88` mean/p05 FPS)
+and 4x-throttled SwiftShader (`13.26/11.99`); the latter remains compatibility
+stress, not hardware evidence.
+
+The order-varied ten-B-body sentinel found no measured V7 CPU regression:
+V6/V7 CPU means were `0.883/0.809 ms` in the 600-frame pair and
+`0.843/0.784 ms` in the reversed 1,200-frame pair. V7 wall means were
+approximately 0.04-0.09 ms (1.8-3.8%) higher. The viewport GPU timer returned
+zero, so no GPU-parity claim is made. Full rationale, rejected-prototype
+history, hashes, evidence, and reproduction are in
+`docs/godot-prompter/specs/2026-09-01-jelly-v7-gummy-glass.md`.
+
+V7 is a source-complete local visual version, not a public Steam-ready release.
+Human preference, exact cross-platform rebuilds, real minimum-spec Windows,
+Steam Deck and physical-phone tests, refreshed owner-approved storefront
+captures, rights/IDs, signing/notarization, Steamworks/Valve review, and final
+owner authorization remain open.
+
 ## V6 working-tree handoff — banner-match visual convergence
 
 V6 is implemented, verified, and preserved at source checkpoint
@@ -1278,8 +1331,8 @@ Remaining work is:
 These are explicit external/product gates, not hidden broken demo work.
 
 【交接狀態】
-- CODEX_HANDOFF.md 是否已更新：是；V6 banner-match working-tree implementation, evidence, rollback, and honest limits are recorded above the historical V5.4 candidate.
-- 本次修改檔案：V6 gel shaders/profiles/environment, authored T/B/M/N/A/D bodies and adapters, mission/combat/shot/smoke integration, project setting, V6 spec, and this handoff.
-- 測試結果：55/55 tools, 53/53 UI, 6/6 Meshy, dual clean import, V6+V5 smoke, six-family visual gates, overflow/build/export, and two-profile real-browser lifecycle pass.
-- 目前風險：V6 is source-preserved but not an exact rebuilt release artifact; true refraction, real hardware/human preference, refreshed storefront captures, rights/IDs, signing/notarization, Steamworks/Valve review, and owner authorization remain open.
-- 下一個最安全任務：develop V7 additively with V5/V6 selectors and checkpoints intact; promote only after side-by-side visual, motion, performance, smoke, and exported-Web gates pass.
+- CODEX_HANDOFF.md 是否已更新：是；V7 additive gummy-glass source checkpoint, V5/V6 preservation, accepted evidence, rejected prototype, performance, Web QA, and honest limits are recorded above V6.
+- 本次修改檔案：V7 additive gel profile/body/shell shaders, separate authored silhouette branch, three-version selector/smoke contracts, project default, V7 spec, and this handoff; no prior version or asset was removed.
+- 測試結果：55/55 tools, 53/53 UI, 6/6 Meshy, dual clean import, V7+V6+V5 smoke, 6/6 visual/mission gates, B motion/gameplay/lifecycle, real portrait/compact overflow, UI build, Steam repository checks, Web export, and two-profile browser lifecycle pass.
+- 目前風險：V7 has only a same-tree local Web export, not an exact rebuilt cross-platform candidate; true refraction, GPU/minimum-spec/human preference, refreshed storefront captures, rights/IDs, signing/notarization, Steamworks/Valve review, and owner authorization remain open.
+- 下一個最安全任務：run the preserved V5/V6/V7 builds through a six-family human preference test, then rebuild all four platforms from an explicitly approved exact V7 release commit without overwriting historical artifacts.
