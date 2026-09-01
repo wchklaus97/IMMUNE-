@@ -17,8 +17,8 @@ App/depot identifiers, signing identities, or an uploaded build.
   account owner's IDs, evidence records, and attestations;
 - `THIRD_PARTY_NOTICES.txt` and `GODOT_COPYRIGHT.txt`: redistribution notices
   copied into every native depot together with the Noto Sans HK OFL;
-- `build-candidate-v0.4.0.md`: preserved historical V5.4 artifact record; the
-  current V8.1 record is created only after a clean source commit and rebuild;
+- `build-candidate-v0.4.0-v8.1.md`: current exact local V8.1 candidate record;
+- `build-candidate-v0.4.0.md`: preserved historical V5.4 artifact record;
 - `assets/`: exact-dimension store/library art, icons, six real 1920x1080
   gameplay screenshots, source art, and provenance notes;
 - `release-checklist.md`: automated gates and the remaining account, human,
@@ -37,8 +37,8 @@ The asset validator reads PNG, JPEG, and ICNS headers directly, checks every
 required size, proves that the library logo contains transparent pixels, and
 requires at least five 16:9 gameplay screenshots at 1920x1080 or larger. The
 readiness gate also validates the strict 14-file release inventory, licence and
-handoff files, offline runtime surface, and shipping/excluded T/M model policy
-inside the PCK.
+handoff files, offline runtime surface, and authored/generated six-family model
+policy inside the PCK.
 
 ## Stage native depots without uploading
 

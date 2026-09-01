@@ -36,11 +36,15 @@ build, nor that the product is publicly released.
   three native records against one candidate commit/version and final artifacts.
 - [x] Depot staging rejects placeholders, unsafe inputs, missing files, and
   credentials; generated VDFs remain in preview mode and do not upload.
-- [ ] Rebuild and record the final V8.1 Windows, Linux, macOS, and Web artifacts
-  from the next clean source commit. The older `build-candidate-v0.4.0.md` is a
-  preserved V5.4 historical record and must not be presented as current.
-- [ ] Run a fresh native macOS release smoke against that exact V8.1 commit and
-  ZIP. Existing pre-V8.1 or intermediate evidence is historical only.
+- [x] Rebuilt and recorded the final V8.1 Windows, Linux, macOS, and Web
+  artifacts from clean source commit
+  `52e05f2562470bc6cbe6db505f8df7ded3f53bf0` in
+  `build-candidate-v0.4.0-v8.1.md`. The older
+  `build-candidate-v0.4.0.md` remains the preserved V5.4 historical record.
+- [x] Fresh native macOS release smoke binds that exact V8.1 commit and ZIP,
+  including strict ad-hoc signature, universal architecture, bundle metadata,
+  entitlements, artifact/log hashes, and the runtime success marker. Developer
+  ID signing and notarization remain separate unchecked gates below.
 - [ ] Native Windows and Linux release smoke is green for the exact candidate
   on those operating systems. Historical remote runs do not prove V8.1.
 

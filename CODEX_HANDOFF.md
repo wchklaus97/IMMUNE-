@@ -2,6 +2,46 @@
 
 Updated: 2026-09-01
 
+## V8.1 exact local release candidate — authored slime and release convergence
+
+V8.1 is rebuilt and preserved as the current exact local candidate. Its 14
+Windows/Linux/macOS/Web artifacts come from clean source commit
+`52e05f2562470bc6cbe6db505f8df7ded3f53bf0`; follow-up commit
+`695fd3181abbdd15d45e8e26686a9308f8c07add` hardens only release validation and
+tests, without changing Godot source or artifact bytes. Exact sizes, SHA-256
+values, evidence hashes, and open gates are recorded in
+`steam/build-candidate-v0.4.0-v8.1.md`. The historical V5.4 record remains at
+`steam/build-candidate-v0.4.0.md`.
+
+All six playable families now ship only authored procedural jelly bodies. The
+PCK gate checks 534 entries, requires compiled authored body scenes and T/B
+logical remaps, and rejects every Meshy/Tripo hero experiment and damaged T
+variant. Those generated development sources and all earlier V5/V6/V7/V8
+checkpoints remain preserved outside the shipping PCKs. The prior intermediate
+V8.1 artifact set is preserved as the verified recoverable archive
+`godot/immune/build/history/v8-1-intermediate-5bed69d.tar.zst`.
+
+All nine runtime sounds now have deterministic project-authored generation,
+locked hashes, documented provenance, and a CI drift check; existing channel
+pools and playback behavior are retained. Six current 1920x1080 Steam
+screenshots are real V8.1 gameplay captures covering every family and mission.
+
+Official Godot `4.7.2.stable.official.ed1daf0bf` imports, source smoke, the
+strict 14-file contract, Steam repository readiness, translation/catalog,
+audio/assets, and all `64/64` release-tool tests pass. Exported-Web QA completes
+the research-to-pause lifecycle at desktop and throttled compatibility
+profiles. Exact macOS evidence binds the source commit and ZIP, passes a real
+universal `arm64+x86_64` app launch, and ends with
+`RELEASE_SMOKE_OK platform=macOS nodes=200`.
+
+This closes the repository-controlled V8.1 candidate work, not public release.
+Native Windows/Linux launch evidence, owner rights/content attestations, real
+Steam App/depot IDs and onboarding, Developer ID signing/notarization,
+SteamPipe/private-branch client installs, physical minimum-spec/Steam Deck and
+human playtests, Valve review/timing, and explicit owner release authorization
+remain open. No push, tag, upload, submission, notarization, or public release
+occurred.
+
 ## V8 source checkpoint — living-slime idle and locomotion
 
 V8 is implemented and preserved at local source checkpoint
