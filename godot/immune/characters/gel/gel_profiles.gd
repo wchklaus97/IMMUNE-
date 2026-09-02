@@ -587,16 +587,62 @@ const V8_4_REFERENCE_VISCOSITY: Dictionary = {
 }
 
 # V8.5 is an exact opt-in presentation revision. It inherits the frozen V8.4
-# optical/motion foundation, then enables only the normal-coherent project sculpt
-# surface. Older selectors keep explicit zeroes from gel_look.DEFAULTS.
+# optical/motion foundation, then locks the authored sculpt to the measured wet
+# amber reference. The warm cards remove the former magenta/red screen-shaped
+# patches, while the mip-filtered authored height carries continuous orange-peel
+# relief without reintroducing bubbles, cells, particles, or detached geometry.
+# Older selectors keep explicit zeroes and the frozen V8.4 values.
 const V8_5_REFERENCE_SCULPT: Dictionary = {
 	&"liquid_wobble_normal_follow": 1.0,
+	&"albedo_gain": 1.82,
+	&"body_roughness": 0.17,
+	&"coat_roughness": 0.038,
+	&"coat_strength": 1.44,
+	&"spec_energy": 0.11,
+	&"wet_spec_breakup": 0.36,
+	&"studio_key_color": Color(1.0, 0.9569, 0.8667, 1.0),
+	&"studio_cool_color": Color(1.0, 0.8863, 0.7412, 1.0),
+	&"studio_warm_color": Color(1.0, 0.7098, 0.4196, 1.0),
+	&"studio_reflection_strength": 0.52,
+	&"studio_reflection_budget": 0.14,
+	&"studio_reflection_edge_share": 0.38,
+	&"studio_streak_strength": 0.28,
+	&"studio_card_broadening": 0.58,
+	&"studio_card_tail_cut": 0.36,
+	&"liquid_flow_emission": 0.12,
+	&"liquid_flow_budget": 0.020,
+	&"liquid_core_color_mix": 0.25,
+	&"liquid_core_roughness_mix": 0.30,
+	&"liquid_laminar_color_mix": 0.16,
+	&"liquid_laminar_roughness_mix": 0.30,
+	&"liquid_laminar_emission": 0.050,
+	&"liquid_laminar_budget": 0.012,
+	&"membrane_face_alpha": 0.0007,
+	&"membrane_edge_alpha": 0.12,
+	&"membrane_edge_power": 4.0,
+	&"membrane_roughness": 0.024,
+	&"membrane_rim_emission": 0.025,
+	&"membrane_thickness": 0.007,
 	&"orange_peel_micro_depth": 0.0012,
-	&"orange_peel_micro_scale": 86.0,
-	&"orange_peel_micro_grazing": 0.65,
-	# The analytic peel supplies the fine reference grain. Reduce the older broad
-	# authored height so two normal layers do not turn the skin into hard plastic.
-	&"authored_height_depth": 0.00065,
+	&"orange_peel_micro_scale": 34.0,
+	&"orange_peel_micro_grazing": 0.30,
+	# One continuous surface height field supplies the visible reference grain.
+	# A coarser positive LOD bias keeps it stable at gameplay distance, and the
+	# all-angle floor avoids a smooth plastic patch across the face-on core.
+	&"authored_height_scale": 0.30,
+	&"authored_height_depth": 0.0014,
+	&"authored_height_lod_bias": 0.50,
+	&"membrane_grazing_floor": 1.0,
+	&"membrane_grazing_power": 1.0,
+}
+
+const V8_5_FAMILY: Dictionary = {
+	"T": {
+		&"body_color": Color(1.0, 0.2392, 0.0, 1.0),
+		&"deep_color": Color(0.7882, 0.0941, 0.0, 1.0),
+		&"transmit_color": Color(1.0, 0.4941, 0.0510, 1.0),
+		&"rim_color": Color(1.0, 0.6118, 0.1373, 1.0),
+	},
 }
 
 const V8_4_FAMILY: Dictionary = {
@@ -837,6 +883,9 @@ static func options(family: String, overrides: Dictionary = {}) -> Dictionary:
 	if v8_5_enabled():
 		for key in V8_5_REFERENCE_SCULPT:
 			merged[key] = V8_5_REFERENCE_SCULPT[key]
+		var v8_5_family_values: Dictionary = V8_5_FAMILY.get(family, {})
+		for key in v8_5_family_values:
+			merged[key] = v8_5_family_values[key]
 	for key in overrides:
 		merged[key] = overrides[key]
 	return merged
@@ -882,6 +931,9 @@ static func with_v5_surface(values: Dictionary, family: String = "") -> Dictiona
 	if v8_5_enabled():
 		for key in V8_5_REFERENCE_SCULPT:
 			merged[key] = V8_5_REFERENCE_SCULPT[key]
+		var v8_5_family_values: Dictionary = V8_5_FAMILY.get(family, {})
+		for key in v8_5_family_values:
+			merged[key] = v8_5_family_values[key]
 	return merged
 
 

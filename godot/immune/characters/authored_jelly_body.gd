@@ -550,12 +550,12 @@ func _build_face(gel: Material, cavity_color: Color) -> void:
 		)
 		if _GelProfiles.v8_5_enabled() and family_id == "T":
 			# The authored r4 sculpt is taller than V8.4 and contains measured shallow
-			# sockets. Seat the presentation lenses in those sockets instead of reusing
-			# the old body's world-space marks.
+			# sockets. Seat broader reference-scale lenses in those sockets instead of
+			# reusing the old body's smaller world-space marks.
 			eye_x = 0.218
 			eye_y = 0.835
 			eye_z = 0.452
-			eye_scale = Vector3(0.190, 0.122, 0.016)
+			eye_scale = Vector3(0.200, 0.128, 0.016)
 	if _GelProfiles.motion_truth_enabled():
 		# Body-space origin/scale are per material instance. Keep one instance per
 		# eye so the right eye can never inherit the left eye's deformation frame.
@@ -615,11 +615,14 @@ func _build_face(gel: Material, cavity_color: Color) -> void:
 			pore_rim.set_shader_parameter(&"studio_strength", 0.18)
 			pore_rim.set_shader_parameter(&"studio_budget", 0.22)
 			pore_rim.set_shader_parameter(&"surface_roughness", 0.08)
-			# The V8.5 torus is already depth-occluded by the opaque authored body.
-			# Discarding it by each torus vertex normal cuts the front ring in half.
-			pore_rim.set_shader_parameter(
-				&"face_visibility_gate", 0.0 if _GelProfiles.v8_5_enabled() else 1.0
-			)
+			pore_rim.set_shader_parameter(&"face_visibility_gate", 1.0)
+			if _GelProfiles.v8_5_enabled():
+				# The authored surface depth-occludes the back half. A whole-mark
+				# camera gate removes the remaining edge-on torus before it can read
+				# as a detached cell, while leaving frontal and 3/4 views complete.
+				# Face rings rotate the torus 90 degrees, so its aperture axis is +Y.
+				pore_rim.set_shader_parameter(&"face_visibility_threshold", 0.18)
+				pore_rim.set_shader_parameter(&"face_visibility_axis", Vector3.UP)
 			var pore_y := 1.050 if _GelProfiles.v8_5_enabled() else 0.800
 			var pore_z := 0.452 if _GelProfiles.v8_5_enabled() else 0.436
 			_add_face_ring(

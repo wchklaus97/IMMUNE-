@@ -16,6 +16,11 @@ uniform vec2 eye_catchlight_shape = vec2(54.0, 58.0);
 // the authored face axis turns behind the camera so transparency ordering can
 // never reveal a second set of eyes/mouth through the back of the gel.
 uniform float face_visibility_gate : hint_range(0.0, 1.0) = 0.0;
+// V8.5's shallow pore ring is a front-face mark rather than a free prop. The
+// default preserves the reviewed V8.4 eye/mouth rejection plane; only the pore
+// raises this threshold so an exact side view cannot expose a floating torus.
+uniform float face_visibility_threshold : hint_range(-1.0, 1.0) = -0.08;
+uniform vec3 face_visibility_axis = vec3(0.0, 0.0, 1.0);
 varying vec3 v_face_forward_view;
 varying vec3 v_eye_local_normal;
 
@@ -119,7 +124,7 @@ vec3 liquid_wobble_surface_normal(vec3 body_position, vec3 body_normal) {
 void vertex() {
 	v_eye_local_normal = normalize(NORMAL);
 	v_face_forward_view = normalize(
-		(MODELVIEW_MATRIX * vec4(0.0, 0.0, 1.0, 0.0)).xyz);
+		(MODELVIEW_MATRIX * vec4(normalize(face_visibility_axis), 0.0)).xyz);
 	if (liquid_body_space_enabled >= 0.5) {
 		vec3 safe_part_scale = max(abs(liquid_part_scale), vec3(0.0001));
 		mat3 body_to_part = transpose(liquid_part_basis);
@@ -186,7 +191,8 @@ void vertex() {
 
 void fragment() {
 	if (face_visibility_gate > 0.5
-			&& dot(normalize(v_face_forward_view), normalize(VIEW)) < -0.08) {
+			&& dot(normalize(v_face_forward_view), normalize(VIEW))
+				< face_visibility_threshold) {
 		discard;
 	}
 	vec3 n = normalize(NORMAL);

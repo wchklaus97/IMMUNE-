@@ -1,6 +1,6 @@
 # Steam release checklist
 
-Updated: 2026-09-01. “Repository complete” means the source tree can produce and
+Updated: 2026-09-02. “Repository complete” means the source tree can produce and
 validate a submission candidate. It does not mean Valve has approved the page or
 build, nor that the product is publicly released.
 
@@ -45,6 +45,10 @@ build, nor that the product is publicly released.
   including strict ad-hoc signature, universal architecture, bundle metadata,
   entitlements, artifact/log hashes, and the runtime success marker. Developer
   ID signing and notarization remain separate unchecked gates below.
+- [x] The opt-in V8.5 T candidate has a hash-bound project-authored mesh,
+  five-group visual lock, all-14-animation review, real Apple M4 Pro GPU
+  evidence, and a complete owner-signing template. It remains separate from
+  the release/default selector and excluded pending the unchecked gates below.
 - [ ] Native Windows and Linux release smoke is green for the exact candidate
   on those operating systems. Historical remote runs do not prove V8.1.
 
@@ -57,7 +61,9 @@ build, nor that the product is publicly released.
 - [ ] Obtain the real App ID and unique Windows/Linux/macOS depot IDs.
 - [ ] Enter supported operating systems, launch options, install folders, and
   branch/package access in Steamworks.
-- [ ] Owner-sign the final asset-rights attestation. Project-authored audio now
+- [ ] Complete and owner-sign
+  `asset-rights-attestation-v8.5-template.md`, then archive the signed record
+  with an exact SHA-256. Project-authored audio now
   has deterministic source and exact hashes, while generated Meshy/Tripo
   development models are non-shipping; Steam key-art inputs and contributor
   authority still require owner confirmation in `asset-rights-register.md`.

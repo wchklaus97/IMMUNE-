@@ -11,9 +11,10 @@ attestation. A `conditional` row must be resolved before commercial submission.
 | B-cell Meshy T2 development model | `characters/base_b/ASSET_PROVENANCE.md`; task `01a043a9-4884-7a6f-bd72-1a716f663403`; integrated GLB SHA-256 `c57cbf701c6ec66dfca69715e82ffe9339bc5ebf121fa05251f54157bab3100e` | non-shipping, excluded | Keep only as source/history evidence; do not use in builds or marketing without resolving its separate rights chain. |
 | T-cell Tripo development model and embedded texture | `characters/base_t/ASSET_PROVENANCE.md`; GLB SHA-256 `4b969a424da09aad9dfb80b810e7ec6b7ce08db61cb54da7febc482b259dd105` | non-shipping, excluded | Keep only as source/history evidence; do not use in builds or marketing without the missing receipt and input rights. |
 | T V8.4 single-mass derivative | `characters/base_t/ASSET_PROVENANCE.md`; GLB SHA-256 `169394df640604f6d5e1302f5ff82b444b088e924125b971441e713185b6f7bb` | development-only, excluded | It inherits the unresolved Tripo source rights. Keep the release-preset and PCK exclusion until the missing source receipt and input rights are verified. |
-| T V8.5 project-authored sculpt candidate | `characters/base_t/ASSET_PROVENANCE.md`; deterministic builder SHA-256 `7f9ae79363244d0cf30ecf3d6f207ec777f189cf4c31bf00ad1496a8014ec8e5`; GLB SHA-256 `8f14cfe59a508df413e4d53218f30bbf316e7e5d31e42154b2916a0bd5669294` | project-authored geometry; development-only, excluded | Confirm contributor authority and rights to the visual concept/reference before a separate commercial-promotion decision. |
+| T V8.5 project-authored sculpt candidate | `characters/base_t/ASSET_PROVENANCE.md`; deterministic builder SHA-256 `7f9ae79363244d0cf30ecf3d6f207ec777f189cf4c31bf00ad1496a8014ec8e5`; GLB SHA-256 `8f14cfe59a508df413e4d53218f30bbf316e7e5d31e42154b2916a0bd5669294`; `steam/asset-rights-attestation-v8.5-template.md` | project-authored geometry; development-only, excluded; awaiting owner signature | Complete the reference inventory, attach evidence, and sign an affirmative commercial-promotion decision before rebuilding any release candidate with V8.5. |
+| T V8.5 visual concept/reference set | Primary SHA-256 `3164ea9567836f98f1fcc96fb2ff0058495b91268f2f1e3ead298a24eab9a65c`; secondary SHA-256 values `8916ea0ba811d35142f38f55e651af6a240b494601db991218fcfb90a4298e40`, `7507f10a9f5ace150cc41ba73c1d8835284442182fcd7ccb1069afe1e9fce494`, `bf0971939cbd7f19e482d4ed9c782d3fa36ad8c13de156dc670d99549ab18680`, and `0c34616bef01adaf2c78c766f7ea826021eb9dd2c7ffa81ef50e4bfe04dae253`; exact paths in the signing template | conditional; awaiting owner evidence and signature | Identify creator/provider/account and applicable commercial terms for every image; attach input-rights evidence and sign the V8.5 decision. |
 | T/B/M/N/A/D authored procedural bodies and runtime materials | GDScript/shader source and repository history; release PCK gate requires authored T/B scenes and rejects generated hero meshes | project-authored | Owner confirms contributor authority and project licence. |
-| Steam key art/capsules/library art | `steam/assets/source/immune-key-art-*.png`, generated for this project and locally composited | conditional | Confirm the generating account had authority over every reference/input and approve commercial use. |
+| Steam key art/capsules/library art | Landscape source SHA-256 `304cfbdb4b07071e456f38719377462078699d410df0b42a85c6592e5e15c33c`; portrait source SHA-256 `4e5dfaf7424c1f8d861665fb22f09bc8e8742de3398a1c2caf460e28b4bcdd9c`; generated for this project and locally composited; `steam/assets/README.md`; V8.5 signing template | conditional; awaiting owner signature | Confirm the generating account had authority over every reference/input, attach the provider record, and approve commercial use. |
 | Wordmark, Steam icons, and UI symbols | SVG/code-native sources and repository history | project-authored | Owner confirms contributor authority. |
 | Music and SFX in `godot/immune/audio/` | `audio/AUDIO_PROVENANCE.md`; deterministic source `tools/generate_release_audio.mjs`; nine exact hashes below | project-authored | Owner confirms contributor authority; retain generator, provenance, and checksum gate. |
 | English and Traditional Chinese text | Checked-in source/localization tables; AI-assisted drafting disclosed | conditional | Human owner reviews accuracy, trademarks, and authority to publish. |
@@ -40,6 +41,12 @@ attestation. A `conditional` row must be resolved before commercial submission.
 
 Commercial readiness remains fail-closed until every `conditional` or `blocked`
 row has a dated owner decision and supporting record.
+
+The prepared owner package is
+`steam/asset-rights-attestation-v8.5-template.md`. It deliberately remains
+unsigned in source control. After signing, archive the completed evidence
+outside the public repository and enter its path and SHA-256 in the private
+publisher-input file; do not change an unchecked owner assertion by automation.
 
 ## Project-authored audio inventory
 

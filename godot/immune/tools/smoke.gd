@@ -2692,7 +2692,14 @@ func _gel_shell_energy_error(shell: ShaderMaterial) -> String:
 
 
 func _gel_v8_5_shell_error(shell: ShaderMaterial) -> String:
-	var inherited_error := _gel_v8_4_shell_error(shell, 1.0)
+	var inherited_error := _gel_v8_4_shell_error(shell, 1.0, {
+		"face_alpha": 0.0007,
+		"edge_alpha": 0.12,
+		"edge_power": 4.0,
+		"shell_roughness": 0.024,
+		"rim_emission": 0.025,
+		"shell_thickness": 0.007,
+	})
 	if not inherited_error.is_empty():
 		return inherited_error.replace("V8.4", "V8.5")
 	for marker in ["liquid_wobble_surface_normal"]:
@@ -2702,7 +2709,9 @@ func _gel_v8_5_shell_error(shell: ShaderMaterial) -> String:
 
 
 func _gel_v8_4_shell_error(
-	shell: ShaderMaterial, expected_normal_follow: float = 0.0
+	shell: ShaderMaterial,
+	expected_normal_follow: float = 0.0,
+	expected_overrides: Dictionary = {}
 ) -> String:
 	var expected := {
 		"shell_energy_scale": 0.50,
@@ -2728,6 +2737,8 @@ func _gel_v8_4_shell_error(
 		"liquid_wobble_scale": 2.40,
 		"liquid_wobble_normal_follow": expected_normal_follow,
 	}
+	for parameter in expected_overrides:
+		expected[parameter] = expected_overrides[parameter]
 	for parameter in expected:
 		if shell.get_shader_parameter(parameter) == null:
 			return "V8.4 reference membrane must expose %s" % parameter
@@ -3074,11 +3085,65 @@ func _gel_v8_4_extension_rollback_error(gel: ShaderMaterial, selector: String) -
 
 
 func _gel_v8_5_surface_error(gel: ShaderMaterial, family: String) -> String:
-	var inherited_error := _gel_v8_4_surface_error(
-		gel, family, 0.00065, 1.0, 0.0012, 0.65
-	)
+	var inherited_error := _gel_v8_4_surface_error(gel, family, {
+		"albedo_gain": 1.82,
+		"body_roughness": 0.17,
+		"coat_roughness": 0.038,
+		"coat_strength": 1.44,
+		"spec_energy": 0.11,
+		"studio_reflection_strength": 0.52,
+		"studio_reflection_budget": 0.14,
+		"studio_reflection_edge_share": 0.38,
+		"studio_streak_strength": 0.28,
+		"studio_card_broadening": 0.58,
+		"studio_card_tail_cut": 0.36,
+		"authored_height_scale": 0.30,
+		"authored_height_depth": 0.0014,
+		"authored_height_lod_bias": 0.50,
+		"membrane_grazing_floor": 1.0,
+		"membrane_grazing_power": 1.0,
+		"liquid_flow_emission": 0.12,
+		"liquid_flow_budget": 0.020,
+		"liquid_laminar_color_mix": 0.16,
+		"liquid_laminar_roughness_mix": 0.30,
+		"liquid_laminar_emission": 0.050,
+		"liquid_laminar_budget": 0.012,
+		"liquid_wobble_normal_follow": 1.0,
+		"orange_peel_micro_depth": 0.0012,
+		"orange_peel_micro_scale": 34.0,
+		"orange_peel_micro_grazing": 0.30,
+	}, 0.25)
 	if not inherited_error.is_empty():
 		return inherited_error.replace("V8.4", "V8.5")
+	var exact_v8_5 := {
+		"wet_spec_breakup": 0.36,
+		"liquid_core_roughness_mix": 0.30,
+	}
+	for parameter in exact_v8_5:
+		if not is_equal_approx(
+			float(gel.get_shader_parameter(parameter)), float(exact_v8_5[parameter])
+		):
+			return "V8.5 family %s parameter %s drifted" % [family, parameter]
+	var expected_studio_colors := {
+		"studio_key_color": Color(1.0, 0.9569, 0.8667, 1.0),
+		"studio_cool_color": Color(1.0, 0.8863, 0.7412, 1.0),
+		"studio_warm_color": Color(1.0, 0.7098, 0.4196, 1.0),
+	}
+	for parameter in expected_studio_colors:
+		var actual_color := gel.get_shader_parameter(parameter) as Color
+		if not actual_color.is_equal_approx(expected_studio_colors[parameter]):
+			return "V8.5 family %s warm-card colour %s drifted" % [family, parameter]
+	if family == "T":
+		var expected_t_colors := {
+			"body_color": Color(1.0, 0.2392, 0.0, 1.0),
+			"deep_color": Color(0.7882, 0.0941, 0.0, 1.0),
+			"transmit_color": Color(1.0, 0.4941, 0.0510, 1.0),
+			"rim_color": Color(1.0, 0.6118, 0.1373, 1.0),
+		}
+		for parameter in expected_t_colors:
+			var actual_color := gel.get_shader_parameter(parameter) as Color
+			if not actual_color.is_equal_approx(expected_t_colors[parameter]):
+				return "V8.5 T amber reference colour %s drifted" % parameter
 	for source_marker in [
 		"liquid_wobble_surface_normal",
 		"orange_peel_micro_height",
@@ -3092,10 +3157,8 @@ func _gel_v8_5_surface_error(gel: ShaderMaterial, family: String) -> String:
 func _gel_v8_4_surface_error(
 	gel: ShaderMaterial,
 	family: String,
-	expected_authored_height_depth: float = 0.00145,
-	expected_normal_follow: float = 0.0,
-	expected_orange_peel_depth: float = 0.0,
-	expected_orange_peel_grazing: float = 0.0
+	expected_overrides: Dictionary = {},
+	expected_core_mix: float = -1.0
 ) -> String:
 	var light_semantics_error := _gel_light_semantics_error(gel)
 	if not light_semantics_error.is_empty():
@@ -3122,7 +3185,7 @@ func _gel_v8_4_surface_error(
 		"studio_card_broadening": 0.72,
 		"studio_card_tail_cut": 0.32,
 		"authored_height_scale": 0.46,
-		"authored_height_depth": expected_authored_height_depth,
+		"authored_height_depth": 0.00145,
 		"authored_height_lod_bias": 0.74,
 		"membrane_grazing_floor": 0.035,
 		"membrane_grazing_power": 1.75,
@@ -3153,13 +3216,15 @@ func _gel_v8_4_surface_error(
 		"liquid_wobble_strength": 0.012,
 		"liquid_wobble_speed": 0.78,
 		"liquid_wobble_scale": 2.40,
-		"liquid_wobble_normal_follow": expected_normal_follow,
-		"orange_peel_micro_depth": expected_orange_peel_depth,
+		"liquid_wobble_normal_follow": 0.0,
+		"orange_peel_micro_depth": 0.0,
 		"orange_peel_micro_scale": 86.0,
-		"orange_peel_micro_grazing": expected_orange_peel_grazing,
+		"orange_peel_micro_grazing": 0.0,
 		"bubble_density": 0.0,
 		"microbubble_density": 0.0,
 	}
+	for parameter in expected_overrides:
+		expected[parameter] = expected_overrides[parameter]
 	for parameter in expected:
 		if gel.get_shader_parameter(parameter) == null:
 			return "V8.4 reference volume must expose %s" % parameter
@@ -3189,7 +3254,9 @@ func _gel_v8_4_surface_error(
 		if not is_zero_approx(float(gel.get_shader_parameter(zero_parameter))):
 			return "V8.4 must keep detached/interior particle cues zero at %s" % zero_parameter
 	var core_mix := float(gel.get_shader_parameter("liquid_core_color_mix"))
-	if core_mix < 0.34 or core_mix > 0.44:
+	if expected_core_mix >= 0.0 and not is_equal_approx(core_mix, expected_core_mix):
+		return "V8.4 family %s moving optical core drifted" % family
+	if expected_core_mix < 0.0 and (core_mix < 0.34 or core_mix > 0.44):
 		return "V8.4 family %s moving optical core is outside the cohesive range" % family
 	if gel.get_shader_parameter("authored_height_enabled") != true:
 		return "V8.4 must retain its mip-filtered wet-skin relief"
@@ -3921,11 +3988,7 @@ func _gel_v8_4_material_coherence_error(
 			]
 		if mesh_name in ["EyeL", "EyeR", "MouthCavity", "ForeheadPore", "ForeheadPoreRim"]:
 			var visibility_gate: Variant = material.get_shader_parameter("face_visibility_gate")
-			var expected_visibility_gate := (
-				0.0
-				if _GelProfiles.v8_5_enabled() and mesh_name == "ForeheadPoreRim"
-				else 1.0
-			)
+			var expected_visibility_gate := 1.0
 			if (
 				visibility_gate == null
 				or not is_equal_approx(float(visibility_gate), expected_visibility_gate)
@@ -3935,6 +3998,20 @@ func _gel_v8_4_material_coherence_error(
 				]
 			if not material.shader.code.contains("discard"):
 				return "CHAR-BASE-%s V8.4 face shader lost its back-view rejection" % family
+			if _GelProfiles.v8_5_enabled() and mesh_name == "ForeheadPoreRim":
+				var visibility_threshold: Variant = material.get_shader_parameter(
+					"face_visibility_threshold"
+				)
+				if (
+					visibility_threshold == null
+					or not is_equal_approx(float(visibility_threshold), 0.18)
+				):
+					return "CHAR-BASE-T V8.5 pore rim must reject edge-on views"
+				var visibility_axis: Variant = material.get_shader_parameter(
+					"face_visibility_axis"
+				)
+				if visibility_axis == null or not Vector3(visibility_axis).is_equal_approx(Vector3.UP):
+					return "CHAR-BASE-T V8.5 pore rim must use its torus aperture axis"
 			if mesh_name in ["EyeL", "EyeR"]:
 				var expected_eye_values := {
 					"studio_strength": 0.42,

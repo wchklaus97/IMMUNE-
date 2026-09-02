@@ -66,10 +66,24 @@
 - Runtime scope: exact selector `v8_5`, family T only. It is fail-closed if the
   immutable asset identity or mesh contract is missing. V8.4 and all earlier
   selectors retain their previous paths.
+- Visual-reference inventory (none of these files is read by the builder):
+  - primary appearance reference `characters/concepts/CHAR-BASE-T-3d-alt.png`,
+    SHA-256
+    `3164ea9567836f98f1fcc96fb2ff0058495b91268f2f1e3ead298a24eab9a65c`;
+  - secondary shape reference
+    `characters/concepts/base-cell-line-v2/CHAR-BASE-T.png`, SHA-256
+    `8916ea0ba811d35142f38f55e651af6a240b494601db991218fcfb90a4298e40`;
+  - secondary raw, fixed, and mobile references, SHA-256 respectively
+    `7507f10a9f5ace150cc41ba73c1d8835284442182fcd7ccb1069afe1e9fce494`,
+    `bf0971939cbd7f19e482d4ed9c782d3fa36ad8c13de156dc670d99549ab18680`,
+    and
+    `0c34616bef01adaf2c78c766f7ea826021eb9dd2c7ffa81ef50e4bfe04dae253`.
 - Rights status: the geometry and builder are project-authored, but this record
   is not an owner attestation for the visual concept/reference. The candidate
   remains excluded from release packages until the owner confirms contributor
-  authority, concept/reference rights, and commercial promotion.
+  authority, concept/reference rights, and commercial promotion. The complete
+  signing package is `steam/asset-rights-attestation-v8.5-template.md`; its
+  current status is **AWAITING OWNER SIGNATURE**.
 
 ## Rejected source variant
 

@@ -11,6 +11,8 @@ App/depot identifiers, signing identities, or an uploaded build.
   including known pre-generated AI content;
 - `asset-rights-register.md`: fail-closed provenance register for every major
   shipping asset class;
+- `asset-rights-attestation-v8.5-template.md`: hash-bound V8.5/reference/key-art
+  signing package, deliberately left awaiting the authorized owner's signature;
 - `privacy-notice-draft.md`: draft for the offline demo's public privacy page;
 - `steamworks-setup.md`: exact separate-Demo-App launch/depot handoff;
 - `publisher-inputs.example.json`: deliberately incomplete schema for the

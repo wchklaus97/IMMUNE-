@@ -11,11 +11,21 @@ the rights to every source/reference image.
   luminous central immune core, six distinct glossy jelly-cell heroes, branching
   biological network, readable exact title `IMMUNE`, no platform marks, no
   reviews, no pricing, and no promotional badges.
+  SHA-256:
+  `304cfbdb4b07071e456f38719377462078699d410df0b42a85c6592e5e15c33c`.
 - `source/immune-key-art-portrait-v1.png` — 1024x1536 portrait companion from the
   same project-only direction, with exact single title and no third-party marks.
+  SHA-256:
+  `4e5dfaf7424c1f8d861665fb22f09bc8e8742de3398a1c2caf460e28b4bcdd9c`.
 - `source/immune-wordmark.svg` — code-native transparent `IMMUNE` wordmark used
   to produce the library logo. It exists because two generated “transparent”
   attempts baked a checkerboard into RGB and were rejected from the repository.
+  SHA-256:
+  `a5d8c6f027528ceeb28881af31a2fbd1fb24d52521ff45450438c56fafb6b330`.
+
+The exact files above are included in
+`../asset-rights-attestation-v8.5-template.md`. Their commercial approval is
+still **AWAITING OWNER SIGNATURE**; this provenance note does not approve them.
 
 ## Store assets
 
