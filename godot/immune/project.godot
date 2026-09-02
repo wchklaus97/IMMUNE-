@@ -37,6 +37,10 @@ window/size/viewport_height=1080
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/v8_5_raw_export/plugin.cfg")
+
 [gui]
 
 theme/custom_font="res://fonts/NotoSansHK-VF.ttf"

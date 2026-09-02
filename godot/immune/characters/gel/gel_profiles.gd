@@ -938,6 +938,8 @@ static func with_v5_surface(values: Dictionary, family: String = "") -> Dictiona
 
 
 static func selected_look() -> String:
+	if OS.has_feature("v8_5_candidate"):
+		return "v8_5"
 	var override := OS.get_environment("IMMUNE_GEL_LOOK").strip_edges().to_lower()
 	if override in ["v5", "v6", "v7", "v8", "v8_1", "v8_2", "v8_3", "v8_4", "v8_5"]:
 		return override

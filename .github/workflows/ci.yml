@@ -53,6 +53,7 @@ jobs:
           else
             node tools/validate_release_contract.mjs
           fi
+          npm run validate:v8-5-export
 
       - name: Set up Godot 4.7.2 and export templates
         uses: chickensoft-games/setup-godot@v2
@@ -94,6 +95,22 @@ jobs:
             if grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" \
               "godot-smoke-$gel_look.log"; then exit 1; fi
           done
+
+      - name: Build and probe isolated V8.5 candidate PCK
+        run: |
+          candidate_dir="$(mktemp -d)"
+          candidate_pck="$candidate_dir/v8-5-candidate.pck"
+          node tools/godot_checked_command.mjs \
+            --log="$candidate_dir/export.log" \
+            --expect=V8_5_RAW_EXPORT_ADDED \
+            -- godot --headless --path godot/immune \
+            --export-pack "Web V8.5 Candidate" "$candidate_pck"
+          npm run validate:v8-5-export -- --pck="$candidate_pck"
+          node tools/godot_checked_command.mjs \
+            --log="$candidate_dir/probe.log" \
+            --expect=V8_5_CANDIDATE_PROBE_OK \
+            -- godot --headless --main-pack "$candidate_pck" \
+            --script "$PWD/tools/godot/v8_5_candidate_probe.gd"
 
       - name: Validate screenshot and preview provenance contracts
         run: |
@@ -150,13 +167,19 @@ jobs:
 
       - name: Export Windows, Linux, macOS, and Web demos
         run: |
-          set -o pipefail
           mkdir -p godot/immune/build/releases/web
-          godot --headless --path godot/immune --export-release "Windows Desktop" build/releases/IMMUNE-windows.exe 2>&1 | tee godot-export-windows.log
-          godot --headless --path godot/immune --export-release "Linux/X11" build/releases/IMMUNE-linux.x86_64 2>&1 | tee godot-export-linux.log
-          godot --headless --path godot/immune --export-release "macOS" build/releases/IMMUNE-macOS.zip 2>&1 | tee godot-export-macos.log
-          godot --headless --path godot/immune --export-release "Web" build/releases/web/index.html 2>&1 | tee godot-export-web.log
-          if grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" godot-export-windows.log godot-export-linux.log godot-export-macos.log godot-export-web.log; then exit 1; fi
+          node tools/godot_checked_command.mjs --log=godot-export-windows.log -- \
+            godot --headless --path godot/immune --export-release \
+            "Windows Desktop" build/releases/IMMUNE-windows.exe
+          node tools/godot_checked_command.mjs --log=godot-export-linux.log -- \
+            godot --headless --path godot/immune --export-release \
+            "Linux/X11" build/releases/IMMUNE-linux.x86_64
+          node tools/godot_checked_command.mjs --log=godot-export-macos.log -- \
+            godot --headless --path godot/immune --export-release \
+            "macOS" build/releases/IMMUNE-macOS.zip
+          node tools/godot_checked_command.mjs --log=godot-export-web.log -- \
+            godot --headless --path godot/immune --export-release \
+            "Web" build/releases/web/index.html
           node tools/validate_release_contract.mjs --artifacts=godot/immune/build/releases
           node tools/validate_steam_readiness.mjs --artifacts=godot/immune/build/releases
 
