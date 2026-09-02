@@ -38,6 +38,7 @@ const EXCLUDED_PCK_MARKERS = [
   "CHAR-BASE-T-tripo-5k",
   "CHAR-BASE-T-fix.glb",
   "CHAR-BASE-T-v8-4-single-mass-r1",
+  "CHAR-BASE-T-v8-5-authored-sculpt-r4",
 ];
 const REQUIRED_PCK_MARKERS = [
   "characters/authored_jelly_body.gdc",
@@ -49,9 +50,11 @@ const PCK_DIRECTORY_ENCRYPTED = 1;
 const PCK_SPARSE_BUNDLE = 4;
 const MAX_PCK_RESOURCE_COUNT = 100_000;
 const RIGHTS_BOUND_FILES = {
+  "tools/meshy/build_t_v8_5_authored_sculpt.py": "7f9ae79363244d0cf30ecf3d6f207ec777f189cf4c31bf00ad1496a8014ec8e5",
   "godot/immune/characters/base_b/CHAR-BASE-B-meshy-t2.glb": "c57cbf701c6ec66dfca69715e82ffe9339bc5ebf121fa05251f54157bab3100e",
   "godot/immune/characters/base_t/CHAR-BASE-T-tripo-5k.glb": "4b969a424da09aad9dfb80b810e7ec6b7ce08db61cb54da7febc482b259dd105",
   "godot/immune/characters/base_t/CHAR-BASE-T-v8-4-single-mass-r1.glb": "169394df640604f6d5e1302f5ff82b444b088e924125b971441e713185b6f7bb",
+  "godot/immune/characters/base_t/CHAR-BASE-T-v8-5-authored-sculpt-r4.glb": "8f14cfe59a508df413e4d53218f30bbf316e7e5d31e42154b2916a0bd5669294",
   "godot/immune/characters/gel/jelly_micro_height.png": "25ba40fcb8a6d800fc1ffe4747a4dadad95593fc8d8f3299aed5eef7888fc9a6",
   "godot/immune/fonts/NotoSansHK-VF.ttf": "70172afd2cf0e045182787219b949e7798253982a36e364114757c09efd55477",
   "godot/immune/audio/music/immune_pulse.ogg": "1daba74fd27ac64db650cda112689ac5b5a9ea4776a5d56b0f71b6d5474de3a4",

@@ -18,8 +18,15 @@ const _EYE_SHADER := preload("res://characters/gel/gel_eye.gdshader")
 const _T_V8_4_SINGLE_MASS_PATH := (
 	"res://characters/base_t/CHAR-BASE-T-v8-4-single-mass-r1.glb"
 )
+const _T_V8_5_SINGLE_MASS_PATH := (
+	"res://characters/base_t/CHAR-BASE-T-v8-5-authored-sculpt-r4.glb"
+)
+const _T_V8_5_SINGLE_MASS_SHA256 := (
+	"8f14cfe59a508df413e4d53218f30bbf316e7e5d31e42154b2916a0bd5669294"
+)
 
 static var _t_v8_4_mesh_cache: ArrayMesh
+static var _t_v8_5_mesh_cache: ArrayMesh
 
 @export_enum("T", "B", "M", "N", "A", "D") var family_id := "N"
 
@@ -165,9 +172,15 @@ func _ready() -> void:
 		push_error("authored_jelly_body.gd: failed to create %s gel material" % family_id)
 		return
 	var shell := _make_shell(profile[&"shell_color"], options)
-	_build_body(gel, shell)
+	if not _build_body(gel, shell):
+		# Fail the complete presentation node closed. In particular, a gated V8.5
+		# asset failure must never continue into floating eyes, mouth, or pore marks.
+		visible = false
+		process_mode = Node.PROCESS_MODE_DISABLED
+		set_meta(&"authored_body_build_failed", true)
+		return
 	_build_face(gel, profile[&"cavity_color"])
-	if _GelProfiles.v8_4_enabled():
+	if _GelProfiles.reference_viscosity_enabled():
 		_configure_v8_4_material_coherence(gel)
 	print("AUTHORED_JELLY_BODY family=%s profile=fizzy-zero-credit" % family_id)
 
@@ -209,13 +222,12 @@ func _make_shell(shell_color: Color, options: Dictionary) -> ShaderMaterial:
 	return shell
 
 
-func _build_body(gel: Material, shell: Material) -> void:
+func _build_body(gel: Material, shell: Material) -> bool:
 	if _GelProfiles.single_mass_enabled():
-		_build_single_mass_body(gel, shell)
-		return
+		return _build_single_mass_body(gel, shell)
 	if _GelProfiles.gummy_glass_enabled():
 		_build_v7_body(gel, shell)
-		return
+		return true
 	match family_id:
 		"M":
 			_add_gel_sphere("Body", Vector3(0.0, 0.58, 0.0), Vector3(1.12, 1.14, 1.00), gel, shell)
@@ -242,6 +254,7 @@ func _build_body(gel: Material, shell: Material) -> void:
 			_add_gel_sphere("ArmR", Vector3(0.53, 0.45, 0.0), Vector3(0.24, 0.28, 0.24), gel, shell)
 			_add_gel_sphere("FootL", Vector3(-0.24, 0.085, 0.06), Vector3(0.41, 0.28, 0.42), gel, shell)
 			_add_gel_sphere("FootR", Vector3(0.24, 0.085, 0.06), Vector3(0.41, 0.28, 0.42), gel, shell)
+	return true
 
 
 func _build_v7_body(gel: Material, shell: Material) -> void:
@@ -277,28 +290,42 @@ func _build_v7_body(gel: Material, shell: Material) -> void:
 			_add_gel_sphere("FootR", Vector3(0.25, 0.080, 0.06), Vector3(0.41, 0.27, 0.41), gel, shell)
 
 
-func _build_single_mass_body(gel: Material, shell: Material) -> void:
+func _build_single_mass_body(gel: Material, shell: Material) -> bool:
 	# One indexed watertight surface owns the full silhouette. Arms, lower lobes,
 	# and D's top ridge are sculpted into this mesh; no free-standing gel pieces
 	# exist for animation to expose or separate.
-	var revision := "v8_4" if _GelProfiles.v8_4_enabled() else "v8_3"
-	var body_mesh := _SingleMassBlob.mesh(family_id, revision)
-	var body_position := _SingleMassBlob.centre(family_id, revision)
-	if revision == "v8_4" and family_id == "T":
-		var reference_mesh := _v8_4_t_single_mass_mesh()
-		if reference_mesh != null:
-			body_mesh = reference_mesh
-			body_position = Vector3.ZERO
+	var revision := (
+		"v8_5" if _GelProfiles.v8_5_enabled()
+		else ("v8_4" if _GelProfiles.v8_4_enabled() else "v8_3")
+	)
+	var body_mesh: ArrayMesh
+	var body_position := Vector3.ZERO
+	if revision == "v8_5" and family_id == "T":
+		var authored_mesh := _v8_5_t_single_mass_mesh()
+		if authored_mesh == null:
+			# Exact V8.5 fails closed. Presenting a procedural fallback under the
+			# accepted sculpt selector would make topology/rights evidence dishonest.
+			push_error("authored_jelly_body.gd: exact V8.5 T sculpt failed to load")
+			return false
+		body_mesh = authored_mesh
+	else:
+		body_mesh = _SingleMassBlob.mesh(family_id, revision)
+		body_position = _SingleMassBlob.centre(family_id, revision)
+		if revision == "v8_4" and family_id == "T":
+			var reference_mesh := _v8_4_t_single_mass_mesh()
+			if reference_mesh != null:
+				body_mesh = reference_mesh
+				body_position = Vector3.ZERO
 	var body := MeshInstance3D.new()
 	body.name = "Body"
 	body.mesh = body_mesh
 	body.position = body_position
 	body.material_override = gel.duplicate()
 	body.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	body.set_meta(
-		&"v8_4_single_mass" if revision == "v8_4" else &"v8_3_single_mass",
-		true
-	)
+	body.set_meta(StringName("%s_single_mass" % revision), true)
+	if revision == "v8_5" and family_id == "T":
+		# This marker is set only after source SHA and imported-mesh validation.
+		body.set_meta(&"v8_5_authored_sculpt", true)
 	if revision == "v8_4" and family_id == "T":
 		body.set_meta(&"v8_4_reference_remesh", body_mesh == _t_v8_4_mesh_cache)
 	add_child(body)
@@ -310,11 +337,88 @@ func _build_single_mass_body(gel: Material, shell: Material) -> void:
 	membrane.scale = Vector3.ONE * 1.006
 	membrane.material_override = shell.duplicate()
 	membrane.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	membrane.set_meta(
-		&"v8_4_single_mass_shell" if revision == "v8_4" else &"v8_3_single_mass_shell",
-		true
-	)
+	membrane.set_meta(StringName("%s_single_mass_shell" % revision), true)
 	add_child(membrane)
+	return true
+
+
+func _v8_5_t_single_mass_mesh() -> ArrayMesh:
+	if _t_v8_5_mesh_cache != null:
+		return _t_v8_5_mesh_cache
+	var source_error := _v8_5_t_source_contract_error(
+		_T_V8_5_SINGLE_MASS_PATH,
+		_T_V8_5_SINGLE_MASS_SHA256
+	)
+	if not source_error.is_empty():
+		push_error("authored_jelly_body.gd: %s" % source_error)
+		return null
+	var packed := load(_T_V8_5_SINGLE_MASS_PATH) as PackedScene
+	if packed == null:
+		push_error("authored_jelly_body.gd: V8.5 T sculpt did not import as PackedScene")
+		return null
+	var source := packed.instantiate()
+	if source == null:
+		push_error("authored_jelly_body.gd: V8.5 T sculpt PackedScene failed to instantiate")
+		return null
+	var mesh_count := _array_mesh_instance_count(source)
+	if mesh_count != 1:
+		source.free()
+		push_error(
+			"authored_jelly_body.gd: V8.5 T sculpt must contain exactly one ArrayMesh; got %d"
+			% mesh_count
+		)
+		return null
+	var mesh_instance := _first_array_mesh(source)
+	if mesh_instance == null:
+		source.free()
+		push_error("authored_jelly_body.gd: V8.5 T sculpt has no ArrayMesh")
+		return null
+	var candidate := mesh_instance.mesh as ArrayMesh
+	var mesh_error := _v8_5_t_mesh_contract_error(candidate)
+	if not mesh_error.is_empty():
+		source.free()
+		push_error("authored_jelly_body.gd: %s" % mesh_error)
+		return null
+	_t_v8_5_mesh_cache = candidate
+	_t_v8_5_mesh_cache.resource_name = "V8.5-AuthoredSculpt-T-r4"
+	source.free()
+	return _t_v8_5_mesh_cache
+
+
+func _v8_5_t_source_contract_error(path: String, expected_sha256: String) -> String:
+	if not ResourceLoader.exists(path):
+		return "V8.5 project-authored T sculpt is unavailable; the selector will not fall back"
+	var actual_sha256 := FileAccess.get_sha256(path)
+	if actual_sha256 != expected_sha256:
+		return "V8.5 T sculpt SHA-256 drifted: %s" % actual_sha256
+	return ""
+
+
+func _v8_5_t_mesh_contract_error(mesh: ArrayMesh) -> String:
+	if mesh == null:
+		return "V8.5 T sculpt did not provide an ArrayMesh"
+	if mesh.get_surface_count() != 1:
+		return "V8.5 T sculpt must contain exactly one surface"
+	if mesh.surface_get_primitive_type(0) != Mesh.PRIMITIVE_TRIANGLES:
+		return "V8.5 T sculpt surface must use indexed triangles"
+	# The immutable source-file SHA proves the GLB has no material payload. Godot's
+	# scene importer may still attach its own default StandardMaterial3D to the
+	# imported surface, so that derived runtime value is intentionally ignored.
+	var arrays := mesh.surface_get_arrays(0)
+	var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	var normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
+	var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
+	if vertices.size() != 6002 or normals.size() != 6002 or indices.size() != 36000:
+		return "V8.5 T sculpt topology drifted (%d vertices, %d normals, %d indices)" % [
+			vertices.size(), normals.size(), indices.size(),
+		]
+	var bounds := mesh.get_aabb()
+	if (
+		not bounds.position.is_equal_approx(Vector3(-0.75, 0.0, -0.50))
+		or not bounds.size.is_equal_approx(Vector3(1.50, 1.46, 1.00))
+	):
+		return "V8.5 T sculpt bounds drifted: %s" % bounds
+	return ""
 
 
 func _v8_4_t_single_mass_mesh() -> ArrayMesh:
@@ -355,6 +459,13 @@ static func _first_array_mesh(node: Node) -> MeshInstance3D:
 	return null
 
 
+static func _array_mesh_instance_count(node: Node) -> int:
+	var count := 1 if node is MeshInstance3D and (node as MeshInstance3D).mesh is ArrayMesh else 0
+	for child in node.get_children():
+		count += _array_mesh_instance_count(child)
+	return count
+
+
 func _build_d_crown(gel: Material, shell: Material) -> void:
 	var crown := [
 		[Vector3(-0.34, 0.99, -0.01), Vector3(0.24, 0.30, 0.23)],
@@ -373,9 +484,9 @@ func _build_face(gel: Material, cavity_color: Color) -> void:
 		var wet_eye := ShaderMaterial.new()
 		wet_eye.shader = _EYE_SHADER
 		wet_eye.set_shader_parameter(
-			&"face_visibility_gate", 1.0 if _GelProfiles.v8_4_enabled() else 0.0
+			&"face_visibility_gate", 1.0 if _GelProfiles.reference_viscosity_enabled() else 0.0
 		)
-		if _GelProfiles.v8_4_enabled():
+		if _GelProfiles.reference_viscosity_enabled():
 			wet_eye.set_shader_parameter(&"studio_strength", 0.42)
 			wet_eye.set_shader_parameter(&"studio_budget", 0.65)
 			wet_eye.set_shader_parameter(&"surface_roughness", 0.035)
@@ -411,7 +522,7 @@ func _build_face(gel: Material, cavity_color: Color) -> void:
 			else (0.445 if family_id == "A" else (0.442 if family_id == "N" else 0.438))
 		)
 		eye_scale = Vector3(0.132, 0.132, 0.040)
-	if _GelProfiles.v8_4_enabled():
+	if _GelProfiles.reference_viscosity_enabled():
 		# Match the reference's wide, low black lenses. Keeping their depth shallow
 		# plus the camera-facing fragment gate makes these larger marks feel inset
 		# without letting either eye escape the silhouette at a three-quarter view.
@@ -437,6 +548,14 @@ func _build_face(gel: Material, cavity_color: Color) -> void:
 			if family_id == "T"
 			else (Vector3(0.210, 0.124, 0.020) if family_id == "M" else Vector3(0.198, 0.120, 0.020))
 		)
+		if _GelProfiles.v8_5_enabled() and family_id == "T":
+			# The authored r4 sculpt is taller than V8.4 and contains measured shallow
+			# sockets. Seat the presentation lenses in those sockets instead of reusing
+			# the old body's world-space marks.
+			eye_x = 0.218
+			eye_y = 0.835
+			eye_z = 0.452
+			eye_scale = Vector3(0.190, 0.122, 0.016)
 	if _GelProfiles.motion_truth_enabled():
 		# Body-space origin/scale are per material instance. Keep one instance per
 		# eye so the right eye can never inherit the left eye's deformation frame.
@@ -451,9 +570,10 @@ func _build_face(gel: Material, cavity_color: Color) -> void:
 	else:
 		_add_sphere("EyeL", Vector3(-eye_x, eye_y, eye_z), eye_scale, eye, 64, 32)
 		_add_sphere("EyeR", Vector3(eye_x, eye_y, eye_z), eye_scale, eye, 64, 32)
-	if _GelProfiles.v8_4_enabled():
-		(get_node("EyeL") as Node3D).rotation_degrees.z = -36.0
-		(get_node("EyeR") as Node3D).rotation_degrees.z = 36.0
+	if _GelProfiles.reference_viscosity_enabled():
+		var eye_angle := 30.0 if _GelProfiles.v8_5_enabled() and family_id == "T" else 36.0
+		(get_node("EyeL") as Node3D).rotation_degrees.z = -eye_angle
+		(get_node("EyeR") as Node3D).rotation_degrees.z = eye_angle
 	if not _GelProfiles.gummy_glass_enabled():
 		_add_face_ring("EyeRimL", Vector3(-eye_x, eye_y, eye_z + 0.047), 0.073, 0.087, gel)
 		_add_face_ring("EyeRimR", Vector3(eye_x, eye_y, eye_z + 0.047), 0.073, 0.087, gel)
@@ -468,13 +588,13 @@ func _build_face(gel: Material, cavity_color: Color) -> void:
 		wet_cavity.set_shader_parameter(
 			&"eye_color",
 			Color(0.004, 0.002, 0.003, 1.0)
-			if _GelProfiles.v8_4_enabled()
+			if _GelProfiles.reference_viscosity_enabled()
 			else (cavity_color.darkened(0.42) if _GelProfiles.single_mass_enabled() else cavity_color)
 		)
 		wet_cavity.set_shader_parameter(&"studio_strength", 0.0)
 		wet_cavity.set_shader_parameter(&"surface_roughness", 0.18)
 		wet_cavity.set_shader_parameter(
-			&"face_visibility_gate", 1.0 if _GelProfiles.v8_4_enabled() else 0.0
+			&"face_visibility_gate", 1.0 if _GelProfiles.reference_viscosity_enabled() else 0.0
 		)
 		cavity = wet_cavity
 	else:
@@ -482,8 +602,8 @@ func _build_face(gel: Material, cavity_color: Color) -> void:
 		standard_cavity.albedo_color = cavity_color
 		standard_cavity.roughness = 0.18
 		cavity = standard_cavity
-	if _GelProfiles.v8_4_enabled():
-		# V8.4 places every facial mark from the same measured reference ratios.
+	if _GelProfiles.reference_viscosity_enabled():
+		# V8.4+ places every facial mark from the same measured reference ratios.
 		# The T pore is an inset, camera-gated mark plus a wet torus bonded to the
 		# body; it is never a free cell, particle, or independently animated mass.
 		if family_id == "T":
@@ -495,13 +615,19 @@ func _build_face(gel: Material, cavity_color: Color) -> void:
 			pore_rim.set_shader_parameter(&"studio_strength", 0.18)
 			pore_rim.set_shader_parameter(&"studio_budget", 0.22)
 			pore_rim.set_shader_parameter(&"surface_roughness", 0.08)
-			pore_rim.set_shader_parameter(&"face_visibility_gate", 1.0)
+			# The V8.5 torus is already depth-occluded by the opaque authored body.
+			# Discarding it by each torus vertex normal cuts the front ring in half.
+			pore_rim.set_shader_parameter(
+				&"face_visibility_gate", 0.0 if _GelProfiles.v8_5_enabled() else 1.0
+			)
+			var pore_y := 1.050 if _GelProfiles.v8_5_enabled() else 0.800
+			var pore_z := 0.452 if _GelProfiles.v8_5_enabled() else 0.436
 			_add_face_ring(
-				"ForeheadPoreRim", Vector3(0.0, 0.800, 0.436),
+				"ForeheadPoreRim", Vector3(0.0, pore_y, pore_z),
 				0.036, 0.060, pore_rim
 			)
 			_add_sphere(
-				"ForeheadPore", Vector3(0.0, 0.800, 0.430),
+				"ForeheadPore", Vector3(0.0, pore_y, pore_z - 0.006),
 				Vector3(0.058, 0.058, 0.010), cavity.duplicate(), 64, 32
 			)
 		var mouth_y_v8_4: float = {
@@ -520,6 +646,9 @@ func _build_face(gel: Material, cavity_color: Color) -> void:
 			"A": 0.430,
 			"D": 0.434,
 		}.get(family_id, 0.425)
+		if _GelProfiles.v8_5_enabled() and family_id == "T":
+			mouth_y_v8_4 = 0.625
+			mouth_z_v8_4 = 0.462
 		_add_sphere(
 			"MouthCavity", Vector3(0.0, mouth_y_v8_4, mouth_z_v8_4),
 			Vector3(0.060, 0.014, 0.010), cavity.duplicate(), 64, 32
@@ -543,7 +672,7 @@ func _build_face(gel: Material, cavity_color: Color) -> void:
 	if _GelProfiles.single_mass_enabled():
 		mouth_z = 0.515 if family_id == "M" else (0.480 if family_id == "A" else 0.480)
 		mouth_scale = Vector3(0.170, 0.190, 0.026)
-	if _GelProfiles.v8_4_enabled():
+	if _GelProfiles.reference_viscosity_enabled():
 		mouth_y -= 0.010
 		mouth_scale = Vector3(0.080, 0.026, 0.012)
 	_add_sphere("MouthCavity", Vector3(0.0, mouth_y, mouth_z), mouth_scale, cavity, 64, 32)
@@ -568,6 +697,7 @@ func _configure_v8_4_material_coherence(source_gel: ShaderMaterial) -> void:
 			&"liquid_wobble_speed",
 			&"liquid_wobble_scale",
 			&"liquid_wobble_phase",
+			&"liquid_wobble_normal_follow",
 		]:
 			material.set_shader_parameter(parameter, source_gel.get_shader_parameter(parameter))
 		var relative := global_transform.affine_inverse() * mesh.global_transform

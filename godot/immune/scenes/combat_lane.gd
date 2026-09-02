@@ -1534,7 +1534,13 @@ func _spawn_combat_portrait_character() -> void:
 	_portrait_character.name = "CombatHeroCharacter"
 	_portrait_character.position = Vector3(0.0, PORTRAIT_Y, 0.0)
 	_portrait_character.rotation_degrees.y = -18.0
-	_portrait_character.scale = Vector3.ONE * float(PORTRAIT_SCALE.get(family, 1.45))
+	var portrait_scale := float(PORTRAIT_SCALE.get(family, 1.45))
+	if _GelProfiles.v8_5_enabled() and family == "T":
+		# The r4 project sculpt is 1.46 units tall. The selector-local fit leaves a
+		# small safe margin above the pore and below the feet in the fixed camera;
+		# all earlier selectors retain their established framing constants.
+		portrait_scale = 1.10
+	_portrait_character.scale = Vector3.ONE * portrait_scale
 	_portrait_stage.add_child(_portrait_character)
 	# CharacterRoot normally listens to the global unlock signal. The presentation
 	# clone must not race the live player/CombatLane sync or start an animation

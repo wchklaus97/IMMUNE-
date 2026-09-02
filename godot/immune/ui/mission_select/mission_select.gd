@@ -4,6 +4,7 @@ const _Content := preload("res://resources/combat/combat_content.gd")
 const _Look := preload("res://characters/family_look.gd")
 const _Responsive := preload("res://ui/responsive_layout.gd")
 const _GelStudio := preload("res://characters/gel/gel_studio_environment.gd")
+const _GelProfiles := preload("res://characters/gel/gel_profiles.gd")
 const RESEARCH_SCENE := "res://ui/research/research_network.tscn"
 const FAMILIES: PackedStringArray = ["T", "B", "M", "N", "A", "D"]
 const PREVIEW_SCALE := {
@@ -521,7 +522,12 @@ func _refresh_preview(family: StringName) -> void:
 		return
 	_preview.position = Vector3(0.0, PREVIEW_Y, 0.0)
 	_preview.rotation_degrees.y = -18
-	_preview.scale = Vector3.ONE * float(PREVIEW_SCALE.get(String(family), 1.45))
+	var preview_scale := float(PREVIEW_SCALE.get(String(family), 1.45))
+	if _GelProfiles.v8_5_enabled() and family == &"T":
+		# Keep the taller authored head and the widened feet inside the 800x360
+		# preview with visible breathing room instead of touching the top border.
+		preview_scale = 1.10
+	_preview.scale = Vector3.ONE * preview_scale
 	_preview_stage.add_child(_preview)
 	# The desk is a family/silhouette review, not a combat-duty preview. The
 	# authored bodies already initialize in fixed duty; forcing mobile here added

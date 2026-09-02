@@ -98,3 +98,27 @@ model's unresolved commercial-rights status. It is available only to the exact
 V8.4 development selector and is deliberately excluded from all release
 presets and the accepted PCK policy until the owner supplies the missing rights
 records.
+
+## CHAR-BASE-T V8.5 project-authored sculpt candidate
+
+`build_t_v8_5_authored_sculpt.py` is a separate, provider-independent path. It
+does not read the V8.4 derivative, any Meshy/Tripo asset, or any reference-image
+pixels. Numeric implicit-shape parameters create one closed surface; the builder
+then audits connected regions, boundary and non-manifold edges, winding, Euler
+characteristic, degenerate faces, volume, GLB structure, and forbidden payloads
+before atomically promoting a new immutable output. Existing destinations are
+never overwritten.
+
+The checked-in r4 was reproduced byte-for-byte with Python 3, NumPy 2.4.4, and
+VTK 9.6.1. Use the same dependency versions when reproducing the evidence:
+
+```sh
+python3 tools/meshy/build_t_v8_5_authored_sculpt.py \
+  --output /tmp/CHAR-BASE-T-v8-5-authored-sculpt-r4.glb
+shasum -a 256 /tmp/CHAR-BASE-T-v8-5-authored-sculpt-r4.glb
+```
+
+The expected asset hash and complete topology record live in
+`characters/base_t/ASSET_PROVENANCE.md`. V8.5 is an opt-in source-tree review
+selector and the candidate GLB remains excluded from every release preset until
+the owner resolves concept/reference rights and approves commercial promotion.

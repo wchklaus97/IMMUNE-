@@ -25,7 +25,10 @@ Suggested detailed description for owner review:
 > visible wet-jelly lighting, internal flow, micro-height, coat, and membrane
 > response are authored procedurally in Godot. Earlier Meshy and Tripo hero
 > experiments remain in source history but are explicitly excluded from every
-> release package and are not used in the final screenshots. Steam marketing
+> release package and are not used in the final screenshots. A later V8.5
+> project-authored sculpt candidate uses only deterministic numeric geometry
+> parameters and no provider mesh or concept-image pixels; it also remains
+> excluded pending owner concept/reference-rights approval. Steam marketing
 > key art was generated for this project
 > with OpenAI image generation and then cropped/composited into the required
 > capsule and library formats; the transparent wordmark and icons are
@@ -41,6 +44,8 @@ Evidence:
 - `godot/immune/characters/base_t/ASSET_PROVENANCE.md`
 - `godot/immune/characters/base_t/CHAR-BASE-T-tripo-5k.glb`
 - `godot/immune/characters/base_t/CHAR-BASE-T-v8-4-single-mass-r1.glb`
+- `godot/immune/characters/base_t/CHAR-BASE-T-v8-5-authored-sculpt-r4.glb`
+- `tools/meshy/build_t_v8_5_authored_sculpt.py`
 - `steam/assets/source/immune-key-art-landscape-v1.png`
 - `steam/assets/source/immune-key-art-portrait-v1.png`
 - `steam/assets/source/immune-wordmark.svg`

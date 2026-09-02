@@ -447,6 +447,11 @@ const DEFAULTS := {
 	&"liquid_wobble_speed": 0.0,
 	&"liquid_wobble_scale": 1.0,
 	&"liquid_wobble_phase": 0.0,
+	&"liquid_wobble_normal_follow": 0.0,
+	# V8.5 analytic orange-peel relief. Zero is both the visual and ALU rollback.
+	&"orange_peel_micro_depth": 0.0,
+	&"orange_peel_micro_scale": 86.0,
+	&"orange_peel_micro_grazing": 0.0,
 	&"liquid_body_deform_strength": 0.0,
 	&"liquid_body_lag": Vector3.ZERO,
 	&"liquid_body_squash": 0.0,
@@ -511,6 +516,7 @@ static func _make_membrane(jelly: Color, opts: Dictionary) -> ShaderMaterial:
 		&"liquid_wobble_speed",
 		&"liquid_wobble_scale",
 		&"liquid_wobble_phase",
+		&"liquid_wobble_normal_follow",
 	]:
 		membrane.set_shader_parameter(
 			wobble_parameter,
@@ -527,8 +533,9 @@ static func apply_v5_shell_bounds(shell: ShaderMaterial) -> void:
 	# so seed the V8.4 extension here rather than only in _make_membrane().
 	shell.set_shader_parameter(&"studio_card_broadening", 0.0)
 	shell.set_shader_parameter(&"studio_card_tail_cut", 0.0)
+	shell.set_shader_parameter(&"liquid_wobble_normal_follow", 0.0)
 	var bounds := SHELL_V5_BOUNDS
-	if _Profiles.v8_4_enabled():
+	if _Profiles.reference_viscosity_enabled():
 		bounds = SHELL_V8_4_BOUNDS
 	elif _Profiles.living_volume_enabled():
 		bounds = SHELL_V8_2_BOUNDS

@@ -399,6 +399,21 @@ uniform float liquid_wobble_strength : hint_range(0.0, 0.04) = 0.0;
 uniform float liquid_wobble_speed : hint_range(0.0, 2.0) = 0.0;
 uniform float liquid_wobble_scale : hint_range(0.2, 6.0) = 1.0;
 uniform float liquid_wobble_phase : hint_range(0.0, 6.2832) = 0.0;
+// V8.5-only analytic normal correction. The existing wobble displaced vertices
+// without transforming their normals, so the wet cards appeared to slide over
+// the moving mass. Zero retains the reviewed V8.4 normal path exactly.
+uniform float liquid_wobble_normal_follow : hint_range(0.0, 1.0) = 0.0;
+
+group_uniforms v8_5_surface;
+// Fine continuous orange-peel relief made from a band-limited analytic field.
+// It introduces no texture read and fades before its frequency becomes sub-pixel.
+// Depth is physical height in body units. Zero skips the complete path and
+// preserves every earlier selector.
+uniform float orange_peel_micro_depth : hint_range(0.0, 0.003, 0.00005) = 0.0;
+uniform float orange_peel_micro_scale : hint_range(12.0, 180.0, 1.0) = 86.0;
+// At one, the detail stays calm face-on and becomes clearest in grazing wet
+// highlights; at zero it has an even physical depth around the whole membrane.
+uniform float orange_peel_micro_grazing : hint_range(0.0, 1.0) = 0.0;
 
 group_uniforms v5_readability;
 // Pulls direct body light below the ACES shoulder. V4 sat close to 1.0 linear
@@ -736,6 +751,23 @@ vec3 bump_normal(vec3 n, vec3 view_pos, float height, float strength) {
 }
 
 
+// A continuous three-axis interference field gives the shallow, irregular
+// dimpling of orange peel without discrete cell borders. Coordinate footprint
+// attenuation removes the signal before it can shimmer at gameplay distance.
+float orange_peel_micro_height(vec3 body_position) {
+	float scale = max(orange_peel_micro_scale, 0.001);
+	vec3 q = body_position * scale;
+	float footprint = max(length(dFdx(q)), length(dFdy(q)));
+	float retained_detail = 1.0 - smoothstep(0.42, 1.35, footprint);
+	float wave_a = sin(dot(q, vec3(0.811107, 0.324443, 0.486664)) + 0.31);
+	float wave_b = sin(dot(q, vec3(-0.371391, 0.928477, 0.0)) + 2.17);
+	float wave_c = sin(dot(q, vec3(-0.451856, -0.180743, 0.873589)) + 4.03);
+	float field = (wave_a + wave_b + wave_c) * 0.22
+		+ (wave_a * wave_b + wave_b * wave_c + wave_c * wave_a) * 0.11;
+	return 0.5 + field * retained_detail;
+}
+
+
 float d_ggx(float ndh, float rough) {
 	float a = rough * rough;
 	float a2 = a * a;
@@ -777,6 +809,67 @@ vec3 liquid_wobble_offset(vec3 body_position) {
 		cos(body_position.y * scale * 1.43
 			- body_position.x * scale * 0.48 - phase * 0.83) * 0.56);
 	return wave * liquid_wobble_strength * sole_anchor * activity;
+}
+
+
+// Transform a body-space normal by the inverse transpose of the wobble
+// deformation Jacobian. The cofactor form avoids a general matrix inverse and
+// remains well behaved for the deliberately shallow (<= 0.04 m) displacement.
+vec3 liquid_wobble_surface_normal(vec3 body_position, vec3 body_normal) {
+	if (liquid_wobble_normal_follow <= 0.0001
+			|| liquid_wobble_strength <= 0.0001) {
+		return body_normal;
+	}
+	float phase = TIME * liquid_wobble_speed + liquid_wobble_phase;
+	float scale = liquid_wobble_scale;
+	float activity = mix(0.46, 1.0, clamp(liquid_flow_motion_mix, 0.0, 1.0));
+	float amplitude = liquid_wobble_strength * activity;
+	float anchor_t = clamp((body_position.y + 0.02) / 0.36, 0.0, 1.0);
+	float sole_anchor = anchor_t * anchor_t * (3.0 - 2.0 * anchor_t);
+	float anchor_dy = 6.0 * anchor_t * (1.0 - anchor_t) / 0.36;
+
+	float phase_x = body_position.y * scale * 1.70
+		+ body_position.z * scale * 0.55 + phase;
+	float phase_y = body_position.x * scale * 1.15
+		- body_position.z * scale * 0.82 + phase * 0.71;
+	float phase_z = body_position.y * scale * 1.43
+		- body_position.x * scale * 0.48 - phase * 0.83;
+	float sin_x = sin(phase_x);
+	float cos_x = cos(phase_x);
+	float sin_y = sin(phase_y);
+	float cos_y = cos(phase_y);
+	float sin_z = sin(phase_z);
+	float cos_z = cos(phase_z);
+	vec3 wave = vec3(
+		sin_x * 0.72,
+		sin_y * 0.30,
+		cos_z * 0.56);
+	vec3 displacement_dx = amplitude * sole_anchor * vec3(
+		0.0,
+		cos_y * 0.30 * scale * 1.15,
+		sin_z * 0.56 * scale * 0.48);
+	vec3 displacement_dy = amplitude * (
+		sole_anchor * vec3(
+			cos_x * 0.72 * scale * 1.70,
+			0.0,
+			-sin_z * 0.56 * scale * 1.43)
+		+ wave * anchor_dy);
+	vec3 displacement_dz = amplitude * sole_anchor * vec3(
+		cos_x * 0.72 * scale * 0.55,
+		-cos_y * 0.30 * scale * 0.82,
+		0.0);
+
+	vec3 jacobian_x = vec3(1.0, 0.0, 0.0) + displacement_dx;
+	vec3 jacobian_y = vec3(0.0, 1.0, 0.0) + displacement_dy;
+	vec3 jacobian_z = vec3(0.0, 0.0, 1.0) + displacement_dz;
+	vec3 followed_normal = normalize(
+		cross(jacobian_y, jacobian_z) * body_normal.x
+		+ cross(jacobian_z, jacobian_x) * body_normal.y
+		+ cross(jacobian_x, jacobian_y) * body_normal.z);
+	return normalize(mix(
+		body_normal,
+		followed_normal,
+		clamp(liquid_wobble_normal_follow, 0.0, 1.0)));
 }
 
 
@@ -847,12 +940,20 @@ void vertex() {
 				-0.08, 0.62, dot(body_position, -contact_normal));
 			body_position += contact_normal * positive_contact * 0.055 * contact_side;
 		}
-		body_position += liquid_wobble_offset(body_position);
+		vec3 wobble_position = body_position;
+		body_position += liquid_wobble_offset(wobble_position);
 
-		body_normal = normalize(vec3(
+		vec3 scaled_body_normal = normalize(vec3(
 			body_normal.x / lateral_scale,
 			body_normal.y / vertical_scale,
 			body_normal.z / lateral_scale));
+		if (liquid_wobble_normal_follow > 0.0001) {
+			body_normal = liquid_wobble_surface_normal(
+				wobble_position,
+				scaled_body_normal);
+		} else {
+			body_normal = scaled_body_normal;
+		}
 		VERTEX += (body_to_part * (body_position - original_body_position))
 			/ safe_part_scale;
 		NORMAL = normalize((body_to_part * body_normal) * safe_part_scale);
@@ -1022,6 +1123,18 @@ void fragment() {
 			authored_height_signal,
 			authored_height_depth * authored_grazing * gel_mask
 				/ max(authored_height_scale, 0.001));
+	}
+	if (orange_peel_micro_depth > 0.00001) {
+		float orange_peel_height = orange_peel_micro_height(liquid_field_position);
+		float orange_peel_grazing = mix(
+			1.0,
+			mix(0.22, 1.0, pow(base_fres, 1.25)),
+			clamp(orange_peel_micro_grazing, 0.0, 1.0));
+		n = bump_normal(
+			n,
+			VERTEX,
+			orange_peel_height,
+			orange_peel_micro_depth * orange_peel_grazing * gel_mask);
 	}
 	if (authored_height_enabled && authored_inclusion_strength > 0.001) {
 		authored_inclusion_signal = authored_texture_triplanar(

@@ -1,7 +1,7 @@
 class_name ImmuneSingleMassBlobMesh
 extends RefCounted
 
-## Deterministic, watertight V8.3/V8.4 character surface.
+## Deterministic, watertight V8.3+ character surface.
 ##
 ## Earlier authored bodies overlapped independent sphere primitives for the
 ## torso, arms, feet, and D crown. That construction looked acceptable at rest,
@@ -144,8 +144,12 @@ const _V8_4_CENTRES: Dictionary = {
 static var _cache: Dictionary = {}
 
 
+static func _uses_reference_profile(revision: String) -> bool:
+	return revision in ["v8_4", "v8_5"]
+
+
 static func mesh(family: String, revision: String = "v8_3") -> ArrayMesh:
-	var profiles := _V8_4_PROFILES if revision == "v8_4" else _PROFILES
+	var profiles := _V8_4_PROFILES if _uses_reference_profile(revision) else _PROFILES
 	var resolved := family if profiles.has(family) else "N"
 	var cache_key := "%s:%s" % [revision, resolved]
 	if _cache.has(cache_key):
@@ -156,7 +160,7 @@ static func mesh(family: String, revision: String = "v8_3") -> ArrayMesh:
 
 
 static func centre(family: String, revision: String = "v8_3") -> Vector3:
-	var centres := _V8_4_CENTRES if revision == "v8_4" else _CENTRES
+	var centres := _V8_4_CENTRES if _uses_reference_profile(revision) else _CENTRES
 	return centres.get(family, centres["N"])
 
 
@@ -219,15 +223,20 @@ static func _build(family: String, revision: String) -> ArrayMesh:
 		surface.add_index(next)
 	surface.generate_normals()
 	var result := surface.commit() as ArrayMesh
+	var revision_label := (
+		"V8.5" if revision == "v8_5"
+		else ("V8.4" if revision == "v8_4" else "V8.3")
+	)
 	result.resource_name = "%s-SingleMass-%s" % [
-		"V8.4" if revision == "v8_4" else "V8.3",
+		revision_label,
 		family,
 	]
 	return result
 
 
 static func _sculpt(direction: Vector3, family: String, revision: String) -> Vector3:
-	var profiles := _V8_4_PROFILES if revision == "v8_4" else _PROFILES
+	var reference_profile := _uses_reference_profile(revision)
+	var profiles := _V8_4_PROFILES if reference_profile else _PROFILES
 	var profile: Dictionary = profiles.get(family, profiles["N"])
 	var radii: Vector3 = profile["radii"]
 	var point := direction * radii
@@ -243,14 +252,14 @@ static func _sculpt(direction: Vector3, family: String, revision: String) -> Vec
 	# a shoulder plus a lower tip kernel so the silhouette reads as a soft hooked
 	# arm rather than a triangular ghost skirt. Both fields deform this same
 	# radial surface; there are still no appendage nodes or disconnected islands.
-	var arm_drop := -0.25 if revision == "v8_4" else -0.17
-	var arm_l := Vector3(-0.97 if revision == "v8_4" else -0.985, arm_drop, 0.0).normalized()
-	var arm_r := Vector3(0.97 if revision == "v8_4" else 0.985, arm_drop, 0.0).normalized()
+	var arm_drop := -0.25 if reference_profile else -0.17
+	var arm_l := Vector3(-0.97 if reference_profile else -0.985, arm_drop, 0.0).normalized()
+	var arm_r := Vector3(0.97 if reference_profile else 0.985, arm_drop, 0.0).normalized()
 	var arms := (
 		pow(maxf(direction.dot(arm_l), 0.0), float(profile.get("arm_power", 14.0)))
 		+ pow(maxf(direction.dot(arm_r), 0.0), float(profile.get("arm_power", 14.0)))
 	)
-	if revision == "v8_4":
+	if reference_profile:
 		var arm_tip_l := Vector3(-0.84, -0.54, 0.0).normalized()
 		var arm_tip_r := Vector3(0.84, -0.54, 0.0).normalized()
 		var arm_tips := (
@@ -266,14 +275,14 @@ static func _sculpt(direction: Vector3, family: String, revision: String) -> Vec
 	# feet. Their wide kernels preserve the mascot stance without a pinched seam.
 	var feet_strength := float(profile["feet"])
 	if feet_strength > 0.0:
-		var foot_l := Vector3(-0.55, -0.84, 0.05).normalized() if revision == "v8_4" else Vector3(-0.42, -0.90, 0.08).normalized()
-		var foot_r := Vector3(0.55, -0.84, 0.05).normalized() if revision == "v8_4" else Vector3(0.42, -0.90, 0.08).normalized()
+		var foot_l := Vector3(-0.55, -0.84, 0.05).normalized() if reference_profile else Vector3(-0.42, -0.90, 0.08).normalized()
+		var foot_r := Vector3(0.55, -0.84, 0.05).normalized() if reference_profile else Vector3(0.42, -0.90, 0.08).normalized()
 		var foot_power := float(profile.get("foot_power", 14.0))
 		var feet := (
 			pow(maxf(direction.dot(foot_l), 0.0), foot_power)
 			+ pow(maxf(direction.dot(foot_r), 0.0), foot_power)
 		)
-		if revision == "v8_4":
+		if reference_profile:
 			point.x *= 1.0 + feet_strength * 2.80 * feet
 			point.y *= 1.0 + feet_strength * 0.75 * feet
 			point.z *= 1.0 + feet_strength * 0.32 * feet
@@ -285,7 +294,7 @@ static func _sculpt(direction: Vector3, family: String, revision: String) -> Vec
 	# A local inward fold between each side lobe and foot gives the continuous
 	# surface a readable under-arm gap. It is a radial indentation in this same
 	# manifold, never a cut, boolean island, or separately moving appendage.
-	if revision == "v8_4":
+	if reference_profile:
 		var notch_l := Vector3(-0.72, -0.69, 0.0).normalized()
 		var notch_r := Vector3(0.72, -0.69, 0.0).normalized()
 		var side_notch := (
@@ -306,13 +315,13 @@ static func _sculpt(direction: Vector3, family: String, revision: String) -> Vec
 
 	# Round the extreme sole into one continuous pad. This leaves a strictly
 	# positive, non-self-intersecting star surface while avoiding a needle point.
-	if direction.y < (-0.76 if revision == "v8_4" else -0.82):
-		var sole_blend := smoothstep(0.76 if revision == "v8_4" else 0.82, 1.0, -direction.y)
-		if revision == "v8_4":
+	if direction.y < (-0.76 if reference_profile else -0.82):
+		var sole_blend := smoothstep(0.76 if reference_profile else 0.82, 1.0, -direction.y)
+		if reference_profile:
 			point.y = lerpf(point.y, -radii.y * 0.985, sole_blend * 0.84)
 		else:
 			point.y = lerpf(point.y, -radii.y * 0.985, sole_blend * 0.72)
-	if revision == "v8_4":
+	if reference_profile:
 		# A broad centre lift creates the reference's rounded arch between two
 		# planted pads. The x gate fades before either foot direction, avoiding the
 		# pointed star shape produced by moving only the shared bottom vertex.

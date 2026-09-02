@@ -586,6 +586,19 @@ const V8_4_REFERENCE_VISCOSITY: Dictionary = {
 	&"membrane_thickness": 0.012,
 }
 
+# V8.5 is an exact opt-in presentation revision. It inherits the frozen V8.4
+# optical/motion foundation, then enables only the normal-coherent project sculpt
+# surface. Older selectors keep explicit zeroes from gel_look.DEFAULTS.
+const V8_5_REFERENCE_SCULPT: Dictionary = {
+	&"liquid_wobble_normal_follow": 1.0,
+	&"orange_peel_micro_depth": 0.0012,
+	&"orange_peel_micro_scale": 86.0,
+	&"orange_peel_micro_grazing": 0.65,
+	# The analytic peel supplies the fine reference grain. Reduce the older broad
+	# authored height so two normal layers do not turn the skin into hard plastic.
+	&"authored_height_depth": 0.00065,
+}
+
 const V8_4_FAMILY: Dictionary = {
 	"T": {
 		&"body_color": Color(1.0, 0.185, 0.0, 1.0),
@@ -815,12 +828,15 @@ static func options(family: String, overrides: Dictionary = {}) -> Dictionary:
 	if single_mass_enabled():
 		for key in V8_3_SINGLE_MASS:
 			merged[key] = V8_3_SINGLE_MASS[key]
-	if v8_4_enabled():
+	if reference_viscosity_enabled():
 		for key in V8_4_REFERENCE_VISCOSITY:
 			merged[key] = V8_4_REFERENCE_VISCOSITY[key]
 		var v8_4_family_values: Dictionary = V8_4_FAMILY.get(family, {})
 		for key in v8_4_family_values:
 			merged[key] = v8_4_family_values[key]
+	if v8_5_enabled():
+		for key in V8_5_REFERENCE_SCULPT:
+			merged[key] = V8_5_REFERENCE_SCULPT[key]
 	for key in overrides:
 		merged[key] = overrides[key]
 	return merged
@@ -857,29 +873,32 @@ static func with_v5_surface(values: Dictionary, family: String = "") -> Dictiona
 	if single_mass_enabled():
 		for key in V8_3_SINGLE_MASS:
 			merged[key] = V8_3_SINGLE_MASS[key]
-	if v8_4_enabled():
+	if reference_viscosity_enabled():
 		for key in V8_4_REFERENCE_VISCOSITY:
 			merged[key] = V8_4_REFERENCE_VISCOSITY[key]
 		var v8_4_family_values: Dictionary = V8_4_FAMILY.get(family, {})
 		for key in v8_4_family_values:
 			merged[key] = v8_4_family_values[key]
+	if v8_5_enabled():
+		for key in V8_5_REFERENCE_SCULPT:
+			merged[key] = V8_5_REFERENCE_SCULPT[key]
 	return merged
 
 
 static func selected_look() -> String:
 	var override := OS.get_environment("IMMUNE_GEL_LOOK").strip_edges().to_lower()
-	if override in ["v5", "v6", "v7", "v8", "v8_1", "v8_2", "v8_3", "v8_4"]:
+	if override in ["v5", "v6", "v7", "v8", "v8_1", "v8_2", "v8_3", "v8_4", "v8_5"]:
 		return override
 	var configured := str(ProjectSettings.get_setting("immune/visual/gel_look", "v6")).strip_edges().to_lower()
-	return configured if configured in ["v5", "v6", "v7", "v8", "v8_1", "v8_2", "v8_3", "v8_4"] else "v6"
+	return configured if configured in ["v5", "v6", "v7", "v8", "v8_1", "v8_2", "v8_3", "v8_4", "v8_5"] else "v6"
 
 
 static func banner_match_enabled() -> bool:
-	return selected_look() in ["v6", "v7", "v8", "v8_1", "v8_2", "v8_3", "v8_4"]
+	return selected_look() in ["v6", "v7", "v8", "v8_1", "v8_2", "v8_3", "v8_4", "v8_5"]
 
 
 static func gummy_glass_enabled() -> bool:
-	return selected_look() in ["v7", "v8", "v8_1", "v8_2", "v8_3", "v8_4"]
+	return selected_look() in ["v7", "v8", "v8_1", "v8_2", "v8_3", "v8_4", "v8_5"]
 
 
 static func v7_enabled() -> bool:
@@ -887,7 +906,7 @@ static func v7_enabled() -> bool:
 
 
 static func v8_enabled() -> bool:
-	return selected_look() in ["v8", "v8_1", "v8_2", "v8_3", "v8_4"]
+	return selected_look() in ["v8", "v8_1", "v8_2", "v8_3", "v8_4", "v8_5"]
 
 
 ## V8.1 inherits the accepted V8 material and clip foundation, then enables the
@@ -909,25 +928,37 @@ static func v8_4_enabled() -> bool:
 	return selected_look() == "v8_4"
 
 
-## V8.3 and V8.4 share the one-piece topology contract. Exact selectors remain
+static func v8_5_enabled() -> bool:
+	return selected_look() == "v8_5"
+
+
+## V8.4 and V8.5 deliberately share the reference-viscosity behavior layer,
+## while exact helpers continue to protect asset identity and rollback tests.
+static func reference_viscosity_enabled() -> bool:
+	return selected_look() in ["v8_4", "v8_5"]
+
+
+## V8.3 through V8.5 share the one-piece topology contract. Exact selectors remain
 ## available for rollback-specific material and evidence checks.
 static func single_mass_enabled() -> bool:
-	return selected_look() in ["v8_3", "v8_4"]
+	return selected_look() in ["v8_3", "v8_4", "v8_5"]
 
 
 ## V8.3+ inherits V8.2's fourteen-clip and living-volume foundation while the
 ## exact v8_2_enabled() selector remains available for rollback assertions.
 static func living_volume_enabled() -> bool:
-	return selected_look() in ["v8_2", "v8_3", "v8_4"]
+	return selected_look() in ["v8_2", "v8_3", "v8_4", "v8_5"]
 
 
 ## V8.2 inherits V8.1's shared-coordinate attachment and release hardening while
 ## v8_1_enabled() remains an exact rollback selector for material/smoke checks.
 static func motion_truth_enabled() -> bool:
-	return selected_look() in ["v8_1", "v8_2", "v8_3", "v8_4"]
+	return selected_look() in ["v8_1", "v8_2", "v8_3", "v8_4", "v8_5"]
 
 
 static func profile_name(family: String) -> StringName:
+	if v8_5_enabled():
+		return &"reference_sculpt"
 	if v8_4_enabled():
 		return &"reference_viscous"
 	if v8_3_enabled():

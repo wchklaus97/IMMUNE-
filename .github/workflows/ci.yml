@@ -65,6 +65,7 @@ jobs:
         run: |
           set -o pipefail
           godot --headless --path godot/immune --import 2>&1 | tee godot-import-warmup.log
+          if grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" godot-import-warmup.log; then exit 1; fi
 
       - name: Validate imported project and scripts
         run: |
@@ -83,7 +84,7 @@ jobs:
       - name: Run preserved gel selector smoke matrix
         run: |
           set -o pipefail
-          for gel_look in v5 v6 v7 v8 v8_1 v8_2 v8_4; do
+          for gel_look in v5 v6 v7 v8 v8_1 v8_2 v8_3 v8_4 v8_5; do
             smoke_dir="$(mktemp -d)"
             IMMUNE_GEL_LOOK="$gel_look" godot --headless --path godot/immune \
               --script res://tools/smoke.gd -- --save-path="$smoke_dir/state.json" \

@@ -37,6 +37,9 @@ uniform float liquid_wobble_strength : hint_range(0.0, 0.04) = 0.0;
 uniform float liquid_wobble_speed : hint_range(0.0, 2.0) = 0.0;
 uniform float liquid_wobble_scale : hint_range(0.2, 6.0) = 1.0;
 uniform float liquid_wobble_phase : hint_range(0.0, 6.2832) = 0.0;
+// V8.5-only analytic normal follow. Zero preserves V8.4 eye reflections and
+// catchlights while an opted-in profile bends both with the moving gel mass.
+uniform float liquid_wobble_normal_follow : hint_range(0.0, 1.0) = 0.0;
 
 vec3 liquid_wobble_offset(vec3 body_position) {
 	if (liquid_wobble_strength <= 0.0001) {
@@ -54,6 +57,63 @@ vec3 liquid_wobble_offset(vec3 body_position) {
 		cos(body_position.y * scale * 1.43
 			- body_position.x * scale * 0.48 - phase * 0.83) * 0.56);
 	return wave * liquid_wobble_strength * sole_anchor * activity;
+}
+
+vec3 liquid_wobble_surface_normal(vec3 body_position, vec3 body_normal) {
+	if (liquid_wobble_normal_follow <= 0.0001
+			|| liquid_wobble_strength <= 0.0001) {
+		return body_normal;
+	}
+	float phase = TIME * liquid_wobble_speed + liquid_wobble_phase;
+	float scale = liquid_wobble_scale;
+	float activity = mix(0.46, 1.0, clamp(liquid_flow_motion_mix, 0.0, 1.0));
+	float amplitude = liquid_wobble_strength * activity;
+	float anchor_t = clamp((body_position.y + 0.02) / 0.36, 0.0, 1.0);
+	float sole_anchor = anchor_t * anchor_t * (3.0 - 2.0 * anchor_t);
+	float anchor_dy = 6.0 * anchor_t * (1.0 - anchor_t) / 0.36;
+
+	float phase_x = body_position.y * scale * 1.70
+		+ body_position.z * scale * 0.55 + phase;
+	float phase_y = body_position.x * scale * 1.15
+		- body_position.z * scale * 0.82 + phase * 0.71;
+	float phase_z = body_position.y * scale * 1.43
+		- body_position.x * scale * 0.48 - phase * 0.83;
+	float sin_x = sin(phase_x);
+	float cos_x = cos(phase_x);
+	float sin_y = sin(phase_y);
+	float cos_y = cos(phase_y);
+	float sin_z = sin(phase_z);
+	float cos_z = cos(phase_z);
+	vec3 wave = vec3(
+		sin_x * 0.72,
+		sin_y * 0.30,
+		cos_z * 0.56);
+	vec3 displacement_dx = amplitude * sole_anchor * vec3(
+		0.0,
+		cos_y * 0.30 * scale * 1.15,
+		sin_z * 0.56 * scale * 0.48);
+	vec3 displacement_dy = amplitude * (
+		sole_anchor * vec3(
+			cos_x * 0.72 * scale * 1.70,
+			0.0,
+			-sin_z * 0.56 * scale * 1.43)
+		+ wave * anchor_dy);
+	vec3 displacement_dz = amplitude * sole_anchor * vec3(
+		cos_x * 0.72 * scale * 0.55,
+		-cos_y * 0.30 * scale * 0.82,
+		0.0);
+
+	vec3 jacobian_x = vec3(1.0, 0.0, 0.0) + displacement_dx;
+	vec3 jacobian_y = vec3(0.0, 1.0, 0.0) + displacement_dy;
+	vec3 jacobian_z = vec3(0.0, 0.0, 1.0) + displacement_dz;
+	vec3 followed_normal = normalize(
+		cross(jacobian_y, jacobian_z) * body_normal.x
+		+ cross(jacobian_z, jacobian_x) * body_normal.y
+		+ cross(jacobian_x, jacobian_y) * body_normal.z);
+	return normalize(mix(
+		body_normal,
+		followed_normal,
+		clamp(liquid_wobble_normal_follow, 0.0, 1.0)));
 }
 
 void vertex() {
@@ -101,15 +161,26 @@ void vertex() {
 				-0.08, 0.62, dot(body_position, -contact_normal));
 			body_position += contact_normal * positive_contact * 0.055 * contact_side;
 		}
-		body_position += liquid_wobble_offset(body_position);
+		vec3 wobble_position = body_position;
+		body_position += liquid_wobble_offset(wobble_position);
 
-		body_normal = normalize(vec3(
+		vec3 scaled_body_normal = normalize(vec3(
 			body_normal.x / lateral_scale,
 			body_normal.y / vertical_scale,
 			body_normal.z / lateral_scale));
+		if (liquid_wobble_normal_follow > 0.0001) {
+			body_normal = liquid_wobble_surface_normal(
+				wobble_position,
+				scaled_body_normal);
+		} else {
+			body_normal = scaled_body_normal;
+		}
 		VERTEX += (body_to_part * (body_position - original_body_position))
 			/ safe_part_scale;
 		NORMAL = normalize((body_to_part * body_normal) * safe_part_scale);
+		if (liquid_wobble_normal_follow > 0.0001) {
+			v_eye_local_normal = normalize(NORMAL);
+		}
 	}
 }
 

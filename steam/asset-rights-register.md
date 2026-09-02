@@ -1,6 +1,6 @@
 # IMMUNE asset-rights register
 
-Updated: 2026-09-01. This is an evidence register, not legal advice or an owner
+Updated: 2026-09-02. This is an evidence register, not legal advice or an owner
 attestation. A `conditional` row must be resolved before commercial submission.
 
 | Shipping material | Evidence | Status | Required owner action |
@@ -11,6 +11,7 @@ attestation. A `conditional` row must be resolved before commercial submission.
 | B-cell Meshy T2 development model | `characters/base_b/ASSET_PROVENANCE.md`; task `01a043a9-4884-7a6f-bd72-1a716f663403`; integrated GLB SHA-256 `c57cbf701c6ec66dfca69715e82ffe9339bc5ebf121fa05251f54157bab3100e` | non-shipping, excluded | Keep only as source/history evidence; do not use in builds or marketing without resolving its separate rights chain. |
 | T-cell Tripo development model and embedded texture | `characters/base_t/ASSET_PROVENANCE.md`; GLB SHA-256 `4b969a424da09aad9dfb80b810e7ec6b7ce08db61cb54da7febc482b259dd105` | non-shipping, excluded | Keep only as source/history evidence; do not use in builds or marketing without the missing receipt and input rights. |
 | T V8.4 single-mass derivative | `characters/base_t/ASSET_PROVENANCE.md`; GLB SHA-256 `169394df640604f6d5e1302f5ff82b444b088e924125b971441e713185b6f7bb` | development-only, excluded | It inherits the unresolved Tripo source rights. Keep the release-preset and PCK exclusion until the missing source receipt and input rights are verified. |
+| T V8.5 project-authored sculpt candidate | `characters/base_t/ASSET_PROVENANCE.md`; deterministic builder SHA-256 `7f9ae79363244d0cf30ecf3d6f207ec777f189cf4c31bf00ad1496a8014ec8e5`; GLB SHA-256 `8f14cfe59a508df413e4d53218f30bbf316e7e5d31e42154b2916a0bd5669294` | project-authored geometry; development-only, excluded | Confirm contributor authority and rights to the visual concept/reference before a separate commercial-promotion decision. |
 | T/B/M/N/A/D authored procedural bodies and runtime materials | GDScript/shader source and repository history; release PCK gate requires authored T/B scenes and rejects generated hero meshes | project-authored | Owner confirms contributor authority and project licence. |
 | Steam key art/capsules/library art | `steam/assets/source/immune-key-art-*.png`, generated for this project and locally composited | conditional | Confirm the generating account had authority over every reference/input and approve commercial use. |
 | Wordmark, Steam icons, and UI symbols | SVG/code-native sources and repository history | project-authored | Owner confirms contributor authority. |
@@ -30,6 +31,10 @@ attestation. A `conditional` row must be resolved before commercial submission.
 - `characters/base_t/CHAR-BASE-T-v8-4-single-mass-r1.glb`: local watertight
   V8.4 review derivative; excluded until the source model's rights chain is
   resolved. Default V8.3 exports remain on the authored body.
+- `characters/base_t/CHAR-BASE-T-v8-5-authored-sculpt-r4.glb`: deterministic,
+  provider-independent project-authored V8.5 candidate; excluded until owner
+  concept/reference-rights and contributor-authority confirmation. Default
+  V8.3 exports remain unchanged.
 - Concepts, tool renders, and development-only sprite runs covered by the
   export preset exclusion filters.
 

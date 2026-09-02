@@ -87,6 +87,14 @@ test("PCK policy rejects an excluded directory entry and a missing shipping entr
     () => validatePckResourcePolicyBuffer(leakedV84Derivative),
     /Excluded source resource leaked/u,
   );
+  const leakedV85Candidate = makePck([
+    ...authoredPckPaths(),
+    ".godot/imported/CHAR-BASE-T-v8-5-authored-sculpt-r4.glb-example.scn",
+  ]);
+  assert.throws(
+    () => validatePckResourcePolicyBuffer(leakedV85Candidate),
+    /Excluded source resource leaked/u,
+  );
   assert.throws(
     () => validatePckResourcePolicyBuffer(makePck(["project.binary"])),
     /Required authored character resource is missing/u,
@@ -122,7 +130,7 @@ test("passes the repository-controlled Steam readiness preflight", async () => {
   assert.equal(report.status, "repository-ready-publisher-gates-open");
   assert.equal(report.version, "0.4.0");
   assert.equal(report.screenshots, 6);
-  assert.equal(report.rights_hashes_verified, 14);
+  assert.equal(report.rights_hashes_verified, 16);
   assert.ok(report.external_gates.length >= 6);
 });
 

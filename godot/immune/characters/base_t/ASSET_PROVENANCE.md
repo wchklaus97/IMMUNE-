@@ -41,6 +41,36 @@
   inherits the same unresolved commercial-rights gate. Topology cleanup does
   not create or imply a new licence.
 
+## V8.5 project-authored reference sculpt candidate
+
+- Development mesh: `CHAR-BASE-T-v8-5-authored-sculpt-r4.glb`
+- SHA-256: `8f14cfe59a508df413e4d53218f30bbf316e7e5d31e42154b2916a0bd5669294`
+- Size: 288,900 bytes.
+- Deterministic builder: `tools/meshy/build_t_v8_5_authored_sculpt.py`
+- Builder SHA-256:
+  `7f9ae79363244d0cf30ecf3d6f207ec777f189cf4c31bf00ad1496a8014ec8e5`
+- Source scope: numeric project-authored implicit-shape parameters only. The
+  builder consumes no Meshy, Tripo, image-to-3D, external provider mesh,
+  texture, or concept-image pixels.
+- Reproducibility: two independent builds produced the exact same GLB hash;
+  existing outputs are immutable and overwrite attempts fail closed.
+- Geometry contract: one identity-transform node, one mesh, one indexed
+  primitive, 6,002 vertices, 12,000 triangles, one connected genus-zero
+  component, zero boundary/non-manifold edges, zero degenerate faces,
+  consistent winding, and finite positive signed volume. The GLB has no material,
+  texture, UV dependency,
+  skeleton, animation, provider metadata, or detached component.
+- Bounds: `x=-0.75..0.75`, `y=0.00..1.46`, `z=-0.50..0.50`.
+- Reproduction environment: Python 3, NumPy 2.4.4, VTK 9.6.1. Two final
+  independent builds and the checked-in GLB share the asset hash above.
+- Runtime scope: exact selector `v8_5`, family T only. It is fail-closed if the
+  immutable asset identity or mesh contract is missing. V8.4 and all earlier
+  selectors retain their previous paths.
+- Rights status: the geometry and builder are project-authored, but this record
+  is not an owner attestation for the visual concept/reference. The candidate
+  remains excluded from release packages until the owner confirms contributor
+  authority, concept/reference rights, and commercial promotion.
+
 ## Rejected source variant
 
 - `CHAR-BASE-T-fix.glb`
@@ -58,5 +88,7 @@ applicable commercial terms. The owner must attach those records and confirm
 that every input image was owned or licensed before submitting a commercial
 Steam build. Until then, the source GLB, its texture, the rejected variant, and
 the V8.4 derivative are development-only and must be excluded from commercial
-release artifacts. This file records what is known; it does not invent missing
-rights or authorize future use.
+release artifacts. The separate V8.5 candidate also stays excluded until its
+owner concept/reference and contributor-authority confirmations are recorded.
+This file records what is known; it does not invent missing rights or authorize
+future use.

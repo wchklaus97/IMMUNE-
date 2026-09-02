@@ -195,6 +195,21 @@ func _local_aabb(root: Node3D) -> AABB:
 	return out
 
 
+func _visible_local_aabb(root: Node3D) -> AABB:
+	var out := AABB()
+	var seeded := false
+	for mi in _mesh_instances(root):
+		if mi.mesh == null or not mi.is_visible_in_tree():
+			continue
+		var box: AABB = (root.global_transform.affine_inverse() * mi.global_transform) * mi.get_aabb()
+		if seeded:
+			out = out.merge(box)
+		else:
+			out = box
+			seeded = true
+	return out
+
+
 func _mesh_instances(node: Node) -> Array[MeshInstance3D]:
 	var out: Array[MeshInstance3D] = []
 	if node is MeshInstance3D:
@@ -219,5 +234,10 @@ func _add_ground() -> void:
 	mi.name = "GroundPad"
 	mi.mesh = disc
 	mi.material_override = mat
-	mi.position = Vector3(0.0, BODY_BOTTOM - 0.006, 0.0)
+	# Production bodies are authored sole-on-origin, while the opt-in legacy GLB
+	# comparison is normalised to BODY_BOTTOM. Read the actual visible subject
+	# instead of forcing every revision onto the legacy review coordinate.
+	var character_box := _visible_local_aabb(_character)
+	var sole_y := BODY_BOTTOM if character_box.size == Vector3.ZERO else character_box.position.y
+	mi.position = Vector3(0.0, sole_y - 0.006, 0.0)
 	add_child(mi)

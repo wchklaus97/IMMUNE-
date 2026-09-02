@@ -397,7 +397,10 @@ func _steer_liquid_direction(current: Vector3, target: Vector3, delta: float) ->
 	elif absf(angle_error) > 0.0001:
 		_liquid_last_turn_sign = signf(angle_error)
 	_liquid_direction_error = angle_error
-	var direction_speed := 5.5 if _GelProfiles.v8_4_enabled() else _V8_1_DIRECTION_SPEED
+	var direction_speed := (
+		5.0 if _GelProfiles.v8_5_enabled()
+		else (5.5 if _GelProfiles.v8_4_enabled() else _V8_1_DIRECTION_SPEED)
+	)
 	var max_step := direction_speed * maxf(delta, 0.0)
 	var next_angle := current_angle + clampf(angle_error, -max_step, max_step)
 	return Vector3(cos(next_angle), 0.0, sin(next_angle)).normalized()
@@ -408,12 +411,18 @@ func _update_viscous_body(local_velocity: Vector3, target_motion: float, delta: 
 	var target_lag := Vector3.ZERO
 	if planar_velocity.length() > _LIQUID_SPEED_FLOOR:
 		var lag_distance := 0.10 if _GelProfiles.motion_truth_enabled() and family_id == &"A" and duty == &"relay" else _VISCOUS_LAG_DISTANCE
-		if _GelProfiles.v8_4_enabled() and not (family_id == &"A" and duty == &"relay"):
-			lag_distance = 0.120
+		if _GelProfiles.reference_viscosity_enabled() and not (family_id == &"A" and duty == &"relay"):
+			lag_distance = 0.125 if _GelProfiles.v8_5_enabled() else 0.120
 		target_lag = -planar_velocity.normalized() * lag_distance * target_motion
 	var spring_delta := minf(delta, 0.05)
-	var spring_stiffness := 14.5 if _GelProfiles.v8_4_enabled() else _VISCOUS_SPRING_STIFFNESS
-	var spring_damping := 6.6 if _GelProfiles.v8_4_enabled() else _VISCOUS_SPRING_DAMPING
+	var spring_stiffness := (
+		13.5 if _GelProfiles.v8_5_enabled()
+		else (14.5 if _GelProfiles.v8_4_enabled() else _VISCOUS_SPRING_STIFFNESS)
+	)
+	var spring_damping := (
+		7.4 if _GelProfiles.v8_5_enabled()
+		else (6.6 if _GelProfiles.v8_4_enabled() else _VISCOUS_SPRING_DAMPING)
+	)
 	var spring_acceleration := (
 		(target_lag - _viscous_body_lag) * spring_stiffness
 		- _viscous_body_velocity * spring_damping
@@ -421,8 +430,10 @@ func _update_viscous_body(local_velocity: Vector3, target_motion: float, delta: 
 	_viscous_body_velocity += spring_acceleration * spring_delta
 	_viscous_body_lag += _viscous_body_velocity * spring_delta
 	var lag_limit := (
-		0.145 if _GelProfiles.v8_4_enabled()
+		0.140 if _GelProfiles.v8_5_enabled()
+		else (0.145 if _GelProfiles.v8_4_enabled()
 		else (0.13 if _GelProfiles.v8_3_enabled() else _VISCOUS_LAG_LIMIT)
+		)
 	)
 	if _viscous_body_lag.length() > lag_limit:
 		_viscous_body_lag = _viscous_body_lag.normalized() * lag_limit
@@ -430,11 +441,17 @@ func _update_viscous_body(local_velocity: Vector3, target_motion: float, delta: 
 	var velocity_delta := (planar_velocity - _viscous_last_local_velocity).length()
 	var acceleration_ratio := clampf(velocity_delta / maxf(delta, 0.001) / 24.0, 0.0, 1.0)
 	var target_squash := (
-		target_motion * 0.024 + acceleration_ratio * 0.065
+		target_motion * 0.020 + acceleration_ratio * 0.050
+		if _GelProfiles.v8_5_enabled()
+		else (target_motion * 0.024 + acceleration_ratio * 0.065
 		if _GelProfiles.v8_4_enabled()
 		else target_motion * 0.018 + acceleration_ratio * 0.055
+		)
 	)
-	var squash_response := 3.2 if _GelProfiles.v8_4_enabled() else _VISCOUS_SQUASH_RESPONSE
+	var squash_response := (
+		2.8 if _GelProfiles.v8_5_enabled()
+		else (3.2 if _GelProfiles.v8_4_enabled() else _VISCOUS_SQUASH_RESPONSE)
+	)
 	var squash_alpha := 1.0 - exp(-squash_response * delta)
 	_viscous_body_squash = lerpf(_viscous_body_squash, target_squash, squash_alpha)
 	_viscous_last_local_velocity = planar_velocity
@@ -450,8 +467,10 @@ func _update_v8_1_responses(local_velocity: Vector3, target_motion: float, delta
 	var turn_squash := absf(_liquid_turn_shear) * 0.45
 	var contact_squash := maxf(_liquid_contact_amount, 0.0) * 0.060
 	var squash_limit := (
-		0.10 if _GelProfiles.v8_4_enabled()
+		0.085 if _GelProfiles.v8_5_enabled()
+		else (0.10 if _GelProfiles.v8_4_enabled()
 		else (0.09 if _GelProfiles.v8_3_enabled() else 0.12)
+		)
 	)
 	_liquid_effective_squash = clampf(
 		_viscous_body_squash + turn_squash + contact_squash,
@@ -870,7 +889,7 @@ func _apply_liquid_runtime_uniforms(force: bool = false) -> void:
 
 func _apply_viscous_material_uniforms(material: ShaderMaterial) -> void:
 	var deform_strength := (
-		0.70 if _GelProfiles.v8_4_enabled()
+		0.70 if _GelProfiles.reference_viscosity_enabled()
 		else (0.64 if _GelProfiles.v8_3_enabled() else _VISCOUS_DEFORM_STRENGTH)
 	)
 	material.set_shader_parameter(&"liquid_body_deform_strength", deform_strength)
