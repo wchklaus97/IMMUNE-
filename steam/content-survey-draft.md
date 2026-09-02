@@ -40,6 +40,7 @@ Evidence:
 - `godot/immune/characters/base_b/CHAR-BASE-B-meshy-t2.glb`
 - `godot/immune/characters/base_t/ASSET_PROVENANCE.md`
 - `godot/immune/characters/base_t/CHAR-BASE-T-tripo-5k.glb`
+- `godot/immune/characters/base_t/CHAR-BASE-T-v8-4-single-mass-r1.glb`
 - `steam/assets/source/immune-key-art-landscape-v1.png`
 - `steam/assets/source/immune-key-art-portrait-v1.png`
 - `steam/assets/source/immune-wordmark.svg`

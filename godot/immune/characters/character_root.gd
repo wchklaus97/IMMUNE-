@@ -168,7 +168,7 @@ func _ready() -> void:
 		kit_swap_burst.emitting = false
 		kit_swap_burst.one_shot = true
 		kit_swap_burst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		if _GelProfiles.v8_3_enabled():
+		if _GelProfiles.single_mass_enabled():
 			# The single-mass presentation never emits loose dots around the body.
 			kit_swap_burst.visible = false
 	if family_id == &"A":
@@ -397,7 +397,8 @@ func _steer_liquid_direction(current: Vector3, target: Vector3, delta: float) ->
 	elif absf(angle_error) > 0.0001:
 		_liquid_last_turn_sign = signf(angle_error)
 	_liquid_direction_error = angle_error
-	var max_step := _V8_1_DIRECTION_SPEED * maxf(delta, 0.0)
+	var direction_speed := 5.5 if _GelProfiles.v8_4_enabled() else _V8_1_DIRECTION_SPEED
+	var max_step := direction_speed * maxf(delta, 0.0)
 	var next_angle := current_angle + clampf(angle_error, -max_step, max_step)
 	return Vector3(cos(next_angle), 0.0, sin(next_angle)).normalized()
 
@@ -407,22 +408,34 @@ func _update_viscous_body(local_velocity: Vector3, target_motion: float, delta: 
 	var target_lag := Vector3.ZERO
 	if planar_velocity.length() > _LIQUID_SPEED_FLOOR:
 		var lag_distance := 0.10 if _GelProfiles.motion_truth_enabled() and family_id == &"A" and duty == &"relay" else _VISCOUS_LAG_DISTANCE
+		if _GelProfiles.v8_4_enabled() and not (family_id == &"A" and duty == &"relay"):
+			lag_distance = 0.120
 		target_lag = -planar_velocity.normalized() * lag_distance * target_motion
 	var spring_delta := minf(delta, 0.05)
+	var spring_stiffness := 14.5 if _GelProfiles.v8_4_enabled() else _VISCOUS_SPRING_STIFFNESS
+	var spring_damping := 6.6 if _GelProfiles.v8_4_enabled() else _VISCOUS_SPRING_DAMPING
 	var spring_acceleration := (
-		(target_lag - _viscous_body_lag) * _VISCOUS_SPRING_STIFFNESS
-		- _viscous_body_velocity * _VISCOUS_SPRING_DAMPING
+		(target_lag - _viscous_body_lag) * spring_stiffness
+		- _viscous_body_velocity * spring_damping
 	)
 	_viscous_body_velocity += spring_acceleration * spring_delta
 	_viscous_body_lag += _viscous_body_velocity * spring_delta
-	var lag_limit := 0.13 if _GelProfiles.v8_3_enabled() else _VISCOUS_LAG_LIMIT
+	var lag_limit := (
+		0.145 if _GelProfiles.v8_4_enabled()
+		else (0.13 if _GelProfiles.v8_3_enabled() else _VISCOUS_LAG_LIMIT)
+	)
 	if _viscous_body_lag.length() > lag_limit:
 		_viscous_body_lag = _viscous_body_lag.normalized() * lag_limit
 
 	var velocity_delta := (planar_velocity - _viscous_last_local_velocity).length()
 	var acceleration_ratio := clampf(velocity_delta / maxf(delta, 0.001) / 24.0, 0.0, 1.0)
-	var target_squash := target_motion * 0.018 + acceleration_ratio * 0.055
-	var squash_alpha := 1.0 - exp(-_VISCOUS_SQUASH_RESPONSE * delta)
+	var target_squash := (
+		target_motion * 0.024 + acceleration_ratio * 0.065
+		if _GelProfiles.v8_4_enabled()
+		else target_motion * 0.018 + acceleration_ratio * 0.055
+	)
+	var squash_response := 3.2 if _GelProfiles.v8_4_enabled() else _VISCOUS_SQUASH_RESPONSE
+	var squash_alpha := 1.0 - exp(-squash_response * delta)
 	_viscous_body_squash = lerpf(_viscous_body_squash, target_squash, squash_alpha)
 	_viscous_last_local_velocity = planar_velocity
 
@@ -436,7 +449,10 @@ func _update_v8_1_responses(local_velocity: Vector3, target_motion: float, delta
 
 	var turn_squash := absf(_liquid_turn_shear) * 0.45
 	var contact_squash := maxf(_liquid_contact_amount, 0.0) * 0.060
-	var squash_limit := 0.09 if _GelProfiles.v8_3_enabled() else 0.12
+	var squash_limit := (
+		0.10 if _GelProfiles.v8_4_enabled()
+		else (0.09 if _GelProfiles.v8_3_enabled() else 0.12)
+	)
 	_liquid_effective_squash = clampf(
 		_viscous_body_squash + turn_squash + contact_squash,
 		0.0,
@@ -853,7 +869,10 @@ func _apply_liquid_runtime_uniforms(force: bool = false) -> void:
 
 
 func _apply_viscous_material_uniforms(material: ShaderMaterial) -> void:
-	var deform_strength := 0.64 if _GelProfiles.v8_3_enabled() else _VISCOUS_DEFORM_STRENGTH
+	var deform_strength := (
+		0.70 if _GelProfiles.v8_4_enabled()
+		else (0.64 if _GelProfiles.v8_3_enabled() else _VISCOUS_DEFORM_STRENGTH)
+	)
 	material.set_shader_parameter(&"liquid_body_deform_strength", deform_strength)
 	material.set_shader_parameter(
 		&"liquid_body_lag",
@@ -906,7 +925,7 @@ func transform_duty(new_duty: StringName) -> void:
 	# a GPUParticles3D restart without both a process material and draw mesh can
 	# rasterize undefined full-screen triangles on the Compatibility/Web renderer.
 	if (
-		not _GelProfiles.v8_3_enabled()
+		not _GelProfiles.single_mass_enabled()
 		and kit_swap_burst
 		and kit_swap_burst.process_material != null
 		and kit_swap_burst.draw_pass_1 != null
@@ -934,7 +953,7 @@ func transform_duty(new_duty: StringName) -> void:
 
 
 func _apply_duty(new_duty: StringName) -> void:
-	if _GelProfiles.v8_3_enabled():
+	if _GelProfiles.single_mass_enabled():
 		# Duty remains a gameplay state, but V8.3 communicates it through motion,
 		# HUD, and attacks. The old wheels/dish were free-floating gel geometry and
 		# broke the one-character silhouette whenever mobile/relay became active.
@@ -992,7 +1011,7 @@ func request_combat_action(
 		# action owns the one-shot layer; it never grows an unbounded queue.
 		if _animation_priority >= _ANIM_DUTY:
 			if (
-				_GelProfiles.v8_3_enabled()
+				_GelProfiles.single_mass_enabled()
 				and family_id == &"T"
 				and (
 					_animation_kind == _KIND_DUTY

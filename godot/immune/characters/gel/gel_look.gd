@@ -82,6 +82,24 @@ const SHELL_V8_2_BOUNDS: Dictionary = {
 	&"studio_streak_strength": 0.68,
 }
 
+const SHELL_V8_4_BOUNDS: Dictionary = {
+	# R22 spends less energy on the family-coloured veil and more on broad neutral
+	# light cards. The envelope stays one thin Compatibility-safe transparent pass.
+	&"shell_energy_scale": 0.50,
+	&"shell_diffuse_strength": 0.016,
+	&"shell_specular_level": 0.86,
+	&"shell_emission_limit": 0.028,
+	&"shell_alpha_limit": 0.28,
+	&"shell_white_mix": 0.24,
+	&"shell_thickness": 0.012,
+	&"studio_reflection_strength": 0.68,
+	&"studio_reflection_alpha": 0.032,
+	&"studio_reflection_budget": 0.12,
+	&"studio_streak_strength": 0.64,
+	&"studio_card_broadening": 0.72,
+	&"studio_card_tail_cut": 0.32,
+}
+
 ## How far the palette colour's saturation is pushed for the body albedo. A gel
 ## absorbs its complement, so the channel opposite the family hue must sit AT
 ## zero, not merely near it -- every lamp in the scene multiplies whatever is left
@@ -201,6 +219,11 @@ const DEFAULTS := {
 	&"spec_energy": 0.18,
 	&"spec_f0": 0.06,
 	&"env_specular": 0.0,
+	# V8.4 may broaden the analytic softboxes without changing any preserved look.
+	# Zero keeps the original Gaussian exponents byte-for-byte equivalent.
+	&"studio_card_broadening": 0.0,
+	# R23 tail remap is similarly V8.4-only; zero preserves the original cards.
+	&"studio_card_tail_cut": 0.0,
 	# Jelly V5 keeps the direct body below the ACES shoulder, then restores a
 	# broad, hue-preserving value ramp with the same macro thickness estimate
 	# already used by the spectral absorption. This is the anti-neon/readability
@@ -411,6 +434,19 @@ const DEFAULTS := {
 	&"liquid_core_color_mix": 0.0,
 	&"liquid_core_roughness_mix": 0.0,
 	&"liquid_bubble_advection": 0.0,
+	# V8.4 controls are explicit rollback zeroes. The corresponding shader paths
+	# branch out before doing work, preserving V5 through V8.3.
+	&"liquid_laminar_strength": 0.0,
+	&"liquid_laminar_scale": 1.0,
+	&"liquid_laminar_thinness": 0.0,
+	&"liquid_laminar_color_mix": 0.0,
+	&"liquid_laminar_roughness_mix": 0.0,
+	&"liquid_laminar_emission": 0.0,
+	&"liquid_laminar_budget": 0.0,
+	&"liquid_wobble_strength": 0.0,
+	&"liquid_wobble_speed": 0.0,
+	&"liquid_wobble_scale": 1.0,
+	&"liquid_wobble_phase": 0.0,
 	&"liquid_body_deform_strength": 0.0,
 	&"liquid_body_lag": Vector3.ZERO,
 	&"liquid_body_squash": 0.0,
@@ -470,6 +506,16 @@ static func _make_membrane(jelly: Color, opts: Dictionary) -> ShaderMaterial:
 	membrane.set_shader_parameter(&"shell_roughness", _option(opts, &"membrane_roughness", 0.025))
 	membrane.set_shader_parameter(&"rim_emission", _option(opts, &"membrane_rim_emission", 0.22))
 	membrane.set_shader_parameter(&"shell_thickness", _option(opts, &"membrane_thickness", 0.006))
+	for wobble_parameter in [
+		&"liquid_wobble_strength",
+		&"liquid_wobble_speed",
+		&"liquid_wobble_scale",
+		&"liquid_wobble_phase",
+	]:
+		membrane.set_shader_parameter(
+			wobble_parameter,
+			_option(opts, wobble_parameter, 0.0 if wobble_parameter != &"liquid_wobble_scale" else 1.0)
+		)
 	membrane.render_priority = 1
 	return membrane
 
@@ -477,8 +523,14 @@ static func _make_membrane(jelly: Color, opts: Dictionary) -> ShaderMaterial:
 static func apply_v5_shell_bounds(shell: ShaderMaterial) -> void:
 	if shell == null:
 		return
+	# Existing authored bodies also call this function on prebuilt shell materials,
+	# so seed the V8.4 extension here rather than only in _make_membrane().
+	shell.set_shader_parameter(&"studio_card_broadening", 0.0)
+	shell.set_shader_parameter(&"studio_card_tail_cut", 0.0)
 	var bounds := SHELL_V5_BOUNDS
-	if _Profiles.living_volume_enabled():
+	if _Profiles.v8_4_enabled():
+		bounds = SHELL_V8_4_BOUNDS
+	elif _Profiles.living_volume_enabled():
 		bounds = SHELL_V8_2_BOUNDS
 	elif _Profiles.gummy_glass_enabled():
 		bounds = SHELL_V7_BOUNDS

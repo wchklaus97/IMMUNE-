@@ -21,7 +21,7 @@ static func apply(host: Node) -> void:
 	var relay_dish := host.get("relay_dish") as Node3D
 	_paint_core(host, jelly)
 	_ensure_collision(host)
-	if _GelProfiles.v8_3_enabled():
+	if _GelProfiles.single_mass_enabled():
 		# V8.3's family silhouette already includes its appendage and footing cues
 		# in one watertight body. Do not even allocate the old blockout limbs,
 		# wheels, relay props, bubbles, or identity pieces: hidden geometry can be

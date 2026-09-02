@@ -80,6 +80,12 @@ uniform vec4 studio_warm_color : source_color = vec4(1.0, 0.28, 0.16, 1.0);
 // V7-only long diagonal reflection. Zero leaves the preserved V5/V6 cards
 // unchanged while the new profile can approach the stretched key-art streaks.
 uniform float studio_streak_strength : hint_range(0.0, 1.0) = 0.0;
+// V8.4 widens the same analytic cards rather than adding a screen/refraction
+// sample. Zero preserves the reviewed V5-V8.3 Gaussian footprints exactly.
+uniform float studio_card_broadening : hint_range(0.0, 1.0) = 0.0;
+// R23 trims only the low-energy Gaussian tails after broadening. The zero branch
+// returns the original card exactly, keeping every older selector rollback-inert.
+uniform float studio_card_tail_cut : hint_range(0.0, 0.5) = 0.0;
 
 group_uniforms gel;
 // Diffuse wrap: how far light creeps past the terminator.
@@ -355,6 +361,16 @@ uniform float liquid_slime_thinness : hint_range(0.0, 0.3) = 0.0;
 // accepted V5-V8.1 response takes the exact pre-V8.2 branch.
 uniform float liquid_core_color_mix : hint_range(0.0, 1.0) = 0.0;
 uniform float liquid_core_roughness_mix : hint_range(0.0, 1.0) = 0.0;
+// V8.4 continuous layered flow. This is a few broad analytic waves rather than
+// a thresholded cell field, so it reads as one folded liquid mass and can never
+// produce a free-floating pellet silhouette. Zero preserves V5 through V8.3.
+uniform float liquid_laminar_strength : hint_range(0.0, 1.0) = 0.0;
+uniform float liquid_laminar_scale : hint_range(0.2, 4.0) = 1.0;
+uniform float liquid_laminar_thinness : hint_range(0.0, 0.3) = 0.0;
+uniform float liquid_laminar_color_mix : hint_range(0.0, 1.0) = 0.0;
+uniform float liquid_laminar_roughness_mix : hint_range(0.0, 1.0) = 0.0;
+uniform float liquid_laminar_emission : hint_range(0.0, 0.5) = 0.0;
+uniform float liquid_laminar_budget : hint_range(0.0, 0.2) = 0.0;
 // Macro bubbles used to be fixed in each primitive's local space. V8.2 opts
 // them into the same shared, advected body coordinate as the cohesive liquid;
 // zero retains the historical local-space distribution byte-for-byte.
@@ -377,6 +393,12 @@ uniform mat3 liquid_part_basis = mat3(1.0);
 uniform float liquid_turn_shear : hint_range(-0.2, 0.2) = 0.0;
 uniform float liquid_contact_amount : hint_range(-1.0, 1.0) = 0.0;
 uniform vec3 liquid_contact_normal = vec3(0.0);
+// V8.4 low-frequency secondary surface motion. Character-space coordinates and
+// identical values on core, shell, eyes, and mouth keep the character coherent.
+uniform float liquid_wobble_strength : hint_range(0.0, 0.04) = 0.0;
+uniform float liquid_wobble_speed : hint_range(0.0, 2.0) = 0.0;
+uniform float liquid_wobble_scale : hint_range(0.2, 6.0) = 1.0;
+uniform float liquid_wobble_phase : hint_range(0.0, 6.2832) = 0.0;
 
 group_uniforms v5_readability;
 // Pulls direct body light below the ACES shoulder. V4 sat close to 1.0 linear
@@ -739,6 +761,25 @@ float spec_lobe(vec3 n, vec3 v, vec3 l, float rough) {
 }
 
 
+vec3 liquid_wobble_offset(vec3 body_position) {
+	if (liquid_wobble_strength <= 0.0001) {
+		return vec3(0.0);
+	}
+	float phase = TIME * liquid_wobble_speed + liquid_wobble_phase;
+	float scale = liquid_wobble_scale;
+	float sole_anchor = smoothstep(-0.02, 0.34, body_position.y);
+	float activity = mix(0.46, 1.0, clamp(liquid_flow_motion_mix, 0.0, 1.0));
+	vec3 wave = vec3(
+		sin(body_position.y * scale * 1.70
+			+ body_position.z * scale * 0.55 + phase) * 0.72,
+		sin(body_position.x * scale * 1.15
+			- body_position.z * scale * 0.82 + phase * 0.71) * 0.30,
+		cos(body_position.y * scale * 1.43
+			- body_position.x * scale * 0.48 - phase * 0.83) * 0.56);
+	return wave * liquid_wobble_strength * sole_anchor * activity;
+}
+
+
 void vertex() {
 	// Keep the reviewed V5-V8 deformation instruction-for-instruction when the
 	// V8.1 body-space switch is off. This also avoids changing imported bodies
@@ -806,6 +847,7 @@ void vertex() {
 				-0.08, 0.62, dot(body_position, -contact_normal));
 			body_position += contact_normal * positive_contact * 0.055 * contact_side;
 		}
+		body_position += liquid_wobble_offset(body_position);
 
 		body_normal = normalize(vec3(
 			body_normal.x / lateral_scale,
@@ -903,6 +945,19 @@ void fragment() {
 			liquid_slime_softness * 0.42,
 			liquid_slime_softness * 0.42 + slime_aa * 2.0,
 			abs(slime_field - liquid_slime_threshold))) * liquid_slime_strength;
+	}
+	float liquid_laminar_mask = 0.0;
+	if (liquid_flow_strength > 0.001 && liquid_laminar_strength > 0.001) {
+		vec3 laminar_position = liquid_sample_position * liquid_laminar_scale;
+		float laminar_field = 0.50
+			+ 0.24 * sin(dot(laminar_position, vec3(0.46, 1.31, 0.38))
+				+ liquid_phase * 0.74)
+			+ 0.16 * sin(dot(laminar_position, vec3(-0.92, 0.34, 0.71))
+				- liquid_phase * 0.49)
+			+ 0.10 * cos(dot(laminar_position, vec3(0.65, -0.47, 1.08))
+				+ liquid_phase * 0.31);
+		liquid_laminar_mask = clamp(laminar_field, 0.0, 1.0)
+			* liquid_laminar_strength;
 	}
 
 	// --- thinness, measured before dimples so creases do not read as limbs ---
@@ -1127,7 +1182,8 @@ void fragment() {
 		- microbubble.x * microbubble_thinness
 		- authored_inclusion * authored_inclusion_thinness
 		- authored_fiber * authored_fiber_thinness
-		- liquid_slime_volume * liquid_slime_thinness,
+		- liquid_slime_volume * liquid_slime_thinness
+		- liquid_laminar_mask * liquid_laminar_thinness,
 		0.0,
 		1.0);
 	vec3 through = gel_throughput(local_thickness);
@@ -1155,6 +1211,14 @@ void fragment() {
 			liquid_core_target,
 			liquid_core_mask * clamp(liquid_core_color_mix, 0.0, 1.0));
 	}
+	if (liquid_laminar_color_mix > 0.001) {
+		vec3 laminar_target = mix(deep_color.rgb, transmit_color.rgb, 0.40)
+			* albedo_gain;
+		body = mix(
+			body,
+			laminar_target,
+			liquid_laminar_mask * clamp(liquid_laminar_color_mix, 0.0, 1.0));
+	}
 	v_surface_color = mix(body, ink_color.rgb, ink);
 	ALBEDO = vec3(1.0);
 	METALLIC = 0.0;
@@ -1167,6 +1231,13 @@ void fragment() {
 			gel_roughness,
 			max(body_roughness * 0.58, 0.04),
 			liquid_core_mask * clamp(liquid_core_roughness_mix, 0.0, 1.0));
+	}
+	if (liquid_laminar_roughness_mix > 0.001) {
+		gel_roughness = mix(
+			gel_roughness,
+			max(body_roughness * 0.46, 0.04),
+			liquid_laminar_mask
+				* clamp(liquid_laminar_roughness_mix, 0.0, 1.0));
 	}
 	gel_roughness = clamp(gel_roughness, 0.04, 1.0);
 	ROUGHNESS = mix(gel_roughness, ink_roughness, ink);
@@ -1229,11 +1300,18 @@ void fragment() {
 		transmit_color.rgb,
 		studio_key_color.rgb,
 		0.42) * authored_inclusion * (0.35 + 0.65 * fres) * gel_mask;
-	float authored_caustic_aa = max(
-		authored_caustic_width,
-		fwidth(authored_inclusion_signal) * 1.5);
-	float authored_caustic = authored_height_enabled
-		? (1.0 - smoothstep(
+	float authored_caustic = 0.0;
+	// The caustic contours are derived from the authored inclusion signal. If that
+	// source is disabled there is neither a valid signal nor a reason to spend the
+	// derivative/shape ALU. V8.4 keeps both controls at zero; older active pairs are
+	// visually unchanged.
+	if (authored_height_enabled
+			&& authored_inclusion_strength > 0.001
+			&& authored_caustic_strength > 0.001) {
+		float authored_caustic_aa = max(
+			authored_caustic_width,
+			fwidth(authored_inclusion_signal) * 1.5);
+		authored_caustic = (1.0 - smoothstep(
 			authored_caustic_width,
 			authored_caustic_width + authored_caustic_aa,
 			abs(authored_inclusion_signal - authored_caustic_threshold)))
@@ -1241,8 +1319,8 @@ void fragment() {
 				0.18,
 				1.0,
 				smoothstep(0.20, 0.34, authored_height_signal))
-			* authored_caustic_strength
-		: 0.0;
+			* authored_caustic_strength;
+	}
 	vec3 authored_caustic_glow = mix(
 		transmit_color.rgb,
 		studio_key_color.rgb,
@@ -1262,30 +1340,50 @@ void fragment() {
 		transmit_color.rgb,
 		0.68) * liquid_current * liquid_flow_emission
 		* (0.22 + 0.78 * fres) * gel_mask;
+	vec3 liquid_laminar_glow = mix(
+		deep_color.rgb,
+		transmit_color.rgb,
+		0.54) * liquid_laminar_mask * liquid_laminar_emission
+		* (0.18 + 0.82 * fres) * gel_mask;
 	// A fixed studio light-card rig in view space. Unlike screen-space refraction it
 	// is deterministic on Compatibility/Web, follows the surface normal during motion,
 	// and is independently energy-limited before it reaches the display transform.
 	vec3 reflection_vector = reflect(-normalize(VIEW), normalize(n));
+	float studio_card_scale = mix(
+		1.0,
+		0.42,
+		clamp(studio_card_broadening, 0.0, 1.0));
 	float studio_front = smoothstep(-0.18, 0.62, reflection_vector.z);
 	vec2 key_delta = reflection_vector.xy - vec2(-0.38, 0.42);
 	vec2 cool_delta = reflection_vector.xy - vec2(0.62, 0.02);
 	vec2 warm_delta = reflection_vector.xy - vec2(-0.08, -0.72);
 	float studio_key = exp(-(
-		key_delta.x * key_delta.x * 4.0 + key_delta.y * key_delta.y * 13.0))
-		* studio_front;
+		key_delta.x * key_delta.x * 4.0 * studio_card_scale
+		+ key_delta.y * key_delta.y * 13.0 * studio_card_scale));
 	float studio_cool = exp(-(
-		cool_delta.x * cool_delta.x * 16.0 + cool_delta.y * cool_delta.y * 3.5))
-		* studio_front;
+		cool_delta.x * cool_delta.x * 16.0 * studio_card_scale
+		+ cool_delta.y * cool_delta.y * 3.5 * studio_card_scale));
 	float studio_warm = exp(-(
-		warm_delta.x * warm_delta.x * 5.0 + warm_delta.y * warm_delta.y * 14.0))
-		* studio_front;
+		warm_delta.x * warm_delta.x * 5.0 * studio_card_scale
+		+ warm_delta.y * warm_delta.y * 14.0 * studio_card_scale));
 	vec2 streak_delta = reflection_vector.xy - vec2(-0.08, 0.06);
 	float streak_across = dot(streak_delta, vec2(0.78, -0.63));
 	float streak_along = dot(streak_delta, vec2(0.63, 0.78));
 	float studio_streak = exp(-(
-		streak_across * streak_across * 42.0
-		+ streak_along * streak_along * 2.4))
-		* studio_front * studio_streak_strength
+		streak_across * streak_across * 42.0 * studio_card_scale
+		+ streak_along * streak_along * 2.4 * studio_card_scale));
+	if (studio_card_tail_cut > 0.0) {
+		float card_tail_cut = clamp(studio_card_tail_cut, 0.0, 0.5);
+		float card_tail_range = max(1.0 - card_tail_cut, 0.001);
+		studio_key = clamp((studio_key - card_tail_cut) / card_tail_range, 0.0, 1.0);
+		studio_cool = clamp((studio_cool - card_tail_cut) / card_tail_range, 0.0, 1.0);
+		studio_warm = clamp((studio_warm - card_tail_cut) / card_tail_range, 0.0, 1.0);
+		studio_streak = clamp((studio_streak - card_tail_cut) / card_tail_range, 0.0, 1.0);
+	}
+	studio_key *= studio_front;
+	studio_cool *= studio_front;
+	studio_warm *= studio_front;
+	studio_streak *= studio_front * studio_streak_strength
 		* mix(0.72, 1.0, smoothstep(0.18, 0.40, authored_height_signal));
 	float studio_edge = mix(
 		1.0 - studio_reflection_edge_share,
@@ -1305,7 +1403,8 @@ void fragment() {
 		+ peak_limit(authored_inclusion_glow, authored_inclusion_budget)
 		+ peak_limit(authored_caustic_glow, authored_caustic_budget)
 		+ peak_limit(authored_fiber_glow, authored_fiber_budget)
-		+ peak_limit(liquid_flow_glow, liquid_flow_budget);
+		+ peak_limit(liquid_flow_glow, liquid_flow_budget)
+		+ peak_limit(liquid_laminar_glow, liquid_laminar_budget);
 
 	v_ink = ink;
 	v_hot = hot;

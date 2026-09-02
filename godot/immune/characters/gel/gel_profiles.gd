@@ -508,6 +508,141 @@ const V8_3_SINGLE_MASS: Dictionary = {
 	&"membrane_thickness": 0.018,
 }
 
+# V8.4 keeps every V8.3 clean-topology zero, then restores the reference's
+# saturated optical range, mip-filtered wet micro-relief, broad continuous
+# laminar folds, and low-frequency shared-surface wobble. No thresholded cell,
+# particle, or detached inclusion field is reintroduced.
+const V8_4_REFERENCE_VISCOSITY: Dictionary = {
+	&"albedo_gain": 1.84,
+	&"body_exposure_scale": 0.86,
+	&"body_roughness": 0.18,
+	&"coat_roughness": 0.034,
+	&"coat_strength": 1.65,
+	&"spec_energy": 0.14,
+	&"coat_tint": 0.06,
+	&"core_glow": 0.12,
+	&"interior_budget": 0.22,
+	&"thickness_contrast": 0.33,
+	&"body_budget": 1.36,
+	&"body_absorb": 1.0,
+	&"extinction_density": 3.80,
+	&"extinction_spread": 2.0,
+	&"extinction_shape": 3.20,
+	&"thin_floor": 0.0,
+	&"thin_glow": 0.22,
+	&"transmit_strength": 1.28,
+	&"transmit_tint": 0.38,
+	&"studio_reflection_strength": 0.72,
+	&"studio_reflection_budget": 0.22,
+	&"studio_reflection_edge_share": 0.25,
+	&"studio_streak_strength": 0.64,
+	&"studio_card_broadening": 0.72,
+	&"studio_card_tail_cut": 0.32,
+	&"authored_height_scale": 0.46,
+	&"authored_height_depth": 0.00145,
+	&"authored_height_lod_bias": 0.74,
+	&"membrane_grazing_floor": 0.035,
+	&"membrane_grazing_power": 1.75,
+	# The former caustic source was gated behind the intentionally disabled
+	# inclusion field, so these values spent budget without producing a signal.
+	# Keep V8.4 cell-free and let the broad laminar field carry internal variation.
+	&"authored_caustic_strength": 0.0,
+	&"authored_caustic_budget": 0.0,
+	# R22's broad laminar/slime fields carry the interior read; disabling this
+	# triplanar strand removes three texture reads and any fleck-like particle cue.
+	&"authored_fiber_strength": 0.0,
+	&"authored_fiber_budget": 0.0,
+	&"detail_emission_scale": 0.06,
+	&"liquid_flow_strength": 0.82,
+	&"liquid_flow_idle_speed": 0.28,
+	&"liquid_flow_move_boost": 0.42,
+	&"liquid_flow_advection": 0.30,
+	&"liquid_flow_warp": 0.12,
+	&"liquid_flow_emission": 0.08,
+	&"liquid_flow_budget": 0.014,
+	&"liquid_slime_strength": 0.82,
+	&"liquid_slime_scale": 0.78,
+	&"liquid_slime_threshold": 0.48,
+	&"liquid_slime_softness": 0.18,
+	&"liquid_slime_thinness": 0.09,
+	&"liquid_core_color_mix": 0.38,
+	&"liquid_core_roughness_mix": 0.44,
+	&"liquid_body_deform_strength": 0.70,
+	&"liquid_laminar_strength": 0.78,
+	&"liquid_laminar_scale": 1.55,
+	&"liquid_laminar_thinness": 0.10,
+	&"liquid_laminar_color_mix": 0.26,
+	&"liquid_laminar_roughness_mix": 0.46,
+	&"liquid_laminar_emission": 0.035,
+	&"liquid_laminar_budget": 0.008,
+	&"liquid_wobble_strength": 0.012,
+	&"liquid_wobble_speed": 0.78,
+	&"liquid_wobble_scale": 2.40,
+	&"membrane_face_alpha": 0.0010,
+	&"membrane_edge_alpha": 0.30,
+	&"membrane_edge_power": 3.35,
+	&"membrane_roughness": 0.018,
+	&"membrane_rim_emission": 0.08,
+	&"membrane_thickness": 0.012,
+}
+
+const V8_4_FAMILY: Dictionary = {
+	"T": {
+		&"body_color": Color(1.0, 0.185, 0.0, 1.0),
+		&"deep_color": Color(0.76, 0.047, 0.0, 1.0),
+		&"transmit_color": Color(1.0, 0.447, 0.0, 1.0),
+		&"rim_color": Color(1.0, 0.57, 0.06, 1.0),
+		&"liquid_flow_phase": 0.53,
+		&"liquid_core_color_mix": 0.38,
+		&"liquid_wobble_phase": 0.31,
+	},
+	"B": {
+		&"body_color": Color(0.60, 0.010, 0.86, 1.0),
+		&"deep_color": Color(0.12, 0.001, 0.28, 1.0),
+		&"transmit_color": Color(0.72, 0.44, 1.0, 1.0),
+		&"rim_color": Color(0.88, 0.72, 1.0, 1.0),
+		&"liquid_flow_phase": 1.39,
+		&"liquid_core_color_mix": 0.42,
+		&"liquid_wobble_phase": 1.17,
+	},
+	"M": {
+		&"body_color": Color(0.39, 0.12, 0.80, 1.0),
+		&"deep_color": Color(0.08, 0.010, 0.27, 1.0),
+		&"transmit_color": Color(0.70, 0.57, 1.0, 1.0),
+		&"rim_color": Color(0.87, 0.79, 1.0, 1.0),
+		&"liquid_flow_phase": 2.23,
+		&"liquid_core_color_mix": 0.38,
+		&"liquid_wobble_phase": 2.03,
+	},
+	"N": {
+		&"body_color": Color(0.48, 0.82, 0.006, 1.0),
+		&"deep_color": Color(0.045, 0.23, 0.001, 1.0),
+		&"transmit_color": Color(0.75, 1.0, 0.18, 1.0),
+		&"rim_color": Color(0.88, 1.0, 0.36, 1.0),
+		&"liquid_flow_phase": 3.13,
+		&"liquid_core_color_mix": 0.36,
+		&"liquid_wobble_phase": 2.89,
+	},
+	"A": {
+		&"body_color": Color(1.0, 0.51, 0.004, 1.0),
+		&"deep_color": Color(0.48, 0.09, 0.001, 1.0),
+		&"transmit_color": Color(1.0, 0.78, 0.17, 1.0),
+		&"rim_color": Color(1.0, 0.90, 0.39, 1.0),
+		&"liquid_flow_phase": 3.97,
+		&"liquid_core_color_mix": 0.36,
+		&"liquid_wobble_phase": 3.73,
+	},
+	"D": {
+		&"body_color": Color(1.0, 0.34, 0.004, 1.0),
+		&"deep_color": Color(0.54, 0.045, 0.001, 1.0),
+		&"transmit_color": Color(1.0, 0.63, 0.13, 1.0),
+		&"rim_color": Color(1.0, 0.77, 0.27, 1.0),
+		&"liquid_flow_phase": 4.89,
+		&"liquid_core_color_mix": 0.38,
+		&"liquid_wobble_phase": 4.61,
+	},
+}
+
 # Historical Fizzy/V5 base values retained as the reversible material control.
 # V6 overrides its production-facing response after this dictionary is merged;
 # legacy look-dev callers can still request these values directly.
@@ -677,9 +812,15 @@ static func options(family: String, overrides: Dictionary = {}) -> Dictionary:
 		var v8_2_family_values: Dictionary = V8_2_FAMILY.get(family, {})
 		for key in v8_2_family_values:
 			merged[key] = v8_2_family_values[key]
-	if v8_3_enabled():
+	if single_mass_enabled():
 		for key in V8_3_SINGLE_MASS:
 			merged[key] = V8_3_SINGLE_MASS[key]
+	if v8_4_enabled():
+		for key in V8_4_REFERENCE_VISCOSITY:
+			merged[key] = V8_4_REFERENCE_VISCOSITY[key]
+		var v8_4_family_values: Dictionary = V8_4_FAMILY.get(family, {})
+		for key in v8_4_family_values:
+			merged[key] = v8_4_family_values[key]
 	for key in overrides:
 		merged[key] = overrides[key]
 	return merged
@@ -713,26 +854,32 @@ static func with_v5_surface(values: Dictionary, family: String = "") -> Dictiona
 		var v8_2_family_values: Dictionary = V8_2_FAMILY.get(family, {})
 		for key in v8_2_family_values:
 			merged[key] = v8_2_family_values[key]
-	if v8_3_enabled():
+	if single_mass_enabled():
 		for key in V8_3_SINGLE_MASS:
 			merged[key] = V8_3_SINGLE_MASS[key]
+	if v8_4_enabled():
+		for key in V8_4_REFERENCE_VISCOSITY:
+			merged[key] = V8_4_REFERENCE_VISCOSITY[key]
+		var v8_4_family_values: Dictionary = V8_4_FAMILY.get(family, {})
+		for key in v8_4_family_values:
+			merged[key] = v8_4_family_values[key]
 	return merged
 
 
 static func selected_look() -> String:
 	var override := OS.get_environment("IMMUNE_GEL_LOOK").strip_edges().to_lower()
-	if override in ["v5", "v6", "v7", "v8", "v8_1", "v8_2", "v8_3"]:
+	if override in ["v5", "v6", "v7", "v8", "v8_1", "v8_2", "v8_3", "v8_4"]:
 		return override
 	var configured := str(ProjectSettings.get_setting("immune/visual/gel_look", "v6")).strip_edges().to_lower()
-	return configured if configured in ["v5", "v6", "v7", "v8", "v8_1", "v8_2", "v8_3"] else "v6"
+	return configured if configured in ["v5", "v6", "v7", "v8", "v8_1", "v8_2", "v8_3", "v8_4"] else "v6"
 
 
 static func banner_match_enabled() -> bool:
-	return selected_look() in ["v6", "v7", "v8", "v8_1", "v8_2", "v8_3"]
+	return selected_look() in ["v6", "v7", "v8", "v8_1", "v8_2", "v8_3", "v8_4"]
 
 
 static func gummy_glass_enabled() -> bool:
-	return selected_look() in ["v7", "v8", "v8_1", "v8_2", "v8_3"]
+	return selected_look() in ["v7", "v8", "v8_1", "v8_2", "v8_3", "v8_4"]
 
 
 static func v7_enabled() -> bool:
@@ -740,7 +887,7 @@ static func v7_enabled() -> bool:
 
 
 static func v8_enabled() -> bool:
-	return selected_look() in ["v8", "v8_1", "v8_2", "v8_3"]
+	return selected_look() in ["v8", "v8_1", "v8_2", "v8_3", "v8_4"]
 
 
 ## V8.1 inherits the accepted V8 material and clip foundation, then enables the
@@ -758,19 +905,31 @@ static func v8_3_enabled() -> bool:
 	return selected_look() == "v8_3"
 
 
-## V8.3 inherits V8.2's fourteen-clip and living-volume foundation while the
+static func v8_4_enabled() -> bool:
+	return selected_look() == "v8_4"
+
+
+## V8.3 and V8.4 share the one-piece topology contract. Exact selectors remain
+## available for rollback-specific material and evidence checks.
+static func single_mass_enabled() -> bool:
+	return selected_look() in ["v8_3", "v8_4"]
+
+
+## V8.3+ inherits V8.2's fourteen-clip and living-volume foundation while the
 ## exact v8_2_enabled() selector remains available for rollback assertions.
 static func living_volume_enabled() -> bool:
-	return selected_look() in ["v8_2", "v8_3"]
+	return selected_look() in ["v8_2", "v8_3", "v8_4"]
 
 
 ## V8.2 inherits V8.1's shared-coordinate attachment and release hardening while
 ## v8_1_enabled() remains an exact rollback selector for material/smoke checks.
 static func motion_truth_enabled() -> bool:
-	return selected_look() in ["v8_1", "v8_2", "v8_3"]
+	return selected_look() in ["v8_1", "v8_2", "v8_3", "v8_4"]
 
 
 static func profile_name(family: String) -> StringName:
+	if v8_4_enabled():
+		return &"reference_viscous"
 	if v8_3_enabled():
 		return &"single_mass_clean"
 	if family == "B":

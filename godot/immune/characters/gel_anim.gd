@@ -116,13 +116,29 @@ static func build(anim_name: String, ctx: Dictionary) -> Animation:
 		"relay_close":
 			return _bake(1.15, false, kit_path, ctx, _plant_channels(), "keys")
 		"move":
+			if _GelProfiles.v8_4_enabled():
+				return _bake(1.12, true, "", ctx, _move_viscous_channels(), "keys")
 			if _GelProfiles.v8_enabled():
 				return _bake(1.12, true, "", ctx, _move_slime_channels(), "keys")
 			return _bake(0.92, true, "", ctx, _move_channels(), "keys")
 		"move_start":
-			return _bake(0.28, false, "", ctx, _move_start_channels(), "keys")
+			return _bake(
+				0.28,
+				false,
+				"",
+				ctx,
+				_move_start_viscous_channels() if _GelProfiles.v8_4_enabled() else _move_start_channels(),
+				"keys"
+			)
 		"move_stop":
-			return _bake(0.52, false, "", ctx, _move_stop_channels(), "keys")
+			return _bake(
+				0.52,
+				false,
+				"",
+				ctx,
+				_move_stop_viscous_channels() if _GelProfiles.v8_4_enabled() else _move_stop_channels(),
+				"keys"
+			)
 		"relay_glide":
 			return _bake(1.60, true, "", ctx, {}, "relay")
 		"hit":
@@ -141,7 +157,7 @@ static func build(anim_name: String, ctx: Dictionary) -> Animation:
 		"defeat":
 			var defeat_channels := (
 				_defeat_single_mass_channels()
-				if _GelProfiles.v8_3_enabled()
+				if _GelProfiles.single_mass_enabled()
 				else _defeat_channels()
 			)
 			return _bake(1.18, false, "", ctx, defeat_channels, "keys")
@@ -270,6 +286,38 @@ static func _move_start_channels() -> Dictionary:
 	}
 
 
+## V8.4 adhesion begins with a shallow floor grip. The body-space spring owns
+## the delayed upper mass, so the authored pose no longer has to rubber-band the
+## entire closed mesh through a large anticipation pulse.
+static func _move_start_viscous_channels() -> Dictionary:
+	return {
+		"sy": [
+			[0.000, 1.000, "in"], [0.075, 0.940, "out"], [0.160, 1.040, "io"],
+			[0.230, 0.985, "io"], [0.280, 1.000, "lin"],
+		],
+		"py": [
+			[0.000, 0.000, "in"], [0.075, -0.010, "out"], [0.160, 0.015, "io"],
+			[0.230, -0.002, "io"], [0.280, 0.000, "lin"],
+		],
+		"pz": [
+			[0.000, 0.000, "in"], [0.075, -0.012, "out"], [0.160, 0.022, "io"],
+			[0.230, 0.006, "io"], [0.280, 0.000, "lin"],
+		],
+		"rx": [
+			[0.000, 0.0, "in"], [0.075, -2.2, "out"], [0.160, 1.2, "io"],
+			[0.230, -0.4, "io"], [0.280, 0.0, "lin"],
+		],
+		"spread": [
+			[0.000, 1.000, "in"], [0.075, 1.060, "out"], [0.160, 0.980, "io"],
+			[0.280, 1.000, "lin"],
+		],
+		"lag": [
+			[0.000, 0.000, "in"], [0.080, -0.015, "out"], [0.200, 0.010, "io"],
+			[0.280, 0.000, "lin"],
+		],
+	}
+
+
 ## V8.1 viscous braking. Forward inertia arrives before the contact patch and
 ## decays through three deliberately uneven settling beats.
 static func _move_stop_channels() -> Dictionary:
@@ -297,6 +345,37 @@ static func _move_stop_channels() -> Dictionary:
 		"lag": [
 			[0.000, 0.000, "in"], [0.075, 0.030, "out"], [0.170, -0.018, "io"],
 			[0.300, 0.008, "io"], [0.520, 0.000, "lin"],
+		],
+	}
+
+
+## V8.4 braking keeps the readable sticky settle but reserves the large shape
+## delay for the runtime spring. Its uneven beats stay below the collapse guard.
+static func _move_stop_viscous_channels() -> Dictionary:
+	return {
+		"sy": [
+			[0.000, 1.000, "in"], [0.075, 0.935, "out"], [0.170, 1.045, "io"],
+			[0.290, 0.975, "io"], [0.410, 1.015, "io"], [0.520, 1.000, "lin"],
+		],
+		"py": [
+			[0.000, 0.000, "in"], [0.075, -0.012, "out"], [0.170, 0.011, "io"],
+			[0.290, -0.005, "io"], [0.410, 0.002, "io"], [0.520, 0.000, "lin"],
+		],
+		"pz": [
+			[0.000, 0.000, "in"], [0.065, 0.035, "out"], [0.170, -0.018, "io"],
+			[0.300, 0.008, "io"], [0.480, 0.000, "lin"], [0.520, 0.000, "lin"],
+		],
+		"rx": [
+			[0.000, 0.0, "in"], [0.075, 2.8, "out"], [0.170, -1.5, "io"],
+			[0.290, 0.8, "io"], [0.410, -0.3, "io"], [0.520, 0.0, "lin"],
+		],
+		"spread": [
+			[0.000, 1.000, "in"], [0.075, 1.070, "out"], [0.170, 0.982, "io"],
+			[0.290, 1.030, "io"], [0.520, 1.000, "lin"],
+		],
+		"lag": [
+			[0.000, 0.000, "in"], [0.075, 0.022, "out"], [0.170, -0.014, "io"],
+			[0.300, 0.006, "io"], [0.520, 0.000, "lin"],
 		],
 	}
 
@@ -339,6 +418,50 @@ static func _move_slime_channels() -> Dictionary:
 		"lag": [
 			[0.00, 0.000, "io"], [0.18, 0.030, "io"], [0.40, -0.055, "io"],
 			[0.62, -0.028, "io"], [0.82, 0.042, "io"], [1.02, -0.010, "io"],
+			[1.12, 0.000, "lin"],
+		],
+	}
+
+
+## V8.4 reduces the old whole-body pulse and lets the body-space spring,
+## height-weighted lag, and membrane wobble carry the locomotion read. The sole
+## stays close to the floor while a slower front-to-back mass wave crosses the
+## one closed mesh. Earlier V8 selectors retain `_move_slime_channels()` exactly.
+static func _move_viscous_channels() -> Dictionary:
+	return {
+		"sy": [
+			[0.00, 1.000, "io"], [0.14, 0.975, "io"], [0.24, 0.950, "io"],
+			[0.38, 1.025, "io"], [0.52, 1.050, "io"], [0.64, 1.018, "io"],
+			[0.76, 0.955, "io"], [0.84, 0.950, "io"], [0.98, 1.030, "io"],
+			[1.12, 1.000, "lin"],
+		],
+		"py": [
+			[0.00, 0.000, "io"], [0.16, -0.007, "io"], [0.26, -0.006, "io"],
+			[0.42, 0.014, "io"], [0.54, 0.022, "io"], [0.66, 0.010, "io"],
+			[0.78, -0.008, "io"], [0.88, -0.005, "io"], [1.00, 0.006, "io"],
+			[1.12, 0.000, "lin"],
+		],
+		"rx": [
+			[0.00, 0.0, "io"], [0.20, 1.8, "io"], [0.40, -1.3, "io"],
+			[0.60, -1.7, "io"], [0.80, 1.6, "io"], [1.00, 0.4, "io"],
+			[1.12, 0.0, "lin"],
+		],
+		"pz": [
+			[0.00, 0.000, "io"], [0.18, -0.022, "io"], [0.36, -0.030, "io"],
+			[0.56, 0.018, "io"], [0.74, 0.028, "io"], [0.94, -0.008, "io"],
+			[1.12, 0.000, "lin"],
+		],
+		"rz": [
+			[0.00, 0.0, "io"], [0.28, 1.1, "io"], [0.56, 0.0, "io"],
+			[0.84, -1.1, "io"], [1.12, 0.0, "lin"],
+		],
+		"spread": [
+			[0.00, 1.000, "io"], [0.22, 1.045, "io"], [0.50, 0.978, "io"],
+			[0.80, 1.052, "io"], [1.02, 0.990, "io"], [1.12, 1.000, "lin"],
+		],
+		"lag": [
+			[0.00, 0.000, "io"], [0.18, 0.022, "io"], [0.40, -0.045, "io"],
+			[0.62, -0.025, "io"], [0.82, 0.034, "io"], [1.02, -0.008, "io"],
 			[1.12, 0.000, "lin"],
 		],
 	}
@@ -638,6 +761,21 @@ static func _defeat_single_mass_channels() -> Dictionary:
 static func _idle_pose(t: float, length: float) -> Dictionary:
 	var ph := TAU * t / length
 	var warped := ph + 0.42 * sin(ph)
+	if _GelProfiles.v8_4_enabled():
+		# V8.4 keeps the contact patch visually planted. The shader owns the
+		# always-on internal circulation and membrane wobble; this transform
+		# layer supplies only a slow transfer of mass through the unified body.
+		# That separation avoids the old read of a rigid object hopping in place.
+		return {
+			"sy": 1.0 + 0.030 * sin(warped) + 0.010 * sin(2.0 * ph + 1.15) + 0.004 * sin(3.0 * ph + 2.4),
+			"py": 0.005 * sin(ph + 0.5),
+			"px": 0.007 * sin(ph - 1.15),
+			"pz": 0.005 * sin(2.0 * ph + 0.35),
+			"rz": 0.65 * sin(ph + 0.85) + 0.22 * sin(2.0 * ph - 0.6),
+			"rx": 0.48 * sin(ph + 2.15),
+			"spread": 1.0 + 0.014 * sin(ph + 1.9),
+			"lag": -0.009 * sin(ph - 0.95),
+		}
 	return {
 		"sy": 1.0 + 0.086 * sin(warped) + 0.022 * sin(2.0 * ph + 1.15) + 0.008 * sin(3.0 * ph + 2.4),
 		"py": 0.020 * sin(ph + 0.5),
@@ -698,11 +836,11 @@ static func _bake(length: float, loop: bool, kit_path: String, ctx: Dictionary, 
 		else:
 			pose = _keyed_pose(channels, t)
 
-		var squash_min := 0.82 if _GelProfiles.v8_3_enabled() else SQUASH_MIN
-		var stretch_max := 1.18 if _GelProfiles.v8_3_enabled() else STRETCH_MAX
+		var squash_min := 0.82 if _GelProfiles.single_mass_enabled() else SQUASH_MIN
+		var stretch_max := 1.18 if _GelProfiles.single_mass_enabled() else STRETCH_MAX
 		var sy := clampf(float(pose.get("sy", 1.0)), squash_min, stretch_max)
 		var zb := float(pose.get("zb", 1.0))
-		if _GelProfiles.v8_3_enabled():
+		if _GelProfiles.single_mass_enabled():
 			zb = clampf(zb, 0.90, 1.12)
 		var lateral := pow(sy, -0.5 * VOLUME_K)
 		var squash := Vector3(lateral / zb, sy, lateral * zb)

@@ -1,7 +1,7 @@
 class_name ImmuneSingleMassBlobMesh
 extends RefCounted
 
-## Deterministic, watertight V8.3 character surface.
+## Deterministic, watertight V8.3/V8.4 character surface.
 ##
 ## Earlier authored bodies overlapped independent sphere primitives for the
 ## torso, arms, feet, and D crown. That construction looked acceptable at rest,
@@ -57,6 +57,72 @@ const _PROFILES: Dictionary = {
 	},
 }
 
+# V8.4 keeps the exact same closed topology and index count, but moves the
+# envelope toward the taller reference silhouette. Wider, softer angular kernels
+# read as arms/lower lobes while remaining part of the one radial surface.
+const _V8_4_PROFILES: Dictionary = {
+	"T": {
+		"radii": Vector3(0.490, 0.580, 0.490),
+		"arms": 1.000,
+		"feet": 0.380,
+		"skirt": 0.035,
+		"top": 0.000,
+		"arm_power": 8.0,
+		"foot_power": 18.0,
+		"side_notch": 0.24,
+	},
+	"B": {
+		"radii": Vector3(0.500, 0.550, 0.505),
+		"arms": 0.880,
+		"feet": 0.320,
+		"skirt": 0.057,
+		"top": 0.000,
+		"arm_power": 8.0,
+		"foot_power": 17.0,
+		"side_notch": 0.20,
+	},
+	"M": {
+		"radii": Vector3(0.555, 0.610, 0.545),
+		"arms": 0.900,
+		"feet": 0.340,
+		"skirt": 0.064,
+		"top": 0.018,
+		"arm_power": 8.0,
+		"foot_power": 17.0,
+		"side_notch": 0.20,
+	},
+	"N": {
+		"radii": Vector3(0.495, 0.555, 0.500),
+		"arms": 0.840,
+		"feet": 0.300,
+		"skirt": 0.052,
+		"top": 0.000,
+		"arm_power": 8.0,
+		"foot_power": 17.0,
+		"side_notch": 0.19,
+	},
+	"A": {
+		"radii": Vector3(0.500, 0.550, 0.505),
+		"arms": 0.780,
+		"feet": 0.000,
+		"skirt": 0.030,
+		"top": 0.010,
+		"arm_power": 8.0,
+		"foot_power": 17.0,
+		"side_notch": 0.12,
+	},
+	"D": {
+		"radii": Vector3(0.510, 0.570, 0.510),
+		"arms": 0.860,
+		"feet": 0.320,
+		"skirt": 0.055,
+		"top": 0.090,
+		"arm_power": 8.0,
+		"foot_power": 17.0,
+		"side_notch": 0.19,
+	},
+}
+
 const _CENTRES: Dictionary = {
 	"T": Vector3(0.0, 0.500, 0.0),
 	"B": Vector3(0.0, 0.500, 0.0),
@@ -66,29 +132,41 @@ const _CENTRES: Dictionary = {
 	"D": Vector3(0.0, 0.515, 0.0),
 }
 
+const _V8_4_CENTRES: Dictionary = {
+	"T": Vector3(0.0, 0.580, 0.0),
+	"B": Vector3(0.0, 0.550, 0.0),
+	"M": Vector3(0.0, 0.610, 0.0),
+	"N": Vector3(0.0, 0.555, 0.0),
+	"A": Vector3(0.0, 0.570, 0.0),
+	"D": Vector3(0.0, 0.570, 0.0),
+}
+
 static var _cache: Dictionary = {}
 
 
-static func mesh(family: String) -> ArrayMesh:
-	var resolved := family if _PROFILES.has(family) else "N"
-	if _cache.has(resolved):
-		return _cache[resolved] as ArrayMesh
-	var generated := _build(resolved)
-	_cache[resolved] = generated
+static func mesh(family: String, revision: String = "v8_3") -> ArrayMesh:
+	var profiles := _V8_4_PROFILES if revision == "v8_4" else _PROFILES
+	var resolved := family if profiles.has(family) else "N"
+	var cache_key := "%s:%s" % [revision, resolved]
+	if _cache.has(cache_key):
+		return _cache[cache_key] as ArrayMesh
+	var generated := _build(resolved, revision)
+	_cache[cache_key] = generated
 	return generated
 
 
-static func centre(family: String) -> Vector3:
-	return _CENTRES.get(family, _CENTRES["N"])
+static func centre(family: String, revision: String = "v8_3") -> Vector3:
+	var centres := _V8_4_CENTRES if revision == "v8_4" else _CENTRES
+	return centres.get(family, centres["N"])
 
 
-static func _build(family: String) -> ArrayMesh:
+static func _build(family: String, revision: String) -> ArrayMesh:
 	var surface := SurfaceTool.new()
 	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 	# The wet-gel shader is object-space/triplanar, so this surface needs no UV
 	# seam. One shared top vertex, closed intermediate rings, and one shared sole
 	# vertex produce an actually connected manifold rather than coincident edges.
-	surface.add_vertex(_sculpt(Vector3.UP, family))
+	surface.add_vertex(_sculpt(Vector3.UP, family, revision))
 	for ring in range(1, RINGS):
 		var v := float(ring) / float(RINGS)
 		var latitude := PI * v
@@ -102,9 +180,9 @@ static func _build(family: String) -> ArrayMesh:
 				y,
 				planar * sin(longitude)
 			)
-			surface.add_vertex(_sculpt(direction, family))
+			surface.add_vertex(_sculpt(direction, family, revision))
 	var bottom_index := 1 + (RINGS - 1) * RADIAL_SEGMENTS
-	surface.add_vertex(_sculpt(Vector3.DOWN, family))
+	surface.add_vertex(_sculpt(Vector3.DOWN, family, revision))
 
 	# Upper cap.
 	for segment in RADIAL_SEGMENTS:
@@ -141,12 +219,16 @@ static func _build(family: String) -> ArrayMesh:
 		surface.add_index(next)
 	surface.generate_normals()
 	var result := surface.commit() as ArrayMesh
-	result.resource_name = "V8.3-SingleMass-%s" % family
+	result.resource_name = "%s-SingleMass-%s" % [
+		"V8.4" if revision == "v8_4" else "V8.3",
+		family,
+	]
 	return result
 
 
-static func _sculpt(direction: Vector3, family: String) -> Vector3:
-	var profile: Dictionary = _PROFILES.get(family, _PROFILES["N"])
+static func _sculpt(direction: Vector3, family: String, revision: String) -> Vector3:
+	var profiles := _V8_4_PROFILES if revision == "v8_4" else _PROFILES
+	var profile: Dictionary = profiles.get(family, profiles["N"])
 	var radii: Vector3 = profile["radii"]
 	var point := direction * radii
 
@@ -157,30 +239,61 @@ static func _sculpt(direction: Vector3, family: String) -> Vector3:
 	point.x *= 1.0 + skirt
 	point.z *= 1.0 + skirt * 0.62
 
-	# Side lobes are deliberately broad, low-amplitude angular fields. The softer
-	# exponent avoids a pointed shoulder when a defeat/turn pose rotates a lobe
-	# onto the upper silhouette. They remain part of the same radial surface.
-	var arm_l := Vector3(-0.985, -0.17, 0.0).normalized()
-	var arm_r := Vector3(0.985, -0.17, 0.0).normalized()
+	# Side lobes are deliberately broad, low-amplitude angular fields. V8.4 uses
+	# a shoulder plus a lower tip kernel so the silhouette reads as a soft hooked
+	# arm rather than a triangular ghost skirt. Both fields deform this same
+	# radial surface; there are still no appendage nodes or disconnected islands.
+	var arm_drop := -0.25 if revision == "v8_4" else -0.17
+	var arm_l := Vector3(-0.97 if revision == "v8_4" else -0.985, arm_drop, 0.0).normalized()
+	var arm_r := Vector3(0.97 if revision == "v8_4" else 0.985, arm_drop, 0.0).normalized()
 	var arms := (
-		pow(maxf(direction.dot(arm_l), 0.0), 14.0)
-		+ pow(maxf(direction.dot(arm_r), 0.0), 14.0)
+		pow(maxf(direction.dot(arm_l), 0.0), float(profile.get("arm_power", 14.0)))
+		+ pow(maxf(direction.dot(arm_r), 0.0), float(profile.get("arm_power", 14.0)))
 	)
-	point.x *= 1.0 + float(profile["arms"]) * arms
+	if revision == "v8_4":
+		var arm_tip_l := Vector3(-0.84, -0.54, 0.0).normalized()
+		var arm_tip_r := Vector3(0.84, -0.54, 0.0).normalized()
+		var arm_tips := (
+			pow(maxf(direction.dot(arm_tip_l), 0.0), 16.0)
+			+ pow(maxf(direction.dot(arm_tip_r), 0.0), 16.0)
+		)
+		var arm_strength := float(profile["arms"])
+		point *= 1.0 + arm_strength * (0.12 * arms + 0.34 * arm_tips)
+	else:
+		point.x *= 1.0 + float(profile["arms"]) * arms
 
 	# The two lower bulges are subtle continuations of the skirt, not separate
 	# feet. Their wide kernels preserve the mascot stance without a pinched seam.
 	var feet_strength := float(profile["feet"])
 	if feet_strength > 0.0:
-		var foot_l := Vector3(-0.42, -0.90, 0.08).normalized()
-		var foot_r := Vector3(0.42, -0.90, 0.08).normalized()
+		var foot_l := Vector3(-0.55, -0.84, 0.05).normalized() if revision == "v8_4" else Vector3(-0.42, -0.90, 0.08).normalized()
+		var foot_r := Vector3(0.55, -0.84, 0.05).normalized() if revision == "v8_4" else Vector3(0.42, -0.90, 0.08).normalized()
+		var foot_power := float(profile.get("foot_power", 14.0))
 		var feet := (
-			pow(maxf(direction.dot(foot_l), 0.0), 14.0)
-			+ pow(maxf(direction.dot(foot_r), 0.0), 14.0)
+			pow(maxf(direction.dot(foot_l), 0.0), foot_power)
+			+ pow(maxf(direction.dot(foot_r), 0.0), foot_power)
 		)
-		point.x *= 1.0 + feet_strength * 1.15 * feet
-		point.y *= 1.0 + feet_strength * 0.32 * feet
-		point.z *= 1.0 + feet_strength * 0.35 * feet
+		if revision == "v8_4":
+			point.x *= 1.0 + feet_strength * 2.80 * feet
+			point.y *= 1.0 + feet_strength * 0.75 * feet
+			point.z *= 1.0 + feet_strength * 0.32 * feet
+		else:
+			point.x *= 1.0 + feet_strength * 1.15 * feet
+			point.y *= 1.0 + feet_strength * 0.32 * feet
+			point.z *= 1.0 + feet_strength * 0.35 * feet
+
+	# A local inward fold between each side lobe and foot gives the continuous
+	# surface a readable under-arm gap. It is a radial indentation in this same
+	# manifold, never a cut, boolean island, or separately moving appendage.
+	if revision == "v8_4":
+		var notch_l := Vector3(-0.72, -0.69, 0.0).normalized()
+		var notch_r := Vector3(0.72, -0.69, 0.0).normalized()
+		var side_notch := (
+			pow(maxf(direction.dot(notch_l), 0.0), 16.0)
+			+ pow(maxf(direction.dot(notch_r), 0.0), 16.0)
+		)
+		var notch_strength := float(profile.get("side_notch", 0.0)) * side_notch
+		point *= 1.0 - notch_strength
 
 	# D keeps a restrained continuous crown ridge. It deforms the upper envelope
 	# itself rather than spawning five free-standing spheres.
@@ -193,7 +306,17 @@ static func _sculpt(direction: Vector3, family: String) -> Vector3:
 
 	# Round the extreme sole into one continuous pad. This leaves a strictly
 	# positive, non-self-intersecting star surface while avoiding a needle point.
-	if direction.y < -0.82:
-		var sole_blend := smoothstep(0.82, 1.0, -direction.y)
-		point.y = lerpf(point.y, -radii.y * 0.985, sole_blend * 0.72)
+	if direction.y < (-0.76 if revision == "v8_4" else -0.82):
+		var sole_blend := smoothstep(0.76 if revision == "v8_4" else 0.82, 1.0, -direction.y)
+		if revision == "v8_4":
+			point.y = lerpf(point.y, -radii.y * 0.985, sole_blend * 0.84)
+		else:
+			point.y = lerpf(point.y, -radii.y * 0.985, sole_blend * 0.72)
+	if revision == "v8_4":
+		# A broad centre lift creates the reference's rounded arch between two
+		# planted pads. The x gate fades before either foot direction, avoiding the
+		# pointed star shape produced by moving only the shared bottom vertex.
+		var arch_vertical := smoothstep(0.62, 0.98, -direction.y)
+		var arch_centre := 1.0 - smoothstep(0.10, 0.48, absf(direction.x))
+		point.y += radii.y * 0.26 * arch_vertical * arch_centre
 	return point

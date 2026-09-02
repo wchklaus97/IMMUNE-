@@ -26,6 +26,11 @@ uniform float studio_reflection_alpha : hint_range(0.0, 0.3) = 0.0;
 uniform float studio_reflection_budget : hint_range(0.0, 0.2) = 0.0;
 // V7 adds a long diagonal card. Zero preserves the V5/V6 shell exactly.
 uniform float studio_streak_strength : hint_range(0.0, 1.0) = 0.0;
+// V8.4 broadens the existing analytic cards with ALU only. Zero preserves every
+// earlier shell selector's reviewed Gaussian footprint.
+uniform float studio_card_broadening : hint_range(0.0, 1.0) = 0.0;
+// R23 removes only low-energy card tails. Zero takes the exact preserved branch.
+uniform float studio_card_tail_cut : hint_range(0.0, 0.5) = 0.0;
 // Zero preserves the separately scaled authored M/N/A/D shell meshes. Imported
 // T/B bodies use this shader as a next pass and opt into a small normal-space
 // expansion, avoiding z-fighting without duplicating their mesh hierarchy.
@@ -46,6 +51,28 @@ uniform mat3 liquid_part_basis = mat3(1.0);
 uniform float liquid_turn_shear : hint_range(-0.2, 0.2) = 0.0;
 uniform float liquid_contact_amount : hint_range(-1.0, 1.0) = 0.0;
 uniform vec3 liquid_contact_normal = vec3(0.0);
+uniform float liquid_wobble_strength : hint_range(0.0, 0.04) = 0.0;
+uniform float liquid_wobble_speed : hint_range(0.0, 2.0) = 0.0;
+uniform float liquid_wobble_scale : hint_range(0.2, 6.0) = 1.0;
+uniform float liquid_wobble_phase : hint_range(0.0, 6.2832) = 0.0;
+
+vec3 liquid_wobble_offset(vec3 body_position) {
+	if (liquid_wobble_strength <= 0.0001) {
+		return vec3(0.0);
+	}
+	float phase = TIME * liquid_wobble_speed + liquid_wobble_phase;
+	float scale = liquid_wobble_scale;
+	float sole_anchor = smoothstep(-0.02, 0.34, body_position.y);
+	float activity = mix(0.46, 1.0, clamp(liquid_flow_motion_mix, 0.0, 1.0));
+	vec3 wave = vec3(
+		sin(body_position.y * scale * 1.70
+			+ body_position.z * scale * 0.55 + phase) * 0.72,
+		sin(body_position.x * scale * 1.15
+			- body_position.z * scale * 0.82 + phase * 0.71) * 0.30,
+		cos(body_position.y * scale * 1.43
+			- body_position.x * scale * 0.48 - phase * 0.83) * 0.56);
+	return wave * liquid_wobble_strength * sole_anchor * activity;
+}
 
 void vertex() {
 	if (liquid_body_space_enabled < 0.5) {
@@ -108,6 +135,7 @@ void vertex() {
 				-0.08, 0.62, dot(body_position, -contact_normal));
 			body_position += contact_normal * positive_contact * 0.055 * contact_side;
 		}
+		body_position += liquid_wobble_offset(body_position);
 
 		body_normal = normalize(vec3(
 			body_normal.x / lateral_scale,
@@ -124,22 +152,35 @@ void fragment() {
 	float fresnel = clamp(1.0 - abs(dot(normalize(NORMAL), normalize(VIEW))), 0.0, 1.0);
 	float edge = pow(fresnel, max(edge_power * 0.78, 0.5));
 	vec3 reflection_vector = reflect(-normalize(VIEW), normalize(NORMAL));
+	float studio_card_scale = mix(
+		1.0,
+		0.42,
+		clamp(studio_card_broadening, 0.0, 1.0));
 	float studio_front = smoothstep(-0.18, 0.62, reflection_vector.z);
 	vec2 key_delta = reflection_vector.xy - vec2(-0.38, 0.42);
 	vec2 cool_delta = reflection_vector.xy - vec2(0.62, 0.02);
 	float studio_key = exp(-(
-		key_delta.x * key_delta.x * 4.0 + key_delta.y * key_delta.y * 13.0))
-		* studio_front;
+		key_delta.x * key_delta.x * 4.0 * studio_card_scale
+		+ key_delta.y * key_delta.y * 13.0 * studio_card_scale));
 	float studio_cool = exp(-(
-		cool_delta.x * cool_delta.x * 16.0 + cool_delta.y * cool_delta.y * 3.5))
-		* studio_front;
+		cool_delta.x * cool_delta.x * 16.0 * studio_card_scale
+		+ cool_delta.y * cool_delta.y * 3.5 * studio_card_scale));
 	vec2 streak_delta = reflection_vector.xy - vec2(-0.08, 0.06);
 	float streak_across = dot(streak_delta, vec2(0.78, -0.63));
 	float streak_along = dot(streak_delta, vec2(0.63, 0.78));
 	float studio_streak = exp(-(
-		streak_across * streak_across * 42.0
-		+ streak_along * streak_along * 2.4))
-		* studio_front * studio_streak_strength;
+		streak_across * streak_across * 42.0 * studio_card_scale
+		+ streak_along * streak_along * 2.4 * studio_card_scale));
+	if (studio_card_tail_cut > 0.0) {
+		float card_tail_cut = clamp(studio_card_tail_cut, 0.0, 0.5);
+		float card_tail_range = max(1.0 - card_tail_cut, 0.001);
+		studio_key = clamp((studio_key - card_tail_cut) / card_tail_range, 0.0, 1.0);
+		studio_cool = clamp((studio_cool - card_tail_cut) / card_tail_range, 0.0, 1.0);
+		studio_streak = clamp((studio_streak - card_tail_cut) / card_tail_range, 0.0, 1.0);
+	}
+	studio_key *= studio_front;
+	studio_cool *= studio_front;
+	studio_streak *= studio_front * studio_streak_strength;
 	float studio_mask = clamp(
 		studio_key + studio_cool * 0.72 + studio_streak,
 		0.0,
