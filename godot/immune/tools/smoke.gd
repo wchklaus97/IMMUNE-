@@ -3861,6 +3861,15 @@ func _authored_jelly_error(unit: Node, family: String) -> String:
 			return "CHAR-BASE-%s V8 must discover its per-instance wet-gel materials" % family
 		if not unit.has_method("liquid_shell_material_count") or int(unit.call("liquid_shell_material_count")) <= 0:
 			return "CHAR-BASE-%s V8 must bind viscosity to its clear membrane" % family
+		if _GelProfiles.v8_5_enabled() and family == "T":
+			var wet_material_count := int(unit.call("liquid_material_count"))
+			var shell_material_count := int(unit.call("liquid_shell_material_count"))
+			if wet_material_count != 1 or shell_material_count != 1:
+				return (
+					"CHAR-BASE-T V8.5 single mass must bind exactly one wet core and one "
+					+ "explicit membrane; got wet=%d shell=%d"
+					% [wet_material_count, shell_material_count]
+				)
 		var collision := unit.get_node_or_null("CollisionShape3D") as CollisionShape3D
 		if collision == null or collision.shape == null:
 			return "CHAR-BASE-%s V8 must retain its stable gameplay collision" % family

@@ -198,7 +198,15 @@ func _realize_imported_mesh() -> void:
 				real_mesh.scale = imported_model_scale
 				core_mesh.add_child(real_mesh)
 				if core_mesh is MeshInstance3D:
-					(core_mesh as MeshInstance3D).mesh = null
+					var legacy_core := core_mesh as MeshInstance3D
+					legacy_core.mesh = null
+					if _GelProfiles.v8_5_enabled() and family_id == &"T":
+						# KitBlockout paints CoreMesh before the authored body is realized.
+						# V8.5 replaces that sphere completely; retaining its materials on a
+						# meshless node made the liquid runtime update a second invisible wet
+						# core and membrane, and made profiling inventory overcount both.
+						legacy_core.material_override = null
+						legacy_core.material_overlay = null
 	if real_mesh == null:
 		return
 	# Imported bodies keep the shared blockout path for duty kits/collision. Each
