@@ -12,14 +12,16 @@ build, nor that the product is publicly released.
   covered by the Godot smoke contract.
 - [x] Keyboard/gamepad actions, four-action desktop HUD, two-by-two narrow HUD,
   touch movement, safe-area, pause, and bilingual UI contracts exist.
-- [x] V8.1 living-slime material, idle circulation, viscous locomotion, and
-  authored six-family body contracts pass automated runtime smoke.
+- [x] V8.6 R7.2 wet-gel material, idle circulation, viscous locomotion, exact
+  14-animation contract, and authored six-family body contracts pass automated
+  runtime smoke. The T presentation is one watertight body with no detached
+  cells, debris, or fallback body.
 - [x] All Meshy/Tripo hero experiments and the damaged faceted T variant are
   excluded from shipping PCKs; all six runtime families use authored jelly
   bodies while source/history evidence remains preserved.
 - [x] Current Steam store/library/icon dimensions are represented by checked-in
   assets and a fail-closed validator.
-- [x] Six current V8.1 1920x1080, 16:9, actual-gameplay screenshots cover all
+- [x] Six current 1920x1080, 16:9, actual-gameplay screenshots cover all
   six families and six missions.
 - [x] All nine shipping audio files have deterministic project source,
   provenance, exact checksum locks, and a CI drift gate.
@@ -36,7 +38,7 @@ build, nor that the product is publicly released.
   three native records against one candidate commit/version and final artifacts.
 - [x] Depot staging rejects placeholders, unsafe inputs, missing files, and
   credentials; generated VDFs remain in preview mode and do not upload.
-- [x] Rebuilt and recorded the final V8.1 Windows, Linux, macOS, and Web
+- [x] Preserved the final V8.1 Windows, Linux, macOS, and Web
   artifacts from clean source commit
   `52e05f2562470bc6cbe6db505f8df7ded3f53bf0` in
   `build-candidate-v0.4.0-v8.1.md`. The older
@@ -49,7 +51,7 @@ build, nor that the product is publicly released.
   five-group visual lock, all-14-animation review, real Apple M4 Pro GPU
   evidence, and a complete owner-signing template. It remains separate from
   the release/default selector and excluded pending the unchecked gates below.
-- [x] The opt-in V8.6 R7.2 T candidate has completed its final multi-angle and
+- [x] The original opt-in V8.6 R7.2 T candidate completed its final multi-angle and
   all-14-animation strips, exact official 4.7.2 four-platform candidate export,
   mounted-PCK probe, local universal macOS release smoke, baseline/SwiftShader
   Web QA, 138/138 full regression suite, and independent code review. The
@@ -70,13 +72,19 @@ build, nor that the product is publicly released.
   failed attempts remain historical and do not replace the successful R7 root.
   The hash-bound owner-signing template is prepared but remains unsigned under
   the separate account/rights gate below.
-- [ ] Native Windows and Linux release smoke is green for the exact candidate
-  on those operating systems. The new PE/ELF artifacts and byte-identical PCK
-  are prepared for transfer. An offline Ubuntu amd64 container smoke passes
-  under Apple-Silicon emulation, but that and cross-exporting on macOS are not
-  native/minimum-spec target evidence. An exact commit-bound three-OS CI matrix
-  is prepared but has not been pushed or run. Historical remote runs do not
-  prove this candidate.
+- [x] V8.6 R7.2 is promoted to the unpublished `0.5.0-rc.1` four-platform
+  shipping default at source commit
+  `2f61c39187b253bb72d87d4a79a5c24b6ede6d35`. Shipping PCK probes prove exact
+  R7.2, all 14 animations, no fallback/debris, and explicit V8.3 rollback;
+  preserved V8.5/V8.6 candidate presets remain independently green. Exact
+  remote artifacts, hashes, and open gates are recorded in
+  `build-candidate-v0.5.0-rc.1.md`.
+- [x] Native Linux, Windows, and macOS release smoke is green for that exact
+  source commit on the corresponding GitHub-hosted operating systems. CI run
+  `33875825213` completed all seven jobs, including three shipping and three
+  preserved-candidate native evidence records bound to `0.5.0-rc.1`. These
+  close target-OS functional smoke, not physical minimum-spec, Steam Deck,
+  Developer ID/notarization, Steam-client, or human-playtest gates.
 
 ## Steamworks/account gates
 

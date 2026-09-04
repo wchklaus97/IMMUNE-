@@ -2,6 +2,53 @@
 
 Updated: 2026-09-04
 
+## V8.6 R7.2 promoted shipping RC1
+
+V8.6 R7.2 is now the unpublished four-platform shipping default for version
+`0.5.0-rc.1`. The promotion implementation is commit
+`2f61c39187b253bb72d87d4a79a5c24b6ede6d35`; its authoritative GitHub Actions
+run is <https://github.com/wchklaus97/IMMUNE-/actions/runs/33875825213>. All seven
+jobs pass: main validation/export plus shipping and preserved-candidate native
+smoke on Ubuntu, Windows, and macOS.
+
+The four normal export presets carry `v8_6_shipping`. Their SHA-bound export
+plugin injects only
+`CHAR-BASE-T-v8-6-authored-sculpt-r7-2.glb`; R5, R6, R7, and R7.1 remain
+preserved source/evidence and excluded from shipping. A mounted shipping-PCK
+probe proves one body, one shell, one wet and one shell material, all 14
+animations, no loose burst, no fallback, and no build failure. A second mounted
+probe with `IMMUNE_GEL_LOOK=v8_3` proves the exact V8.3 rollback from that same
+shipping pack. Candidate features remain higher-priority for isolated candidate
+testing; explicit environment rollback remains higher-priority than the
+shipping-default feature.
+
+The exact 14-file remote release inventory, native evidence hashes, source
+commit, and honest external gates are recorded in
+`steam/build-candidate-v0.5.0-rc.1.md`. The downloaded remote run is preserved
+under `outputs/v8.6-promotion-rc1/remote-ci-33875825213/`; local R1 and corrected
+R2 preflights are preserved separately. The remote Windows/Linux/Web PCKs are
+byte-identical at 58,246,448 bytes, SHA-256
+`fd8afee9f8653acfd8a13f16dd0ab10e88a1dcae72ae8e64dd4317058d5452d1`.
+Read-only revalidation accepts the release inventory, V8.6 PCK policy, and Steam
+repository readiness with seven owner/platform gate groups deliberately open.
+
+Local R2 official-Godot-4.7.2 validation passes 139/139 tool tests, 53/53 UI
+tests, 14 animations / 154 sampled poses / zero detached bodies, four platform
+exports, universal macOS launch, Apple-Metal Web QA, translation/catalog/audio/
+Steam-art contracts, six-family MISSION-01, and T/B MISSION-01/MISSION-06
+bookends. The first strict exported rollback investigation caught a real
+selector-precedence failure that an earlier non-fail-fast shell had masked; the
+selector and CI were corrected, then the entire PCK and R2 pipeline was rerun
+with fail-fast semantics.
+
+This promotion does not close the publisher boundary. The V8.6 rights
+attestation and content survey remain unsigned; macOS remains ad-hoc rather than
+Developer ID signed/notarized; real Steam App/depot IDs, SteamPipe preview and
+private-client installs, physical minimum-spec/Steam Deck sessions, human QA,
+Valve review, and explicit owner release authorization remain open. No merge,
+tag, GitHub Release, Steam upload, signing, notarization, submission, or public
+release was performed.
+
 ## V8.6 R7.2 opt-in technical candidate — reference convergence
 
 V8.6 is implemented as an additive, opt-in T-cell candidate. It does not
@@ -1587,26 +1634,24 @@ Run exports sequentially. Parallel Godot exporters race on the shared
 
 ## Honest status and next development tranche
 
-The six-mission vertical slice, all six base-cell playable bodies, V5.1 jelly
-surface, portrait lifecycle, 390x844/360x800 safe-area layouts, desktop/tall
-regressions, local smoke/capture gates, fresh four-platform exports, final
-exported-Web browser gate, and four-job remote CI gate are complete. The
-previous checksum-locked V5.1 private playtest campaign remains historically
-valid for commit `2d011b1`, but it does not contain V5.2. The exact V5.2 release
-artifact from run `33361771002` is now packaged as a verified, checksum-locked
-six-person V5.2 campaign. It is ready for private distribution, but contains no
-completed human result. This is not a content-complete commercial release.
-Remaining work is:
+The six-mission vertical slice, six playable families, V8.6 R7.2 T-cell visual
+lock, all-14-animation viscous motion contract, responsive bilingual UI, local
+four-platform R2 preflight, exported Web/macOS runtime checks, and exact-source
+seven-job GitHub CI run are complete. Linux, Windows, and macOS native release
+smoke is now sealed for the corresponding target runner. The earlier
+checksum-locked V5/V5.2 campaigns and V8.1 build remain valid historical
+records, but they do not represent this RC1. This remains a technical release
+candidate rather than a content-complete commercial release. Remaining work is:
 
 1. Keep the N/A/D Meshy manifests as optional comparisons only. Any paid task
    still needs a separate exact 5-credit approval; never batch paid retries after
-   a failed task. V5.2 made no Meshy call and the playable demo does not depend on
+   a failed task. RC1 made no Meshy call and the playable demo does not depend on
    further generation.
-2. Use the existing checksum-locked V5.2 campaign to run real six-family
-   human playtesting for material direction, phone readability, accessibility,
-   and control feel,
-   followed by an agreed lower-end Windows/Web machine. SwiftShader and
-   deterministic captures prove neither human judgement nor hardware speed.
+2. Build a checksum-locked RC1 campaign from the exact CI artifacts and run real
+   six-family human playtesting for material direction, motion readability,
+   phone accessibility, difficulty, and control feel. Follow with agreed
+   lower-end Windows/Web hardware. SwiftShader and deterministic captures prove
+   neither human judgement nor minimum-spec speed.
 3. If exact V4/V5 cost comparison is required, approve launching the
    checksum-identified V4 worktree and run the same 10-body/300-frame harness.
    The current standard-material sentinel is green but is not a historical V4
@@ -1617,37 +1662,34 @@ Remaining work is:
 5. Add a Developer ID Application identity, notarization credentials, privacy /
    storefront metadata, and store-specific packaging before public distribution.
 6. A future tag/release remains an explicit owner-approved publishing action.
-   Run `node tools/validate_release_contract.mjs --tag=v0.4.0` first. No tag,
+   Run `node tools/validate_release_contract.mjs --tag=v0.5.0-rc.1` first. No tag,
    GitHub Release, public upload, notarization, or storefront submission has
    been performed.
 
 These are explicit external/product gates, not hidden broken demo work.
 
 【交接狀態】
-- CODEX_HANDOFF.md 是否已更新：是；V8.6 R7.2 視覺/GPU lock、磁碟清理、
-  四平台隔離 export、artifact identity、macOS/Web 本機結果同誠實 release
-  邊界都已記錄。
-- 本次修改檔案：`godot/immune/export_presets.cfg` 新增 Windows/Linux/macOS
-  V8.6 candidate presets；`tools/validate_v8_6_export.mjs` 同測試升級到四平台
-  fail-closed contract；同步更新 V8.6 spec、README、Steam checklist 同本文件。
-  六個早於現行 `.gitattributes` 嘅既有 GLB 只喺目前 tree 正規化為 Git LFS
-  pointer；binary SHA-256 內容不變，亦冇重寫歷史。
-  新 preflight artifacts/logs/report/SHA256SUMS 保留喺 outputs；舊模型、build、
-  capture、GPU evidence 同 V8.3 shipping presets 冇被刪除或覆寫。
-- 測試結果：完整 Node tools 138/138；官方 Godot 4.7.2 import、四平台 exports、
-  546-resource PCK policy、mounted V8.6 probe、14/14 animations、universal macOS
-  strict ad-hoc signature/native smoke、Ubuntu amd64 container smoke、baseline
-  + SwiftShader Web QA、Steam
-  repository readiness、17 個 Steam assets、6 screenshots、9 audio assets 同
-  `git diff --check` 全部通過。三份 PCK byte-identical，SHA-256
-  `e81ca5510553cd04669aea4910e27c921ecdd4f36762bea25c59109ec313c9f4`。
-- 目前風險：磁碟由約 12 GiB 提升到 41 GiB；本機 repository-controlled
-  技術 gate 已綠。Windows/Linux 尚未喺目標 OS 執行；macOS 仍係 ad-hoc 而非
-  Developer ID/notarized；owner rights/content survey、Steam IDs/onboarding、
-  private SteamPipe/client installs、min-spec/Deck、真人 QA、Valve review 同
-  最終 owner release authorization 未完成，因此不可聲稱 100% storefront-ready。
-- 下一個最安全任務：權利持有人完成 V8.6 attestation/content survey，然後將
-  已 hash-bound 嘅 Windows/Linux artifacts 送到真實目標 OS 做 exact-candidate
-  smoke；本次已獲明確授權 commit/push 並觸發三 OS CI matrix。取得真實 Steam
-  IDs 後先做 preview-only depot staging。任何 tag、upload、Developer ID
-  signing、notarization 或 release 仍需另外明確授權。
+- CODEX_HANDOFF.md 是否已更新：是；已新增 V8.6 R7.2 promoted shipping
+  RC1、exact source commit、CI run、remote hashes、回退修正同誠實發佈邊界。
+- 本次修改檔案：promotion implementation 涵蓋 project/export presets、V8.6
+  raw export plugin、selector、V8.3 rollback probe、release/V8.5/V8.6/Steam
+  validators、CI、RC semver tooling/tests、rights/store/spec 文件；follow-up
+  新增 `steam/build-candidate-v0.5.0-rc.1.md` 並更新 Steam README/checklist 同
+  本 handoff。舊模型、候選 presets、build records、captures 同 GPU evidence
+  全部保留。
+- 測試結果：本機 tools 139/139、UI 53/53、官方 Godot 4.7.2 import、14/14
+  animations（154 poses、0 detached）、shipping/candidate PCK、V8.3 exported
+  rollback、四平台 R2 export、macOS universal native smoke、Apple-Metal +
+  SwiftShader Web QA、六家族/首末關 regression、語言/audio/Steam assets 全綠。
+  GitHub run `33875825213` 7/7 jobs 通過，正式 Linux/Windows/macOS target-OS
+  smoke 已 hash-bound；remote 三份 PCK byte-identical，SHA-256
+  `fd8afee9f8653acfd8a13f16dd0ab10e88a1dcae72ae8e64dd4317058d5452d1`。
+- 目前風險：技術 RC gate 已綠，但 V8.6 rights/content survey 未由 owner
+  簽署；macOS 未 Developer ID/notarize；Steam IDs/onboarding、SteamPipe 私人
+  branch/client install、physical min-spec/Deck、真人視覺/玩法/無障礙 QA、
+  Valve review 同最終 owner release authorization 未完成，所以唔可以聲稱
+  100% storefront-ready。
+- 下一個最安全任務：先由權利持有人完成 V8.6 attestation/content survey，
+  再用 exact CI artifacts 建立 checksum-locked RC1 真人 playtest campaign；
+  取得真實 Steam IDs 後先做 preview-only depot staging。任何 merge、tag、
+  upload、Developer ID signing、notarization 或 release 仍需另外明確授權。

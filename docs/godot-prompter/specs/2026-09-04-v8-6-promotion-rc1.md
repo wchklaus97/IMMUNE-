@@ -1,7 +1,7 @@
 # V8.6 promotion RC1
 
 Date: 2026-09-04
-Status: implementation authorized; publication blocked on owner-controlled gates
+Status: technical promotion validated; publication blocked on owner-controlled gates
 
 ## Outcome
 
@@ -59,3 +59,22 @@ source history and artifacts are not rewritten.
 The promotion PR may be committed, pushed, and opened for review. It must not
 be merged or published automatically. External owner-controlled gates remain
 visible blockers rather than being represented as completed technical work.
+
+## Completed evidence
+
+Promotion source commit
+`2f61c39187b253bb72d87d4a79a5c24b6ede6d35` passes all seven jobs in GitHub
+Actions run <https://github.com/wchklaus97/IMMUNE-/actions/runs/33875825213>.
+This includes the main official-Godot-4.7.2 validation/export job and shipping
+plus preserved-candidate native smoke on Ubuntu, Windows, and macOS.
+
+The downloaded 14-file release is recorded in
+`steam/build-candidate-v0.5.0-rc.1.md`. Its Windows, Linux, and Web PCK copies
+are byte-identical with SHA-256
+`fd8afee9f8653acfd8a13f16dd0ab10e88a1dcae72ae8e64dd4317058d5452d1`.
+Both the V8.6 shipping probe and V8.3 rollback probe pass against the mounted
+export. Local R2 additionally passes the Apple M4 Pro Web path, universal macOS
+launch, 139/139 tools, 53/53 UI tests, all 14 animations, six-family MISSION-01,
+and T/B first/final mission bookends.
+
+No owner-controlled publication gate was changed by these technical results.

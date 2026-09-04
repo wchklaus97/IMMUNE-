@@ -21,7 +21,9 @@ App/depot identifiers, signing identities, or an uploaded build.
   account owner's IDs, evidence records, and attestations;
 - `THIRD_PARTY_NOTICES.txt` and `GODOT_COPYRIGHT.txt`: redistribution notices
   copied into every native depot together with the Noto Sans HK OFL;
-- `build-candidate-v0.4.0-v8.1.md`: current exact local V8.1 candidate record;
+- `build-candidate-v0.5.0-rc.1.md`: current exact V8.6 promotion RC1 record,
+  including the successful seven-job cross-platform CI run;
+- `build-candidate-v0.4.0-v8.1.md`: preserved exact V8.1 candidate record;
 - `build-candidate-v0.4.0.md`: preserved historical V5.4 artifact record;
 - `assets/`: exact-dimension store/library art, icons, six real 1920x1080
   gameplay screenshots, source art, and provenance notes;
@@ -52,7 +54,7 @@ the bracketed values below with the identifiers issued by Steamworks:
 ```sh
 npm run prepare:steam -- \
   --artifacts=godot/immune/build/releases \
-  --out=outputs/steam-stage-v0.4.0 \
+  --out=outputs/steam-stage-v0.5.0-rc.1 \
   --app-id=<APP_ID> \
   --windows-depot=<WINDOWS_DEPOT_ID> \
   --linux-depot=<LINUX_DEPOT_ID> \
