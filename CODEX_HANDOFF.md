@@ -72,6 +72,15 @@ and Linux/Windows/macOS native-smoke evidence matrix. It is syntactically valid
 and locked by the V8.6 validator. The owner has explicitly authorized committing
 and pushing this candidate branch; remote CI must still be assessed from the
 GitHub run itself, and no remote result is embedded or pre-claimed here.
+The first authorized remote run (`33861253886`) stopped at the fresh-cache warm
+import before any export or native job: Godot reports the four ignored/generated
+CSV translation outputs as missing while it bootstraps them, and the old generic
+`ERROR:` grep rejected those known first-pass diagnostics even though import then
+created all four files. The workflow now allowlists only the exact four
+`Cannot open`/`Failed loading` translation-resource messages during that warm
+pass, asserts all four generated files are non-empty, and keeps the second import
+fully fail-closed for every diagnostic. The failed run remains retained; the
+authoritative follow-up outcome is the GitHub run attached to the fix commit.
 
 The final repository-controlled performance gate is the formal same-host
 Forward+/Metal ABBA run (`A1=v8_5, B1=v8_6, B2=v8_6, A2=v8_5`). The hardened

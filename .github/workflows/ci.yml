@@ -67,7 +67,18 @@ jobs:
         run: |
           set -o pipefail
           godot --headless --path godot/immune --import 2>&1 | tee godot-import-warmup.log
-          if grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" godot-import-warmup.log; then exit 1; fi
+          known_translation_bootstrap="res://translations/(game|research_catalog)\.(zh_HK|en)\.translation"
+          if grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" godot-import-warmup.log \
+            | grep -Ev "^ERROR: Cannot open file '$known_translation_bootstrap'\.$|^ERROR: Failed loading resource: $known_translation_bootstrap\.$" \
+            > godot-import-warmup-unexpected.log; then
+            cat godot-import-warmup-unexpected.log
+            exit 1
+          fi
+          for translation in \
+            game.en.translation game.zh_HK.translation \
+            research_catalog.en.translation research_catalog.zh_HK.translation; do
+            test -s "godot/immune/translations/$translation"
+          done
 
       - name: Validate imported project and scripts
         run: |
