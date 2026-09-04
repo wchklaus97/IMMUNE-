@@ -1,6 +1,155 @@
 # IMMUNE demo handoff
 
-Updated: 2026-09-01
+Updated: 2026-09-04
+
+## V8.6 R7.2 opt-in technical candidate — reference convergence
+
+V8.6 is implemented as an additive, opt-in T-cell candidate. It does not
+replace the release-safe V8.3 default, V8.5 R4, or any earlier model, selector,
+look-dev capture, animation evidence, or export. The locked active mesh is
+`godot/immune/characters/base_t/CHAR-BASE-T-v8-6-authored-sculpt-r7-2.glb`
+(SHA-256
+`3fc0b00e7ee8bdf2696fbf7ef97a8044abf8dc60d49c3b917a5471c60945f6a3`):
+one watertight component, one node/mesh/primitive, 6,002 vertices, and 12,000
+triangles. It presents one coherent character with no detached cell, satellite,
+or debris body. The R4.1 V8.6-only optical tuning adds the locked orange wet-gel
+response, clear edge, internal laminar/core flow, softer highlights, embedded
+eyes, and body-bound pore without changing gameplay collision.
+
+Final six-angle look-dev is preserved under
+`outputs/v8.6-reference-convergence/lookdev-r7-2-r4-1-face-lock/`. The official
+Godot 4.7.2 animation gate covers all 14 exact clips and 154 sampled poses with
+zero collapse or detached meshes. Idle circulation remains active; locomotion,
+reversal, stopping, combat, and defeat preserve viscosity, squash, directional
+lag, and settling. The 127 frame captures and 23 review sheets are under
+`outputs/v8.6-reference-convergence/animation-r7-2-r4-1-face-lock/`.
+
+Fresh, isolated technical PCKs are preserved under
+`outputs/v8.6-reference-convergence/export-runtime-mesh-lock-20260904T0400Z/`.
+The V8.5 PCK is 59,318,780 bytes with SHA-256
+`d84a2e07c71bcfd08683647945cae28d9a76f52a8732879ff98e4c5893e9c87b`;
+the V8.6 PCK is 59,317,556 bytes with SHA-256
+`825df57307a15801cea0eb4a7a289889988f8b3ddeaf05cf26b278bd673801ea`.
+The V8.6 validator finds exactly 546 files and its official mounted-PCK probe
+loads one R7.2 body, one shell, one wet material, all 14 animations, no loose
+burst, no fallback, and no build failure while retaining V8.3 as the default.
+The complete current Node tool suite passes 138/138, including a real child
+process with an injected `ENOSPC` command-log write failure; the runner records
+the error and terminates that exact owned process through its tracked cleanup.
+It also includes a real Git worktree regression proving that binary diffs larger
+than Node's default 1 MiB subprocess buffer are captured under a separate,
+bounded 16 MiB fingerprint ceiling.
+
+The disk promotion gate is now materially cleared. APFS free space increased
+from about 12 GiB to 41 GiB after removing only rebuildable uv/npm/npx caches,
+six shut-down stale/duplicate Simulator devices, and the exact local Time
+Machine snapshot that retained those deleted blocks. Active npx sandboxes,
+CoreSimulator devices used recently, the codebase graph, the repository, all
+historical models/exports, and every R5/R6/R7 GPU evidence root were preserved.
+
+V8.6 now also has four isolated candidate presets without changing the V8.3
+shipping default. A fresh official-4.7.2 Windows/Linux/macOS/Web preflight is
+preserved under
+`outputs/v8.6-reference-convergence/export-four-platform-r7-2-preflight-r1/`.
+All four exports emitted the exact raw-body hash marker. The three platform PCK
+copies are byte-identical at 59,317,556 bytes, SHA-256
+`e81ca5510553cd04669aea4910e27c921ecdd4f36762bea25c59109ec313c9f4`,
+and the mounted probe validates 546 resources, V8.6 selection over a retained
+V8.3 default, one body/shell/wet material, all 14 animations, no loose burst,
+fallback, or build failure. The universal x86_64/arm64 macOS app passes strict
+ad-hoc code-sign verification and real local native release smoke. Gatekeeper
+rejection is expected until owner Developer ID signing and notarization. The
+Web baseline passes at 60.002 mean FPS; SwiftShader compatibility stress passes
+at 13.720 mean FPS and is explicitly not hardware evidence. The Linux ELF also
+passes an offline, read-only, unprivileged Ubuntu 24.04 amd64-container smoke
+under Apple-Silicon emulation. Its first run was rejected because `nobody` used
+`/nonexistent` for `user://`; R2 supplied only tmpfs HOME/XDG storage and passed
+without diagnostics. This is compatibility evidence, not native/min-spec
+hardware. The Windows PE is ready for target-OS transfer but remains unexecuted
+on Windows.
+CI now contains a fail-closed, commit-bound V8.6 four-platform exporter, Web QA,
+and Linux/Windows/macOS native-smoke evidence matrix. It is syntactically valid
+and locked by the V8.6 validator. The owner has explicitly authorized committing
+and pushing this candidate branch; remote CI must still be assessed from the
+GitHub run itself, and no remote result is embedded or pre-claimed here.
+
+The final repository-controlled performance gate is the formal same-host
+Forward+/Metal ABBA run (`A1=v8_5, B1=v8_6, B2=v8_6, A2=v8_5`). The hardened
+runner binds exact PIDs, source and imported-mesh fingerprints, Godot/Xcode/
+xctrace identities, authoritative trace times, and four 300-frame post-warmup
+windows from exact-PID traces requested with an exact 8-second time limit.
+Pinned xctrace stop latency may expand the authoritative TOC envelope to a
+bounded 7.95-12.0 seconds; the full envelope must remain inside the 35-second
+render hold and none of that extra tail expands the fixed analysis window. It
+validates each report immediately and
+fails closed on source, host, artifact, trace, repeatability, or disk drift. A
+30-second A1 attempt was deliberately interrupted when its incomplete trace and
+Xcode staging consumed about 15 GiB; no comparison verdict was claimed. After
+verifying that no Godot/xctrace process remained, only that incomplete
+task-owned trace and exact same-birth-time staging were removed. Runtime logs
+and the failure manifest remain; previous game/model/evidence versions were not
+removed.
+
+A fresh plan-only preflight on 2026-09-04 failed before reserving its evidence
+root with 24,995,209,216 bytes available versus the locked 25,769,803,776-byte
+(24 GiB) minimum, and the absent root was verified. macOS later reclaimed
+purgeable space without deleting any project artifact; a new plan passed with
+36,229,648,384 bytes free. Its A1 completed the exact V8.5 workload and
+requested 8-second trace, but the then-current TOC guard rejected pinned
+xctrace's 9.745658-second authoritative recording envelope before B1. Sanitized
+inspection confirmed the exact PID, Metal schema, exact time-limit/end reason,
+zero forbidden environment keys, and full hold containment. This is
+harness-validation-inconclusive, not GPU evidence. The failed root and manifest
+remain immutable, no B run occurred, and the corrected contract must use a
+brand-new root. At that point V8.6 still had no formal GPU-regression verdict.
+
+The next fresh R6 plan initially stopped before root reservation because the
+dirty binary Git diff was 2,657,667 bytes and exceeded the old 1 MiB subprocess
+buffer. After the bounded fingerprint fix and regression passed, R6 A1 completed
+the exact 4,000-sample V8.5 workload, 35,005 ms hold, requested 8-second trace,
+and 300-frame measurement. The then-current analyzer classified seven legal
+nullable Frame-column `<sentinel/>` rows as malformed and stopped before B1.
+The R6 root remains immutable. Read-only reanalysis outside that root proves
+22,860 target rows reconcile exactly as 18,670 channel top-level + 4,183 nested
++ 7 unframed + 0 malformed; none of the seven overlaps frames 61-360, and the
+unchanged diagnostic A1 metrics are mean 7.127 ms, p95 7.488 ms, max 9.540 ms.
+The parser now validates the first six columns positionally, rejects unresolved
+or contradictory references, duplicate attributes and IDs, inconsistent
+process identities, and merged rows, while both immediate and aggregate gates
+require zero malformed rows, zero analyzed-window unframed overlap, and exact
+row accounting. This diagnosed R6 only; it did not alter or replace that failed
+root.
+
+The subsequent fresh R7 campaign completed all four exact workloads and passed
+the aggregate gate on Apple M4 Pro. Every run analyzed frames 61-360 (300
+contiguous frames), reported zero malformed rows and zero unframed overlap, and
+stayed below the 16.67 ms per-window maximum ceiling. V8.5 A1/A2 measured
+mean 7.881/7.717 ms and p95 8.186/8.084 ms; V8.6 B1/B2 measured mean
+7.744/7.698 ms and p95 8.076/8.056 ms. Aggregate V8.6 is 7.721 ms mean and
+8.066 ms p95 versus V8.5's 7.799/8.135 ms: -0.078 ms (-1.00%) mean and
+-0.069 ms (-0.85%) p95. Baseline/candidate repeat spreads pass, and candidate
+max is 10.204 ms. The independent post-run validator reproduced a byte-identical
+gate, and an independent audit re-hashed all 42 retained artifacts with zero
+mismatches and reported no P0/P1 findings. The immutable local evidence root is
+`/var/folders/s3/8ntnh5c12bv7njyr38rvftcw0000gn/T/v86-r7-2-r4-1-final-r7-20260904T-current`;
+its raw provenance SHA-256 is
+`8bbde87e7f1d1d42158bc0d64e1f402ea43235305d42a376222ba3cd44346c53`
+and gate SHA-256 is
+`469e41dd340f3e02935501b209dfbf58b8d6fa09bc2797567718ce4fb50d01d7`.
+Host, Godot, Xcode/xctrace, source fingerprints, and Git snapshot remained
+unchanged throughout; every runner-owned raw/export temporary directory was
+removed. Post-campaign edits are documentation only.
+
+This is a locally validated technical candidate, not a public Steam release.
+Owner rights signatures, native Windows/Linux and physical minimum-spec/Steam
+Deck evidence, Steam App/depot IDs and onboarding, Developer ID signing and
+notarization, private SteamPipe/client-install rehearsal, human visual/gameplay
+QA, Valve review, and explicit owner publishing authorization remain external
+open gates. No commit, push, tag, upload, signing, notarization, submission, or
+release was performed. Full rationale, rejected prototypes, exact metrics,
+failure discipline, and reproduction contract are in
+`docs/godot-prompter/specs/2026-09-04-v8-6-reference-convergence.md`; raw Metal
+retention rules are in `docs/metal-trace-security.md`.
 
 ## V8.1 exact local release candidate — authored slime and release convergence
 
@@ -1466,8 +1615,30 @@ Remaining work is:
 These are explicit external/product gates, not hidden broken demo work.
 
 【交接狀態】
-- CODEX_HANDOFF.md 是否已更新：是；exact V7 four-platform artifacts, native/Web evidence, blinded V5.1/V6/V7 campaign, browser QA, provenance correction, preservation, and honest publisher limits are recorded above the earlier V7 handoff.
-- 本次修改檔案：added the atomic visual-preference campaign generator and tests, package command, exact-candidate/preference spec, and this handoff; existing V5/V6/V7 source, artifacts, captures, generated models, and ignored evidence were not removed or overwritten.
-- 測試結果：58/58 tools, 53/53 UI plus production build, 6/6 Meshy safety, catalog/translation/playtest-template checks, 14-file exact release contract, native macOS smoke, two-profile exported-Web lifecycle, Steam repository checks, six-permutation campaign verification, and desktop/mobile participant-browser export all pass.
-- 目前風險：human preference remains 0 real reports; Windows/Linux native runtime, real minimum-spec Windows/Deck/phone performance, final storefront approval, rights/IDs, Developer ID/required signing, notarization, Steamworks/Valve review, and owner authorization remain open.
-- 下一個最安全任務：give the six blinded participant folders to independent adult testers, collect at least three complete anonymous reports, decode only after collection, then run the exact approved look on native target/minimum hardware before any owner-authorized signing or publishing action.
+- CODEX_HANDOFF.md 是否已更新：是；V8.6 R7.2 視覺/GPU lock、磁碟清理、
+  四平台隔離 export、artifact identity、macOS/Web 本機結果同誠實 release
+  邊界都已記錄。
+- 本次修改檔案：`godot/immune/export_presets.cfg` 新增 Windows/Linux/macOS
+  V8.6 candidate presets；`tools/validate_v8_6_export.mjs` 同測試升級到四平台
+  fail-closed contract；同步更新 V8.6 spec、README、Steam checklist 同本文件。
+  六個早於現行 `.gitattributes` 嘅既有 GLB 只喺目前 tree 正規化為 Git LFS
+  pointer；binary SHA-256 內容不變，亦冇重寫歷史。
+  新 preflight artifacts/logs/report/SHA256SUMS 保留喺 outputs；舊模型、build、
+  capture、GPU evidence 同 V8.3 shipping presets 冇被刪除或覆寫。
+- 測試結果：完整 Node tools 138/138；官方 Godot 4.7.2 import、四平台 exports、
+  546-resource PCK policy、mounted V8.6 probe、14/14 animations、universal macOS
+  strict ad-hoc signature/native smoke、Ubuntu amd64 container smoke、baseline
+  + SwiftShader Web QA、Steam
+  repository readiness、17 個 Steam assets、6 screenshots、9 audio assets 同
+  `git diff --check` 全部通過。三份 PCK byte-identical，SHA-256
+  `e81ca5510553cd04669aea4910e27c921ecdd4f36762bea25c59109ec313c9f4`。
+- 目前風險：磁碟由約 12 GiB 提升到 41 GiB；本機 repository-controlled
+  技術 gate 已綠。Windows/Linux 尚未喺目標 OS 執行；macOS 仍係 ad-hoc 而非
+  Developer ID/notarized；owner rights/content survey、Steam IDs/onboarding、
+  private SteamPipe/client installs、min-spec/Deck、真人 QA、Valve review 同
+  最終 owner release authorization 未完成，因此不可聲稱 100% storefront-ready。
+- 下一個最安全任務：權利持有人完成 V8.6 attestation/content survey，然後將
+  已 hash-bound 嘅 Windows/Linux artifacts 送到真實目標 OS 做 exact-candidate
+  smoke；本次已獲明確授權 commit/push 並觸發三 OS CI matrix。取得真實 Steam
+  IDs 後先做 preview-only depot staging。任何 tag、upload、Developer ID
+  signing、notarization 或 release 仍需另外明確授權。

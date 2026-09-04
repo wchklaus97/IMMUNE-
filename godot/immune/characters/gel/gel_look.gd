@@ -29,7 +29,34 @@ const MEMBRANE_OPTIONS: Array[StringName] = [
 	&"membrane_roughness",
 	&"membrane_rim_emission",
 	&"membrane_thickness",
+	&"membrane_shell_energy_scale",
+	&"membrane_shell_diffuse_strength",
+	&"membrane_shell_specular_level",
+	&"membrane_shell_emission_limit",
+	&"membrane_shell_alpha_limit",
+	&"membrane_shell_white_mix",
+	&"membrane_studio_reflection_strength",
+	&"membrane_studio_reflection_alpha",
+	&"membrane_studio_reflection_budget",
+	&"membrane_studio_streak_strength",
+	&"membrane_studio_card_broadening",
+	&"membrane_studio_card_tail_cut",
 ]
+
+const MEMBRANE_ENERGY_OPTIONS: Dictionary = {
+	&"membrane_shell_energy_scale": &"shell_energy_scale",
+	&"membrane_shell_diffuse_strength": &"shell_diffuse_strength",
+	&"membrane_shell_specular_level": &"shell_specular_level",
+	&"membrane_shell_emission_limit": &"shell_emission_limit",
+	&"membrane_shell_alpha_limit": &"shell_alpha_limit",
+	&"membrane_shell_white_mix": &"shell_white_mix",
+	&"membrane_studio_reflection_strength": &"studio_reflection_strength",
+	&"membrane_studio_reflection_alpha": &"studio_reflection_alpha",
+	&"membrane_studio_reflection_budget": &"studio_reflection_budget",
+	&"membrane_studio_streak_strength": &"studio_streak_strength",
+	&"membrane_studio_card_broadening": &"studio_card_broadening",
+	&"membrane_studio_card_tail_cut": &"studio_card_tail_cut",
+}
 
 const SHELL_V5_BOUNDS: Dictionary = {
 	&"shell_energy_scale": 0.42,
@@ -503,6 +530,7 @@ static func _make_membrane(jelly: Color, opts: Dictionary) -> ShaderMaterial:
 	var membrane := ShaderMaterial.new()
 	membrane.shader = shader
 	apply_v5_shell_bounds(membrane)
+	apply_membrane_energy_options(membrane, opts)
 	var clear_tint := rim_color(jelly).lerp(Color.WHITE, 0.16)
 	membrane.set_shader_parameter(&"shell_color", _option(opts, &"membrane_color", clear_tint))
 	membrane.set_shader_parameter(&"face_alpha", _option(opts, &"membrane_face_alpha", 0.012))
@@ -524,6 +552,14 @@ static func _make_membrane(jelly: Color, opts: Dictionary) -> ShaderMaterial:
 		)
 	membrane.render_priority = 1
 	return membrane
+
+
+static func apply_membrane_energy_options(shell: ShaderMaterial, opts: Dictionary) -> void:
+	if shell == null:
+		return
+	for option in MEMBRANE_ENERGY_OPTIONS:
+		if opts.has(option) or opts.has(String(option)):
+			shell.set_shader_parameter(MEMBRANE_ENERGY_OPTIONS[option], _option(opts, option, 0.0))
 
 
 static func apply_v5_shell_bounds(shell: ShaderMaterial) -> void:

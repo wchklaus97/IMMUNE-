@@ -645,6 +645,116 @@ const V8_5_FAMILY: Dictionary = {
 	},
 }
 
+# V8.6 is a T-only optical overlay on the frozen V8.5 material foundation.
+# The accepted R3 values remain named and immutable so every captured revision
+# can be reconstructed. R4 merges after R3 and corrects the remaining pale,
+# opaque-gummy read without adding a texture, branch, pass, or draw call.
+# R3 keeps the moving liquid fields intact, but consolidates their roughness
+# response into one broad wet card and narrows the clear envelope so it stays
+# bonded to the R6 silhouette. Older looks and non-T V8.6 families never merge
+# these values.
+const V8_6_REFERENCE_CONVERGENCE_R3: Dictionary = {
+	&"albedo_gain": 1.76,
+	&"body_exposure_scale": 0.84,
+	&"thickness_contrast": 0.37,
+	&"coat_roughness": 0.050,
+	&"coat_strength": 1.25,
+	&"spec_energy": 0.12,
+	&"wet_spec_breakup": 0.10,
+	&"studio_reflection_strength": 0.55,
+	&"studio_reflection_budget": 0.18,
+	&"studio_reflection_edge_share": 0.32,
+	&"studio_streak_strength": 0.36,
+	&"studio_card_broadening": 0.84,
+	&"studio_card_tail_cut": 0.12,
+	&"liquid_core_roughness_mix": 0.16,
+	&"liquid_laminar_roughness_mix": 0.14,
+	&"authored_height_scale": 0.42,
+	&"authored_height_depth": 0.00085,
+	&"authored_height_lod_bias": 0.90,
+	&"membrane_grazing_floor": 0.42,
+	&"membrane_grazing_power": 1.60,
+	&"orange_peel_micro_depth": 0.00055,
+	&"orange_peel_micro_scale": 48.0,
+	&"orange_peel_micro_grazing": 0.72,
+	&"membrane_face_alpha": 0.0005,
+	&"membrane_edge_alpha": 0.13,
+	&"membrane_edge_power": 3.65,
+	&"membrane_roughness": 0.045,
+	&"membrane_rim_emission": 0.025,
+	&"membrane_thickness": 0.0055,
+}
+
+const V8_6_REFERENCE_CONVERGENCE_R4: Dictionary = {
+	&"body_color": Color(1.0, 0.185, 0.0, 1.0),
+	&"deep_color": Color(0.80, 0.052, 0.0, 1.0),
+	&"transmit_color": Color(1.0, 0.465, 0.025, 1.0),
+	&"rim_color": Color(1.0, 0.59, 0.085, 1.0),
+	&"albedo_gain": 1.84,
+	&"body_exposure_scale": 0.88,
+	&"thickness_contrast": 0.39,
+	&"coat_roughness": 0.058,
+	&"coat_strength": 1.18,
+	&"spec_energy": 0.10,
+	&"wet_spec_breakup": 0.20,
+	&"studio_reflection_strength": 0.74,
+	&"studio_reflection_budget": 0.24,
+	&"studio_reflection_edge_share": 0.18,
+	&"studio_streak_strength": 0.58,
+	&"studio_card_broadening": 0.70,
+	&"studio_card_tail_cut": 0.28,
+	&"liquid_core_color_mix": 0.32,
+	&"liquid_core_roughness_mix": 0.22,
+	&"liquid_laminar_color_mix": 0.22,
+	&"liquid_laminar_roughness_mix": 0.20,
+	&"authored_height_scale": 0.36,
+	&"authored_height_depth": 0.00110,
+	&"authored_height_lod_bias": 0.70,
+	&"membrane_grazing_floor": 0.52,
+	&"membrane_grazing_power": 1.45,
+	&"orange_peel_micro_depth": 0.00080,
+	&"orange_peel_micro_scale": 42.0,
+	&"orange_peel_micro_grazing": 0.58,
+	&"membrane_face_alpha": 0.0010,
+	&"membrane_edge_alpha": 0.18,
+	&"membrane_edge_power": 3.25,
+	&"membrane_roughness": 0.032,
+	&"membrane_rim_emission": 0.040,
+	&"membrane_thickness": 0.0065,
+	&"membrane_shell_energy_scale": 0.56,
+	&"membrane_shell_diffuse_strength": 0.010,
+	&"membrane_shell_specular_level": 0.92,
+	&"membrane_shell_emission_limit": 0.040,
+	&"membrane_shell_alpha_limit": 0.22,
+	&"membrane_shell_white_mix": 0.44,
+	&"membrane_studio_reflection_strength": 0.74,
+	&"membrane_studio_reflection_alpha": 0.036,
+	&"membrane_studio_reflection_budget": 0.15,
+	&"membrane_studio_streak_strength": 0.58,
+	&"membrane_studio_card_broadening": 0.70,
+	&"membrane_studio_card_tail_cut": 0.28,
+}
+
+# R4.1 keeps R4's saturation, flow, eye, pore, and shell-boundary choices while
+# softening the hard card contour and oversized normal patches found in the
+# Compatibility/Metal A/B capture. R3 and R4 remain preserved above.
+const V8_6_REFERENCE_CONVERGENCE_R4_1: Dictionary = {
+	&"studio_reflection_strength": 0.64,
+	&"studio_reflection_budget": 0.20,
+	&"studio_card_broadening": 0.78,
+	&"studio_card_tail_cut": 0.16,
+	&"wet_spec_breakup": 0.12,
+	&"authored_height_depth": 0.00090,
+	&"authored_height_lod_bias": 0.84,
+	&"membrane_grazing_floor": 0.44,
+	&"orange_peel_micro_depth": 0.00060,
+	&"membrane_studio_reflection_strength": 0.64,
+	&"membrane_studio_reflection_alpha": 0.030,
+	&"membrane_studio_reflection_budget": 0.13,
+	&"membrane_studio_card_broadening": 0.78,
+	&"membrane_studio_card_tail_cut": 0.16,
+}
+
 const V8_4_FAMILY: Dictionary = {
 	"T": {
 		&"body_color": Color(1.0, 0.185, 0.0, 1.0),
@@ -880,12 +990,19 @@ static func options(family: String, overrides: Dictionary = {}) -> Dictionary:
 		var v8_4_family_values: Dictionary = V8_4_FAMILY.get(family, {})
 		for key in v8_4_family_values:
 			merged[key] = v8_4_family_values[key]
-	if v8_5_enabled():
+	if reference_sculpt_behavior_enabled():
 		for key in V8_5_REFERENCE_SCULPT:
 			merged[key] = V8_5_REFERENCE_SCULPT[key]
 		var v8_5_family_values: Dictionary = V8_5_FAMILY.get(family, {})
 		for key in v8_5_family_values:
 			merged[key] = v8_5_family_values[key]
+	if v8_6_enabled() and family == "T":
+		for key in V8_6_REFERENCE_CONVERGENCE_R3:
+			merged[key] = V8_6_REFERENCE_CONVERGENCE_R3[key]
+		for key in V8_6_REFERENCE_CONVERGENCE_R4:
+			merged[key] = V8_6_REFERENCE_CONVERGENCE_R4[key]
+		for key in V8_6_REFERENCE_CONVERGENCE_R4_1:
+			merged[key] = V8_6_REFERENCE_CONVERGENCE_R4_1[key]
 	for key in overrides:
 		merged[key] = overrides[key]
 	return merged
@@ -928,31 +1045,40 @@ static func with_v5_surface(values: Dictionary, family: String = "") -> Dictiona
 		var v8_4_family_values: Dictionary = V8_4_FAMILY.get(family, {})
 		for key in v8_4_family_values:
 			merged[key] = v8_4_family_values[key]
-	if v8_5_enabled():
+	if reference_sculpt_behavior_enabled():
 		for key in V8_5_REFERENCE_SCULPT:
 			merged[key] = V8_5_REFERENCE_SCULPT[key]
 		var v8_5_family_values: Dictionary = V8_5_FAMILY.get(family, {})
 		for key in v8_5_family_values:
 			merged[key] = v8_5_family_values[key]
+	if v8_6_enabled() and family == "T":
+		for key in V8_6_REFERENCE_CONVERGENCE_R3:
+			merged[key] = V8_6_REFERENCE_CONVERGENCE_R3[key]
+		for key in V8_6_REFERENCE_CONVERGENCE_R4:
+			merged[key] = V8_6_REFERENCE_CONVERGENCE_R4[key]
+		for key in V8_6_REFERENCE_CONVERGENCE_R4_1:
+			merged[key] = V8_6_REFERENCE_CONVERGENCE_R4_1[key]
 	return merged
 
 
 static func selected_look() -> String:
+	if OS.has_feature("v8_6_candidate"):
+		return "v8_6"
 	if OS.has_feature("v8_5_candidate"):
 		return "v8_5"
 	var override := OS.get_environment("IMMUNE_GEL_LOOK").strip_edges().to_lower()
-	if override in ["v5", "v6", "v7", "v8", "v8_1", "v8_2", "v8_3", "v8_4", "v8_5"]:
+	if override in ["v5", "v6", "v7", "v8", "v8_1", "v8_2", "v8_3", "v8_4", "v8_5", "v8_6"]:
 		return override
 	var configured := str(ProjectSettings.get_setting("immune/visual/gel_look", "v6")).strip_edges().to_lower()
-	return configured if configured in ["v5", "v6", "v7", "v8", "v8_1", "v8_2", "v8_3", "v8_4", "v8_5"] else "v6"
+	return configured if configured in ["v5", "v6", "v7", "v8", "v8_1", "v8_2", "v8_3", "v8_4", "v8_5", "v8_6"] else "v6"
 
 
 static func banner_match_enabled() -> bool:
-	return selected_look() in ["v6", "v7", "v8", "v8_1", "v8_2", "v8_3", "v8_4", "v8_5"]
+	return selected_look() in ["v6", "v7", "v8", "v8_1", "v8_2", "v8_3", "v8_4", "v8_5", "v8_6"]
 
 
 static func gummy_glass_enabled() -> bool:
-	return selected_look() in ["v7", "v8", "v8_1", "v8_2", "v8_3", "v8_4", "v8_5"]
+	return selected_look() in ["v7", "v8", "v8_1", "v8_2", "v8_3", "v8_4", "v8_5", "v8_6"]
 
 
 static func v7_enabled() -> bool:
@@ -960,7 +1086,7 @@ static func v7_enabled() -> bool:
 
 
 static func v8_enabled() -> bool:
-	return selected_look() in ["v8", "v8_1", "v8_2", "v8_3", "v8_4", "v8_5"]
+	return selected_look() in ["v8", "v8_1", "v8_2", "v8_3", "v8_4", "v8_5", "v8_6"]
 
 
 ## V8.1 inherits the accepted V8 material and clip foundation, then enables the
@@ -986,32 +1112,45 @@ static func v8_5_enabled() -> bool:
 	return selected_look() == "v8_5"
 
 
-## V8.4 and V8.5 deliberately share the reference-viscosity behavior layer,
+static func v8_6_enabled() -> bool:
+	return selected_look() == "v8_6"
+
+
+## V8.6 shares V8.5's reference-sculpt behavior gate for common motion/body
+## routing, then applies its own fail-closed T-only R7.2 geometry and R4.1
+## optical overrides. Exact helpers remain available for rollback checks.
+static func reference_sculpt_behavior_enabled() -> bool:
+	return selected_look() in ["v8_5", "v8_6"]
+
+
+## V8.4 through V8.6 deliberately share the reference-viscosity behavior layer,
 ## while exact helpers continue to protect asset identity and rollback tests.
 static func reference_viscosity_enabled() -> bool:
-	return selected_look() in ["v8_4", "v8_5"]
+	return selected_look() in ["v8_4", "v8_5", "v8_6"]
 
 
-## V8.3 through V8.5 share the one-piece topology contract. Exact selectors remain
+## V8.3 through V8.6 share the one-piece topology contract. Exact selectors remain
 ## available for rollback-specific material and evidence checks.
 static func single_mass_enabled() -> bool:
-	return selected_look() in ["v8_3", "v8_4", "v8_5"]
+	return selected_look() in ["v8_3", "v8_4", "v8_5", "v8_6"]
 
 
 ## V8.3+ inherits V8.2's fourteen-clip and living-volume foundation while the
 ## exact v8_2_enabled() selector remains available for rollback assertions.
 static func living_volume_enabled() -> bool:
-	return selected_look() in ["v8_2", "v8_3", "v8_4", "v8_5"]
+	return selected_look() in ["v8_2", "v8_3", "v8_4", "v8_5", "v8_6"]
 
 
 ## V8.2 inherits V8.1's shared-coordinate attachment and release hardening while
 ## v8_1_enabled() remains an exact rollback selector for material/smoke checks.
 static func motion_truth_enabled() -> bool:
-	return selected_look() in ["v8_1", "v8_2", "v8_3", "v8_4", "v8_5"]
+	return selected_look() in ["v8_1", "v8_2", "v8_3", "v8_4", "v8_5", "v8_6"]
 
 
 static func profile_name(family: String) -> StringName:
-	if v8_5_enabled():
+	if v8_6_enabled() and family == "T":
+		return &"reference_convergence"
+	if reference_sculpt_behavior_enabled():
 		return &"reference_sculpt"
 	if v8_4_enabled():
 		return &"reference_viscous"

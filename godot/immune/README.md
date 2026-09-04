@@ -87,9 +87,49 @@ godot --path godot/immune --resolution 1920x1080 res://tools/gel_perf.tscn -- \
 
 `--sync=true` 只會喺量度前 drain 一次 render queue；唔會再由
 `frame_post_draw` callback 每 frame `force_sync()`，避免 Forward+／Metal
-stall。Apple Metal 如內建 viewport GPU timer 全部回傳零，請用 Instruments
-`Metal System Trace` 再以 `tools/analyze_metal_gpu_trace.mjs` 分析；完整命令同
-限制見 `docs/godot-prompter/specs/2026-08-29-all-family-soak-and-metal-gpu.md`。
+stall。Apple Metal 如內建 viewport GPU timer 全部回傳零，單次診斷可以用
+Instruments `Metal System Trace` 再以 `tools/analyze_metal_gpu_trace.mjs`
+分析；完整命令同限制見
+`docs/godot-prompter/specs/2026-08-29-all-family-soak-and-metal-gpu.md`。
+V8.6 正式比較只接受 `npm run run:gpu-abba` 產生嘅 A1/B1/B2/A2 證據；唔接受
+手動拼接或者預先存在嘅 JSON。Trace 可能包含 process environment，保存或
+分享前必須遵守 `docs/metal-trace-security.md`。`--evidence-root` 必須係一個
+位於 OS temporary directory 下、尚未存在、canonical target 經驗證、而且喺
+`IMMUNE-` repository 同 `godot/immune` 以外嘅絕對路徑。正式合約係四段以
+exact PID 請求 8 秒 time limit 嘅 trace；xctrace 停錄 latency 只可令權威 TOC
+window 落喺 7.95-12.0 秒，而且成段要喺 35 秒 render hold 入面。額外尾段唔會
+納入分析：每段仍然丟棄 60 frames 後精確分析 300 個連續 GPU frames；runner 會鎖定
+真正載入嘅 mesh arrays、Apple GPU、Xcode build 同 xctrace executable，而唔
+只係 selector 名稱。Metal rows 會按首六個欄位位置逐一驗證；所有 ref、process
+identity、scalar cardinality、duplicate attribute/ID 同 row boundary 都 fail closed。
+合法 nullable Frame sentinel 會獨立計數，必須同 300-frame analysis window 零重疊，
+而所有 target rows 必須精確對賬。開始／每段／分析前磁碟門檻分別係 24／14／6 GiB。
+
+2026-09-04 R7 正式 A1/B1/B2/A2 已喺 Apple M4 Pro 完成並 PASS。V8.5 aggregate
+mean/p95 為 7.799/8.135 ms；V8.6 為 7.721/8.066 ms（-1.00%/-0.85%），
+repeatability 同四段 16.67 ms max ceiling 全部通過。完整本機敏感 evidence path、
+hash、逐段數據同 failure history 見
+`docs/godot-prompter/specs/2026-09-04-v8-6-reference-convergence.md`；raw trace
+不可 commit 或上傳。
+
+V8.6 R7.2 而家另外有四個互相隔離、預設不可直接運行嘅 candidate presets；
+佢哋唔會改動 V8.3 shipping default。四平台 preflight、PCK probe、macOS native
+smoke 同 Web QA 保留喺
+`outputs/v8.6-reference-convergence/export-four-platform-r7-2-preflight-r1/`：
+
+```bash
+godot --headless --path godot/immune --export-release \
+  "Windows Desktop V8.6 Candidate" /absolute/evidence/artifacts/IMMUNE-windows.exe
+godot --headless --path godot/immune --export-release \
+  "Linux/X11 V8.6 Candidate" /absolute/evidence/artifacts/IMMUNE-linux.x86_64
+godot --headless --path godot/immune --export-release \
+  "macOS V8.6 Candidate" /absolute/evidence/artifacts/IMMUNE-macOS.zip
+godot --headless --path godot/immune --export-release \
+  "Web V8.6 Candidate" /absolute/evidence/artifacts/web/index.html
+```
+
+Windows/Linux binary 仍要喺真正目標 OS 啟動；macOS 目前只係 ad-hoc 開發簽章，
+未有 Developer ID/notarization。呢批 artifacts 唔係 Steam upload 授權。
 
 ```powershell
 winget install --id GodotEngine.GodotEngine --version 4.7.2

@@ -1,6 +1,6 @@
 # Steam release checklist
 
-Updated: 2026-09-02. “Repository complete” means the source tree can produce and
+Updated: 2026-09-04. “Repository complete” means the source tree can produce and
 validate a submission candidate. It does not mean Valve has approved the page or
 build, nor that the product is publicly released.
 
@@ -49,8 +49,34 @@ build, nor that the product is publicly released.
   five-group visual lock, all-14-animation review, real Apple M4 Pro GPU
   evidence, and a complete owner-signing template. It remains separate from
   the release/default selector and excluded pending the unchecked gates below.
+- [x] The opt-in V8.6 R7.2 T candidate has completed its final multi-angle and
+  all-14-animation strips, exact official 4.7.2 four-platform candidate export,
+  mounted-PCK probe, local universal macOS release smoke, baseline/SwiftShader
+  Web QA, 138/138 full regression suite, and independent code review. The
+  official Forward+/Metal A1/B1/B2/A2 R7 campaign now passes on Apple M4 Pro:
+  V8.6 aggregate mean/p95 is 7.721/8.066 ms versus V8.5 7.799/8.135 ms
+  (-1.00%/-0.85%), with all repeatability and 16.67 ms maximum gates green.
+  The immutable provenance and an independent byte-identical gate rerun are
+  recorded in the convergence specification. An initial 24 GiB
+  preflight failed without creating a root; after macOS reclaimed space, A1
+  captured successfully but its 9.745658-second authoritative TOC envelope was
+  rejected by the old exact-duration tolerance before B1. That immutable root
+  is harness-validation-inconclusive and supplies no GPU verdict; at that point
+  all four sequences had to restart under the bounded-envelope contract. A
+  later R6 A1 also completed but stopped before B1 when seven legal nullable Frame
+  sentinels were misclassified as malformed. That root remains immutable;
+  read-only reanalysis proves zero overlap with its 300-frame window and exact
+  row accounting, and the parser/gates now have fail-closed regressions. Those
+  failed attempts remain historical and do not replace the successful R7 root.
+  The hash-bound owner-signing template is prepared but remains unsigned under
+  the separate account/rights gate below.
 - [ ] Native Windows and Linux release smoke is green for the exact candidate
-  on those operating systems. Historical remote runs do not prove V8.1.
+  on those operating systems. The new PE/ELF artifacts and byte-identical PCK
+  are prepared for transfer. An offline Ubuntu amd64 container smoke passes
+  under Apple-Silicon emulation, but that and cross-exporting on macOS are not
+  native/minimum-spec target evidence. An exact commit-bound three-OS CI matrix
+  is prepared but has not been pushed or run. Historical remote runs do not
+  prove this candidate.
 
 ## Steamworks/account gates
 
@@ -62,7 +88,8 @@ build, nor that the product is publicly released.
 - [ ] Enter supported operating systems, launch options, install folders, and
   branch/package access in Steamworks.
 - [ ] Complete and owner-sign
-  `asset-rights-attestation-v8.5-template.md`, then archive the signed record
+  `asset-rights-attestation-v8.6-template.md` for R7.2 (or the preserved V8.5
+  template if that older candidate is selected), then archive the signed record
   with an exact SHA-256. Project-authored audio now
   has deterministic source and exact hashes, while generated Meshy/Tripo
   development models are non-shipping; Steam key-art inputs and contributor

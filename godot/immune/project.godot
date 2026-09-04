@@ -39,7 +39,7 @@ window/stretch/aspect="expand"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/v8_5_raw_export/plugin.cfg")
+enabled=PackedStringArray("res://addons/v8_5_raw_export/plugin.cfg", "res://addons/v8_6_raw_export/plugin.cfg")
 
 [gui]
 

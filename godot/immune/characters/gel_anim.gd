@@ -116,7 +116,7 @@ static func build(anim_name: String, ctx: Dictionary) -> Animation:
 		"relay_close":
 			return _bake(1.15, false, kit_path, ctx, _plant_channels(), "keys")
 		"move":
-			if _GelProfiles.v8_5_enabled():
+			if _GelProfiles.reference_sculpt_behavior_enabled():
 				return _bake(1.12, true, "", ctx, _move_v8_5_viscous_channels(), "keys")
 			if _GelProfiles.v8_4_enabled():
 				return _bake(1.12, true, "", ctx, _move_viscous_channels(), "keys")
@@ -131,7 +131,7 @@ static func build(anim_name: String, ctx: Dictionary) -> Animation:
 				ctx,
 				(
 					_move_start_v8_5_viscous_channels()
-					if _GelProfiles.v8_5_enabled()
+					if _GelProfiles.reference_sculpt_behavior_enabled()
 					else (
 						_move_start_viscous_channels()
 						if _GelProfiles.v8_4_enabled()
@@ -148,7 +148,7 @@ static func build(anim_name: String, ctx: Dictionary) -> Animation:
 				ctx,
 				(
 					_move_stop_v8_5_viscous_channels()
-					if _GelProfiles.v8_5_enabled()
+					if _GelProfiles.reference_sculpt_behavior_enabled()
 					else (
 						_move_stop_viscous_channels()
 						if _GelProfiles.v8_4_enabled()
@@ -962,11 +962,11 @@ static func _bake(length: float, loop: bool, kit_path: String, ctx: Dictionary, 
 			pose = _keyed_pose(channels, t)
 
 		var squash_min := (
-			0.86 if _GelProfiles.v8_5_enabled()
+			0.86 if _GelProfiles.reference_sculpt_behavior_enabled()
 			else (0.82 if _GelProfiles.single_mass_enabled() else SQUASH_MIN)
 		)
 		var stretch_max := (
-			1.14 if _GelProfiles.v8_5_enabled()
+			1.14 if _GelProfiles.reference_sculpt_behavior_enabled()
 			else (1.18 if _GelProfiles.single_mass_enabled() else STRETCH_MAX)
 		)
 		var sy := clampf(float(pose.get("sy", 1.0)), squash_min, stretch_max)
@@ -974,7 +974,7 @@ static func _bake(length: float, loop: bool, kit_path: String, ctx: Dictionary, 
 		if _GelProfiles.single_mass_enabled():
 			zb = (
 				clampf(zb, 0.93, 1.09)
-				if _GelProfiles.v8_5_enabled()
+				if _GelProfiles.reference_sculpt_behavior_enabled()
 				else clampf(zb, 0.90, 1.12)
 			)
 		var lateral := pow(sy, -0.5 * VOLUME_K)

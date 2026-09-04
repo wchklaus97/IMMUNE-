@@ -65,6 +65,10 @@ func _run() -> void:
 		push_error("IMMUNE_GEL_LOOK=v8_5 must resolve to the exact V8.5 selector")
 		quit(1)
 		return
+	if requested_look == "v8_6" and _GelProfiles.selected_look() != "v8_6":
+		push_error("IMMUNE_GEL_LOOK=v8_6 must resolve to the exact V8.6 selector")
+		quit(1)
+		return
 	var jelly_rig_error := _jelly_direct_light_rig_error()
 	if not jelly_rig_error.is_empty():
 		push_error(jelly_rig_error)
@@ -914,7 +918,7 @@ func _run() -> void:
 		push_error("T gel profile lost its selector-specific detail contract")
 		quit(1)
 		return
-	var t_membrane_error := _gel_membrane_error(gel_material)
+	var t_membrane_error := _gel_membrane_error(gel_material, "T")
 	if not t_membrane_error.is_empty():
 		push_error("T Fizzy profile %s" % t_membrane_error)
 		quit(1)
@@ -922,6 +926,15 @@ func _run() -> void:
 	var t_noise_error := _gel_surface_noise_error(gel_material, "T")
 	if not t_noise_error.is_empty():
 		push_error("T Fizzy profile %s" % t_noise_error)
+		quit(1)
+		return
+	var expected_t_profile: StringName = (
+		&"reference_convergence"
+		if _GelProfiles.v8_6_enabled()
+		else _GelProfiles.profile_name("T")
+	)
+	if look.call("gel_profile_name", "T") != expected_t_profile:
+		push_error("T gel profile name is not stable for the selected look")
 		quit(1)
 		return
 	var b_gel_material: ShaderMaterial = look.call("gel_material", "B")
@@ -941,7 +954,7 @@ func _run() -> void:
 		push_error("B Fizzy profile must enable the V5.1 authored height")
 		quit(1)
 		return
-	var b_membrane_error := _gel_membrane_error(b_gel_material)
+	var b_membrane_error := _gel_membrane_error(b_gel_material, "B")
 	if not b_membrane_error.is_empty():
 		push_error("B Fizzy profile %s" % b_membrane_error)
 		quit(1)
@@ -958,7 +971,7 @@ func _run() -> void:
 		return
 	var expected_b_profile := (
 		&"reference_sculpt"
-		if _GelProfiles.v8_5_enabled()
+		if _GelProfiles.reference_sculpt_behavior_enabled()
 		else (&"reference_viscous" if _GelProfiles.v8_4_enabled()
 		else (&"single_mass_clean" if _GelProfiles.v8_3_enabled() else &"round_bubbles")
 		)
@@ -982,7 +995,7 @@ func _run() -> void:
 		return
 	var expected_m_profile := (
 		&"reference_sculpt"
-		if _GelProfiles.v8_5_enabled()
+		if _GelProfiles.reference_sculpt_behavior_enabled()
 		else (&"reference_viscous" if _GelProfiles.v8_4_enabled()
 		else (&"single_mass_clean" if _GelProfiles.v8_3_enabled() else &"macrophage_bubbles")
 		)
@@ -1949,7 +1962,7 @@ func _gel_selector_animation_error(
 			var integrity_error := _gel_single_mass_animation_integrity_error(animator, family)
 			if not integrity_error.is_empty():
 				return integrity_error
-		if _GelProfiles.v8_5_enabled():
+		if _GelProfiles.reference_sculpt_behavior_enabled():
 			var v8_5_error := _gel_v8_5_animation_contract_error(animator, family)
 			if not v8_5_error.is_empty():
 				return v8_5_error
@@ -2629,13 +2642,13 @@ func _has_wet_gel_mesh(node: Node) -> bool:
 	return _find_wet_gel_material(node) != null
 
 
-func _gel_membrane_error(gel: ShaderMaterial) -> String:
+func _gel_membrane_error(gel: ShaderMaterial, family: String = "") -> String:
 	var membrane := gel.next_pass as ShaderMaterial
 	if membrane == null or membrane.shader == null:
 		return "must attach a clear membrane next pass"
 	if not membrane.shader.resource_path.ends_with("jelly_shell.gdshader"):
 		return "must use the Compatibility-safe clear membrane shader"
-	var energy_error := _gel_shell_energy_error(membrane)
+	var energy_error := _gel_shell_energy_error(membrane, family)
 	if not energy_error.is_empty():
 		return energy_error
 	if float(membrane.get_shader_parameter("shell_thickness")) <= 0.0:
@@ -2645,8 +2658,10 @@ func _gel_membrane_error(gel: ShaderMaterial) -> String:
 	return ""
 
 
-func _gel_shell_energy_error(shell: ShaderMaterial) -> String:
-	if _GelProfiles.v8_5_enabled():
+func _gel_shell_energy_error(shell: ShaderMaterial, family: String = "") -> String:
+	if _GelProfiles.v8_6_enabled() and family == "T":
+		return _gel_v8_6_shell_error(shell)
+	if _GelProfiles.reference_sculpt_behavior_enabled():
 		return _gel_v8_5_shell_error(shell)
 	if _GelProfiles.v8_4_enabled():
 		return _gel_v8_4_shell_error(shell)
@@ -2705,6 +2720,34 @@ func _gel_v8_5_shell_error(shell: ShaderMaterial) -> String:
 	for marker in ["liquid_wobble_surface_normal"]:
 		if not shell.shader.code.contains(marker):
 			return "V8.5 membrane lost shader marker %s" % marker
+	return ""
+
+
+func _gel_v8_6_shell_error(shell: ShaderMaterial) -> String:
+	var inherited_error := _gel_v8_4_shell_error(shell, 1.0, {
+		"shell_energy_scale": 0.56,
+		"shell_diffuse_strength": 0.010,
+		"shell_specular_level": 0.92,
+		"shell_emission_limit": 0.040,
+		"shell_alpha_limit": 0.22,
+		"shell_white_mix": 0.44,
+		"studio_reflection_strength": 0.64,
+		"studio_reflection_alpha": 0.030,
+		"studio_reflection_budget": 0.13,
+		"studio_streak_strength": 0.58,
+		"studio_card_broadening": 0.78,
+		"studio_card_tail_cut": 0.16,
+		"face_alpha": 0.0010,
+		"edge_alpha": 0.18,
+		"edge_power": 3.25,
+		"shell_roughness": 0.032,
+		"rim_emission": 0.040,
+		"shell_thickness": 0.0065,
+	})
+	if not inherited_error.is_empty():
+		return inherited_error.replace("V8.4", "V8.6")
+	if not shell.shader.code.contains("liquid_wobble_surface_normal"):
+		return "V8.6 membrane lost its coherent surface-normal marker"
 	return ""
 
 
@@ -2901,7 +2944,9 @@ func _gel_surface_noise_error(gel: ShaderMaterial, family: String = "") -> Strin
 		var legacy_motion_error := _gel_legacy_liquid_motion_error(gel)
 		if not legacy_motion_error.is_empty():
 			return legacy_motion_error
-	if _GelProfiles.v8_5_enabled():
+	if _GelProfiles.v8_6_enabled() and family == "T":
+		return _gel_v8_6_surface_error(gel, family)
+	if _GelProfiles.reference_sculpt_behavior_enabled():
 		return _gel_v8_5_surface_error(gel, family)
 	if _GelProfiles.v8_4_enabled():
 		return _gel_v8_4_surface_error(gel, family)
@@ -3085,7 +3130,46 @@ func _gel_v8_4_extension_rollback_error(gel: ShaderMaterial, selector: String) -
 
 
 func _gel_v8_5_surface_error(gel: ShaderMaterial, family: String) -> String:
-	var inherited_error := _gel_v8_4_surface_error(gel, family, {
+	return _gel_reference_sculpt_surface_error(gel, family, {}, "V8.5")
+
+
+func _gel_v8_6_surface_error(gel: ShaderMaterial, family: String) -> String:
+	return _gel_reference_sculpt_surface_error(gel, family, {
+		"albedo_gain": 1.84,
+		"body_exposure_scale": 0.88,
+		"thickness_contrast": 0.39,
+		"coat_roughness": 0.058,
+		"coat_strength": 1.18,
+		"spec_energy": 0.10,
+		"wet_spec_breakup": 0.12,
+		"studio_reflection_strength": 0.64,
+		"studio_reflection_budget": 0.20,
+		"studio_reflection_edge_share": 0.18,
+		"studio_streak_strength": 0.58,
+		"studio_card_broadening": 0.78,
+		"studio_card_tail_cut": 0.16,
+		"liquid_core_color_mix": 0.32,
+		"liquid_core_roughness_mix": 0.22,
+		"liquid_laminar_color_mix": 0.22,
+		"liquid_laminar_roughness_mix": 0.20,
+		"authored_height_scale": 0.36,
+		"authored_height_depth": 0.00090,
+		"authored_height_lod_bias": 0.84,
+		"membrane_grazing_floor": 0.44,
+		"membrane_grazing_power": 1.45,
+		"orange_peel_micro_depth": 0.00060,
+		"orange_peel_micro_scale": 42.0,
+		"orange_peel_micro_grazing": 0.58,
+	}, "V8.6")
+
+
+func _gel_reference_sculpt_surface_error(
+	gel: ShaderMaterial,
+	family: String,
+	expected_overrides: Dictionary,
+	revision: String
+) -> String:
+	var expected := {
 		"albedo_gain": 1.82,
 		"body_roughness": 0.17,
 		"coat_roughness": 0.038,
@@ -3112,18 +3196,25 @@ func _gel_v8_5_surface_error(gel: ShaderMaterial, family: String) -> String:
 		"orange_peel_micro_depth": 0.0012,
 		"orange_peel_micro_scale": 34.0,
 		"orange_peel_micro_grazing": 0.30,
-	}, 0.25)
+	}
+	for parameter in expected_overrides:
+		expected[parameter] = expected_overrides[parameter]
+	var expected_core_mix := float(expected_overrides.get("liquid_core_color_mix", 0.25))
+	var inherited_error := _gel_v8_4_surface_error(gel, family, expected, expected_core_mix)
 	if not inherited_error.is_empty():
-		return inherited_error.replace("V8.4", "V8.5")
+		return inherited_error.replace("V8.4", revision)
 	var exact_v8_5 := {
 		"wet_spec_breakup": 0.36,
 		"liquid_core_roughness_mix": 0.30,
 	}
 	for parameter in exact_v8_5:
+		var expected_value: float = float(
+			expected_overrides.get(parameter, exact_v8_5[parameter])
+		)
 		if not is_equal_approx(
-			float(gel.get_shader_parameter(parameter)), float(exact_v8_5[parameter])
+			float(gel.get_shader_parameter(parameter)), expected_value
 		):
-			return "V8.5 family %s parameter %s drifted" % [family, parameter]
+			return "%s family %s parameter %s drifted" % [revision, family, parameter]
 	var expected_studio_colors := {
 		"studio_key_color": Color(1.0, 0.9569, 0.8667, 1.0),
 		"studio_cool_color": Color(1.0, 0.8863, 0.7412, 1.0),
@@ -3132,7 +3223,7 @@ func _gel_v8_5_surface_error(gel: ShaderMaterial, family: String) -> String:
 	for parameter in expected_studio_colors:
 		var actual_color := gel.get_shader_parameter(parameter) as Color
 		if not actual_color.is_equal_approx(expected_studio_colors[parameter]):
-			return "V8.5 family %s warm-card colour %s drifted" % [family, parameter]
+			return "%s family %s warm-card colour %s drifted" % [revision, family, parameter]
 	if family == "T":
 		var expected_t_colors := {
 			"body_color": Color(1.0, 0.2392, 0.0, 1.0),
@@ -3140,17 +3231,24 @@ func _gel_v8_5_surface_error(gel: ShaderMaterial, family: String) -> String:
 			"transmit_color": Color(1.0, 0.4941, 0.0510, 1.0),
 			"rim_color": Color(1.0, 0.6118, 0.1373, 1.0),
 		}
+		if revision == "V8.6":
+			expected_t_colors = {
+				"body_color": Color(1.0, 0.185, 0.0, 1.0),
+				"deep_color": Color(0.80, 0.052, 0.0, 1.0),
+				"transmit_color": Color(1.0, 0.465, 0.025, 1.0),
+				"rim_color": Color(1.0, 0.59, 0.085, 1.0),
+			}
 		for parameter in expected_t_colors:
 			var actual_color := gel.get_shader_parameter(parameter) as Color
 			if not actual_color.is_equal_approx(expected_t_colors[parameter]):
-				return "V8.5 T amber reference colour %s drifted" % parameter
+				return "%s T amber reference colour %s drifted" % [revision, parameter]
 	for source_marker in [
 		"liquid_wobble_surface_normal",
 		"orange_peel_micro_height",
 		"orange_peel_micro_depth > 0.00001",
 	]:
 		if not gel.shader.code.contains(source_marker):
-			return "V8.5 shader lost coherent-surface marker %s" % source_marker
+			return "%s shader lost coherent-surface marker %s" % [revision, source_marker]
 	return ""
 
 
@@ -3861,15 +3959,15 @@ func _authored_jelly_error(unit: Node, family: String) -> String:
 			return "CHAR-BASE-%s V8 must discover its per-instance wet-gel materials" % family
 		if not unit.has_method("liquid_shell_material_count") or int(unit.call("liquid_shell_material_count")) <= 0:
 			return "CHAR-BASE-%s V8 must bind viscosity to its clear membrane" % family
-		if _GelProfiles.v8_5_enabled() and family == "T":
+		if _GelProfiles.reference_sculpt_behavior_enabled() and family == "T":
 			var wet_material_count := int(unit.call("liquid_material_count"))
 			var shell_material_count := int(unit.call("liquid_shell_material_count"))
 			if wet_material_count != 1 or shell_material_count != 1:
+				var revision: String = "V8.6" if _GelProfiles.v8_6_enabled() else "V8.5"
 				return (
-					"CHAR-BASE-T V8.5 single mass must bind exactly one wet core and one "
+					"CHAR-BASE-T %s single mass must bind exactly one wet core and one "
 					+ "explicit membrane; got wet=%d shell=%d"
-					% [wet_material_count, shell_material_count]
-				)
+				) % [revision, wet_material_count, shell_material_count]
 		var collision := unit.get_node_or_null("CollisionShape3D") as CollisionShape3D
 		if collision == null or collision.shape == null:
 			return "CHAR-BASE-%s V8 must retain its stable gameplay collision" % family
@@ -3903,7 +4001,7 @@ func _authored_jelly_error(unit: Node, family: String) -> String:
 	var shell_material := shell.material_override as ShaderMaterial
 	if shell_material == null or shell_material.shader == null or not shell_material.shader.resource_path.ends_with("jelly_shell.gdshader"):
 		return "CHAR-BASE-%s authored body must keep its clear membrane" % family
-	var shell_error := _gel_shell_energy_error(shell_material)
+	var shell_error := _gel_shell_energy_error(shell_material, family)
 	if not shell_error.is_empty():
 		return "CHAR-BASE-%s %s" % [family, shell_error]
 	if _GelProfiles.v8_enabled():
@@ -4007,7 +4105,10 @@ func _gel_v8_4_material_coherence_error(
 				]
 			if not material.shader.code.contains("discard"):
 				return "CHAR-BASE-%s V8.4 face shader lost its back-view rejection" % family
-			if _GelProfiles.v8_5_enabled() and mesh_name == "ForeheadPoreRim":
+			if (
+				_GelProfiles.reference_sculpt_behavior_enabled()
+				and mesh_name == "ForeheadPoreRim"
+			):
 				var visibility_threshold: Variant = material.get_shader_parameter(
 					"face_visibility_threshold"
 				)
@@ -4015,12 +4116,12 @@ func _gel_v8_4_material_coherence_error(
 					visibility_threshold == null
 					or not is_equal_approx(float(visibility_threshold), 0.18)
 				):
-					return "CHAR-BASE-T V8.5 pore rim must reject edge-on views"
+					return "CHAR-BASE-T V8.5+ pore rim must reject edge-on views"
 				var visibility_axis: Variant = material.get_shader_parameter(
 					"face_visibility_axis"
 				)
 				if visibility_axis == null or not Vector3(visibility_axis).is_equal_approx(Vector3.UP):
-					return "CHAR-BASE-T V8.5 pore rim must use its torus aperture axis"
+					return "CHAR-BASE-T V8.5+ pore rim must use its torus aperture axis"
 			if mesh_name in ["EyeL", "EyeR"]:
 				var expected_eye_values := {
 					"studio_strength": 0.42,
@@ -4034,6 +4135,19 @@ func _gel_v8_4_material_coherence_error(
 					"eye_catchlight_center": Vector2(-0.32, 0.32),
 					"eye_catchlight_shape": Vector2(38.0, 48.0),
 				}
+				if _GelProfiles.v8_6_enabled() and family == "T":
+					expected_eye_values = {
+						"studio_strength": 0.46,
+						"studio_budget": 0.56,
+						"surface_roughness": 0.042,
+						"main_card_center": Vector2(-0.26, 0.30),
+						"main_card_shape": Vector2(4.5, 7.0),
+						"pin_card_center": Vector2(0.30, 0.42),
+						"pin_card_shape": Vector2(52.0, 52.0),
+						"eye_catchlight_strength": 0.48,
+						"eye_catchlight_center": Vector2(-0.34, 0.31),
+						"eye_catchlight_shape": Vector2(24.0, 32.0),
+					}
 				for parameter in expected_eye_values:
 					var value: Variant = material.get_shader_parameter(parameter)
 					if value == null or value != expected_eye_values[parameter]:
@@ -4046,8 +4160,24 @@ func _gel_v8_4_material_coherence_error(
 					return "CHAR-BASE-%s V8.4 %s must remain a dark attached mark" % [
 						family, mesh_name,
 					]
-			elif not is_equal_approx(float(material.get_shader_parameter("studio_strength")), 0.18):
-				return "CHAR-BASE-T V8.4 pore rim must retain its bounded wet response"
+			elif mesh_name == "ForeheadPoreRim":
+				var expected_pore_values := {
+					"studio_strength": 0.10 if _GelProfiles.v8_6_enabled() else 0.18,
+					"studio_budget": 0.14 if _GelProfiles.v8_6_enabled() else 0.22,
+					"surface_roughness": 0.11 if _GelProfiles.v8_6_enabled() else 0.08,
+				}
+				for parameter in expected_pore_values:
+					if not is_equal_approx(
+						float(material.get_shader_parameter(parameter)),
+						float(expected_pore_values[parameter])
+					):
+						return "CHAR-BASE-T V8.4 pore rim %s drifted" % parameter
+				if _GelProfiles.v8_6_enabled():
+					var pore_body := source_gel.get_shader_parameter("body_color") as Color
+					var pore_deep := source_gel.get_shader_parameter("deep_color") as Color
+					var pore_color := material.get_shader_parameter("eye_color") as Color
+					if not pore_color.is_equal_approx(pore_deep.lerp(pore_body, 0.86)):
+						return "CHAR-BASE-T V8.6 pore rim colour lost body integration"
 	return ""
 
 
@@ -4057,21 +4187,27 @@ func _single_mass_mesh_error(
 	shell: MeshInstance3D,
 	family: String
 ) -> String:
-	var revision := (
-		"V8.5" if _GelProfiles.v8_5_enabled()
-		else ("V8.4" if _GelProfiles.v8_4_enabled() else "V8.3")
-	)
-	var meta_prefix := (
-		&"v8_5" if _GelProfiles.v8_5_enabled()
-		else (&"v8_4" if _GelProfiles.v8_4_enabled() else &"v8_3")
-	)
+	var exact_v8_6_t: bool = _GelProfiles.v8_6_enabled() and family == "T"
+	var revision: String = "V8.3"
+	var meta_prefix: StringName = &"v8_3"
+	if _GelProfiles.v8_4_enabled():
+		revision = "V8.4"
+		meta_prefix = &"v8_4"
+	elif _GelProfiles.reference_sculpt_behavior_enabled():
+		revision = "V8.5"
+		meta_prefix = &"v8_5"
+	if exact_v8_6_t:
+		revision = "V8.6"
+		meta_prefix = &"v8_6"
 	var label := "CHAR-BASE-%s %s single mass" % [family, revision]
 	if body.mesh == null or shell.mesh == null or body.mesh != shell.mesh:
 		return "%s must share one body/shell mesh resource" % label
 	if body.mesh is not ArrayMesh:
 		return "%s must use the generated watertight ArrayMesh" % label
 	var expected_resource_name := "%s-SingleMass-%s" % [revision, family]
-	if _GelProfiles.v8_5_enabled() and family == "T":
+	if exact_v8_6_t:
+		expected_resource_name = "V8.6-AuthoredSculpt-T-r7-2"
+	elif _GelProfiles.v8_5_enabled() and family == "T":
 		expected_resource_name = "V8.5-AuthoredSculpt-T-r4"
 	if body.mesh.resource_name != expected_resource_name:
 		return "%s resource identity drifted" % label
@@ -4086,16 +4222,23 @@ func _single_mass_mesh_error(
 	var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
 	var expected_vertices := 4514
 	var expected_indices := 27072
-	if _GelProfiles.v8_5_enabled() and family == "T":
+	if exact_v8_6_t:
+		expected_vertices = 6002
+		expected_indices = 36000
+	elif _GelProfiles.v8_5_enabled() and family == "T":
 		expected_vertices = 6002
 		expected_indices = 36000
 	elif _GelProfiles.v8_4_enabled() and family == "T":
 		expected_vertices = 2253
 		expected_indices = 13506
-	if vertices.size() != expected_vertices or indices.size() != expected_indices:
+	if (
+		vertices.size() != expected_vertices or indices.size() != expected_indices
+	):
 		return "%s deterministic topology drifted (%d vertices, %d indices)" % [
 			label, vertices.size(), indices.size(),
 		]
+	if exact_v8_6_t and not bool(body.get_meta(&"v8_6_authored_sculpt", false)):
+		return "%s must use the verified project-authored R7.2 body" % label
 	if (
 		_GelProfiles.v8_5_enabled()
 		and family == "T"
@@ -4108,10 +4251,53 @@ func _single_mass_mesh_error(
 		and not bool(body.get_meta(&"v8_4_reference_remesh", false))
 	):
 		return "%s must use the verified reference-derived watertight body" % label
+	if (
+		_GelProfiles.v8_6_enabled()
+		and family != "T"
+		and (
+			body.has_meta(&"v8_6_authored_sculpt")
+			or shell.has_meta(&"v8_6_single_mass_shell")
+		)
+	):
+		return "%s V8.6 R7.2 identity must remain T-only" % label
 	var manifold_error := _closed_triangle_manifold_error(vertices, indices, label)
 	if not manifold_error.is_empty():
 		return manifold_error
-	if _GelProfiles.v8_5_enabled() and family == "T":
+	if exact_v8_6_t:
+		if (
+			not real_mesh.has_method("_v8_6_t_source_contract_error")
+			or not real_mesh.has_method("_v8_6_t_mesh_contract_error")
+		):
+			return "%s lost its fail-closed R7.2 loader contract" % label
+		var expected_path: String = (
+			"res://characters/base_t/CHAR-BASE-T-v8-6-authored-sculpt-r7-2.glb"
+		)
+		if not ResourceLoader.exists(expected_path):
+			return "%s exact R7.2 source path is unavailable; fallback is forbidden" % label
+		var missing_source_error: String = str(real_mesh.call(
+			"_v8_6_t_source_contract_error",
+			"res://characters/base_t/__missing-v8-6-negative.glb",
+			""
+		))
+		if missing_source_error.is_empty():
+			return "%s missing-source negative fixture was accepted" % label
+		var malformed_mesh_error: String = str(real_mesh.call(
+			"_v8_6_t_mesh_contract_error",
+			ArrayMesh.new()
+		))
+		if malformed_mesh_error.is_empty():
+			return "%s malformed-mesh negative fixture was accepted" % label
+		if _count_nodes_named(real_mesh, &"Body") != 1:
+			return "%s must contain exactly one Body node" % label
+		if _count_nodes_named(real_mesh, &"BodyShell") != 1:
+			return "%s must contain exactly one BodyShell node" % label
+		var bounds := body.mesh.get_aabb()
+		if (
+			not bounds.position.is_equal_approx(Vector3(-0.82, 0.0, -0.50))
+			or not bounds.size.is_equal_approx(Vector3(1.64, 1.46, 1.00))
+		):
+			return "%s authored bounds drifted: %s" % [label, bounds]
+	elif _GelProfiles.v8_5_enabled() and family == "T":
 		if (
 			not real_mesh.has_method("_v8_5_t_source_contract_error")
 			or not real_mesh.has_method("_v8_5_t_mesh_contract_error")
@@ -4164,9 +4350,15 @@ func _single_mass_mesh_error(
 		var pore_rim := real_mesh.get_node_or_null("ForeheadPoreRim") as MeshInstance3D
 		if pore == null or pore_rim == null:
 			return "%s must preserve the two attached forehead-pore marks" % label
-		var expected_pore_z := 0.446 if _GelProfiles.v8_5_enabled() else 0.430
+		var expected_pore_z := (
+			0.438
+			if exact_v8_6_t
+			else (0.446 if _GelProfiles.reference_sculpt_behavior_enabled() else 0.430)
+		)
 		if pore.scale.z > 0.012 or not is_equal_approx(pore.position.z, expected_pore_z):
 			return "%s pore must remain shallow and embedded" % label
+		if exact_v8_6_t and not pore_rim.position.is_equal_approx(Vector3(0.0, 1.085, 0.438)):
+			return "%s pore rim no longer seats in the R7.2 surface" % label
 	if _GelProfiles.v8_5_enabled() and family == "T":
 		var eye_l := real_mesh.get_node_or_null("EyeL") as MeshInstance3D
 		if (
@@ -4175,10 +4367,26 @@ func _single_mass_mesh_error(
 			or not is_equal_approx(eye_l.rotation_degrees.z, -30.0)
 		):
 			return "%s left eye no longer seats in the authored socket" % label
+	elif exact_v8_6_t:
+		var eye_l := real_mesh.get_node_or_null("EyeL") as MeshInstance3D
+		if (
+			eye_l == null
+			or not eye_l.position.is_equal_approx(Vector3(-0.238, 0.855, 0.436))
+			or not eye_l.scale.is_equal_approx(Vector3(0.205, 0.136, 0.014))
+			or not is_equal_approx(eye_l.rotation_degrees.z, -38.0)
+		):
+			return "%s left eye no longer seats in the R7.2 reference socket" % label
 	var burst := real_mesh.get_parent().get_parent().get_node_or_null("KitSwapBurst") as GPUParticles3D
 	if burst != null and (burst.visible or burst.emitting):
 		return "%s must keep loose duty particles hidden" % label
 	return ""
+
+
+func _count_nodes_named(node: Node, expected_name: StringName) -> int:
+	var count: int = 1 if node.name == expected_name else 0
+	for child in node.get_children():
+		count += _count_nodes_named(child, expected_name)
+	return count
 
 
 func _count_shader_meshes(node: Node, shader_suffix: String) -> int:

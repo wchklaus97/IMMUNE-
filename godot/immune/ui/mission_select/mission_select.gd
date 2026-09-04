@@ -523,7 +523,7 @@ func _refresh_preview(family: StringName) -> void:
 	_preview.position = Vector3(0.0, PREVIEW_Y, 0.0)
 	_preview.rotation_degrees.y = -18
 	var preview_scale := float(PREVIEW_SCALE.get(String(family), 1.45))
-	if _GelProfiles.v8_5_enabled() and family == &"T":
+	if _GelProfiles.reference_sculpt_behavior_enabled() and family == &"T":
 		# Keep the taller authored head and the widened feet inside the 800x360
 		# preview with visible breathing room instead of touching the top border.
 		preview_scale = 1.10

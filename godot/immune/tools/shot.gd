@@ -5,7 +5,7 @@ const _GelStudio := preload("res://characters/gel/gel_studio_environment.gd")
 const _AnimPreview := preload("res://tools/anim_preview.gd")
 
 ## Headed screenshot rig for character review.
-## Run: godot --path <proj> --resolution 1024x1024 res://tools/shot.tscn -- --scene=<res path> --out=<abs dir> [--tag=name] [--anim=idle] [--frames=8]
+## Run: godot --path <proj> --resolution 1024x1024 res://tools/shot.tscn -- --scene=<res path> --out=<abs dir> [--tag=name] [--anim=idle] [--frames=8] [--anim-yaw=35]
 ## Living-liquid review: replace --frames with
 ## [--flow-seconds=0.25,1.0,1.75,2.5] [--flow-velocity=3,0,0].
 ## A real turn/reversal strip can instead provide one velocity per sample:
@@ -17,13 +17,16 @@ const _AnimPreview := preload("res://tools/anim_preview.gd")
 
 const ALLOWED_ARGS: Array[String] = [
 	# Harness-owned controls.
-	"scene", "out", "tag", "anim", "frames", "height-scale", "height-depth",
+	"scene", "out", "tag", "anim", "frames", "anim-yaw", "height-scale", "height-depth",
 	"yaw-sequence", "flow-seconds", "flow-velocity", "flow-velocity-sequence", "save-path",
 	# Intentional subject passthrough documented by gel_preview, anim_preview, and
 	# the accepted M reference-body review scene.
 	"family", "source", "mesh", "set", "body", "duty", "ground", "variant",
 ]
 const QA_STARTUP_FAILURE_EXIT_CODE := 74
+const DEFAULT_ANIMATION_YAW_DEGREES := 35.0
+const MIN_ANIMATION_YAW_DEGREES := -180.0
+const MAX_ANIMATION_YAW_DEGREES := 180.0
 const VALID_PREVIEW_FAMILIES: Array[String] = ["T", "B", "M", "N", "A", "D"]
 const GEL_PREVIEW_SCENE := "res://tools/gel_preview.tscn"
 const ANIM_PREVIEW_SCENE := "res://tools/anim_preview.tscn"
@@ -61,6 +64,7 @@ var _height := 1.0
 var _yaw_sequence: Array[float] = []
 var _height_overrides := {}
 var _animation_frames := 8
+var _animation_yaw := DEFAULT_ANIMATION_YAW_DEGREES
 var _flow_seconds: Array[float] = []
 var _flow_velocity := Vector3.ZERO
 var _flow_velocity_sequence: Array[Vector3] = []
@@ -138,6 +142,12 @@ func _validate_lookdev_args() -> bool:
 			push_error("shot.gd: --anim requires a non-empty animation name")
 			return false
 		_args["anim"] = animation_name
+	var animation_yaw_contract_error := animation_yaw_error(_args)
+	if not animation_yaw_contract_error.is_empty():
+		push_error("shot.gd: %s" % animation_yaw_contract_error)
+		return false
+	if _args.has("anim-yaw"):
+		_animation_yaw = float(String(_args["anim-yaw"]).strip_edges())
 	if _args.has("frames") and not _args.has("anim"):
 		push_error("shot.gd: --frames requires --anim")
 		return false
@@ -257,6 +267,22 @@ func _validate_lookdev_args() -> bool:
 			return false
 		_yaw_sequence.append(float(parsed["value"]))
 	return not _yaw_sequence.is_empty()
+
+
+static func animation_yaw_error(args: Dictionary) -> String:
+	if not args.has("anim-yaw"):
+		return ""
+	if not args.has("anim") or String(args["anim"]).strip_edges().is_empty():
+		return "--anim-yaw requires --anim"
+	var raw_yaw := String(args["anim-yaw"]).strip_edges()
+	if raw_yaw.is_empty() or not raw_yaw.is_valid_float():
+		return "--anim-yaw requires a finite number from -180..180"
+	var yaw := float(raw_yaw)
+	if not is_finite(yaw):
+		return "--anim-yaw requires a finite number from -180..180"
+	if yaw < MIN_ANIMATION_YAW_DEGREES or yaw > MAX_ANIMATION_YAW_DEGREES:
+		return "--anim-yaw must remain within -180..180 degrees"
+	return ""
 
 
 func _parse_finite_float(option: String, raw_value: String) -> Dictionary:
@@ -642,7 +668,7 @@ func _run_anim(anim_name: String) -> bool:
 		return false
 	var animation := player.get_animation(anim_name)
 	var length := animation.length
-	_pivot.rotation_degrees = Vector3(0.0, 35.0, 0.0)
+	_pivot.rotation_degrees = Vector3(0.0, _animation_yaw, 0.0)
 	_place_camera(false)
 	player.play(anim_name)
 	var all_saved := true
@@ -676,7 +702,7 @@ func _run_flow_sequence(anim_name: String) -> bool:
 		return false
 	if _flow_velocity_sequence.is_empty():
 		character.velocity = _flow_velocity
-	_pivot.rotation_degrees = Vector3(0.0, 35.0, 0.0)
+	_pivot.rotation_degrees = Vector3(0.0, _animation_yaw, 0.0)
 	_place_camera(false)
 	player.play(anim_name)
 	var all_saved := true

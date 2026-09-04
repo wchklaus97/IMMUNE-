@@ -23,6 +23,10 @@ func _run() -> void:
 	if not sequence_error.is_empty():
 		_fail(sequence_error)
 		return
+	var animation_yaw_error := _animation_yaw_error()
+	if not animation_yaw_error.is_empty():
+		_fail(animation_yaw_error)
+		return
 	var provenance_error := _preview_provenance_error()
 	if not provenance_error.is_empty():
 		_fail(provenance_error)
@@ -86,6 +90,38 @@ func _sequence_flow_error() -> String:
 		or Vector3(velocities[1]) != Vector3(-3.0, 0.0, 0.0)
 	):
 		return "shot sequence parser lost the forward-to-reverse transition"
+	return ""
+
+
+func _animation_yaw_error() -> String:
+	if not _Shot.animation_yaw_error({"anim": "idle", "anim-yaw": "0"}).is_empty():
+		return "shot animation yaw parser rejected a valid frontal angle"
+	if not _Shot.animation_yaw_error({"anim-yaw": "0"}).contains("requires --anim"):
+		return "shot animation yaw parser accepted an angle without --anim"
+	if not _Shot.animation_yaw_error({"anim": "idle", "anim-yaw": "181"}).contains("-180..180"):
+		return "shot animation yaw parser accepted an angle outside its bounded range"
+	if not _Shot.animation_yaw_error({"anim": "idle", "anim-yaw": "nan"}).contains("finite"):
+		return "shot animation yaw parser accepted a non-finite angle"
+
+	var frontal := _Shot.new()
+	frontal.set("_args", {"anim": "idle", "anim-yaw": "0"})
+	if not bool(frontal.call("_validate_lookdev_args")):
+		frontal.free()
+		return "shot animation yaw validation rejected zero degrees"
+	var parsed_frontal_yaw := float(frontal.get("_animation_yaw"))
+	frontal.free()
+	if not is_zero_approx(parsed_frontal_yaw):
+		return "shot animation yaw parser did not preserve zero degrees"
+
+	var legacy_default := _Shot.new()
+	legacy_default.set("_args", {"anim": "idle"})
+	if not bool(legacy_default.call("_validate_lookdev_args")):
+		legacy_default.free()
+		return "shot animation yaw validation rejected the legacy default"
+	var parsed_default_yaw := float(legacy_default.get("_animation_yaw"))
+	legacy_default.free()
+	if not is_equal_approx(parsed_default_yaw, 35.0):
+		return "shot animation yaw default drifted from the preserved 35 degrees"
 	return ""
 
 

@@ -54,6 +54,7 @@ jobs:
             node tools/validate_release_contract.mjs
           fi
           npm run validate:v8-5-export
+          npm run validate:v8-6-export
 
       - name: Set up Godot 4.7.2 and export templates
         uses: chickensoft-games/setup-godot@v2
@@ -85,7 +86,7 @@ jobs:
       - name: Run preserved gel selector smoke matrix
         run: |
           set -o pipefail
-          for gel_look in v5 v6 v7 v8 v8_1 v8_2 v8_3 v8_4 v8_5; do
+          for gel_look in v5 v6 v7 v8 v8_1 v8_2 v8_3 v8_4 v8_5 v8_6; do
             smoke_dir="$(mktemp -d)"
             IMMUNE_GEL_LOOK="$gel_look" godot --headless --path godot/immune \
               --script res://tools/smoke.gd -- --save-path="$smoke_dir/state.json" \
@@ -95,6 +96,9 @@ jobs:
             if grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" \
               "godot-smoke-$gel_look.log"; then exit 1; fi
           done
+
+      - name: Validate exact V8.6 animation contract
+        run: npm run validate:v8-6-animations -- --godot="$(command -v godot)"
 
       - name: Build and probe isolated V8.5 candidate PCK
         run: |
@@ -111,6 +115,22 @@ jobs:
             --expect=V8_5_CANDIDATE_PROBE_OK \
             -- godot --headless --main-pack "$candidate_pck" \
             --script "$PWD/tools/godot/v8_5_candidate_probe.gd"
+
+      - name: Build and probe isolated V8.6 candidate PCK
+        run: |
+          candidate_dir="$(mktemp -d)"
+          candidate_pck="$candidate_dir/v8-6-candidate.pck"
+          node tools/godot_checked_command.mjs \
+            --log="$candidate_dir/export.log" \
+            --expect=V8_6_RAW_EXPORT_ADDED \
+            -- godot --headless --path godot/immune \
+            --export-pack "Web V8.6 Candidate" "$candidate_pck"
+          npm run validate:v8-6-export -- --pck="$candidate_pck"
+          node tools/godot_checked_command.mjs \
+            --log="$candidate_dir/probe.log" \
+            --expect=V8_6_CANDIDATE_PROBE_OK \
+            -- godot --headless --main-pack "$candidate_pck" \
+            --script "$PWD/tools/godot/v8_6_candidate_probe.gd"
 
       - name: Validate screenshot and preview provenance contracts
         run: |
@@ -183,9 +203,39 @@ jobs:
           node tools/validate_release_contract.mjs --artifacts=godot/immune/build/releases
           node tools/validate_steam_readiness.mjs --artifacts=godot/immune/build/releases
 
+      - name: Export isolated Windows, Linux, macOS, and Web V8.6 candidates
+        run: |
+          mkdir -p godot/immune/build/v8-6-candidate/web
+          node tools/godot_checked_command.mjs \
+            --log=godot-v8-6-export-windows.log \
+            --expect=V8_6_RAW_EXPORT_ADDED -- \
+            godot --headless --path godot/immune --export-release \
+            "Windows Desktop V8.6 Candidate" build/v8-6-candidate/IMMUNE-windows.exe
+          node tools/godot_checked_command.mjs \
+            --log=godot-v8-6-export-linux.log \
+            --expect=V8_6_RAW_EXPORT_ADDED -- \
+            godot --headless --path godot/immune --export-release \
+            "Linux/X11 V8.6 Candidate" build/v8-6-candidate/IMMUNE-linux.x86_64
+          node tools/godot_checked_command.mjs \
+            --log=godot-v8-6-export-macos.log \
+            --expect=V8_6_RAW_EXPORT_ADDED -- \
+            godot --headless --path godot/immune --export-release \
+            "macOS V8.6 Candidate" build/v8-6-candidate/IMMUNE-macOS.zip
+          node tools/godot_checked_command.mjs \
+            --log=godot-v8-6-export-web.log \
+            --expect=V8_6_RAW_EXPORT_ADDED -- \
+            godot --headless --path godot/immune --export-release \
+            "Web V8.6 Candidate" build/v8-6-candidate/web/index.html
+          npm run validate:v8-6-export -- \
+            --pck=godot/immune/build/v8-6-candidate/IMMUNE-linux.pck
+
       - name: Exercise exported Web demo under baseline and constrained profiles
         timeout-minutes: 5
         run: npm run test:web-release -- --artifacts=godot/immune/build/releases/web --out=outputs/ci-web-release-qa --duration-ms=4000 --gate-mode=compatibility-only
+
+      - name: Exercise exported V8.6 Web candidate
+        timeout-minutes: 5
+        run: npm run test:web-release -- --artifacts=godot/immune/build/v8-6-candidate/web --out=outputs/ci-v8-6-web-qa --duration-ms=4000 --gate-mode=compatibility-only
 
       - name: Upload Web release QA evidence
         if: always()
@@ -196,11 +246,27 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
+      - name: Upload V8.6 Web QA evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: immune-v8-6-web-qa-${{ github.sha }}
+          path: outputs/ci-v8-6-web-qa
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Upload release artifacts
         uses: actions/upload-artifact@v7
         with:
           name: immune-demo-${{ github.sha }}
           path: godot/immune/build/releases
+          if-no-files-found: error
+
+      - name: Upload isolated V8.6 candidate artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: immune-v8-6-candidate-${{ github.sha }}
+          path: godot/immune/build/v8-6-candidate
           if-no-files-found: error
 
   native-release-smoke:
@@ -337,5 +403,130 @@ jobs:
         with:
           name: immune-native-smoke-${{ runner.os }}-${{ github.sha }}
           path: native-smoke-evidence
+          if-no-files-found: error
+          retention-days: 30
+
+  v8-6-native-smoke:
+    needs: validate-and-export
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout evidence tooling
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js for evidence sealing
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Download isolated V8.6 candidate artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: immune-v8-6-candidate-${{ github.sha }}
+          path: candidate
+
+      - name: Launch Linux V8.6 candidate
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -o pipefail
+          cd candidate
+          chmod +x IMMUNE-linux.x86_64
+          timeout 30s ./IMMUNE-linux.x86_64 --headless --audio-driver Dummy \
+            --log-file linux-v8-6-smoke.log -- --release-smoke
+          cat linux-v8-6-smoke.log
+          grep -F "RELEASE_SMOKE_OK platform=Linux nodes=200" linux-v8-6-smoke.log
+          if grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" linux-v8-6-smoke.log; then exit 1; fi
+          node ../tools/create_native_smoke_evidence.mjs \
+            --platform=Linux \
+            --log=linux-v8-6-smoke.log \
+            --artifact=IMMUNE-linux.x86_64 \
+            --pck=IMMUNE-linux.pck \
+            --out=../v8-6-native-smoke-evidence/linux.json \
+            --commit="$GITHUB_SHA" \
+            --version=0.4.0
+
+      - name: Launch Windows V8.6 candidate
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $logPath = Join-Path $PWD "windows-v8-6-smoke.log"
+          $arguments = @(
+            "--headless",
+            "--audio-driver", "Dummy",
+            "--log-file", $logPath,
+            "--", "--release-smoke"
+          )
+          $process = Start-Process -FilePath ".\candidate\IMMUNE-windows.exe" -ArgumentList $arguments -PassThru
+          if (-not $process.WaitForExit(30000)) {
+            $process.Kill($true)
+            throw "Windows V8.6 smoke timed out after 30 seconds"
+          }
+          if ($process.ExitCode -ne 0) {
+            throw "Windows V8.6 candidate exited with code $($process.ExitCode)"
+          }
+          $log = Get-Content $logPath -Raw
+          Write-Output $log
+          if ($log -notmatch "RELEASE_SMOKE_OK platform=Windows nodes=200") {
+            throw "Windows V8.6 release smoke marker missing"
+          }
+          if ($log -match "SCRIPT ERROR|Parse Error|Compile Error|ERROR:") {
+            throw "Windows V8.6 release log contains an engine error"
+          }
+          $versionInfo = (Get-Item ".\candidate\IMMUNE-windows.exe").VersionInfo
+          if ($versionInfo.ProductName -ne "IMMUNE") {
+            throw "Windows ProductName mismatch: $($versionInfo.ProductName)"
+          }
+          if ($versionInfo.CompanyName -ne "wchklaus97") {
+            throw "Windows CompanyName mismatch: $($versionInfo.CompanyName)"
+          }
+          if ($versionInfo.FileDescription -ne "IMMUNE V8.6 visual candidate") {
+            throw "Windows FileDescription mismatch: $($versionInfo.FileDescription)"
+          }
+          node tools/create_native_smoke_evidence.mjs `
+            --platform=Windows `
+            --log="$logPath" `
+            --artifact=candidate/IMMUNE-windows.exe `
+            --pck=candidate/IMMUNE-windows.pck `
+            --out=v8-6-native-smoke-evidence/windows.json `
+            --commit="$env:GITHUB_SHA" `
+            --version=0.4.0
+
+      - name: Launch macOS V8.6 candidate
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -o pipefail
+          cd candidate
+          unzip -q IMMUNE-macOS.zip -d macos
+          chmod +x macos/IMMUNE.app/Contents/MacOS/IMMUNE
+          codesign --verify --deep --strict macos/IMMUNE.app
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' macos/IMMUNE.app/Contents/Info.plist)" = "com.wchklaus97.immune.v86candidate"
+          architectures="$(lipo -archs macos/IMMUNE.app/Contents/MacOS/IMMUNE)"
+          [[ "$architectures" == *arm64* && "$architectures" == *x86_64* ]]
+          log_path="$PWD/macos-v8-6-smoke.log"
+          ./macos/IMMUNE.app/Contents/MacOS/IMMUNE --headless --audio-driver Dummy \
+            -- --release-smoke 2>&1 | tee "$log_path"
+          grep -F "RELEASE_SMOKE_OK platform=macOS nodes=200" "$log_path"
+          if grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" "$log_path"; then exit 1; fi
+          node ../tools/create_native_smoke_evidence.mjs \
+            --platform=macOS \
+            --log=macos-v8-6-smoke.log \
+            --artifact=IMMUNE-macOS.zip \
+            --out=../v8-6-native-smoke-evidence/macos.json \
+            --commit="$GITHUB_SHA" \
+            --version=0.4.0
+
+      - name: Upload hash-bound V8.6 native smoke evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: immune-v8-6-native-smoke-${{ runner.os }}-${{ github.sha }}
+          path: v8-6-native-smoke-evidence
           if-no-files-found: error
           retention-days: 30
