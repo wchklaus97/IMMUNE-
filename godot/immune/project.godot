@@ -16,7 +16,7 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 
 config/name="IMMUNE"
 config/description="3D immune-cell tower defense plus the permanent research-network HUD."
-config/version="0.4.0"
+config/version="0.5.0-rc.1"
 config/icon="res://ui_icons/symbols/SYM-CORE.png"
 run/main_scene="res://ui/research/research_network.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
@@ -52,7 +52,7 @@ locale/translations=PackedStringArray("res://translations/game.zh_HK.translation
 
 [immune]
 
-visual/gel_look="v8_3"
+visual/gel_look="v8_6"
 
 [input]
 

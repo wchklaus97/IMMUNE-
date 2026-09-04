@@ -3,7 +3,8 @@ extends EditorExportPlugin
 
 const _SOURCE_PATH := "res://characters/base_t/CHAR-BASE-T-v8-6-authored-sculpt-r7-2.glb"
 const _EXPECTED_SHA256 := "3fc0b00e7ee8bdf2696fbf7ef97a8044abf8dc60d49c3b917a5471c60945f6a3"
-const _FEATURE := "v8_6_candidate"
+const _CANDIDATE_FEATURE := "v8_6_candidate"
+const _SHIPPING_FEATURE := "v8_6_shipping"
 
 
 func _get_name() -> String:
@@ -16,7 +17,7 @@ func _export_begin(
 		_path: String,
 		_flags: int
 ) -> void:
-	if not features.has(_FEATURE):
+	if not features.has(_CANDIDATE_FEATURE) and not features.has(_SHIPPING_FEATURE):
 		return
 	var source := FileAccess.open(_SOURCE_PATH, FileAccess.READ)
 	if source == null:

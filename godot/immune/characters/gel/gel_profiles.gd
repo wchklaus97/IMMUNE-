@@ -1069,6 +1069,8 @@ static func selected_look() -> String:
 	var override := OS.get_environment("IMMUNE_GEL_LOOK").strip_edges().to_lower()
 	if override in ["v5", "v6", "v7", "v8", "v8_1", "v8_2", "v8_3", "v8_4", "v8_5", "v8_6"]:
 		return override
+	if OS.has_feature("v8_6_shipping"):
+		return "v8_6"
 	var configured := str(ProjectSettings.get_setting("immune/visual/gel_look", "v6")).strip_edges().to_lower()
 	return configured if configured in ["v5", "v6", "v7", "v8", "v8_1", "v8_2", "v8_3", "v8_4", "v8_5", "v8_6"] else "v6"
 

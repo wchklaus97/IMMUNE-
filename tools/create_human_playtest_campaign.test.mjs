@@ -59,7 +59,7 @@ function options(artifactRoot, outputRoot) {
   return {
     artifactRoot,
     outputRoot,
-    buildVersion: "0.4.0",
+    buildVersion: "0.5.0-rc.1",
     buildCommit: BUILD_COMMIT,
     participantCount: 6,
     sourceRun: 33257048004,

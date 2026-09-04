@@ -32,6 +32,14 @@ const EXCLUDED_RELEASE_RESOURCES = [
   "res://characters/base_t/CHAR-BASE-T-fix.glb",
   "res://characters/base_t/CHAR-BASE-T-fix_orange+alien+blob+3d+model-+remesh_basecolor.jpg",
 ];
+const V86_SHIPPING_FEATURE = "v8_6_shipping";
+const V86_ACTIVE_RESOURCE = "res://characters/base_t/CHAR-BASE-T-v8-6-authored-sculpt-r7-2.glb";
+const V86_INTERMEDIATE_RESOURCES = [
+  "res://characters/base_t/CHAR-BASE-T-v8-6-authored-sculpt-r5.glb",
+  "res://characters/base_t/CHAR-BASE-T-v8-6-authored-sculpt-r6.glb",
+  "res://characters/base_t/CHAR-BASE-T-v8-6-authored-sculpt-r7.glb",
+  "res://characters/base_t/CHAR-BASE-T-v8-6-authored-sculpt-r7-1.glb",
+];
 
 export function parseConfig(source, file = "config") {
   const sections = new Map();
@@ -75,6 +83,20 @@ function expectText(errors, value, label) {
   if (typeof value !== "string" || !value.trim()) errors.push(`${label}: expected a non-empty string`);
 }
 
+export function nativeVersionIdentity(version) {
+  const match = /^(\d+)\.(\d+)\.(\d+)(?:-rc\.(\d+))?$/u.exec(String(version));
+  if (!match) return null;
+  const marketing = `${match[1]}.${match[2]}.${match[3]}`;
+  const rc = match[4] ?? "";
+  return {
+    source: String(version),
+    windowsFile: rc ? `${marketing}.${rc}` : marketing,
+    windowsProduct: String(version),
+    macShort: marketing,
+    macBuild: rc || marketing,
+  };
+}
+
 function presetByName(sections, name) {
   for (const [section, values] of sections) {
     if (/^preset\.\d+$/u.test(section) && values.name === name) {
@@ -82,6 +104,12 @@ function presetByName(sections, name) {
     }
   }
   return null;
+}
+
+function presetExcludesResource(preset, resource) {
+  const relative = resource.slice("res://".length);
+  return String(preset.base.export_files ?? "").includes(resource)
+    || String(preset.base.exclude_filter ?? "").split(",").map((value) => value.trim()).includes(relative);
 }
 
 function projectResourcePath(root, resourcePath) {
@@ -162,10 +190,11 @@ export async function validateReleaseContract({ root = ROOT, tag = "", artifacts
 
   const name = app["config/name"];
   const version = app["config/version"];
+  const nativeVersion = nativeVersionIdentity(version);
   const icon = app["config/icon"];
   expectText(errors, name, "project application/config/name");
-  if (typeof version !== "string" || !/^\d+\.\d+\.\d+$/u.test(version)) {
-    errors.push(`project application/config/version: expected numeric SemVer, got ${JSON.stringify(version)}`);
+  if (!nativeVersion) {
+    errors.push(`project application/config/version: expected numeric SemVer or an rc prerelease, got ${JSON.stringify(version)}`);
   }
   expect(errors, rendering["renderer/rendering_method"], "gl_compatibility", "project renderer");
   expectText(errors, icon, "project application/config/icon");
@@ -195,8 +224,8 @@ export async function validateReleaseContract({ root = ROOT, tag = "", artifacts
     expect(errors, windows.options["application/product_name"], name, "Windows product name");
     expectText(errors, windows.options["application/company_name"], "Windows company name");
     expectText(errors, windows.options["application/file_description"], "Windows file description");
-    expect(errors, windows.options["application/file_version"], version, "Windows file version");
-    expect(errors, windows.options["application/product_version"], version, "Windows product version");
+    expect(errors, windows.options["application/file_version"], nativeVersion?.windowsFile, "Windows file version");
+    expect(errors, windows.options["application/product_version"], nativeVersion?.windowsProduct, "Windows product version");
     expect(errors, windows.options["application/icon"], icon, "Windows icon");
   }
   if (linux) {
@@ -215,8 +244,8 @@ export async function validateReleaseContract({ root = ROOT, tag = "", artifacts
     expect(errors, mac.base.platform, "macOS", "macOS platform");
     expect(errors, mac.base.export_path, "build/releases/IMMUNE-macOS.zip", "macOS export path");
     expect(errors, mac.options["binary_format/architecture"], "universal", "macOS architecture");
-    expect(errors, mac.options["application/short_version"], version, "macOS short version");
-    expect(errors, mac.options["application/version"], version, "macOS build version");
+    expect(errors, mac.options["application/short_version"], nativeVersion?.macShort, "macOS short version");
+    expect(errors, mac.options["application/version"], nativeVersion?.macBuild, "macOS build version");
     expect(errors, mac.options["application/icon"], icon, "macOS icon");
     const bundle = mac.options["application/bundle_identifier"];
     if (typeof bundle !== "string" || !/^[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+$/u.test(bundle)) {
@@ -232,9 +261,18 @@ export async function validateReleaseContract({ root = ROOT, tag = "", artifacts
   for (const [label, preset] of [["Windows Desktop", windows], ["Linux/X11", linux], ["Web", web], ["macOS", mac]]) {
     if (!preset) continue;
     expect(errors, preset.base.export_filter, "exclude", `${label} release resource policy`);
+    expect(errors, preset.base.custom_features, V86_SHIPPING_FEATURE, `${label} V8.6 shipping feature`);
     const excluded = String(preset.base.export_files ?? "");
     for (const resource of EXCLUDED_RELEASE_RESOURCES) {
       if (!excluded.includes(`\"${resource}\"`)) errors.push(`${label} release exclusions: missing ${resource}`);
+    }
+    if (presetExcludesResource(preset, V86_ACTIVE_RESOURCE)) {
+      errors.push(`${label} release exclusions: active V8.6 R7.2 body is excluded`);
+    }
+    for (const resource of V86_INTERMEDIATE_RESOURCES) {
+      if (!presetExcludesResource(preset, resource)) {
+        errors.push(`${label} release exclusions: intermediate V8.6 body leaked ${resource}`);
+      }
     }
   }
 

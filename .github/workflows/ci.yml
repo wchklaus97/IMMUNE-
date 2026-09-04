@@ -91,7 +91,7 @@ jobs:
           set -o pipefail
           smoke_dir="$(mktemp -d)"
           godot --headless --path godot/immune --script res://tools/smoke.gd -- --save-path="$smoke_dir/state.json" 2>&1 | tee godot-smoke.log
-          grep -F "SMOKE_OK missions=6 families=6 save=v2 audio=ready gamepad=ready active_skills=6 encounters=6 touch=ready signatures=T+B traits=enrage+regen authored_jelly=T+B+M+N+A+D gel_fizzy=T+B+M+N+A+D gel_look=v8_3" godot-smoke.log
+          grep -F "SMOKE_OK missions=6 families=6 save=v2 audio=ready gamepad=ready active_skills=6 encounters=6 touch=ready signatures=T+B traits=enrage+regen authored_jelly=T+B+M+N+A+D gel_fizzy=T+B+M+N+A+D gel_look=v8_6" godot-smoke.log
           if grep -E "SCRIPT ERROR|Parse Error|Compile Error|ERROR:" godot-smoke.log; then exit 1; fi
 
       - name: Run preserved gel selector smoke matrix
@@ -127,19 +127,36 @@ jobs:
             -- godot --headless --main-pack "$candidate_pck" \
             --script "$PWD/tools/godot/v8_5_candidate_probe.gd"
 
-      - name: Build and probe isolated V8.6 candidate PCK
+      - name: Build and probe promoted V8.6 shipping and candidate PCKs
         run: |
-          candidate_dir="$(mktemp -d)"
-          candidate_pck="$candidate_dir/v8-6-candidate.pck"
+          probe_dir="$(mktemp -d)"
+          shipping_pck="$probe_dir/v8-6-shipping.pck"
+          candidate_pck="$probe_dir/v8-6-candidate.pck"
           node tools/godot_checked_command.mjs \
-            --log="$candidate_dir/export.log" \
+            --log="$probe_dir/shipping-export.log" \
+            --expect=V8_6_RAW_EXPORT_ADDED \
+            -- godot --headless --path godot/immune \
+            --export-pack "Web" "$shipping_pck"
+          npm run validate:v8-6-export -- --pck="$shipping_pck"
+          node tools/godot_checked_command.mjs \
+            --log="$probe_dir/shipping-probe.log" \
+            --expect=V8_6_EXPORT_PROBE_OK \
+            -- godot --headless --main-pack "$shipping_pck" \
+            --script "$PWD/tools/godot/v8_6_candidate_probe.gd"
+          IMMUNE_GEL_LOOK=v8_3 node tools/godot_checked_command.mjs \
+            --log="$probe_dir/rollback-probe.log" \
+            --expect=V8_3_ROLLBACK_PROBE_OK \
+            -- godot --headless --main-pack "$shipping_pck" \
+            --script "$PWD/tools/godot/v8_3_rollback_probe.gd"
+          node tools/godot_checked_command.mjs \
+            --log="$probe_dir/candidate-export.log" \
             --expect=V8_6_RAW_EXPORT_ADDED \
             -- godot --headless --path godot/immune \
             --export-pack "Web V8.6 Candidate" "$candidate_pck"
           npm run validate:v8-6-export -- --pck="$candidate_pck"
           node tools/godot_checked_command.mjs \
-            --log="$candidate_dir/probe.log" \
-            --expect=V8_6_CANDIDATE_PROBE_OK \
+            --log="$probe_dir/candidate-probe.log" \
+            --expect=V8_6_EXPORT_PROBE_OK \
             -- godot --headless --main-pack "$candidate_pck" \
             --script "$PWD/tools/godot/v8_6_candidate_probe.gd"
 
@@ -199,16 +216,16 @@ jobs:
       - name: Export Windows, Linux, macOS, and Web demos
         run: |
           mkdir -p godot/immune/build/releases/web
-          node tools/godot_checked_command.mjs --log=godot-export-windows.log -- \
+          node tools/godot_checked_command.mjs --log=godot-export-windows.log --expect=V8_6_RAW_EXPORT_ADDED -- \
             godot --headless --path godot/immune --export-release \
             "Windows Desktop" build/releases/IMMUNE-windows.exe
-          node tools/godot_checked_command.mjs --log=godot-export-linux.log -- \
+          node tools/godot_checked_command.mjs --log=godot-export-linux.log --expect=V8_6_RAW_EXPORT_ADDED -- \
             godot --headless --path godot/immune --export-release \
             "Linux/X11" build/releases/IMMUNE-linux.x86_64
-          node tools/godot_checked_command.mjs --log=godot-export-macos.log -- \
+          node tools/godot_checked_command.mjs --log=godot-export-macos.log --expect=V8_6_RAW_EXPORT_ADDED -- \
             godot --headless --path godot/immune --export-release \
             "macOS" build/releases/IMMUNE-macOS.zip
-          node tools/godot_checked_command.mjs --log=godot-export-web.log -- \
+          node tools/godot_checked_command.mjs --log=godot-export-web.log --expect=V8_6_RAW_EXPORT_ADDED -- \
             godot --headless --path godot/immune --export-release \
             "Web" build/releases/web/index.html
           node tools/validate_release_contract.mjs --artifacts=godot/immune/build/releases
@@ -322,7 +339,7 @@ jobs:
             --pck=IMMUNE-linux.pck \
             --out=../native-smoke-evidence/linux.json \
             --commit="$GITHUB_SHA" \
-            --version=0.4.0
+            --version=0.5.0-rc.1
 
       - name: Launch Windows release
         if: runner.os == 'Windows'
@@ -361,10 +378,10 @@ jobs:
           if ($versionInfo.FileDescription -ne "IMMUNE playable demo") {
             throw "Windows FileDescription mismatch: $($versionInfo.FileDescription)"
           }
-          if (-not $versionInfo.FileVersion.StartsWith("0.4.0")) {
+          if (-not $versionInfo.FileVersion.StartsWith("0.5.0.1")) {
             throw "Windows FileVersion mismatch: $($versionInfo.FileVersion)"
           }
-          if (-not $versionInfo.ProductVersion.StartsWith("0.4.0")) {
+          if (-not $versionInfo.ProductVersion.StartsWith("0.5.0-rc.1")) {
             throw "Windows ProductVersion mismatch: $($versionInfo.ProductVersion)"
           }
           node tools/create_native_smoke_evidence.mjs `
@@ -374,7 +391,7 @@ jobs:
             --pck=release/IMMUNE-windows.pck `
             --out=native-smoke-evidence/windows.json `
             --commit="$env:GITHUB_SHA" `
-            --version=0.4.0
+            --version=0.5.0-rc.1
 
       - name: Launch macOS release
         if: runner.os == 'macOS'
@@ -386,7 +403,8 @@ jobs:
           chmod +x macos/IMMUNE.app/Contents/MacOS/IMMUNE
           codesign --verify --deep --strict macos/IMMUNE.app
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' macos/IMMUNE.app/Contents/Info.plist)" = "com.wchklaus97.immune"
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' macos/IMMUNE.app/Contents/Info.plist)" = "0.4.0"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' macos/IMMUNE.app/Contents/Info.plist)" = "0.5.0"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' macos/IMMUNE.app/Contents/Info.plist)" = "1"
           icon_file="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIconFile' macos/IMMUNE.app/Contents/Info.plist)"
           test -n "$icon_file"
           test -f "macos/IMMUNE.app/Contents/Resources/$icon_file"
@@ -406,7 +424,7 @@ jobs:
             --artifact=IMMUNE-macOS.zip \
             --out=../native-smoke-evidence/macos.json \
             --commit="$GITHUB_SHA" \
-            --version=0.4.0
+            --version=0.5.0-rc.1
 
       - name: Upload hash-bound native smoke evidence
         if: always()
@@ -460,7 +478,7 @@ jobs:
             --pck=IMMUNE-linux.pck \
             --out=../v8-6-native-smoke-evidence/linux.json \
             --commit="$GITHUB_SHA" \
-            --version=0.4.0
+            --version=0.5.0-rc.1
 
       - name: Launch Windows V8.6 candidate
         if: runner.os == 'Windows'
@@ -506,7 +524,7 @@ jobs:
             --pck=candidate/IMMUNE-windows.pck `
             --out=v8-6-native-smoke-evidence/windows.json `
             --commit="$env:GITHUB_SHA" `
-            --version=0.4.0
+            --version=0.5.0-rc.1
 
       - name: Launch macOS V8.6 candidate
         if: runner.os == 'macOS'
@@ -531,7 +549,7 @@ jobs:
             --artifact=IMMUNE-macOS.zip \
             --out=../v8-6-native-smoke-evidence/macos.json \
             --commit="$GITHUB_SHA" \
-            --version=0.4.0
+            --version=0.5.0-rc.1
 
       - name: Upload hash-bound V8.6 native smoke evidence
         if: always()

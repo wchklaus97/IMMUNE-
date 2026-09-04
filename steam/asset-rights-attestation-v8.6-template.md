@@ -2,7 +2,7 @@
 
 - Status: **AWAITING OWNER SIGNATURE**
 - Prepared: 2026-09-04
-- Scope: opt-in T-cell V8.6 R7.2 candidate and current Steam key art
+- Scope: V8.6 R7.2 promotion RC1 and current Steam key art
 
 This is a signing template and evidence checklist, not legal advice. It is not
 an approval until an authorized owner completes every applicable blank, makes
@@ -13,8 +13,10 @@ Keep the signed record outside the public repository and bind it to the final
 ## Candidate identity
 
 - Repository: `wchklaus97/IMMUNE-`
-- Candidate selector: exact `v8_6`, family T only
-- Shipping/default selector: `v8_3` (unchanged)
+- Release identity: `0.5.0-rc.1`
+- Shipping/default selector: exact `v8_6`; authored R7.2 geometry applies to
+  family T only
+- Preserved rollback selector: exact `IMMUNE_GEL_LOOK=v8_3`
 - Candidate mesh:
   `godot/immune/characters/base_t/CHAR-BASE-T-v8-6-authored-sculpt-r7-2.glb`
 - Mesh SHA-256:
@@ -69,9 +71,10 @@ authority, applicable commercial terms, and restrictions.
 This signature does not promote historical provider experiments or rejected
 geometry. Unless separately cleared and recorded, Meshy/Tripo source models,
 embedded provider textures, V8.4's provider-derived remesh, V8.6 R5, R6, R7,
-and R7.1 remain development-only and excluded. R7.2 also remains excluded from
-ordinary shipping presets until the affirmative decision below is signed and a
-new release candidate is rebuilt, audited, signed, and explicitly authorized.
+and R7.1 remain development-only and excluded. R7.2 is the only V8.6 raw body
+included in the technical RC1 package. That package must not be commercially
+distributed until the affirmative rights decision below is completed and the
+remaining platform/release gates are satisfied.
 
 ## Owner confirmations
 
@@ -100,10 +103,10 @@ new release candidate is rebuilt, audited, signed, and explicitly authorized.
 
 V8.6 R7.2 commercial promotion (select one):
 
-- [ ] **APPROVE** the exact V8.6 candidate above for inclusion in a newly built
-  commercial release candidate, subject to the remaining technical/platform
-  gates.
-- [ ] **DO NOT APPROVE**; keep V8.6 development-only and excluded.
+- [ ] **APPROVE** the exact V8.6 candidate above for commercial distribution of
+  the already-built technical RC, subject to the remaining platform gates.
+- [ ] **DO NOT APPROVE**; block publication and rebuild shipping packages
+  without V8.6.
 
 Current Steam key art (select one):
 

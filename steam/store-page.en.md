@@ -81,9 +81,9 @@ macOS, and Steam Deck testing.
 
 ## Internal accuracy notes
 
-- The current deliverable is version 0.4.0, a complete six-mission playable
-  vertical slice. Do not describe it as multiplayer, online, procedural, or
-  Steam Deck Verified.
+- The current unpublished deliverable is version 0.5.0-rc.1, a complete
+  six-mission playable vertical slice. Do not describe it as multiplayer,
+  online, procedural, publicly released, or Steam Deck Verified.
 - Steam achievements, cloud saves, leaderboards, Workshop, and Steam Input API
   integration are not implemented and must not be selected as features.
 - Store key art, the shipping B/T meshes, and portions of concept/text work use

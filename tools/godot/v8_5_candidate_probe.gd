@@ -33,8 +33,8 @@ func _run() -> void:
 		_fail("export feature v8_5_candidate is missing")
 		return
 	var configured := str(ProjectSettings.get_setting("immune/visual/gel_look", "missing"))
-	if configured != "v8_3":
-		_fail("shipping default drifted from v8_3 to %s" % configured)
+	if configured != "v8_6":
+		_fail("shipping default drifted from v8_6 to %s" % configured)
 		return
 	if not FileAccess.file_exists(ASSET_PATH):
 		_fail("raw V8.5 source is missing")

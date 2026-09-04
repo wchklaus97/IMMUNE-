@@ -48,6 +48,7 @@ function authoredPckPaths() {
     "characters/authored_jelly_body.gdc",
     "characters/base_b/reference_body.tscn.remap",
     "characters/base_t/reference_body.tscn.remap",
+    "characters/base_t/CHAR-BASE-T-v8-6-authored-sculpt-r7-2.glb",
     ...Array.from({ length: 6 }, (_, index) => (
       `.godot/exported/fixture/export-${String(index + 1).padStart(2, "0")}-reference_body.scn`
     )),
@@ -69,7 +70,7 @@ test("PCK policy audits resource entries instead of matching UID-cache payload t
   for (const version of [2, 3, 4]) {
     const pck = makePck(paths, "CHAR-BASE-M-meshy-t2 CHAR-BASE-T-fix.glb", version);
     assert.deepEqual(parsePckResourcePaths(pck), paths);
-    assert.deepEqual(validatePckResourcePolicyBuffer(pck), { files: 10 });
+    assert.deepEqual(validatePckResourcePolicyBuffer(pck), { files: 11 });
   }
 });
 
@@ -95,6 +96,14 @@ test("PCK policy rejects an excluded directory entry and a missing shipping entr
     () => validatePckResourcePolicyBuffer(leakedV85Candidate),
     /Excluded source resource leaked/u,
   );
+  const leakedV86Intermediate = makePck([
+    ...authoredPckPaths(),
+    "characters/base_t/CHAR-BASE-T-v8-6-authored-sculpt-r7-1.glb",
+  ]);
+  assert.throws(
+    () => validatePckResourcePolicyBuffer(leakedV86Intermediate),
+    /Excluded source resource leaked/u,
+  );
   assert.throws(
     () => validatePckResourcePolicyBuffer(makePck(["project.binary"])),
     /Required authored character resource is missing/u,
@@ -104,6 +113,7 @@ test("PCK policy rejects an excluded directory entry and a missing shipping entr
       "characters/authored_jelly_body.gdc",
       "characters/base_b/reference_body.tscn.remap",
       "characters/base_t/reference_body.tscn.remap",
+      "characters/base_t/CHAR-BASE-T-v8-6-authored-sculpt-r7-2.glb",
     ])),
     /Required compiled reference bodies are missing/u,
   );
@@ -128,9 +138,9 @@ test("PCK parser fails closed on encrypted, truncated, and out-of-bounds packs",
 test("passes the repository-controlled Steam readiness preflight", async () => {
   const report = await validateSteamReadiness({ root: path.resolve(".") });
   assert.equal(report.status, "repository-ready-publisher-gates-open");
-  assert.equal(report.version, "0.4.0");
+  assert.equal(report.version, "0.5.0-rc.1");
   assert.equal(report.screenshots, 6);
-  assert.equal(report.rights_hashes_verified, 16);
+  assert.equal(report.rights_hashes_verified, 22);
   assert.ok(report.external_gates.length >= 6);
 });
 
@@ -144,7 +154,7 @@ test("distinguishes complete release evidence from the final owner authorization
   const input = {
     schema_version: 2,
     release_track: "steam_demo",
-    candidate: { version: "0.4.0", commit: candidateCommit },
+    candidate: { version: "0.5.0-rc.1", commit: candidateCommit },
     base_game_app_id: "5800000",
     demo_app_id: "5800010",
     depots: { windows: "5800011", linux: "5800012", macos: "5800013" },
@@ -209,7 +219,7 @@ test("distinguishes complete release evidence from the final owner authorization
         schema_version: 1,
         status: "pass",
         platform,
-        build: { version: "0.4.0", commit: candidateCommit },
+        build: { version: "0.5.0-rc.1", commit: candidateCommit },
         source_repository: { head_verified: true, tracked_tree_clean: true },
         artifacts: [],
       }, null, 2)}\n`

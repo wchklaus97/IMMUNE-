@@ -60,11 +60,11 @@ test("validateV86PckPaths requires only the exact active R7.2 body inventory", (
   );
 });
 
-test("repository V8.6 export contract is isolated on four platforms and keeps V8.3 shipping default", async () => {
+test("repository V8.6 export contract promotes R7.2 and preserves V8.3 rollback", async () => {
   const result = await validateV86ExportContract({ root: ROOT });
   assert.equal(result.candidatePresetCount, 4);
   assert.equal(result.shippingPresetCount, 4);
-  assert.equal(result.defaultLook, "v8_3");
+  assert.equal(result.defaultLook, "v8_6");
   assert.equal(result.bodySha256, "3fc0b00e7ee8bdf2696fbf7ef97a8044abf8dc60d49c3b917a5471c60945f6a3");
   assert.deepEqual(result.preservedBodySha256, Object.fromEntries(PRESERVED_BODIES));
   assert.equal(result.pck, "not-requested");

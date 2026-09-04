@@ -47,10 +47,10 @@ test("validateV85PckPaths requires the raw body and imported scene without banne
   );
 });
 
-test("repository V8.5 export contract keeps V8.3 shipping default", async () => {
+test("repository V8.5 export contract remains isolated after V8.6 promotion", async () => {
   const result = await validateV85ExportContract({ root: ROOT });
   assert.equal(result.candidatePresetCount, 4);
   assert.equal(result.shippingPresetCount, 4);
-  assert.equal(result.defaultLook, "v8_3");
+  assert.equal(result.defaultLook, "v8_6");
   assert.equal(result.pck, "not-requested");
 });

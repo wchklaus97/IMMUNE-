@@ -3,6 +3,12 @@
 Date: 2026-09-04
 Status: local technical candidate in validation; not a public-release claim
 
+> Promotion note (2026-09-04): this document preserves the evidence and
+> decisions from the opt-in convergence phase. V8.6 R7.2 was subsequently
+> promoted to the unpublished `0.5.0-rc.1` four-platform shipping default under
+> `2026-09-04-v8-6-promotion-rc1.md`. V8.3 remains the explicit runtime rollback;
+> no historical candidate, model, capture, or evidence root was removed.
+
 ## Outcome
 
 V8.6 is an additive, opt-in T-cell presentation revision over the frozen V8.5

@@ -53,7 +53,7 @@ async function campaignFixture(context) {
   await createHumanPlaytestCampaign({
     artifactRoot,
     outputRoot: campaignRoot,
-    buildVersion: "0.4.0",
+    buildVersion: "0.5.0-rc.1",
     buildCommit: BUILD_COMMIT,
     sourceRun: 33257048004,
     sourceArtifact: `immune-demo-${BUILD_COMMIT}`,

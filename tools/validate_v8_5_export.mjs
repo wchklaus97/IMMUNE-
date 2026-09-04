@@ -16,6 +16,7 @@ const BODY_RELATIVE = "godot/immune/characters/base_t/CHAR-BASE-T-v8-5-authored-
 const BODY_RESOURCE = "res://characters/base_t/CHAR-BASE-T-v8-5-authored-sculpt-r4.glb";
 const BODY_SHA256 = "8f14cfe59a508df413e4d53218f30bbf316e7e5d31e42154b2916a0bd5669294";
 const FEATURE = "v8_5_candidate";
+const SHIPPING_FEATURE = "v8_6_shipping";
 const ADDON_RESOURCE = "res://addons/v8_5_raw_export/plugin.cfg";
 const ADDON_FILES = [
   "godot/immune/addons/v8_5_raw_export/plugin.cfg",
@@ -107,7 +108,7 @@ export async function validateV85ExportContract({ root = ROOT, pck = "" } = {}) 
   const presets = parseConfig(presetsSource, PRESETS_RELATIVE);
   const errors = [];
   const defaultLook = project.get("immune")?.["visual/gel_look"];
-  requireCondition(errors, defaultLook === "v8_3", `shipping default must remain v8_3, got ${JSON.stringify(defaultLook)}`);
+  requireCondition(errors, defaultLook === "v8_6", `shipping default must be promoted to v8_6, got ${JSON.stringify(defaultLook)}`);
   requireCondition(
     errors,
     String(project.get("editor_plugins")?.enabled ?? "").includes(ADDON_RESOURCE),
@@ -127,7 +128,7 @@ export async function validateV85ExportContract({ root = ROOT, pck = "" } = {}) 
     const preset = presetByName(presets, name);
     requireCondition(errors, Boolean(preset), `shipping preset is missing: ${name}`);
     if (!preset) continue;
-    requireCondition(errors, preset.base.custom_features === "", `${name}: shipping custom_features must remain empty`);
+    requireCondition(errors, preset.base.custom_features === SHIPPING_FEATURE, `${name}: shipping feature must be ${SHIPPING_FEATURE}`);
     requireCondition(errors, String(preset.base.export_files ?? "").includes(BODY_RESOURCE), `${name}: V8.5 body must remain excluded`);
     requireCondition(errors, String(preset.base.exclude_filter ?? "").includes("addons/*"), `${name}: editor addons must be excluded`);
   }

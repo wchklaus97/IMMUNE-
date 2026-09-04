@@ -37,12 +37,14 @@ func _init() -> void:
 
 func _run() -> void:
 	await process_frame
-	if not OS.has_feature("v8_6_candidate"):
-		_fail("export feature v8_6_candidate is missing")
+	var candidate_feature := OS.has_feature("v8_6_candidate")
+	var shipping_feature := OS.has_feature("v8_6_shipping")
+	if not candidate_feature and not shipping_feature:
+		_fail("V8.6 candidate or shipping export feature is missing")
 		return
 	var configured := str(ProjectSettings.get_setting("immune/visual/gel_look", "missing"))
-	if configured != "v8_3":
-		_fail("shipping default drifted from v8_3 to %s" % configured)
+	if configured != "v8_6":
+		_fail("shipping default drifted from v8_6 to %s" % configured)
 		return
 	var selected := _GelProfiles.selected_look()
 	if selected != "v8_6" or not _GelProfiles.v8_6_enabled():
@@ -106,9 +108,10 @@ func _run() -> void:
 				animations_ok = false
 				break
 	print(
-		"V8_6_CANDIDATE_PROBE feature=%s default=%s selected=%s profile=%s sha256=%s body=%d shell=%d wet=%d shell_material=%d build_failed=%d fallback=%d loose_burst_hidden=%s animations=%d animations_ok=%s"
+		"V8_6_EXPORT_PROBE candidate=%s shipping=%s default=%s selected=%s profile=%s sha256=%s body=%d shell=%d wet=%d shell_material=%d build_failed=%d fallback=%d loose_burst_hidden=%s animations=%d animations_ok=%s"
 		% [
-			OS.has_feature("v8_6_candidate"),
+			candidate_feature,
+			shipping_feature,
 			configured,
 			selected,
 			profile,
@@ -138,7 +141,7 @@ func _run() -> void:
 	):
 		_fail("single-body, material, fallback, loose-burst, or animation contract failed")
 		return
-	print("V8_6_CANDIDATE_PROBE_OK")
+	print("V8_6_EXPORT_PROBE_OK")
 	character.queue_free()
 	quit(0)
 
@@ -151,5 +154,5 @@ func _collect_meta_nodes(node: Node, marker: StringName, found: Array[Node]) -> 
 
 
 func _fail(message: String) -> void:
-	push_error("V8_6_CANDIDATE_PROBE_FAILED: %s" % message)
+	push_error("V8_6_EXPORT_PROBE_FAILED: %s" % message)
 	quit(1)

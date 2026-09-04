@@ -6,6 +6,7 @@ import test from "node:test";
 
 import {
   parseConfig,
+  nativeVersionIdentity,
   releaseArguments,
   validateArtifactInventory,
   validateReleaseContract,
@@ -31,7 +32,18 @@ const RELEASE_FILES = [
 test("release-contract CLI rejects unknown, empty, and duplicate inputs", () => {
   assert.throws(() => releaseArguments(["--token=secret"]), /Unknown/u);
   assert.throws(() => releaseArguments(["--tag="]), /requires a value/u);
-  assert.throws(() => releaseArguments(["--tag=v0.4.0", "--tag=v0.4.1"]), /Duplicate/u);
+  assert.throws(() => releaseArguments(["--tag=v0.5.0-rc.1", "--tag=v0.5.0-rc.2"]), /Duplicate/u);
+});
+
+test("maps RC identity to platform-safe native versions", () => {
+  assert.deepEqual(nativeVersionIdentity("0.5.0-rc.1"), {
+    source: "0.5.0-rc.1",
+    windowsFile: "0.5.0.1",
+    windowsProduct: "0.5.0-rc.1",
+    macShort: "0.5.0",
+    macBuild: "1",
+  });
+  assert.equal(nativeVersionIdentity("0.5-rc.1"), null);
 });
 
 test("parses Godot config sections and typed scalar values", () => {
@@ -41,7 +53,7 @@ test("parses Godot config sections and typed scalar values", () => {
 
 test("keeps the live four-platform release identity coherent", async () => {
   const report = await validateReleaseContract({ root: path.resolve(".") });
-  assert.equal(report.version, "0.4.0");
+  assert.equal(report.version, "0.5.0-rc.1");
   assert.equal(report.presetCount, 4);
   assert.equal(report.webMode, "single-threaded");
   assert.equal(report.macSigning, "adhoc");
