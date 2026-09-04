@@ -1,25 +1,42 @@
 extends Node3D
 
-## GPU cost check for the wet-gel material. Renders N copies of the T mesh filling
-## the frame and reports measured GPU time per frame, so the combat budget claim is
-## measured rather than asserted.
+## GPU cost check for the production wet-gel character. Renders N copies of the
+## selected authored runtime scene and reports measured render time per frame.
 ##
 ## Run (needs a real window, same as the shot harness):
 ##   godot --path <proj> --resolution 1280x720 res://tools/gel_perf.tscn -- \
-##     --count=10 [--frames=240] [--material=gel|standard|none]
+##     --count=10 [--frames=240] [--family=T] [--source=character|reference] \
+##     [--material=gel|standard]
+## Release ABBA evidence additionally supplies the same --run-id to all four
+## launches plus --sequence=A1|B1|B2|A2 and an absolute --out path. Those
+## sequences fail before spawning unless the complete 4.7.2 Forward+/Metal
+## T/character/gel/20/1920x1080/4000 contract and the exact formal-only
+## --capture-hold-ms=35000 keepalive are active.
 ##
-## `--material=standard` renders the same meshes with the old StandardMaterial3D
-## jelly look, and `none` leaves the imported GLB material, which together give the
-## comparison the gel number is only meaningful against.
+## `--source=character` is the default and includes the exact production body,
+## animation/runtime bridge, and duty kit. `reference` isolates its authored body.
+## Excluded Meshy/Tripo GLBs are never auto-selected: inspecting one requires both
+## `--source=legacy-glb` and an explicit whitelisted `--mesh=...`. `none` is valid
+## only in that diagnostic mode; production comparisons use gel or standard.
 
 const _Look := preload("res://characters/family_look.gd")
 const _Gel := preload("res://characters/gel/gel_look.gd")
 const _GelProfiles := preload("res://characters/gel/gel_profiles.gd")
 const _LightContract := preload("res://characters/gel/light_contract.gd")
 
-## Clean mesh first, same reasoning as tools/gel_preview.gd: a published cost number
-## should not have been measured on a mesh with holes torn through the eyes.
-const MESH_CANDIDATES: Dictionary = {
+const FAMILIES: PackedStringArray = ["T", "B", "M", "N", "A", "D"]
+const VALID_SOURCES: PackedStringArray = ["character", "reference", "legacy-glb"]
+const REFERENCE_SCENES := {
+	"T": "res://characters/base_t/reference_body.tscn",
+	"B": "res://characters/base_b/reference_body.tscn",
+	"M": "res://characters/base_m/authored_body.tscn",
+	"N": "res://characters/base_n/reference_body.tscn",
+	"A": "res://characters/base_a/reference_body.tscn",
+	"D": "res://characters/base_d/reference_body.tscn",
+}
+## These excluded assets remain available only as explicitly named diagnostics.
+## There is deliberately no first-existing-candidate fallback.
+const LEGACY_GLB_SCENES: Dictionary = {
 	"T": [
 		"res://characters/base_t/CHAR-BASE-T-tripo-5k.glb",
 		"res://characters/base_t/CHAR-BASE-T-fix.glb",
@@ -35,11 +52,80 @@ const MESH_CANDIDATES: Dictionary = {
 ## Frames discarded before measuring, so shader compilation and the first-frame
 ## pipeline warm-up do not land in the average.
 const WARMUP_FRAMES := 60
+const FORMAL_CAPTURE_HOLD_MS := 35000
+const MAX_CAPTURE_HOLD_MS := 60000
+const CAPTURE_HOLD_CLOCK_TOLERANCE_MS := 1000
+const CAPTURE_SEQUENCE_INDEX := {
+	"A1": 1,
+	"B1": 2,
+	"B2": 3,
+	"A2": 4,
+}
+const CAPTURE_LOOK_FOR_SEQUENCE := {
+	"A1": "v8_5",
+	"B1": "v8_6",
+	"B2": "v8_6",
+	"A2": "v8_5",
+}
+## Versioned canonical stream used to bind a formal GPU report to the ArrayMesh
+## that Godot actually imported and handed to the production body. The raw GLB
+## digest alone cannot detect a stale `.godot/imported/*.scn` cache entry.
+const RUNTIME_MESH_HASH_SCHEMA := "godot-4.7.2-mesh-arrays-v1"
+const T_SCULPT_ASSET_FOR_REVISION := {
+	"v8_5": {
+		"path": "res://characters/base_t/CHAR-BASE-T-v8-5-authored-sculpt-r4.glb",
+		"sha256": "8f14cfe59a508df413e4d53218f30bbf316e7e5d31e42154b2916a0bd5669294",
+		"revision_label": "r4",
+		"resource_name": "V8.5-AuthoredSculpt-T-r4",
+		"runtime_mesh_hash_schema": RUNTIME_MESH_HASH_SCHEMA,
+		"runtime_mesh_sha256": "ce95be01d9b0b1272c74760f8c8e1d997baa0428e308a8cf50afb78cd77fbc4d",
+		"runtime_mesh_surface_count": 1,
+		"runtime_mesh_vertex_count": 6002,
+		"runtime_mesh_normal_count": 6002,
+		"runtime_mesh_index_count": 36000,
+		"runtime_mesh_surfaces": [{
+			"surface_index": 0,
+			"primitive": Mesh.PRIMITIVE_TRIANGLES,
+			"format": 34896613383,
+			"name": "",
+			"vertex_count": 6002,
+			"normal_count": 6002,
+			"index_count": 36000,
+		}],
+	},
+	"v8_6": {
+		"path": "res://characters/base_t/CHAR-BASE-T-v8-6-authored-sculpt-r7-2.glb",
+		"sha256": "3fc0b00e7ee8bdf2696fbf7ef97a8044abf8dc60d49c3b917a5471c60945f6a3",
+		"revision_label": "r7-2",
+		"resource_name": "V8.6-AuthoredSculpt-T-r7-2",
+		"runtime_mesh_hash_schema": RUNTIME_MESH_HASH_SCHEMA,
+		"runtime_mesh_sha256": "d5efe6491bdc51aadafe4aaccb5c1c3321376e29f6949e123a458780bf57f1de",
+		"runtime_mesh_surface_count": 1,
+		"runtime_mesh_vertex_count": 6002,
+		"runtime_mesh_normal_count": 6002,
+		"runtime_mesh_index_count": 36000,
+		"runtime_mesh_surfaces": [{
+			"surface_index": 0,
+			"primitive": Mesh.PRIMITIVE_TRIANGLES,
+			"format": 34896613383,
+			"name": "",
+			"vertex_count": 6002,
+			"normal_count": 6002,
+			"index_count": 36000,
+		}],
+	},
+}
+const CAPTURE_ANIMATIONS: PackedStringArray = [
+	"attack", "defeat", "hit", "idle", "move", "move_start", "move_stop",
+	"plant", "relay_close", "relay_glide", "relay_open", "skill_cast", "uproot", "victory",
+]
 
 const ALLOWED_ARGS: Array[String] = [
-	"count", "frames", "material", "family", "sync", "out", "set", "save-path",
+	"count", "frames", "material", "family", "source", "mesh", "sync", "out",
+	"set", "save-path", "run-id", "sequence", "capture-hold-ms",
 ]
 const VALID_MATERIALS: Array[String] = ["gel", "standard", "none"]
+const EYE_SHADER_PATH := "res://characters/gel/gel_eye.gdshader"
 const MEMBRANE_SET_ALIASES: Dictionary = {
 	"membrane_face_alpha": "face_alpha",
 	"membrane_edge_alpha": "edge_alpha",
@@ -50,14 +136,40 @@ const MEMBRANE_SET_ALIASES: Dictionary = {
 }
 const QA_STARTUP_FAILURE_EXIT_CODE := 74
 const REPORT_TRANSACTION_ATTEMPTS := 32
+const RUNTIME_MANAGED_CONTROLS: PackedStringArray = [
+	"liquid_flow_motion_mix",
+	"liquid_flow_direction",
+	"liquid_body_deform_strength",
+	"liquid_body_lag",
+	"liquid_body_squash",
+	"liquid_turn_shear",
+	"liquid_contact_amount",
+	"liquid_contact_normal",
+]
 
 var _count := 10
 var _frames := 240
 var _mode := "gel"
 var _family := "T"
+var _source := "character"
+var _subject_path := ""
+var _mesh_path := ""
 var _force_sync := false
 var _out_path := ""
+var _run_id := ""
+var _sequence := "adhoc"
+var _sequence_index := 0
+var _capture_hold_ms := 0
+var _measurement_started_unix_ms := 0
+var _runtime_identity := {}
 var _opts := {}
+var _material_stats := {
+	"visible_mesh_instances": 0,
+	"wet_materials": 0,
+	"shell_materials": 0,
+	"eye_materials": 0,
+	"standard_replacements": 0,
+}
 
 
 func _ready() -> void:
@@ -71,6 +183,12 @@ func _ready() -> void:
 		get_tree().quit(2)
 		return
 	if not _configure(parsed_args["args"] as Dictionary):
+		get_tree().quit(2)
+		return
+	if not _capture_runtime_environment_is_valid():
+		get_tree().quit(2)
+		return
+	if not _prepare_formal_capture_window():
 		get_tree().quit(2)
 		return
 	_build_stage()
@@ -94,6 +212,8 @@ func _configure(args: Dictionary) -> bool:
 		if String(key) not in ALLOWED_ARGS:
 			push_error("gel_perf.gd: unknown option --%s" % String(key))
 			return false
+	if not _configure_capture_identity(args):
+		return false
 
 	var parsed_count := _parse_bounded_int("count", String(args.get("count", "10")), 1, 200)
 	if not bool(parsed_count.get("ok", false)):
@@ -109,8 +229,16 @@ func _configure(args: Dictionary) -> bool:
 		push_error("gel_perf.gd: --material must be gel, standard, or none")
 		return false
 	_family = String(args.get("family", "T")).strip_edges().to_upper()
-	if not MESH_CANDIDATES.has(_family):
+	if _family not in FAMILIES:
 		push_error("gel_perf.gd: unsupported family %s" % _family)
+		return false
+	if not _configure_subject_source(args):
+		return false
+	if _mode == "none" and _source != "legacy-glb":
+		push_error(
+			"gel_perf.gd: --material=none is legacy diagnostic-only; "
+			+ "production sources require gel or standard"
+		)
 		return false
 	var sync_value := String(args.get("sync", "false")).strip_edges().to_lower()
 	if sync_value not in ["true", "false"]:
@@ -126,7 +254,7 @@ func _configure(args: Dictionary) -> bool:
 			return false
 
 	if not args.has("set"):
-		return true
+		return _capture_configuration_is_valid()
 	if _mode != "gel":
 		push_error("gel_perf.gd: --set is only valid with --material=gel")
 		return false
@@ -158,6 +286,14 @@ func _configure(args: Dictionary) -> bool:
 		if not bool(parsed_value.get("ok", false)):
 			return false
 		_opts[key] = parsed_value["value"]
+	if _source == "character":
+		for control in RUNTIME_MANAGED_CONTROLS:
+			if _opts.has(control):
+				push_error(
+					"gel_perf.gd: --set control '%s' is runtime-managed in " % control
+					+ "--source=character; use --source=reference for a static ablation"
+				)
+				return false
 	var effective_options := _GelProfiles.options(_family, _opts)
 	if (
 		float(effective_options.get("microbubble_radius_max", 0.0))
@@ -176,6 +312,174 @@ func _configure(args: Dictionary) -> bool:
 					% alias
 				)
 				return false
+	return _capture_configuration_is_valid()
+
+
+func _configure_capture_identity(args: Dictionary) -> bool:
+	var has_run_id := args.has("run-id")
+	var has_sequence := args.has("sequence")
+	var has_capture_hold := args.has("capture-hold-ms")
+	if has_run_id != has_sequence:
+		push_error("gel_perf.gd: --run-id and --sequence must be supplied together")
+		return false
+	if not has_run_id:
+		if has_capture_hold:
+			push_error("gel_perf.gd: --capture-hold-ms is valid only for a formal ABBA sequence")
+			return false
+		_run_id = "adhoc-%d-%d" % [OS.get_process_id(), Time.get_ticks_usec()]
+		_sequence = "adhoc"
+		_sequence_index = 0
+		_capture_hold_ms = 0
+		return true
+	_run_id = String(args["run-id"]).strip_edges()
+	if not _safe_run_id(_run_id):
+		push_error("gel_perf.gd: --run-id must use 8-128 safe identifier characters")
+		return false
+	_sequence = String(args["sequence"]).strip_edges().to_upper()
+	if not CAPTURE_SEQUENCE_INDEX.has(_sequence):
+		push_error("gel_perf.gd: --sequence must be A1, B1, B2, or A2")
+		return false
+	_sequence_index = int(CAPTURE_SEQUENCE_INDEX[_sequence])
+	if not has_capture_hold:
+		push_error(
+			"gel_perf.gd: formal ABBA capture requires --capture-hold-ms=%d"
+			% FORMAL_CAPTURE_HOLD_MS
+		)
+		return false
+	var parsed_hold := _parse_bounded_int(
+		"capture-hold-ms",
+		String(args["capture-hold-ms"]),
+		1000,
+		MAX_CAPTURE_HOLD_MS
+	)
+	if not bool(parsed_hold.get("ok", false)):
+		return false
+	_capture_hold_ms = int(parsed_hold["value"])
+	if _capture_hold_ms != FORMAL_CAPTURE_HOLD_MS:
+		push_error(
+			"gel_perf.gd: formal ABBA capture requires --capture-hold-ms=%d exactly"
+			% FORMAL_CAPTURE_HOLD_MS
+		)
+		return false
+	return true
+
+
+func _capture_configuration_is_valid() -> bool:
+	if _sequence == "adhoc":
+		return true
+	var expected_look := String(CAPTURE_LOOK_FOR_SEQUENCE[_sequence])
+	var actual_look := _GelProfiles.selected_look()
+	if actual_look != expected_look:
+		push_error(
+			"gel_perf.gd: sequence %s requires gel look %s, got %s"
+			% [_sequence, expected_look, actual_look]
+		)
+		return false
+	if (
+		_family != "T"
+		or _source != "character"
+		or _subject_path != "res://characters/base_t/character.tscn"
+		or _mode != "gel"
+		or _count != 20
+		or _frames != 4000
+		or _force_sync
+		or _capture_hold_ms != FORMAL_CAPTURE_HOLD_MS
+		or _out_path.is_empty()
+		or not _opts.is_empty()
+	):
+		push_error(
+			"gel_perf.gd: ABBA capture requires T/character/gel/count=20/frames=4000/"
+			+ "sync=false, capture-hold-ms=35000, --out, and no --set overrides"
+		)
+		return false
+	return true
+
+
+func _capture_runtime_environment_is_valid() -> bool:
+	if _sequence == "adhoc":
+		return true
+	var viewport_size := get_viewport().get_visible_rect().size
+	if (
+		String(Engine.get_version_info().get("string", "")) != "4.7.2-stable (official)"
+		or OS.get_name() != "macOS"
+		or DisplayServer.get_name() != "macOS"
+		or RenderingServer.get_current_rendering_method() != "forward_plus"
+		or RenderingServer.get_current_rendering_driver_name() != "metal"
+		or int(viewport_size.x) != 1920
+		or int(viewport_size.y) != 1080
+	):
+		push_error(
+			"gel_perf.gd: ABBA capture requires Godot 4.7.2 on macOS "
+			+ "Forward+/Metal at 1920x1080"
+		)
+		return false
+	return true
+
+
+func _prepare_formal_capture_window() -> bool:
+	if _sequence == "adhoc":
+		return true
+	# macOS can stop delivering normal frame_post_draw cadence to an occluded
+	# headed window. Keep the formal surface visible and request foreground before
+	# warm-up so the exact 4,000-frame workload and 8-second trace are comparable.
+	DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_ALWAYS_ON_TOP, true)
+	DisplayServer.window_move_to_foreground()
+	if not DisplayServer.window_get_flag(DisplayServer.WINDOW_FLAG_ALWAYS_ON_TOP):
+		push_error("gel_perf.gd: formal capture window could not enable always-on-top")
+		return false
+	return true
+
+
+func _safe_run_id(value: String) -> bool:
+	if value.length() < 8 or value.length() > 128:
+		return false
+	for index in value.length():
+		var code := value.unicode_at(index)
+		var is_letter := (code >= 65 and code <= 90) or (code >= 97 and code <= 122)
+		var is_digit := code >= 48 and code <= 57
+		if index == 0 and not is_letter and not is_digit:
+			return false
+		if not is_letter and not is_digit and code not in [45, 46, 95]:
+			return false
+	return true
+
+
+func _configure_subject_source(args: Dictionary) -> bool:
+	_source = String(args.get("source", "character")).strip_edges().to_lower()
+	if _source not in VALID_SOURCES:
+		push_error("gel_perf.gd: --source must be character, reference, or legacy-glb")
+		return false
+	_mesh_path = String(args.get("mesh", "")).strip_edges()
+	if _source == "legacy-glb":
+		if _mesh_path.is_empty():
+			push_error(
+				"gel_perf.gd: --source=legacy-glb requires "
+				+ "--mesh=<known excluded GLB>"
+			)
+			return false
+		var allowed_legacy: Array = LEGACY_GLB_SCENES.get(_family, [])
+		if _mesh_path not in allowed_legacy:
+			push_error(
+				"gel_perf.gd: --mesh is not an approved %s legacy diagnostic GLB"
+				% _family
+			)
+			return false
+		_subject_path = _mesh_path
+	else:
+		if args.has("mesh"):
+			push_error(
+				"gel_perf.gd: --mesh is valid only with --source=legacy-glb; "
+				+ "production scene identity is family-locked"
+			)
+			return false
+		_subject_path = (
+			String(_Look.SCENE_PATH[_family])
+			if _source == "character"
+			else String(REFERENCE_SCENES[_family])
+		)
+	if not ResourceLoader.exists(_subject_path):
+		push_error("gel_perf.gd: measured subject does not exist: %s" % _subject_path)
+		return false
 	return true
 
 
@@ -318,17 +622,9 @@ func _build_stage() -> void:
 ## Grid laid out to roughly fill the frame: the material is fragment-bound, so a
 ## count that covers little screen area would flatter it.
 func _spawn() -> bool:
-	var path := ""
-	for candidate in MESH_CANDIDATES[_family]:
-		if ResourceLoader.exists(candidate):
-			path = candidate
-			break
-	if path.is_empty():
-		push_error("gel_perf.gd: no mesh found")
-		return false
-	var packed := load(path) as PackedScene
+	var packed := load(_subject_path) as PackedScene
 	if packed == null:
-		push_error("gel_perf.gd: cannot load %s" % path)
+		push_error("gel_perf.gd: cannot load %s" % _subject_path)
 		return false
 
 	var cols := int(ceil(sqrt(float(_count))))
@@ -337,8 +633,9 @@ func _spawn() -> bool:
 	for i in _count:
 		var node := packed.instantiate() as Node3D
 		if node == null:
-			push_error("gel_perf.gd: %s is not a Node3D scene" % path)
+			push_error("gel_perf.gd: %s is not a Node3D scene" % _subject_path)
 			return false
+		node.name = "MeasuredSubject%03d" % i
 		node.position = Vector3(
 			(float(i % cols) - float(cols - 1) * 0.5) * step,
 			(float(i / cols) - float(rows - 1) * 0.5) * step,
@@ -346,14 +643,53 @@ func _spawn() -> bool:
 		add_child(node)
 		match _mode:
 			"gel":
-				var materials := _Look.apply_gel(node, _family, _opts)
-				if not _applied_options_match(materials):
+				if _source == "legacy-glb":
+					var materials := _Look.apply_gel(node, _family, _opts)
+					if not _legacy_options_match(materials):
+						return false
+					_record_material_stats(
+						node,
+						materials,
+						_shader_materials(node, _Gel.MEMBRANE_SHADER_PATH),
+						[],
+						0
+					)
+				elif not _prepare_production_gel(node):
 					return false
 			"standard":
-				for mi in _mesh_instances(node):
-					mi.material_override = _Look.jelly_material(_family)
+				if _source == "legacy-glb":
+					var legacy_replacements := _replace_legacy_with_standard(node)
+					_record_material_stats(node, [], [], [], legacy_replacements)
+				else:
+					var wet := _shader_materials(node, _Gel.SHADER_PATH)
+					var shells := _shader_materials(node, _Gel.MEMBRANE_SHADER_PATH)
+					var eyes := _shader_materials(node, EYE_SHADER_PATH)
+					if wet.is_empty():
+						push_error(
+							"gel_perf.gd: production subject exposed no wet-gel materials"
+						)
+						return false
+					var replacements := _replace_production_gel_with_standard(node)
+					if replacements == 0:
+						push_error("gel_perf.gd: standard control replaced no gel materials")
+						return false
+					_record_material_stats(node, wet, shells, eyes, replacements)
 			_:
-				pass
+				_record_material_stats(node, [], [], [], 0)
+		if _source == "character" and _mode == "gel":
+			var identity := _production_runtime_identity(node)
+			var identity_error := _runtime_identity_contract_error(identity)
+			if not identity_error.is_empty():
+				push_error(
+					"gel_perf.gd: measured subject %d identity failed: %s"
+					% [i, identity_error]
+				)
+				return false
+			if _runtime_identity.is_empty():
+				_runtime_identity = identity
+			elif JSON.stringify(identity) != JSON.stringify(_runtime_identity):
+				push_error("gel_perf.gd: production subject identities differ across instances")
+				return false
 
 	var camera := Camera3D.new()
 	camera.current = true
@@ -363,9 +699,437 @@ func _spawn() -> bool:
 	return true
 
 
-func _applied_options_match(materials: Array[ShaderMaterial]) -> bool:
+func _production_runtime_identity(node: Node3D) -> Dictionary:
+	var selected_look := _GelProfiles.selected_look()
+	var revision := "unknown"
+	var body: MeshInstance3D
+	var shell: MeshInstance3D
+	for mesh in _mesh_instances(node):
+		for candidate: String in ["v8_6", "v8_5", "v8_4", "v8_3"]:
+			if body == null and bool(mesh.get_meta(StringName("%s_single_mass" % candidate), false)):
+				body = mesh
+				revision = candidate
+			if shell == null and bool(
+				mesh.get_meta(StringName("%s_single_mass_shell" % candidate), false)
+			):
+				shell = mesh
+	var asset_path := ""
+	var expected_sha256 := ""
+	var expected_revision_label := ""
+	var expected_resource_name := ""
+	if T_SCULPT_ASSET_FOR_REVISION.has(revision):
+		var asset := T_SCULPT_ASSET_FOR_REVISION[revision] as Dictionary
+		asset_path = String(asset["path"])
+		expected_sha256 = String(asset["sha256"])
+		expected_revision_label = String(asset["revision_label"])
+		expected_resource_name = String(asset["resource_name"])
+	var actual_sha256 := FileAccess.get_sha256(asset_path) if not asset_path.is_empty() else ""
+	var asset_resource_name := String(body.mesh.resource_name) if body != null and body.mesh != null else ""
+	var mesh_fingerprint := _runtime_mesh_fingerprint(body.mesh if body != null else null)
+	var asset_revision_label := ""
+	var revision_separator := asset_resource_name.rfind("-T-")
+	if revision_separator >= 0:
+		asset_revision_label = asset_resource_name.substr(revision_separator + 3)
+	var authored_sculpt := (
+		body != null
+		and bool(body.get_meta(StringName("%s_authored_sculpt" % revision), false))
+	)
+	var animation_player := node.get_node_or_null("AnimationPlayer") as AnimationPlayer
+	var animation_catalog: Array[String] = []
+	if animation_player != null:
+		for animation_name in animation_player.get_animation_list():
+			animation_catalog.append(String(animation_name))
+		animation_catalog.sort()
+	var animation_kind := ""
+	if node.has_method("current_animation_kind"):
+		animation_kind = String(node.call("current_animation_kind"))
+	return {
+		"body_revision": revision,
+		"asset_path": asset_path,
+		"asset_sha256": actual_sha256,
+		"expected_asset_sha256": expected_sha256,
+		"asset_revision_label": asset_revision_label,
+		"expected_asset_revision_label": expected_revision_label,
+		"asset_resource_name": asset_resource_name,
+		"expected_asset_resource_name": expected_resource_name,
+		"runtime_mesh_hash_schema": String(mesh_fingerprint.get("hash_schema", "")),
+		"runtime_mesh_sha256": String(mesh_fingerprint.get("sha256", "")),
+		"runtime_mesh_surface_count": int(mesh_fingerprint.get("surface_count", 0)),
+		"runtime_mesh_vertex_count": int(mesh_fingerprint.get("vertex_count", 0)),
+		"runtime_mesh_normal_count": int(mesh_fingerprint.get("normal_count", 0)),
+		"runtime_mesh_index_count": int(mesh_fingerprint.get("index_count", 0)),
+		"runtime_mesh_surfaces": (mesh_fingerprint.get("surfaces", []) as Array).duplicate(true),
+		"runtime_mesh_error": String(mesh_fingerprint.get("error", "")),
+		"authored_sculpt": authored_sculpt,
+		"fallback_used": selected_look in ["v8_5", "v8_6"] and (
+			revision != selected_look or not authored_sculpt
+		),
+		"body_build_failed": _tree_has_truthy_meta(node, &"authored_body_build_failed"),
+		"shell_present": shell != null,
+		"shell_visible": shell != null and shell.is_visible_in_tree(),
+		"shell_shares_body_mesh": body != null and shell != null and body.mesh == shell.mesh,
+		"animation_catalog": animation_catalog,
+		"animation_count": animation_catalog.size(),
+		"active_animation": (
+			String(animation_player.current_animation) if animation_player != null else ""
+		),
+		"animation_playing": animation_player != null and animation_player.is_playing(),
+		"animation_kind": animation_kind,
+	}
+
+
+## Hashes the immutable topology consumed by the renderer, rather than the raw
+## source file. Each update is a length/type-delimited Variant encoding, and the
+## schema is pinned to the Godot version required by the formal capture contract.
+func _runtime_mesh_fingerprint(mesh: Mesh) -> Dictionary:
+	if mesh == null:
+		return {"ok": false, "error": "body mesh is missing"}
+	var surface_count := mesh.get_surface_count()
+	if surface_count <= 0:
+		return {"ok": false, "error": "body mesh has no surfaces"}
+	var context := HashingContext.new()
+	var hash_error := context.start(HashingContext.HASH_SHA256)
+	if hash_error != OK:
+		return {"ok": false, "error": "mesh hash context start failed (%d)" % hash_error}
+	hash_error = context.update(var_to_bytes([
+		RUNTIME_MESH_HASH_SCHEMA,
+		surface_count,
+		mesh.get_blend_shape_count(),
+	]))
+	if hash_error != OK:
+		return {"ok": false, "error": "mesh hash header update failed (%d)" % hash_error}
+
+	var total_vertices := 0
+	var total_normals := 0
+	var total_indices := 0
+	var surfaces: Array[Dictionary] = []
+	for surface_index in surface_count:
+		var arrays := mesh.surface_get_arrays(surface_index)
+		if arrays.size() != Mesh.ARRAY_MAX:
+			return {
+				"ok": false,
+				"error": "surface %d array slot count is not Mesh.ARRAY_MAX" % surface_index,
+			}
+		if (
+			arrays[Mesh.ARRAY_VERTEX] is not PackedVector3Array
+			or arrays[Mesh.ARRAY_NORMAL] is not PackedVector3Array
+			or arrays[Mesh.ARRAY_INDEX] is not PackedInt32Array
+		):
+			return {
+				"ok": false,
+				"error": "surface %d is missing packed vertices, normals, or indices"
+				% surface_index,
+			}
+		var vertices := arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array
+		var normals := arrays[Mesh.ARRAY_NORMAL] as PackedVector3Array
+		var indices := arrays[Mesh.ARRAY_INDEX] as PackedInt32Array
+		var primitive: int = mesh.surface_get_primitive_type(surface_index)
+		var surface_format: int = mesh.surface_get_format(surface_index)
+		var surface_name: String = mesh.surface_get_name(surface_index)
+		if vertices.is_empty():
+			return {"ok": false, "error": "surface %d has no vertices" % surface_index}
+		if normals.size() != vertices.size():
+			return {
+				"ok": false,
+				"error": "surface %d normal count does not match vertex count" % surface_index,
+			}
+		if indices.is_empty():
+			return {"ok": false, "error": "surface %d has no indices" % surface_index}
+		if primitive == Mesh.PRIMITIVE_TRIANGLES and indices.size() % 3 != 0:
+			return {
+				"ok": false,
+				"error": "surface %d triangle index count is not divisible by three"
+				% surface_index,
+			}
+		var metadata := {
+			"surface_index": surface_index,
+			"primitive": primitive,
+			"format": surface_format,
+			"name": surface_name,
+			"vertex_count": vertices.size(),
+			"normal_count": normals.size(),
+			"index_count": indices.size(),
+		}
+		for payload in [
+			[
+				"surface_metadata",
+				surface_index,
+				primitive,
+				surface_format,
+				surface_name,
+				vertices.size(),
+				normals.size(),
+				indices.size(),
+			],
+			["vertices", vertices],
+			["normals", normals],
+			["indices", indices],
+		]:
+			hash_error = context.update(var_to_bytes(payload))
+			if hash_error != OK:
+				return {
+					"ok": false,
+					"error": "surface %d mesh hash update failed (%d)"
+					% [surface_index, hash_error],
+				}
+		total_vertices += vertices.size()
+		total_normals += normals.size()
+		total_indices += indices.size()
+		surfaces.append(metadata)
+
+	return {
+		"ok": true,
+		"hash_schema": RUNTIME_MESH_HASH_SCHEMA,
+		"sha256": context.finish().hex_encode(),
+		"surface_count": surface_count,
+		"vertex_count": total_vertices,
+		"normal_count": total_normals,
+		"index_count": total_indices,
+		"surfaces": surfaces,
+	}
+
+
+func _runtime_identity_contract_error(identity: Dictionary) -> String:
+	var selected_look := _GelProfiles.selected_look()
+	if selected_look not in ["v8_5", "v8_6"]:
+		return ""
+	var expected_asset := T_SCULPT_ASSET_FOR_REVISION[selected_look] as Dictionary
+	if String(identity.get("body_revision", "")) != selected_look:
+		return "body revision does not match the selected look"
+	if String(identity.get("asset_path", "")) != String(expected_asset["path"]):
+		return "body asset path does not match the locked sculpt"
+	if String(identity.get("asset_sha256", "")) != String(expected_asset["sha256"]):
+		return "body asset SHA-256 does not match the locked sculpt"
+	if String(identity.get("asset_revision_label", "")) != String(expected_asset["revision_label"]):
+		return "body asset revision label does not match the locked sculpt"
+	if String(identity.get("asset_resource_name", "")) != String(expected_asset["resource_name"]):
+		return "body mesh resource name does not match the locked sculpt"
+	if not String(identity.get("runtime_mesh_error", "")).is_empty():
+		return "runtime body mesh fingerprint failed: %s" % String(identity["runtime_mesh_error"])
+	for field: String in ["runtime_mesh_hash_schema", "runtime_mesh_sha256"]:
+		if String(identity.get(field, "")) != String(expected_asset[field]):
+			return "%s does not match the locked imported runtime mesh" % field
+	for field: String in [
+		"runtime_mesh_surface_count",
+		"runtime_mesh_vertex_count",
+		"runtime_mesh_normal_count",
+		"runtime_mesh_index_count",
+	]:
+		if not _json_integer_equals(identity.get(field), int(expected_asset[field])):
+			return "%s does not match the locked imported runtime mesh" % field
+	if not _runtime_mesh_surfaces_match(
+		identity.get("runtime_mesh_surfaces"), expected_asset["runtime_mesh_surfaces"]
+	):
+		return "runtime_mesh_surfaces does not match the locked imported runtime mesh"
+	if not bool(identity.get("authored_sculpt", false)):
+		return "authored sculpt marker is missing"
+	if bool(identity.get("fallback_used", true)):
+		return "a fallback body was selected"
+	if bool(identity.get("body_build_failed", true)):
+		return "authored body reported a build failure"
+	for field: String in ["shell_present", "shell_visible", "shell_shares_body_mesh"]:
+		if not bool(identity.get(field, false)):
+			return "%s is false" % field
+	if int(identity.get("animation_count", 0)) != CAPTURE_ANIMATIONS.size():
+		return "animation count does not equal the locked 14-animation catalog"
+	if JSON.stringify(identity.get("animation_catalog", [])) != JSON.stringify(CAPTURE_ANIMATIONS):
+		return "animation catalog does not equal the locked 14-animation catalog"
+	if String(identity.get("active_animation", "")) != "idle":
+		return "measured character is not in idle animation"
+	if not bool(identity.get("animation_playing", false)):
+		return "idle animation is not playing"
+	if String(identity.get("animation_kind", "")) != "rest":
+		return "animation arbiter is not in rest state"
+	return ""
+
+
+func _runtime_mesh_surfaces_match(actual_value: Variant, expected_value: Variant) -> bool:
+	if actual_value is not Array or expected_value is not Array:
+		return false
+	var actual := actual_value as Array
+	var expected := expected_value as Array
+	if actual.size() != expected.size():
+		return false
+	for index in actual.size():
+		if actual[index] is not Dictionary or expected[index] is not Dictionary:
+			return false
+		var actual_surface := actual[index] as Dictionary
+		var expected_surface := expected[index] as Dictionary
+		for field: String in [
+			"surface_index", "primitive", "format",
+			"vertex_count", "normal_count", "index_count",
+		]:
+			if not _json_integer_equals(
+				actual_surface.get(field), int(expected_surface.get(field, -1))
+			):
+				return false
+		if String(actual_surface.get("name", "")) != String(expected_surface.get("name", "")):
+			return false
+	return true
+
+
+func _tree_has_truthy_meta(node: Node, meta_name: StringName) -> bool:
+	if bool(node.get_meta(meta_name, false)):
+		return true
+	for child in node.get_children():
+		if _tree_has_truthy_meta(child, meta_name):
+			return true
+	return false
+
+
+func _prepare_production_gel(node: Node) -> bool:
+	var wet := _shader_materials(node, _Gel.SHADER_PATH)
+	var shells := _shader_materials(node, _Gel.MEMBRANE_SHADER_PATH)
+	var eyes := _shader_materials(node, EYE_SHADER_PATH)
+	if wet.is_empty():
+		push_error("gel_perf.gd: production subject exposed no wet-gel materials")
+		return false
+	if not _apply_production_options(node, wet, shells):
+		return false
+	_record_material_stats(node, wet, shells, eyes, 0)
+	return true
+
+
+func _apply_production_options(
+	node: Node,
+	wet: Array[ShaderMaterial],
+	shells: Array[ShaderMaterial]
+) -> bool:
+	var shell_meshes := _mesh_instances_using_shader(node, _Gel.MEMBRANE_SHADER_PATH)
+	if _opts.has("membrane_enabled"):
+		var enabled := bool(_opts["membrane_enabled"])
+		if enabled:
+			if not _production_membrane_enabled(wet, shell_meshes):
+				push_error(
+					"gel_perf.gd: membrane_enabled=true requested, but the production "
+					+ "subject has no membrane"
+				)
+				return false
+		else:
+			_set_production_membrane_enabled(wet, shell_meshes, false)
+
+	for raw_key in _opts:
+		var key := String(raw_key)
+		if key == "membrane_enabled":
+			continue
+		var targets: Array[ShaderMaterial] = wet
+		var shader_name := String(key)
+		if MEMBRANE_SET_ALIASES.has(key):
+			targets = shells
+			shader_name = String(MEMBRANE_SET_ALIASES[key])
+		if targets.is_empty():
+			push_error("gel_perf.gd: --set control '%s' has no production target" % key)
+			return false
+		var applied := 0
+		for material in targets:
+			if material.get_shader_parameter(shader_name) == null:
+				continue
+			material.set_shader_parameter(shader_name, _opts[raw_key])
+			if not _option_values_equal(
+				material.get_shader_parameter(shader_name), _opts[raw_key]
+			):
+				push_error(
+					"gel_perf.gd: production --set control '%s' did not survive application"
+					% key
+				)
+				return false
+			applied += 1
+		if applied == 0:
+			push_error(
+				"gel_perf.gd: --set control '%s' is not exposed by production materials"
+				% key
+			)
+			return false
+	if _opts.has("membrane_enabled"):
+		if (
+			_production_membrane_enabled(wet, shell_meshes)
+			!= bool(_opts["membrane_enabled"])
+		):
+			push_error("gel_perf.gd: applied production membrane_enabled does not match request")
+			return false
+	return true
+
+
+func _set_production_membrane_enabled(
+	wet: Array[ShaderMaterial],
+	shell_meshes: Array[MeshInstance3D],
+	enabled: bool
+) -> void:
+	for mesh in shell_meshes:
+		mesh.visible = enabled
+	if enabled:
+		return
+	for material in wet:
+		if _material_uses_shader(material.next_pass, _Gel.MEMBRANE_SHADER_PATH):
+			material.next_pass = null
+
+
+func _production_membrane_enabled(
+	wet: Array[ShaderMaterial],
+	shell_meshes: Array[MeshInstance3D]
+) -> bool:
+	for mesh in shell_meshes:
+		if mesh.is_visible_in_tree():
+			return true
+	for material in wet:
+		if _material_uses_shader(material.next_pass, _Gel.MEMBRANE_SHADER_PATH):
+			return true
+	return false
+
+
+func _replace_legacy_with_standard(node: Node) -> int:
+	var replacements := 0
+	for mesh in _mesh_instances(node):
+		if mesh.mesh == null:
+			continue
+		mesh.material_override = _Look.jelly_material(_family)
+		replacements += 1
+	return replacements
+
+
+func _replace_production_gel_with_standard(node: Node) -> int:
+	var replacements := 0
+	for mesh in _mesh_instances(node):
+		var override_replaced := false
+		if _material_is_production_gel(mesh.material_override):
+			mesh.material_override = _Look.jelly_material(_family)
+			replacements += 1
+			override_replaced = true
+		if _material_is_production_gel(mesh.material_overlay):
+			mesh.material_overlay = _Look.jelly_material(_family)
+			replacements += 1
+		if override_replaced or mesh.mesh == null:
+			continue
+		for surface in mesh.mesh.get_surface_count():
+			if _material_is_production_gel(mesh.get_active_material(surface)):
+				mesh.set_surface_override_material(surface, _Look.jelly_material(_family))
+				replacements += 1
+	return replacements
+
+
+func _record_material_stats(
+	node: Node,
+	wet: Array,
+	shells: Array,
+	eyes: Array,
+	standard_replacements: int
+) -> void:
+	_material_stats["wet_materials"] = int(_material_stats["wet_materials"]) + wet.size()
+	_material_stats["shell_materials"] = int(_material_stats["shell_materials"]) + shells.size()
+	_material_stats["eye_materials"] = int(_material_stats["eye_materials"]) + eyes.size()
+	_material_stats["standard_replacements"] = (
+		int(_material_stats["standard_replacements"]) + standard_replacements
+	)
+	for mesh in _mesh_instances(node):
+		if mesh.mesh != null and mesh.is_visible_in_tree():
+			_material_stats["visible_mesh_instances"] = (
+				int(_material_stats["visible_mesh_instances"]) + 1
+			)
+
+
+func _legacy_options_match(materials: Array[ShaderMaterial]) -> bool:
 	if materials.is_empty():
-		push_error("gel_perf.gd: gel application produced no measurable materials")
+		push_error("gel_perf.gd: legacy gel application produced no measurable materials")
 		return false
 	for material in materials:
 		for key in _opts:
@@ -396,9 +1160,83 @@ func _applied_options_match(materials: Array[ShaderMaterial]) -> bool:
 	return true
 
 
+func _option_values_equal(actual: Variant, expected: Variant) -> bool:
+	if expected is bool:
+		return actual is bool and bool(actual) == bool(expected)
+	return (
+		typeof(actual) in [TYPE_INT, TYPE_FLOAT]
+		and typeof(expected) in [TYPE_INT, TYPE_FLOAT]
+		and is_equal_approx(float(actual), float(expected))
+	)
+
+
+func _shader_materials(root: Node, shader_path: String) -> Array[ShaderMaterial]:
+	var out: Array[ShaderMaterial] = []
+	var seen := {}
+	for mesh in _mesh_instances(root):
+		_append_shader_material(mesh.material_override, shader_path, out, seen)
+		_append_shader_material(mesh.material_overlay, shader_path, out, seen)
+		if mesh.mesh == null:
+			continue
+		for surface in mesh.mesh.get_surface_count():
+			_append_shader_material(mesh.get_active_material(surface), shader_path, out, seen)
+	return out
+
+
+func _append_shader_material(
+	material: Material,
+	shader_path: String,
+	out: Array[ShaderMaterial],
+	seen: Dictionary
+) -> void:
+	if material == null:
+		return
+	var instance_id := material.get_instance_id()
+	if seen.has(instance_id):
+		return
+	seen[instance_id] = true
+	if _material_uses_shader(material, shader_path):
+		out.append(material as ShaderMaterial)
+	_append_shader_material(material.next_pass, shader_path, out, seen)
+
+
+func _mesh_instances_using_shader(root: Node, shader_path: String) -> Array[MeshInstance3D]:
+	var out: Array[MeshInstance3D] = []
+	for mesh in _mesh_instances(root):
+		var direct := _material_uses_shader(mesh.material_override, shader_path)
+		direct = direct or _material_uses_shader(mesh.material_overlay, shader_path)
+		if not direct and mesh.mesh != null:
+			for surface in mesh.mesh.get_surface_count():
+				if _material_uses_shader(mesh.get_active_material(surface), shader_path):
+					direct = true
+					break
+		if direct:
+			out.append(mesh)
+	return out
+
+
+func _material_is_production_gel(material: Material) -> bool:
+	return (
+		_material_uses_shader(material, _Gel.SHADER_PATH)
+		or _material_uses_shader(material, _Gel.MEMBRANE_SHADER_PATH)
+		or _material_uses_shader(material, EYE_SHADER_PATH)
+	)
+
+
+func _material_uses_shader(material: Material, shader_path: String) -> bool:
+	return (
+		material is ShaderMaterial
+		and (material as ShaderMaterial).shader != null
+		and (material as ShaderMaterial).shader.resource_path == shader_path
+	)
+
+
 func _measure() -> bool:
+	if _sequence != "adhoc":
+		DisplayServer.window_move_to_foreground()
 	var vp := get_viewport().get_viewport_rid()
 	RenderingServer.viewport_set_measure_render_time(vp, true)
+	_measurement_started_unix_ms = int(Time.get_unix_time_from_system() * 1000.0)
 	# Calling force_sync() from the frame_post_draw continuation can stall the
 	# Forward+ Metal backend indefinitely. A requested sync is therefore a single
 	# pre-measure drain, before any signal await, rather than one sync per frame.
@@ -418,16 +1256,41 @@ func _measure() -> bool:
 	var gpu_summary := _summary(gpu_samples)
 	var cpu_summary := _summary(cpu_samples)
 	var wall_summary := _summary(wall_samples)
+	var measurement_finished_unix_ms := int(Time.get_unix_time_from_system() * 1000.0)
 	var gpu_timer_available := float(gpu_summary.get("max_ms", 0.0)) > 0.0
 	var report := {
-		"schema_version": 1,
+		"schema_version": 4,
+		"run_id": _run_id,
+		"sequence": _sequence,
+		"sequence_index": _sequence_index,
+		"process_pid": OS.get_process_id(),
+		"measurement_started_unix_ms": _measurement_started_unix_ms,
+		"measurement_finished_unix_ms": measurement_finished_unix_ms,
+		"capture_hold_ms": _capture_hold_ms,
+		"capture_hold_status": "ready" if _sequence != "adhoc" else "disabled",
+		"capture_hold_started_unix_ms": 0,
+		"capture_hold_finished_unix_ms": 0,
+		"capture_hold_actual_ms": 0,
+		"capture_hold_rendered_frames": 0,
+		"capture_window_always_on_top": (
+			_sequence != "adhoc"
+			and DisplayServer.window_get_flag(DisplayServer.WINDOW_FLAG_ALWAYS_ON_TOP)
+		),
+		"gel_look": _GelProfiles.selected_look(),
 		"godot_version": String(Engine.get_version_info().get("string", "unknown")),
 		"platform": OS.get_name(),
 		"display_server": DisplayServer.get_name(),
+		"rendering_method": RenderingServer.get_current_rendering_method(),
 		"renderer": RenderingServer.get_current_rendering_driver_name(),
 		"family": _family,
+		"source": _source,
+		"subject_scene": _subject_path,
+		"production_authored": _source != "legacy-glb",
+		"legacy_diagnostic": _source == "legacy-glb",
 		"material": _mode,
 		"count": _count,
+		"material_stats": _material_stats.duplicate(true),
+		"runtime_identity": _runtime_identity.duplicate(true),
 		"viewport": {
 			"width": int(get_viewport().get_visible_rect().size.x),
 			"height": int(get_viewport().get_visible_rect().size.y),
@@ -447,8 +1310,14 @@ func _measure() -> bool:
 		"wall": wall_summary,
 		"options": _opts,
 	}
-	print("GEL_PERF family=%s mode=%s count=%d viewport=%s sync=%s gpu=%s cpu=%s wall=%s opts=%s" % [
+	print("GEL_PERF run_id=%s sequence=%s pid=%d look=%s family=%s source=%s scene=%s mode=%s count=%d viewport=%s sync=%s gpu=%s cpu=%s wall=%s opts=%s" % [
+		_run_id,
+		_sequence,
+		OS.get_process_id(),
+		_GelProfiles.selected_look(),
 		_family,
+		_source,
+		_subject_path,
 		_mode,
 		_count,
 		str(get_viewport().get_visible_rect().size),
@@ -463,6 +1332,12 @@ func _measure() -> bool:
 		report["renderer"],
 		report["display_server"],
 	])
+	if _sequence != "adhoc":
+		# Publish a fail-closed ready record so the external trace runner can bind
+		# this exact PID. Only the post-hold rewrite changes status to complete.
+		if not _write_report(report):
+			return false
+		return await _complete_formal_capture_hold(report)
 	if not _out_path.is_empty() and not _write_report(report):
 		return false
 	return true
@@ -492,6 +1367,47 @@ func _summary_text(summary: Dictionary) -> String:
 		float(summary.get("p95_ms", 0.0)),
 		float(summary.get("max_ms", 0.0)),
 	]
+
+
+func _complete_formal_capture_hold(report: Dictionary) -> bool:
+	if _sequence == "adhoc" or _capture_hold_ms != FORMAL_CAPTURE_HOLD_MS:
+		push_error("gel_perf.gd: invalid formal capture hold state")
+		return false
+	DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_ALWAYS_ON_TOP, true)
+	DisplayServer.window_move_to_foreground()
+	if not DisplayServer.window_get_flag(DisplayServer.WINDOW_FLAG_ALWAYS_ON_TOP):
+		push_error("gel_perf.gd: formal capture window lost always-on-top state")
+		return false
+	var started_ticks_ms := Time.get_ticks_msec()
+	var started_unix_ms := int(Time.get_unix_time_from_system() * 1000.0)
+	print(
+		"GEL_PERF_CAPTURE_HOLD_READY run_id=%s sequence=%s pid=%d hold_ms=%d"
+		% [_run_id, _sequence, OS.get_process_id(), _capture_hold_ms]
+	)
+	var rendered_frames := 0
+	while Time.get_ticks_msec() - started_ticks_ms < _capture_hold_ms:
+		await RenderingServer.frame_post_draw
+		rendered_frames += 1
+	var actual_ms := Time.get_ticks_msec() - started_ticks_ms
+	var finished_unix_ms := int(Time.get_unix_time_from_system() * 1000.0)
+	if actual_ms < _capture_hold_ms or rendered_frames <= 0:
+		push_error(
+			"gel_perf.gd: formal capture hold ended early (%d ms, %d rendered frames)"
+			% [actual_ms, rendered_frames]
+		)
+		return false
+	report["capture_hold_status"] = "complete"
+	report["capture_hold_started_unix_ms"] = started_unix_ms
+	report["capture_hold_finished_unix_ms"] = finished_unix_ms
+	report["capture_hold_actual_ms"] = actual_ms
+	report["capture_hold_rendered_frames"] = rendered_frames
+	if not _write_report(report):
+		return false
+	print(
+		"GEL_PERF_CAPTURE_HOLD_COMPLETE run_id=%s sequence=%s pid=%d actual_ms=%d frames=%d"
+		% [_run_id, _sequence, OS.get_process_id(), actual_ms, rendered_frames]
+	)
+	return true
 
 
 func _write_report(report: Dictionary) -> bool:
@@ -555,7 +1471,7 @@ func _write_report(report: Dictionary) -> bool:
 
 func _validate_out_path() -> bool:
 	var normalized := _out_path.strip_edges().replace("\\", "/")
-	if normalized.is_empty() or normalized.contains("\u0000"):
+	if normalized.is_empty() or normalized.to_utf8_buffer().has(0):
 		push_error("gel_perf.gd: --out must name a JSON file")
 		return false
 	if normalized.ends_with("/") or normalized.get_extension().to_lower() != "json":
@@ -810,25 +1726,169 @@ func _verify_report_file(path: String, expected_text: String = "") -> bool:
 
 func _report_schema_error(report: Dictionary) -> String:
 	var required_fields: PackedStringArray = [
-		"schema_version", "godot_version", "platform", "display_server", "renderer",
-		"family", "material", "count", "viewport", "frames", "warmup_frames",
+		"schema_version", "run_id", "sequence", "sequence_index", "process_pid",
+		"measurement_started_unix_ms", "measurement_finished_unix_ms",
+		"capture_hold_ms", "capture_hold_status", "capture_hold_started_unix_ms",
+		"capture_hold_finished_unix_ms", "capture_hold_actual_ms",
+		"capture_hold_rendered_frames", "capture_window_always_on_top",
+		"gel_look", "godot_version", "platform", "display_server",
+		"rendering_method", "renderer",
+		"family", "source", "subject_scene", "production_authored",
+		"legacy_diagnostic", "material", "count", "material_stats", "runtime_identity",
+		"viewport",
+		"frames", "warmup_frames",
 		"sample_count", "sync_mode", "gpu_timer_available", "gpu_timer_note",
 		"gpu", "cpu", "wall", "options",
 	]
 	for field: String in required_fields:
 		if not report.has(field):
 			return "missing required gel report field %s" % field
-	if not _json_integer_equals(report["schema_version"], 1):
-		return "schema_version must equal 1"
-	for field: String in ["godot_version", "platform", "display_server", "renderer"]:
+	if not _json_integer_equals(report["schema_version"], 4):
+		return "schema_version must equal 4"
+	if report["run_id"] is not String or not _safe_run_id(String(report["run_id"])):
+		return "run_id must use 8-128 safe identifier characters"
+	if report["sequence"] is not String:
+		return "sequence must be a string"
+	var sequence := String(report["sequence"])
+	if sequence == "adhoc":
+		if not _json_integer_equals(report["sequence_index"], 0):
+			return "adhoc sequence_index must equal zero"
+	elif not CAPTURE_SEQUENCE_INDEX.has(sequence):
+		return "sequence must be adhoc, A1, B1, B2, or A2"
+	elif not _json_integer_equals(report["sequence_index"], int(CAPTURE_SEQUENCE_INDEX[sequence])):
+		return "sequence_index does not match sequence"
+	if not _json_integer_in_range(report["process_pid"], 1, 2147483647):
+		return "process_pid must be a positive bounded integer"
+	if (
+		not _json_integer_in_range(report["measurement_started_unix_ms"], 1, 9223372036854775807)
+		or not _json_integer_in_range(report["measurement_finished_unix_ms"], 1, 9223372036854775807)
+		or int(report["measurement_finished_unix_ms"])
+		< int(report["measurement_started_unix_ms"])
+	):
+		return "measurement timestamps are invalid"
+	if not _json_integer_in_range(report["capture_hold_ms"], 0, MAX_CAPTURE_HOLD_MS):
+		return "capture_hold_ms must be a bounded integer"
+	if report["capture_hold_status"] is not String:
+		return "capture_hold_status must be a string"
+	for field: String in [
+		"capture_hold_started_unix_ms", "capture_hold_finished_unix_ms",
+		"capture_hold_actual_ms", "capture_hold_rendered_frames",
+	]:
+		if not _json_integer_in_range(report[field], 0, 9223372036854775807):
+			return "%s must be a non-negative bounded integer" % field
+	var capture_status := String(report["capture_hold_status"])
+	if report["capture_window_always_on_top"] is not bool:
+		return "capture_window_always_on_top must be a boolean"
+	if sequence == "adhoc":
+		if (
+			int(report["capture_hold_ms"]) != 0
+			or capture_status != "disabled"
+			or int(report["capture_hold_started_unix_ms"]) != 0
+			or int(report["capture_hold_finished_unix_ms"]) != 0
+			or int(report["capture_hold_actual_ms"]) != 0
+			or int(report["capture_hold_rendered_frames"]) != 0
+			or bool(report["capture_window_always_on_top"])
+		):
+			return "adhoc reports cannot claim a formal capture hold"
+	else:
+		if not bool(report["capture_window_always_on_top"]):
+			return "formal capture window must remain always-on-top"
+		if int(report["capture_hold_ms"]) != FORMAL_CAPTURE_HOLD_MS:
+			return "formal capture_hold_ms must equal 35000"
+		if capture_status == "ready":
+			if (
+				int(report["capture_hold_started_unix_ms"]) != 0
+				or int(report["capture_hold_finished_unix_ms"]) != 0
+				or int(report["capture_hold_actual_ms"]) != 0
+				or int(report["capture_hold_rendered_frames"]) != 0
+			):
+				return "ready capture hold cannot claim completion evidence"
+		elif capture_status == "complete":
+			var hold_wall_clock_ms := (
+				int(report["capture_hold_finished_unix_ms"])
+				- int(report["capture_hold_started_unix_ms"])
+			)
+			if (
+				int(report["capture_hold_started_unix_ms"])
+				< int(report["measurement_finished_unix_ms"])
+				or int(report["capture_hold_finished_unix_ms"])
+				< int(report["capture_hold_started_unix_ms"])
+			):
+				return "capture hold timestamps are invalid"
+			if (
+				int(report["capture_hold_actual_ms"]) < FORMAL_CAPTURE_HOLD_MS
+				or int(report["capture_hold_actual_ms"]) > MAX_CAPTURE_HOLD_MS
+			):
+				return "completed capture hold duration is outside its bounded contract"
+			if (
+				hold_wall_clock_ms < FORMAL_CAPTURE_HOLD_MS
+				or hold_wall_clock_ms > MAX_CAPTURE_HOLD_MS
+				or absi(hold_wall_clock_ms - int(report["capture_hold_actual_ms"]))
+				> CAPTURE_HOLD_CLOCK_TOLERANCE_MS
+			):
+				return "capture hold wall-clock and monotonic durations are inconsistent"
+			if int(report["capture_hold_rendered_frames"]) <= 0:
+				return "completed capture hold must render at least one frame"
+		else:
+			return "formal capture_hold_status must be ready or complete"
+	if (
+		report["gel_look"] is not String
+		or String(report["gel_look"]) != _GelProfiles.selected_look()
+	):
+		return "gel_look must record the exact selected visual profile"
+	for field: String in [
+		"godot_version", "platform", "display_server", "rendering_method", "renderer",
+	]:
 		if report[field] is not String or String(report[field]).is_empty():
 			return "%s must be a non-empty string" % field
-	if report["family"] is not String or not MESH_CANDIDATES.has(String(report["family"])):
-		return "family must name a supported measured mesh"
+	if report["family"] is not String or String(report["family"]) not in FAMILIES:
+		return "family must name a supported production family"
+	var family := String(report["family"])
+	if report["source"] is not String or String(report["source"]) not in VALID_SOURCES:
+		return "source must be character, reference, or legacy-glb"
+	var source := String(report["source"])
+	if report["subject_scene"] is not String or String(report["subject_scene"]).is_empty():
+		return "subject_scene must be a non-empty string"
+	var subject_scene := String(report["subject_scene"])
+	if source == "character" and subject_scene != String(_Look.SCENE_PATH[family]):
+		return "character source must name the family-locked production scene"
+	if source == "reference" and subject_scene != String(REFERENCE_SCENES[family]):
+		return "reference source must name the family-locked authored body"
+	if source == "legacy-glb":
+		var allowed_legacy: Array = LEGACY_GLB_SCENES.get(family, [])
+		if subject_scene not in allowed_legacy:
+			return "legacy source must name an explicitly approved diagnostic GLB"
+	if report["production_authored"] is not bool or report["legacy_diagnostic"] is not bool:
+		return "production/legacy identity flags must be booleans"
+	if bool(report["production_authored"]) != (source != "legacy-glb"):
+		return "production_authored is inconsistent with source"
+	if bool(report["legacy_diagnostic"]) != (source == "legacy-glb"):
+		return "legacy_diagnostic is inconsistent with source"
 	if report["material"] is not String or String(report["material"]) not in VALID_MATERIALS:
 		return "material must be gel, standard, or none"
+	if String(report["material"]) == "none" and source != "legacy-glb":
+		return "material none is valid only for a legacy diagnostic"
 	if not _json_integer_in_range(report["count"], 1, 200):
 		return "count must be a bounded integer"
+	if report["material_stats"] is not Dictionary:
+		return "material_stats must be a dictionary"
+	if report["runtime_identity"] is not Dictionary:
+		return "runtime_identity must be a dictionary"
+	var material_stats := report["material_stats"] as Dictionary
+	for field: String in [
+		"visible_mesh_instances", "wet_materials", "shell_materials",
+		"eye_materials", "standard_replacements",
+	]:
+		if not material_stats.has(field):
+			return "material_stats is missing %s" % field
+		if not _json_integer_in_range(material_stats[field], 0, 10000000):
+			return "material_stats %s must be a non-negative bounded integer" % field
+	if int(material_stats["visible_mesh_instances"]) == 0:
+		return "measured subject must expose at least one visible mesh"
+	if String(report["material"]) == "gel" and int(material_stats["wet_materials"]) == 0:
+		return "gel measurement must expose at least one wet-gel material"
+	if String(report["material"]) == "standard" and int(material_stats["standard_replacements"]) == 0:
+		return "standard comparison must replace at least one measured material"
 	if not _json_integer_in_range(report["frames"], 30, 4000):
 		return "frames must be a bounded integer"
 	var frame_count := int(report["frames"])
@@ -884,6 +1944,65 @@ func _report_schema_error(report: Dictionary) -> String:
 			continue
 		if typeof(value) not in [TYPE_INT, TYPE_FLOAT] or not is_finite(float(value)):
 			return "option values must be booleans or finite numbers"
+	if source == "character" and String(report["material"]) == "gel":
+		var identity_error := _runtime_identity_contract_error(
+			report["runtime_identity"] as Dictionary
+		)
+		if not identity_error.is_empty():
+			return "runtime identity: %s" % identity_error
+	var capture_error := _capture_report_contract_error(report)
+	if not capture_error.is_empty():
+		return capture_error
+	return ""
+
+
+func _capture_report_contract_error(report: Dictionary) -> String:
+	var sequence := String(report.get("sequence", ""))
+	if sequence == "adhoc":
+		return ""
+	if String(report.get("gel_look", "")) != String(CAPTURE_LOOK_FOR_SEQUENCE[sequence]):
+		return "capture sequence gel look is inconsistent"
+	if String(report.get("godot_version", "")) != "4.7.2-stable (official)":
+		return "capture requires Godot 4.7.2-stable (official)"
+	if (
+		String(report.get("platform", "")) != "macOS"
+		or String(report.get("display_server", "")) != "macOS"
+		or String(report.get("rendering_method", "")) != "forward_plus"
+		or String(report.get("renderer", "")) != "metal"
+	):
+		return "capture requires macOS Forward+/Metal"
+	if (
+		String(report.get("family", "")) != "T"
+		or String(report.get("source", "")) != "character"
+		or String(report.get("subject_scene", ""))
+		!= "res://characters/base_t/character.tscn"
+		or not bool(report.get("production_authored", false))
+		or bool(report.get("legacy_diagnostic", true))
+		or String(report.get("material", "")) != "gel"
+		or int(report.get("count", 0)) != 20
+		or int(report.get("frames", 0)) != 4000
+		or int(report.get("sample_count", 0)) != 4000
+		or int(report.get("warmup_frames", 0)) != 60
+		or String(report.get("sync_mode", "")) != "none"
+		or int(report.get("capture_hold_ms", 0)) != FORMAL_CAPTURE_HOLD_MS
+		or String(report.get("capture_hold_status", "")) not in ["ready", "complete"]
+		or not (report.get("options", {}) as Dictionary).is_empty()
+	):
+		return "capture workload is not exact T/character/gel/20/4000/35000ms-hold/no-overrides"
+	var viewport := report.get("viewport", {}) as Dictionary
+	if int(viewport.get("width", 0)) != 1920 or int(viewport.get("height", 0)) != 1080:
+		return "capture viewport must equal 1920x1080"
+	var material_stats := report.get("material_stats", {}) as Dictionary
+	var expected_material_stats := {
+		"visible_mesh_instances": 140,
+		"wet_materials": 20,
+		"shell_materials": 20,
+		"eye_materials": 100,
+		"standard_replacements": 0,
+	}
+	for key in expected_material_stats:
+		if int(material_stats.get(key, -1)) != int(expected_material_stats[key]):
+			return "capture material_stats.%s does not match the locked inventory" % key
 	return ""
 
 

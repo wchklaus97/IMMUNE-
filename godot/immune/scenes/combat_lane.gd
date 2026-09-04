@@ -23,6 +23,11 @@ const _LightContract := preload("res://characters/gel/light_contract.gd")
 const _PauseMenu := preload("res://ui/pause_menu.gd")
 const _PlaytestTelemetry := preload("res://combat/combat_playtest_telemetry.gd")
 const _Responsive := preload("res://ui/responsive_layout.gd")
+const _ActiveSkillController := preload("res://combat/active_skill_controller.gd")
+const _EncounterDirector := preload("res://combat/combat_encounter_director.gd")
+const _TouchControls := preload("res://ui/combat_touch_controls.gd")
+const _GelStudio := preload("res://characters/gel/gel_studio_environment.gd")
+const _GelProfiles := preload("res://characters/gel/gel_profiles.gd")
 
 const MISSION_SELECT_SCENE := "res://ui/mission_select/mission_select.tscn"
 const NODE_FIXED := &"BASE-T-03"
@@ -40,17 +45,17 @@ const PORTRAIT_BOTTOM_CLEARANCE := 108.0
 const PORTRAIT_MIN_VIEWPORT := Vector2(1200.0, 620.0)
 const PORTRAIT_MIN_ASPECT := 1.45
 const PORTRAIT_SCALE := {
-	"T": 1.72,
-	"B": 1.58,
-	"M": 1.32,
-	"N": 1.62,
-	"A": 1.32,
+	"T": 1.52,
+	"B": 1.48,
+	"M": 1.34,
+	"N": 1.50,
+	"A": 1.40,
 	"D": 1.36,
 }
-const PORTRAIT_Y := {
-	"B": 0.64,
-}
+const PORTRAIT_Y := -0.12
 const HUD_BASE_FONT_SIZE := 16
+const COMBAT_ACTION_BASIC := &"basic"
+const COMBAT_ACTION_ACTIVE := &"active"
 
 @export var mission_data: ImmuneMissionData
 @export var auto_spawn: bool = true
@@ -82,6 +87,7 @@ var _hud_layout_scale: float = 1.0
 var _hud_layout_narrow := false
 var _hud_safe_insets := Vector4.ZERO
 var _duty_button: Button
+var _ability_button: Button
 var _intel_button: Button
 var _back_button: Button
 var _result_panel: PanelContainer
@@ -110,6 +116,14 @@ var _over: bool = false
 var _rewarded: bool = false
 var _onboarding_open: bool = false
 var _telemetry: CombatPlaytestTelemetry
+var _active_skill_controller: ActiveSkillController
+var _encounter_director: CombatEncounterDirector
+var _touch_controls: CombatTouchControls
+var _encounter_spawn_multiplier: float = 1.0
+var _resolving_active_skill: bool = false
+var _core_last_hp: int = _Core.MAX_HP
+var _next_combat_action_id: int = 1
+var _pending_combat_actions: Dictionary = {}
 
 
 func _ready() -> void:
@@ -124,6 +138,7 @@ func _ready() -> void:
 	if telemetry_enabled:
 		_telemetry = _PlaytestTelemetry.new()
 		_telemetry.begin(mission_data.id, _family_profile.family_id, playtest_build_tag)
+	_build_gameplay_components()
 	_build_stage()
 	_build_cleanse_zone()
 	_spawn_core()
@@ -157,6 +172,7 @@ func _assert_jelly_light_contract() -> void:
 func _exit_tree() -> void:
 	if get_viewport() != null and get_viewport().size_changed.is_connected(_on_viewport_size_changed):
 		get_viewport().size_changed.disconnect(_on_viewport_size_changed)
+	_pending_combat_actions.clear()
 	_shutdown_combat_portrait()
 
 
@@ -172,6 +188,20 @@ func _process(_delta: float) -> void:
 		return
 	_portrait_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 	_portrait_refresh_frames -= 1
+
+
+func _build_gameplay_components() -> void:
+	_active_skill_controller = _ActiveSkillController.new()
+	_active_skill_controller.name = "ActiveSkillController"
+	_active_skill_controller.configure(_family_profile.active_skill)
+	_active_skill_controller.activation_requested.connect(_on_active_skill_requested)
+	_active_skill_controller.cooldown_changed.connect(_on_active_skill_cooldown_changed)
+	add_child(_active_skill_controller)
+	_encounter_director = _EncounterDirector.new()
+	_encounter_director.name = "EncounterDirector"
+	_encounter_director.configure(mission_data)
+	_encounter_director.event_triggered.connect(_on_encounter_event)
+	add_child(_encounter_director)
 
 
 func _on_duty_unlocked(family: StringName, _duty: StringName) -> void:
@@ -195,6 +225,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed(&"demo_toggle_duty"):
 		_toggle_duty()
 		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed(&"demo_active_skill"):
+		_request_active_skill()
+		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed(&"demo_research"):
 		_show_intel_or_research()
 		get_viewport().set_input_as_handled()
@@ -204,7 +237,11 @@ func _physics_process(delta: float) -> void:
 	if _over or _onboarding_open or get_tree().paused:
 		return
 	_update_playtest_autopilot()
-	_move_player()
+	_move_player(delta)
+	if _active_skill_controller != null:
+		_active_skill_controller.tick(delta)
+	if _encounter_director != null:
+		_encounter_director.tick(delta)
 	if _telemetry != null and _player != null:
 		_telemetry.tick(delta, _player.duty)
 	_try_fire(delta)
@@ -214,7 +251,11 @@ func _physics_process(delta: float) -> void:
 	_spawn_cd -= delta
 	if _spawn_cd <= 0.0:
 		var base_interval := mission_data.defense_spawn_interval if current_phase == Phase.CORE_DEFENSE else mission_data.late_spawn_interval
-		_spawn_cd = base_interval * mission_data.difficulty.spawn_interval_multiplier
+		_spawn_cd = (
+			base_interval
+			* mission_data.difficulty.spawn_interval_multiplier
+			* _encounter_spawn_multiplier
+		)
 		if (
 			current_phase != Phase.TOTAL_WAR
 			or get_tree().get_nodes_in_group("bacterium").size() < mission_data.total_war_enemy_cap
@@ -238,18 +279,40 @@ func _toggle_duty() -> void:
 	if _family_profile.family_id == &"T" and not ResearchState.is_completed(NODE_MOBILE):
 		_set_status(tr("STATUS_T_MOBILE_REQUIRED") % SettingsState.prompt(&"demo_research"))
 		return
-	if _player.duty == &"fixed":
-		_player.transform_duty(&"mobile")
+	var requested_duty := &"mobile" if _player.duty == &"fixed" else &"fixed"
+	if requested_duty == &"mobile":
+		_player.transform_duty(requested_duty)
 		_set_status(tr("STATUS_DUTY_MOBILE"))
 	else:
-		_player.transform_duty(&"fixed")
+		_player.transform_duty(requested_duty)
 		_set_status(tr("STATUS_DUTY_FIXED"))
+	if _GelProfiles.motion_truth_enabled():
+		# V8.1 may queue the request behind an authored combat pose. The actual
+		# state signal owns HUD/touch/QA publication when the duty really applies.
+		return
 	_sync_combat_portrait_duty()
+	_sync_touch_movement_state()
 	AudioDirector.play_sfx(&"duty")
 	_refresh_hud()
 	WebQaBridge.publish(&"duty_changed", {
 		"family": String(_family_profile.family_id),
 		"duty": String(_player.duty),
+	})
+
+
+func _on_player_duty_changed(new_duty: StringName) -> void:
+	if not _GelProfiles.motion_truth_enabled():
+		return
+	_set_status(
+		tr("STATUS_DUTY_FIXED") if new_duty == &"fixed" else tr("STATUS_DUTY_MOBILE")
+	)
+	_sync_combat_portrait_duty()
+	_sync_touch_movement_state()
+	AudioDirector.play_sfx(&"duty")
+	_refresh_hud()
+	WebQaBridge.publish(&"duty_changed", {
+		"family": String(_family_profile.family_id),
+		"duty": String(new_duty),
 	})
 
 
@@ -280,22 +343,102 @@ func _research_t_chain() -> void:
 	_set_status(tr("STATUS_T_MOBILE_OWNED"))
 
 
-func _move_player() -> void:
+func _move_player(delta: float) -> void:
 	if _player == null:
 		return
 	if _player.duty == &"fixed":
 		_player.velocity = Vector3.ZERO
 		_player.global_position.y = PLAYER_HOME.y
+		if _GelProfiles.motion_truth_enabled():
+			_player.submit_motion_truth(Vector3.ZERO, Vector3.ZERO, Vector3.ZERO, delta)
 		return
 	var move_input: Vector2 = _playtest_move_input() if playtest_autopilot else Input.get_vector(
 		&"demo_move_left", &"demo_move_right", &"demo_move_back", &"demo_move_forward"
 	)
+	if not playtest_autopilot and _touch_controls != null:
+		var touch_input := _touch_controls.movement_vector()
+		if not touch_input.is_zero_approx():
+			move_input = touch_input
 	var move_speed := _family_profile.move_speed * (1.0 + ResearchState.global_stat("moveSpeed"))
-	_player.velocity = Vector3(move_input.x, 0.0, move_input.y) * move_speed
+	var requested_velocity := Vector3(move_input.x, 0.0, move_input.y) * move_speed
+	_player.velocity = requested_velocity
+	var start_position := _player.global_position
 	_player.move_and_slide()
-	_player.global_position.y = PLAYER_HOME.y
-	_player.global_position.x = clampf(_player.global_position.x, -STRAFE_LIMIT, STRAFE_LIMIT)
-	_player.global_position.z = clampf(_player.global_position.z, REAR_LIMIT, FRONT_LIMIT)
+	if not _GelProfiles.motion_truth_enabled():
+		_player.global_position.y = PLAYER_HOME.y
+		_player.global_position.x = clampf(_player.global_position.x, -STRAFE_LIMIT, STRAFE_LIMIT)
+		_player.global_position.z = clampf(_player.global_position.z, REAR_LIMIT, FRONT_LIMIT)
+		return
+
+	var contact_normal := _strongest_player_slide_normal(requested_velocity)
+	var clamped_position := _player.global_position
+	clamped_position.y = PLAYER_HOME.y
+	if clamped_position.x < -STRAFE_LIMIT:
+		clamped_position.x = -STRAFE_LIMIT
+		contact_normal = _stronger_contact_normal(
+			contact_normal, Vector3.RIGHT, requested_velocity
+		)
+	elif clamped_position.x > STRAFE_LIMIT:
+		clamped_position.x = STRAFE_LIMIT
+		contact_normal = _stronger_contact_normal(
+			contact_normal, Vector3.LEFT, requested_velocity
+		)
+	if clamped_position.z < REAR_LIMIT:
+		clamped_position.z = REAR_LIMIT
+		contact_normal = _stronger_contact_normal(
+			contact_normal, Vector3.BACK, requested_velocity
+		)
+	elif clamped_position.z > FRONT_LIMIT:
+		clamped_position.z = FRONT_LIMIT
+		contact_normal = _stronger_contact_normal(
+			contact_normal, Vector3.FORWARD, requested_velocity
+		)
+	_player.global_position = clamped_position
+	var resolved_velocity := (
+		(_player.global_position - start_position) / maxf(delta, 0.000001)
+	)
+	# The lane controller is planar. Correcting hover height back to PLAYER_HOME
+	# must never masquerade as vertical locomotion in the liquid presentation.
+	resolved_velocity.y = 0.0
+	_player.submit_motion_truth(
+		requested_velocity, resolved_velocity, contact_normal, delta
+	)
+
+
+func _strongest_player_slide_normal(requested_velocity: Vector3) -> Vector3:
+	var strongest := Vector3.ZERO
+	for collision_index in _player.get_slide_collision_count():
+		var collision := _player.get_slide_collision(collision_index)
+		if collision == null:
+			continue
+		var normal := collision.get_normal()
+		var planar_normal := Vector3(normal.x, 0.0, normal.z)
+		if planar_normal.is_zero_approx():
+			continue
+		strongest = _stronger_contact_normal(
+			strongest, planar_normal.normalized(), requested_velocity
+		)
+	return strongest
+
+
+func _stronger_contact_normal(
+	current: Vector3,
+	candidate: Vector3,
+	requested_velocity: Vector3
+) -> Vector3:
+	var planar_candidate := Vector3(candidate.x, 0.0, candidate.z)
+	if planar_candidate.is_zero_approx():
+		return current
+	planar_candidate = planar_candidate.normalized()
+	if current.is_zero_approx():
+		return planar_candidate
+	var planar_request := Vector3(requested_velocity.x, 0.0, requested_velocity.z)
+	if planar_request.is_zero_approx():
+		return current
+	var direction := planar_request.normalized()
+	var current_score := -direction.dot(current.normalized())
+	var candidate_score := -direction.dot(planar_candidate)
+	return planar_candidate if candidate_score > current_score else current
 
 
 func _update_playtest_autopilot() -> void:
@@ -308,6 +451,19 @@ func _update_playtest_autopilot() -> void:
 		_sync_combat_portrait_duty()
 		if _telemetry != null:
 			_telemetry.record_duty_switch()
+	_update_playtest_active_skill()
+
+
+func _update_playtest_active_skill() -> void:
+	if _active_skill_controller == null or not _active_skill_controller.is_ready():
+		return
+	var profile := _active_skill_controller.profile
+	if profile == null:
+		return
+	var has_target := not _active_skill_targets(profile).is_empty()
+	var can_repair_core := profile.core_heal > 0 and _core != null and _core.hp < _Core.MAX_HP
+	if has_target or can_repair_core:
+		_request_active_skill()
 
 
 func _playtest_move_input() -> Vector2:
@@ -322,11 +478,198 @@ func _playtest_move_input() -> Vector2:
 	return offset.normalized()
 
 
+func _request_active_skill() -> void:
+	if _active_skill_controller == null or _active_skill_controller.profile == null:
+		return
+	if not _active_skill_controller.is_ready():
+		_set_status(tr("STATUS_ACTIVE_SKILL_COOLDOWN") % ceili(
+			_active_skill_controller.remaining_seconds()
+		))
+		return
+	var profile := _active_skill_controller.profile
+	var targets := _active_skill_targets(profile)
+	var can_repair_core := profile.core_heal > 0 and _core != null and _core.hp < _Core.MAX_HP
+	if targets.is_empty() and not can_repair_core:
+		_set_status(tr("STATUS_ACTIVE_SKILL_NO_TARGET"))
+		return
+	_active_skill_controller.request_activation()
+
+
+func _on_active_skill_requested(profile: FamilyActiveSkillProfile) -> void:
+	if _over or _player == null:
+		if _GelProfiles.motion_truth_enabled() and _active_skill_controller != null:
+			_active_skill_controller.reset()
+		return
+	if _GelProfiles.motion_truth_enabled():
+		_request_active_skill_action(profile)
+		return
+	var targets := _active_skill_targets(profile)
+	_player.fire_skill(StringName("SKILL-%s-ACTIVE" % String(_family_profile.family_id)))
+	_commit_active_skill(profile, targets)
+
+
+func _request_active_skill_action(profile: FamilyActiveSkillProfile) -> void:
+	var request_id := _allocate_combat_action_id()
+	_pending_combat_actions[request_id] = {
+		"kind": COMBAT_ACTION_ACTIVE,
+		"profile": profile,
+	}
+	var accepted := _player.request_combat_action(
+		request_id,
+		COMBAT_ACTION_ACTIVE,
+		StringName("SKILL-%s-ACTIVE" % String(_family_profile.family_id))
+	)
+	# A failed animation request can cancel synchronously. Store first so that
+	# the cancellation signal always has a payload to retire.
+	if not accepted or not _pending_combat_actions.has(request_id):
+		_pending_combat_actions.erase(request_id)
+		if _active_skill_controller != null:
+			_active_skill_controller.reset()
+
+
+func _release_active_skill(profile: FamilyActiveSkillProfile) -> void:
+	if _over or _player == null or profile == null:
+		return
+	_commit_active_skill(profile, _active_skill_targets(profile))
+
+
+func _commit_active_skill(
+	profile: FamilyActiveSkillProfile,
+	targets: Array[Node3D]
+) -> void:
+	_resolving_active_skill = true
+	var hits := 0
+	for target in targets:
+		if not is_instance_valid(target):
+			continue
+		target.call(
+			"take_profiled_hit",
+			profile.damage,
+			_family_profile.family_id,
+			StringName(profile.hit_effect),
+			profile.hit_effect_power,
+			profile.hit_effect_cap,
+			profile.hit_effect_threshold
+		)
+		hits += 1
+	_resolving_active_skill = false
+	var restored := 0
+	if profile.core_heal > 0 and _core != null:
+		restored = int(_core.call("restore_health", profile.core_heal))
+	if _telemetry != null:
+		_telemetry.record_active_skill(profile.id, hits)
+	if restored > 0:
+		_set_status(tr("STATUS_ACTIVE_SKILL_HEAL") % [tr(profile.name_key), hits, restored])
+	else:
+		_set_status(tr("STATUS_ACTIVE_SKILL_USED") % [tr(profile.name_key), hits])
+	AudioDirector.play_sfx(&"phase", 1.15, -1.0)
+	_shake_camera(0.12)
+	WebQaBridge.publish(&"active_skill_used", {
+		"family": String(_family_profile.family_id),
+		"skill": String(profile.id),
+		"hits": hits,
+		"core_heal": restored,
+	})
+
+
+func _active_skill_targets(profile: FamilyActiveSkillProfile) -> Array[Node3D]:
+	var candidates: Array[Node3D] = []
+	if _player == null:
+		return candidates
+	for enemy in _owned_enemies():
+		if _player.global_position.distance_to(enemy.global_position) <= profile.radius:
+			candidates.append(enemy)
+	candidates.sort_custom(func(a: Node3D, b: Node3D) -> bool:
+		return _active_skill_target_score(a, profile) < _active_skill_target_score(b, profile)
+	)
+	var selected: Array[Node3D] = []
+	for candidate in candidates:
+		if selected.size() >= profile.max_targets:
+			break
+		selected.append(candidate)
+	return selected
+
+
+func _active_skill_target_score(target: Node3D, profile: FamilyActiveSkillProfile) -> float:
+	var distance := _player.global_position.distance_to(target.global_position)
+	if profile.targeting == "lowest_health":
+		return float(target.get("hp")) / float(maxi(int(target.get("max_hp")), 1)) * 1000.0 + distance
+	if profile.targeting == "spread":
+		return distance + absf(target.global_position.x) * 0.05
+	return distance
+
+
+func _on_active_skill_cooldown_changed(_remaining: float, _duration: float) -> void:
+	_refresh_prompts()
+
+
+func _owned_enemies() -> Array[Node3D]:
+	var result: Array[Node3D] = []
+	for node in get_tree().get_nodes_in_group("bacterium"):
+		if node is Node3D and is_ancestor_of(node):
+			result.append(node as Node3D)
+	return result
+
+
+func _on_encounter_event(event_id: StringName, strength: int, occurrence: int) -> void:
+	if _over:
+		return
+	var outcome := 0
+	match event_id:
+		&"surge":
+			outcome = _spawn_encounter_wave(strength)
+		&"systemic_surge":
+			# Systemic pressure alternates frequently with biofilm restoration.
+			# A single reinforcement keeps that cadence lethal without creating
+			# an unavoidable two-hit core spike for lower-DPS families.
+			outcome = _spawn_encounter_wave(mini(strength, 1))
+		&"cytokine":
+			for enemy in _owned_enemies():
+				enemy.call("apply_speed_boost", 1.0 + float(strength) * 0.18, 3.5)
+			outcome = _owned_enemies().size()
+			_shake_camera(0.16)
+		&"adaptive":
+			_encounter_spawn_multiplier = maxf(
+				_encounter_spawn_multiplier * (1.0 - 0.07 * float(strength)), 0.68
+			)
+			_spawn_cd = minf(_spawn_cd, 0.35)
+			outcome = roundi((1.0 - _encounter_spawn_multiplier) * 100.0)
+		&"biofilm", &"systemic_biofilm":
+			for enemy in _owned_enemies():
+				outcome += int(enemy.call("restore_health", strength))
+	var status_key := "STATUS_ENCOUNTER_%s" % String(event_id).to_upper()
+	_set_status(tr(status_key) % outcome)
+	if _telemetry != null:
+		_telemetry.record_encounter_event(event_id)
+	WebQaBridge.publish(&"encounter_event", {
+		"mission": String(mission_data.id),
+		"pattern": String(event_id),
+		"occurrence": occurrence,
+		"outcome": outcome,
+	})
+
+
+func _spawn_encounter_wave(count: int) -> int:
+	var spawned := 0
+	for _index in maxi(count, 0):
+		if current_phase == Phase.TOTAL_WAR and _owned_enemies().size() >= mission_data.total_war_enemy_cap:
+			break
+		_spawn_regular(false)
+		spawned += 1
+	return spawned
+
+
 func _try_fire(delta: float) -> void:
 	_fire_cd -= delta
 	if _fire_cd > 0.0 or _player == null:
 		return
-	var target := _nearest_bacterium()
+	if _GelProfiles.motion_truth_enabled() and _has_pending_combat_action(COMBAT_ACTION_BASIC):
+		return
+	var target := (
+		_nearest_owned_bacterium()
+		if _GelProfiles.motion_truth_enabled()
+		else _nearest_bacterium()
+	)
 	if target == null:
 		return
 	var from := _muzzle()
@@ -336,9 +679,91 @@ func _try_fire(delta: float) -> void:
 		return
 	var base_cd := _family_profile.fixed_fire_cooldown if _player.duty == &"fixed" else _family_profile.mobile_fire_cooldown
 	var speed := 1.0 + ResearchState.global_stat("attackSpeed", _player.duty)
-	_fire_cd = base_cd / maxf(speed, 0.25)
+	var cadence := base_cd / maxf(speed, 0.25)
+	if _GelProfiles.motion_truth_enabled():
+		_request_basic_fire_action(target, horizontal_aim, cadence)
+		return
+	_fire_cd = cadence
 	_player.look_at(_player.global_position + horizontal_aim, Vector3.UP, true)
 	_player.fire_skill(StringName("SKILL-%s-ACTIVE" % String(_family_profile.family_id)))
+	_spawn_basic_bolt(from, aim)
+
+
+func _request_basic_fire_action(
+	target: Node3D,
+	horizontal_aim: Vector3,
+	cadence: float
+) -> void:
+	_player.look_at(_player.global_position + horizontal_aim, Vector3.UP, true)
+	var request_id := _allocate_combat_action_id()
+	_pending_combat_actions[request_id] = {
+		"kind": COMBAT_ACTION_BASIC,
+		"target": weakref(target),
+		"cadence": cadence,
+	}
+	# V8.3 may release a scheduled basic token synchronously while a stronger
+	# active/hit/duty pose stays on screen. Reserve cadence before that signal can
+	# re-enter this node; rejected requests restore the ready state below.
+	var cadence_reserved := _GelProfiles.v8_3_enabled()
+	if cadence_reserved:
+		_fire_cd = cadence
+	var accepted := _player.request_combat_action(
+		request_id,
+		COMBAT_ACTION_BASIC,
+		StringName("BASIC-%s" % String(_family_profile.family_id)),
+		cadence
+	)
+	if not accepted or not _pending_combat_actions.has(request_id):
+		_pending_combat_actions.erase(request_id)
+		if not accepted and cadence_reserved:
+			_fire_cd = 0.0
+		return
+	# Consume cadence only after the presentation arbiter accepts the request.
+	# A later pre-release cancellation restores it in the signal handler.
+	if not cadence_reserved:
+		_fire_cd = cadence
+
+
+func _release_basic_fire(payload: Dictionary) -> bool:
+	if _over or _player == null:
+		return false
+	var target: Node3D = null
+	var target_reference := payload.get("target") as WeakRef
+	if target_reference != null:
+		target = target_reference.get_ref() as Node3D
+	if not _basic_fire_target_is_valid(target):
+		target = _nearest_owned_bacterium()
+	if not _basic_fire_target_is_valid(target):
+		return false
+	var from := _muzzle()
+	var aim := target.global_position - from
+	var horizontal_aim := Vector3(aim.x, 0.0, aim.z)
+	if aim.is_zero_approx() or horizontal_aim.length() > _family_profile.fire_range:
+		# The remembered target can leave range during wind-up. Reacquire once at
+		# the authored release pose so a valid nearby pathogen still receives it.
+		target = _nearest_owned_bacterium()
+		if not _basic_fire_target_is_valid(target):
+			return false
+		from = _muzzle()
+		aim = target.global_position - from
+		horizontal_aim = Vector3(aim.x, 0.0, aim.z)
+		if aim.is_zero_approx() or horizontal_aim.length() > _family_profile.fire_range:
+			return false
+	_player.look_at(_player.global_position + horizontal_aim, Vector3.UP, true)
+	_spawn_basic_bolt(from, aim)
+	return true
+
+
+func _basic_fire_target_is_valid(target: Node3D) -> bool:
+	return (
+		is_instance_valid(target)
+		and not target.is_queued_for_deletion()
+		and target.is_in_group("bacterium")
+		and is_ancestor_of(target)
+	)
+
+
+func _spawn_basic_bolt(from: Vector3, aim: Vector3) -> void:
 	var bolt: _Bolt = _Bolt.new()
 	bolt.configure(
 		_family_profile.projectile_damage,
@@ -358,6 +783,61 @@ func _try_fire(delta: float) -> void:
 	if _telemetry != null:
 		_telemetry.record_shot()
 	AudioDirector.play_sfx(&"shot", randf_range(0.96, 1.04), -2.0)
+
+
+func _allocate_combat_action_id() -> int:
+	var request_id := _next_combat_action_id
+	_next_combat_action_id += 1
+	if _next_combat_action_id >= 2147483647:
+		_next_combat_action_id = 1
+	while _pending_combat_actions.has(request_id):
+		request_id = _next_combat_action_id
+		_next_combat_action_id += 1
+	return request_id
+
+
+func _has_pending_combat_action(action_kind: StringName) -> bool:
+	for request_id: int in _pending_combat_actions:
+		var payload: Dictionary = _pending_combat_actions[request_id]
+		if StringName(payload.get("kind", &"")) == action_kind:
+			return true
+	return false
+
+
+func _on_combat_action_released(request_id: int, action_kind: StringName) -> void:
+	if not _pending_combat_actions.has(request_id):
+		return
+	var payload: Dictionary = _pending_combat_actions.get(request_id, {})
+	_pending_combat_actions.erase(request_id)
+	var expected_kind := StringName(payload.get("kind", &""))
+	if expected_kind != action_kind:
+		push_warning(
+			"CombatLane: release kind mismatch for action %d (%s != %s)"
+			% [request_id, String(action_kind), String(expected_kind)]
+		)
+		return
+	match action_kind:
+		COMBAT_ACTION_BASIC:
+			_release_basic_fire(payload)
+		COMBAT_ACTION_ACTIVE:
+			var profile := payload.get("profile") as FamilyActiveSkillProfile
+			_release_active_skill(profile)
+
+
+func _on_combat_action_cancelled(
+	request_id: int,
+	action_kind: StringName,
+	reason: StringName
+) -> void:
+	if not _pending_combat_actions.has(request_id):
+		return
+	_pending_combat_actions.erase(request_id)
+	if reason == &"terminal" or _over:
+		return
+	if action_kind == COMBAT_ACTION_BASIC:
+		_fire_cd = 0.0
+	elif action_kind == COMBAT_ACTION_ACTIVE and _active_skill_controller != null:
+		_active_skill_controller.reset()
 
 
 func _muzzle() -> Vector3:
@@ -380,10 +860,22 @@ func _nearest_bacterium() -> Node3D:
 	return best
 
 
-func _spawn_regular() -> void:
+func _nearest_owned_bacterium() -> Node3D:
+	var best: Node3D = null
+	var best_distance := INF
+	var muzzle := _muzzle()
+	for body in _owned_enemies():
+		var distance := muzzle.distance_to(body.global_position)
+		if distance < best_distance:
+			best_distance = distance
+			best = body
+	return best
+
+
+func _spawn_regular(counts_for_objective: bool = true) -> void:
 	var bug: _Bacterium = _Bacterium.new()
 	bug.configure_profile(mission_data.regular_enemy, mission_data.difficulty)
-	_wire_enemy(bug)
+	_wire_enemy(bug, counts_for_objective)
 	add_child(bug)
 	bug.global_position = Vector3(randf_range(-2.2, 2.2), bug.ground_y, SPAWN_Z)
 
@@ -401,16 +893,17 @@ func _spawn_boss() -> void:
 	_boss.health_changed.connect(_on_boss_health_changed)
 
 
-func _wire_enemy(enemy: _Bacterium) -> void:
+func _wire_enemy(enemy: _Bacterium, counts_for_objective: bool = true) -> void:
 	enemy.core = _core
-	enemy.died.connect(_on_enemy_died)
+	enemy.died.connect(_on_enemy_died.bind(counts_for_objective))
 	enemy.hit_received.connect(_on_enemy_hit)
 
 
-func _on_enemy_died(was_boss: bool) -> void:
-	_kills += 1
+func _on_enemy_died(was_boss: bool, counts_for_objective: bool = true) -> void:
+	if counts_for_objective:
+		_kills += 1
 	if _telemetry != null:
-		_telemetry.record_enemy_defeated(was_boss)
+		_telemetry.record_enemy_defeated(was_boss, counts_for_objective)
 	if was_boss and current_phase == Phase.TOTAL_WAR:
 		_victory()
 	elif current_phase == Phase.CORE_DEFENSE and _kills >= mission_data.defense_kills:
@@ -419,7 +912,7 @@ func _on_enemy_died(was_boss: bool) -> void:
 
 
 func _on_enemy_hit(world_position: Vector3, amount: int, was_boss: bool) -> void:
-	if _telemetry != null:
+	if _telemetry != null and not _resolving_active_skill:
 		_telemetry.record_hit(amount, was_boss)
 	AudioDirector.play_sfx(&"hit", randf_range(0.92, 1.08), -1.0)
 	_spawn_damage_number(world_position, amount, was_boss)
@@ -454,22 +947,31 @@ func _update_expedition(delta: float) -> void:
 
 
 func _on_core_hit(hp: int, max_hp: int) -> void:
+	var took_damage := hp < _core_last_hp
+	_core_last_hp = hp
 	if _telemetry != null:
 		_telemetry.record_core_hp(hp, max_hp)
 	_core_bar.max_value = max_hp
 	_core_bar.value = hp
 	_core_value.text = "%d/%d" % [hp, max_hp]
-	AudioDirector.play_sfx(&"core_hit")
-	_shake_camera(0.22)
+	if took_damage:
+		AudioDirector.play_sfx(&"core_hit")
+		_shake_camera(0.22)
+		# V8.2 turns core damage into a visible shock on the playable body. This is
+		# presentation-only: the core's HP and all damage resolution stay untouched.
+		if _GelProfiles.living_volume_enabled() and _player != null:
+			_player.play_hit()
 	_refresh_hud()
 	if hp <= 0:
 		_defeat()
-	elif hp < max_hp:
+	elif took_damage and hp < max_hp:
 		_set_status(tr("STATUS_CORE_DAMAGED") % [hp, max_hp])
 
 
 func _set_phase(next_phase: Phase) -> void:
 	current_phase = next_phase
+	if _encounter_director != null:
+		_encounter_director.enter_phase(_phase_code())
 	if _telemetry != null:
 		_telemetry.enter_phase(phase_name())
 	match current_phase:
@@ -493,6 +995,18 @@ func _set_phase(next_phase: Phase) -> void:
 	phase_changed.emit(phase_name(), objective_text())
 
 
+func _phase_code() -> StringName:
+	match current_phase:
+		Phase.CORE_DEFENSE:
+			return &"core"
+		Phase.EXPEDITION:
+			return &"expedition"
+		Phase.TOTAL_WAR:
+			return &"total_war"
+		_:
+			return &"complete"
+
+
 func _victory() -> void:
 	if not _over:
 		_set_phase(Phase.VICTORY)
@@ -505,6 +1019,7 @@ func _defeat() -> void:
 
 func _finish_victory() -> void:
 	_over = true
+	_enter_player_terminal(&"victory")
 	if _telemetry != null:
 		_telemetry.finish(true)
 	if not _rewarded:
@@ -528,6 +1043,7 @@ func _finish_victory() -> void:
 
 func _finish_defeat() -> void:
 	_over = true
+	_enter_player_terminal(&"defeat")
 	if _telemetry != null:
 		_telemetry.finish(false)
 	_show_result(tr("RESULT_DEFEAT_TITLE"), tr("RESULT_DEFEAT_BODY") % tr(mission_data.title))
@@ -616,15 +1132,23 @@ func _build_stage() -> void:
 	env.environment = environment
 	add_child(env)
 	var sun := DirectionalLight3D.new()
+	sun.name = "CombatKey"
 	sun.rotation_degrees = Vector3(-48, 30, 0)
-	sun.light_color = Color(1.0, 0.83, 0.67)
-	sun.light_energy = 1.0
+	sun.light_color = Color(1.0, 0.94, 0.86)
+	sun.light_energy = 1.18
 	sun.shadow_enabled = true
 	add_child(sun)
+	var fill := DirectionalLight3D.new()
+	fill.name = "CombatFill"
+	fill.rotation_degrees = Vector3(-18, -62, 0)
+	fill.light_color = Color(0.58, 0.74, 1.0)
+	fill.light_energy = 0.36
+	add_child(fill)
 	var rim := DirectionalLight3D.new()
+	rim.name = "CombatRim"
 	rim.rotation_degrees = Vector3(-28, -145, 0)
-	rim.light_color = Color(0.35, 0.58, 0.8)
-	rim.light_energy = 0.38
+	rim.light_color = Color(0.52, 0.72, 1.0)
+	rim.light_energy = 0.58
 	add_child(rim)
 	_camera = Camera3D.new()
 	_camera.name = "CombatCamera"
@@ -851,6 +1375,7 @@ func _spawn_core() -> void:
 	_core.hp_changed.connect(_on_core_hit)
 	_core.breached.connect(_defeat)
 	add_child(_core)
+	_core_last_hp = _core.hp
 	if _telemetry != null:
 		_telemetry.record_core_hp(_core.hp, _Core.MAX_HP)
 
@@ -867,6 +1392,41 @@ func _spawn_player() -> void:
 		return
 	_player.position = PLAYER_HOME
 	add_child(_player)
+	if _GelProfiles.motion_truth_enabled():
+		_player.duty_changed.connect(_on_player_duty_changed)
+		_player.combat_action_released.connect(_on_combat_action_released)
+		_player.combat_action_cancelled.connect(_on_combat_action_cancelled)
+	_sync_touch_movement_state()
+
+
+func _settle_player_motion(delta: float, terminal: bool = false) -> void:
+	if not _GelProfiles.motion_truth_enabled():
+		return
+	if _player != null:
+		_player.settle_motion(delta, terminal)
+	if terminal:
+		_pending_combat_actions.clear()
+
+
+func _enter_player_terminal(result: StringName) -> void:
+	const TERMINAL_DELTA := 1.0 / 60.0
+	if (
+		_GelProfiles.living_volume_enabled()
+		and _player != null
+		and _player.enter_terminal(result, TERMINAL_DELTA)
+	):
+		_pending_combat_actions.clear()
+		return
+	# V8.1 keeps its exact 12-clip terminal settle; older profiles remain no-op.
+	_settle_player_motion(TERMINAL_DELTA, true)
+
+
+func _sync_touch_movement_state() -> void:
+	if _touch_controls == null:
+		return
+	_touch_controls.set_movement_enabled(
+		_player != null and _player.duty != &"fixed" and not _over
+	)
 
 
 func _build_combat_portrait() -> void:
@@ -919,6 +1479,7 @@ func _build_combat_portrait() -> void:
 	environment.ambient_light_color = Color(0.46, 0.58, 0.72)
 	environment.ambient_light_energy = 0.46
 	environment.tonemap_mode = Environment.TONE_MAPPER_ACES
+	_GelStudio.apply_banner_preview(environment)
 	env.environment = environment
 	_portrait_stage.add_child(env)
 	var key := DirectionalLight3D.new()
@@ -934,6 +1495,12 @@ func _build_combat_portrait() -> void:
 	rim.light_color = Color(0.34, 0.58, 1.0)
 	rim.light_energy = 0.85
 	_portrait_stage.add_child(rim)
+	var fill := DirectionalLight3D.new()
+	fill.name = "CombatHeroFill"
+	fill.rotation_degrees = Vector3(-12.0, 62.0, 0.0)
+	fill.light_color = Color(0.72, 0.82, 1.0)
+	fill.light_energy = 0.32
+	_portrait_stage.add_child(fill)
 	_portrait_camera = Camera3D.new()
 	_portrait_camera.name = "CombatHeroCamera"
 	_portrait_camera.position = Vector3(1.0, 1.45, 3.75)
@@ -965,9 +1532,15 @@ func _spawn_combat_portrait_character() -> void:
 		push_warning("CombatLane: portrait scene did not instantiate ImmuneCharacter")
 		return
 	_portrait_character.name = "CombatHeroCharacter"
-	_portrait_character.position = Vector3(0.0, float(PORTRAIT_Y.get(family, -0.12)), 0.0)
+	_portrait_character.position = Vector3(0.0, PORTRAIT_Y, 0.0)
 	_portrait_character.rotation_degrees.y = -18.0
-	_portrait_character.scale = Vector3.ONE * float(PORTRAIT_SCALE.get(family, 1.45))
+	var portrait_scale := float(PORTRAIT_SCALE.get(family, 1.45))
+	if _GelProfiles.reference_sculpt_behavior_enabled() and family == "T":
+		# The authored reference sculpt is taller than the procedural body. The fit leaves a
+		# small safe margin above the pore and below the feet in the fixed camera;
+		# all earlier selectors retain their established framing constants.
+		portrait_scale = 1.10
+	_portrait_character.scale = Vector3.ONE * portrait_scale
 	_portrait_stage.add_child(_portrait_character)
 	# CharacterRoot normally listens to the global unlock signal. The presentation
 	# clone must not race the live player/CombatLane sync or start an animation
@@ -1079,9 +1652,9 @@ func _layout_combat_portrait() -> void:
 	_portrait_frame.anchor_right = 0.0
 	_portrait_frame.anchor_bottom = 1.0
 	_portrait_frame.offset_left = display_rect.position.x
-	_portrait_frame.offset_top = -PORTRAIT_BOTTOM_CLEARANCE - PORTRAIT_DISPLAY_SIZE.y
+	_portrait_frame.offset_top = display_rect.position.y - viewport_size.y
 	_portrait_frame.offset_right = display_rect.end.x
-	_portrait_frame.offset_bottom = -PORTRAIT_BOTTOM_CLEARANCE
+	_portrait_frame.offset_bottom = display_rect.end.y - viewport_size.y
 	_refresh_combat_portrait(4)
 
 
@@ -1098,12 +1671,15 @@ func _discard_combat_portrait_character() -> void:
 
 
 func _combat_portrait_display_rect(viewport_size: Vector2) -> Rect2:
+	var scale := _Responsive.layout_scale(get_viewport())
+	var display_size := PORTRAIT_DISPLAY_SIZE * scale
+	var bottom_clearance := PORTRAIT_BOTTOM_CLEARANCE * scale
 	return Rect2(
 		Vector2(
-			PORTRAIT_LEFT_MARGIN,
-			viewport_size.y - PORTRAIT_BOTTOM_CLEARANCE - PORTRAIT_DISPLAY_SIZE.y
+			PORTRAIT_LEFT_MARGIN * scale,
+			viewport_size.y - bottom_clearance - display_size.y
 		),
-		PORTRAIT_DISPLAY_SIZE
+		display_size
 	)
 
 
@@ -1241,7 +1817,7 @@ func _build_hud() -> void:
 	vitals.add_child(_boss_row)
 	var boss_label := Label.new()
 	boss_label.name = "BossLabel"
-	boss_label.text = "Boss"
+	boss_label.text = "UI_BOSS"
 	boss_label.custom_minimum_size.x = 90
 	_boss_row.add_child(boss_label)
 	_boss_bar = ProgressBar.new()
@@ -1265,18 +1841,24 @@ func _build_hud() -> void:
 	bottom_margin.add_child(action_center)
 	var action_panel := PanelContainer.new()
 	action_panel.name = "ActionTray"
-	action_panel.custom_minimum_size = Vector2(748, 70)
+	action_panel.custom_minimum_size = Vector2(930, 70)
 	action_panel.add_theme_stylebox_override("panel", _panel_box(
 		Color(0.012, 0.032, 0.048, 0.94), Color(_Tokens.CYAN, 0.34), 12
 	))
 	action_center.add_child(action_panel)
 	var actions := GridContainer.new()
 	actions.name = "ActionRow"
-	actions.columns = 3
+	actions.columns = 4
 	actions.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	actions.add_theme_constant_override("h_separation", 10)
 	actions.add_theme_constant_override("v_separation", 10)
 	action_panel.add_child(actions)
+	_ability_button = Button.new()
+	_ability_button.name = "AbilityButton"
+	_ability_button.custom_minimum_size = Vector2(210, 52)
+	_ability_button.pressed.connect(_request_active_skill)
+	_style_action_button(_ability_button, _Tokens.GOLD, true)
+	actions.add_child(_ability_button)
 	_duty_button = Button.new()
 	_duty_button.name = "DutyButton"
 	_duty_button.custom_minimum_size = Vector2(220, 52)
@@ -1295,6 +1877,11 @@ func _build_hud() -> void:
 	_back_button.pressed.connect(_back_to_missions)
 	_style_action_button(_back_button, _Tokens.MUTED)
 	actions.add_child(_back_button)
+	_touch_controls = _TouchControls.new()
+	_touch_controls.name = "CombatTouchControls"
+	_touch_controls.visible = false
+	_hud_root.add_child(_touch_controls)
+	_sync_touch_movement_state()
 	_damage_layer = Control.new()
 	_damage_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_damage_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -1406,7 +1993,7 @@ func _apply_hud_responsive_layout(force: bool = false) -> void:
 	_status.add_theme_font_size_override("font_size", _hud_metric(17 if _hud_layout_narrow else 16))
 	if bottom_margin != null:
 		bottom_margin.offset_top = -float(
-			_hud_metric(220 if _hud_layout_narrow else 94) + roundi(_hud_safe_insets.w)
+			_hud_metric(170 if _hud_layout_narrow else 94) + roundi(_hud_safe_insets.w)
 		)
 		bottom_margin.add_theme_constant_override(
 			"margin_left", _hud_metric(24) + roundi(_hud_safe_insets.x)
@@ -1417,10 +2004,17 @@ func _apply_hud_responsive_layout(force: bool = false) -> void:
 		bottom_margin.add_theme_constant_override(
 			"margin_bottom", _hud_metric(18) + roundi(_hud_safe_insets.w)
 		)
+	var safe_content_width := maxf(
+		viewport_size.x
+		- _hud_safe_insets.x
+		- _hud_safe_insets.z
+		- float(_hud_metric(48)),
+		1.0
+	)
 	if action_panel != null:
 		action_panel.custom_minimum_size = Vector2(
-			0 if _hud_layout_narrow else _hud_metric(748),
-			_hud_metric(200 if _hud_layout_narrow else 70)
+			safe_content_width if _hud_layout_narrow else _hud_metric(930),
+			_hud_metric(150 if _hud_layout_narrow else 70)
 		)
 		action_panel.size_flags_horizontal = (
 			Control.SIZE_EXPAND_FILL if _hud_layout_narrow else Control.SIZE_SHRINK_CENTER
@@ -1429,20 +2023,31 @@ func _apply_hud_responsive_layout(force: bool = false) -> void:
 			Color(0.012, 0.032, 0.048, 0.94), Color(_Tokens.CYAN, 0.34), 12
 		))
 	if actions != null:
-		actions.columns = 1 if _hud_layout_narrow else 3
+		actions.columns = 2 if _hud_layout_narrow else 4
 		actions.add_theme_constant_override("h_separation", _hud_metric(10))
 		actions.add_theme_constant_override("v_separation", _hud_metric(10))
-	for button in [_duty_button, _intel_button, _back_button]:
+	for button in [_ability_button, _duty_button, _intel_button, _back_button]:
 		button.custom_minimum_size = Vector2(
-			0 if _hud_layout_narrow else _hud_metric(220),
+			0 if _hud_layout_narrow else _hud_metric(210),
 			_hud_metric(53 if _hud_layout_narrow else 52)
 		)
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.clip_text = _hud_layout_narrow
+		button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	_style_action_button(
 		_duty_button, _Tokens.family_color(String(_family_profile.family_id)), true
 	)
+	_style_action_button(_ability_button, _Tokens.GOLD, true)
 	_style_action_button(_intel_button, _Tokens.CYAN)
 	_style_action_button(_back_button, _Tokens.MUTED)
+	if _touch_controls != null:
+		_touch_controls.visible = _hud_layout_narrow or DisplayServer.is_touchscreen_available()
+		_touch_controls.apply_layout(
+			_hud_layout_scale,
+			_hud_safe_insets,
+			float(_hud_metric(170 if _hud_layout_narrow else 94))
+		)
+		_sync_touch_movement_state()
 	var result_available_width := (
 		viewport_size.x
 		- _hud_safe_insets.x
@@ -1460,11 +2065,13 @@ func _apply_hud_responsive_layout(force: bool = false) -> void:
 		result_column.add_theme_constant_override("separation", _hud_metric(14))
 	_result_title.add_theme_font_size_override("font_size", _hud_metric(34))
 	_result_body.add_theme_font_size_override("font_size", _hud_metric(19))
+	_refresh_prompts()
 	_request_combat_portrait_layout(4)
 
 
 func responsive_contract() -> Dictionary:
 	var narrow := _Responsive.is_narrow_phone(get_viewport())
+	var compact := _Responsive.is_compact_landscape(get_viewport())
 	var physical := _Responsive.physical_window_size()
 	var viewport_size := get_viewport().get_visible_rect().size
 	var top_margin := _hud_root.find_child("HudTopMargin", true, false) as MarginContainer
@@ -1472,16 +2079,28 @@ func responsive_contract() -> Dictionary:
 	var bottom_margin := _hud_root.find_child("HudBottomMargin", true, false) as MarginContainer
 	var actions := _hud_root.find_child("ActionRow", true, false) as GridContainer
 	var min_action_height := INF
-	for button in [_duty_button, _intel_button, _back_button]:
+	var min_action_width := INF
+	for button in [_ability_button, _duty_button, _intel_button, _back_button]:
+		var physical_button_size := _Responsive.logical_size_to_physical(
+			get_viewport(),
+			Vector2(
+				maxf(button.size.x, button.custom_minimum_size.x),
+				maxf(button.size.y, button.custom_minimum_size.y)
+			)
+		)
+		min_action_width = minf(min_action_width, physical_button_size.x)
 		min_action_height = minf(
 			min_action_height,
-			_Responsive.logical_height_to_physical(
-				get_viewport(), maxf(button.size.y, button.custom_minimum_size.y)
-			)
+			physical_button_size.y
 		)
 	var copy_physical := _Responsive.logical_height_to_physical(
 		get_viewport(), float(_status.get_theme_font_size("font_size"))
 	)
+	var min_touch_height := 0.0
+	if _touch_controls != null:
+		min_touch_height = _Responsive.logical_height_to_physical(
+			get_viewport(), _touch_controls.minimum_button_height()
+		)
 	var safe_pass := (
 		top_margin != null
 		and bottom_margin != null
@@ -1500,41 +2119,72 @@ func responsive_contract() -> Dictionary:
 		)
 	)
 	var critical_inside_safe := true
-	for control_name in ["MissionBriefingPanel", "VitalsPanel", "ActionTray"]:
+	var critical_controls := ["MissionBriefingPanel", "VitalsPanel", "ActionTray"]
+	var critical_control_contract := {}
+	if narrow:
+		critical_controls.append("TouchDirectionPad")
+	for control_name in critical_controls:
 		var control := _hud_root.find_child(control_name, true, false) as Control
+		var rect := control.get_global_rect() if control != null else Rect2()
+		var inside := control != null and safe_rect.grow(1.0).encloses(rect)
+		critical_control_contract[control_name] = {
+			"inside": inside,
+			"rect": [rect.position.x, rect.position.y, rect.size.x, rect.size.y],
+		}
 		critical_inside_safe = (
 			critical_inside_safe
-			and control != null
-			and safe_rect.grow(1.0).encloses(control.get_global_rect())
+			and inside
 		)
 	var pause_contract := _pause_menu.responsive_contract() if _pause_menu != null else {}
-	var all_pass := (
-		not narrow
-		or (
+	var all_pass := true
+	if narrow:
+		all_pass = (
 			top_row != null
 			and top_row.columns == 1
 			and actions != null
-			and actions.columns == 1
+			and actions.columns == 2
+			and min_action_width >= 96.0
+			and min_action_height >= 44.0
+			and _touch_controls != null
+			and _touch_controls.visible
+			and _touch_controls.directional_button_count() == 4
+			and min_touch_height >= 44.0
+			and copy_physical >= 14.0
+			and safe_pass
+			and critical_inside_safe
+			and bool(pause_contract.get("all_pass", false))
+		)
+	elif compact:
+		all_pass = (
+			top_row != null
+			and top_row.columns == 2
+			and actions != null
+			and actions.columns == 4
+			and min_action_width >= 96.0
 			and min_action_height >= 44.0
 			and copy_physical >= 14.0
 			and safe_pass
 			and critical_inside_safe
 			and bool(pause_contract.get("all_pass", false))
 		)
-	)
 	return {
-		"mode": "narrow-phone" if narrow else ("tall" if _hud_layout_scale > 1.0 else "wide"),
+		"mode": "narrow-phone" if narrow else ("compact-landscape" if compact else ("tall" if _hud_layout_scale > 1.0 else "wide")),
 		"physical": [physical.x, physical.y],
 		"logical": [viewport_size.x, viewport_size.y],
 		"layout_scale": _hud_layout_scale,
 		"safe_area_source": _Responsive.safe_area_source(),
 		"safe_insets_logical": [_hud_safe_insets.x, _hud_safe_insets.y, _hud_safe_insets.z, _hud_safe_insets.w],
+		"safe_rect": [safe_rect.position.x, safe_rect.position.y, safe_rect.size.x, safe_rect.size.y],
 		"top_columns": top_row.columns if top_row != null else 0,
 		"action_columns": actions.columns if actions != null else 0,
+		"minimum_action_width_physical": min_action_width,
 		"minimum_action_height_physical": min_action_height,
+		"minimum_touch_height_physical": min_touch_height,
+		"touch_controls_visible": _touch_controls.visible if _touch_controls != null else false,
 		"minimum_copy_size_physical": copy_physical,
 		"safe_margins_pass": safe_pass,
 		"critical_controls_inside_safe_area": critical_inside_safe,
+		"critical_controls": critical_control_contract,
 		"pause": pause_contract,
 		"all_pass": all_pass,
 	}
@@ -1620,15 +2270,45 @@ func _refresh_hud() -> void:
 	_objective.text = objective_text()
 	if _duty_button:
 		_duty_button.disabled = _over
+	if _ability_button and _active_skill_controller:
+		_ability_button.disabled = _over or not _active_skill_controller.is_ready()
+	_sync_touch_movement_state()
 
 
 func _refresh_prompts() -> void:
+	if _ability_button and _active_skill_controller and _active_skill_controller.profile:
+		_ability_button.disabled = _over or not _active_skill_controller.is_ready()
+		var active_name := tr(_active_skill_controller.profile.name_key)
+		var full_ability_text := ""
+		if _active_skill_controller.is_ready():
+			full_ability_text = tr("UI_ACTIVE_SKILL_READY") % [
+				SettingsState.prompt(&"demo_active_skill"), active_name
+			]
+			_ability_button.text = active_name if _hud_layout_narrow else full_ability_text
+		else:
+			full_ability_text = tr("UI_ACTIVE_SKILL_COOLDOWN") % [
+				active_name, ceili(_active_skill_controller.remaining_seconds())
+			]
+			_ability_button.text = (
+				tr("UI_ACTIVE_SKILL_COOLDOWN_SHORT")
+				% [active_name, ceili(_active_skill_controller.remaining_seconds())]
+				if _hud_layout_narrow
+				else full_ability_text
+			)
+		_ability_button.tooltip_text = full_ability_text
 	if _duty_button:
-		_duty_button.text = tr("UI_TOGGLE_DUTY") % SettingsState.prompt(&"demo_toggle_duty")
+		var full_duty_text := tr("UI_TOGGLE_DUTY") % SettingsState.prompt(&"demo_toggle_duty")
+		_duty_button.text = tr("UI_DUTY_SHORT") if _hud_layout_narrow else full_duty_text
+		_duty_button.tooltip_text = full_duty_text
 	if _intel_button:
-		_intel_button.text = "%s · %s" % [SettingsState.prompt(&"demo_research"), tr("UI_RESEARCH_T") if _family_profile and _family_profile.family_id == &"T" else tr("UI_CHARACTER_INTEL")]
+		var intel_name := tr("UI_RESEARCH_T") if _family_profile and _family_profile.family_id == &"T" else tr("UI_CHARACTER_INTEL")
+		var full_intel_text := "%s · %s" % [SettingsState.prompt(&"demo_research"), intel_name]
+		_intel_button.text = tr("UI_CHARACTER_INTEL_SHORT") if _hud_layout_narrow else full_intel_text
+		_intel_button.tooltip_text = full_intel_text
 	if _back_button:
-		_back_button.text = tr("UI_RETURN_MISSION_DESK")
+		var full_back_text := tr("UI_RETURN_MISSION_DESK")
+		_back_button.text = tr("UI_RETURN_MISSION_DESK_SHORT") if _hud_layout_narrow else full_back_text
+		_back_button.tooltip_text = full_back_text
 
 
 func _set_status(text: String) -> void:
@@ -1693,7 +2373,11 @@ func _show_onboarding() -> void:
 	title.add_theme_font_size_override("font_size", 34)
 	box.add_child(title)
 	var body := Label.new()
-	body.text = (tr("UI_TUTORIAL_BODY") % [SettingsState.prompt(&"demo_toggle_duty"), SettingsState.prompt(&"demo_pause")]).replace("\\n", "\n")
+	body.text = (tr("UI_TUTORIAL_BODY") % [
+		SettingsState.prompt(&"demo_active_skill"),
+		SettingsState.prompt(&"demo_toggle_duty"),
+		SettingsState.prompt(&"demo_pause"),
+	]).replace("\\n", "\n")
 	body.add_theme_font_size_override("font_size", 21)
 	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	box.add_child(body)

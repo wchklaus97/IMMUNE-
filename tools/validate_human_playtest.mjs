@@ -99,8 +99,8 @@ export function validateHumanPlaytest(report, { allowIncomplete = false } = {}) 
   if (!isRecord(report.build)) {
     errors.push("build: expected an object");
   } else {
-    if (typeof report.build.version !== "string" || !/^\d+\.\d+\.\d+$/u.test(report.build.version)) {
-      errors.push("build.version: expected numeric SemVer");
+    if (typeof report.build.version !== "string" || !/^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/u.test(report.build.version)) {
+      errors.push("build.version: expected SemVer");
     }
     if (!allowIncomplete && (typeof report.build.commit !== "string" || !/^[0-9a-f]{7,40}$/u.test(report.build.commit))) {
       errors.push("build.commit: expected a 7..40 character lowercase Git commit, not a placeholder");

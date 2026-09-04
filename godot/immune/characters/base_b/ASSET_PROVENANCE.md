@@ -9,6 +9,7 @@
 - Texturing: disabled; the shared Godot wet-gel shader supplies the violet jelly look
 - Meshy output: GLB only, 158,348 bytes
 - Integrated GLB: 736,468 bytes after Assimp 6.0.2 regenerated missing smooth vertex normals and repaired the rear-pole shading seam; geometry, topology, and silhouette unchanged
+- Integrated GLB SHA-256: `c57cbf701c6ec66dfca69715e82ffe9339bc5ebf121fa05251f54157bab3100e`
 - Reproducible post-process source: `tools/smooth_meshy_b_normals.cpp`
 - Credits consumed: 5
 - Generated: 2026-08-27 (Asia/Hong_Kong)
@@ -19,3 +20,11 @@ outer workspace under `work/meshy_output/20260827_223931_b-cell-jelly-smart-topo
 Known review note: the single-view reconstruction produced a circular rear shading
 seam. The integrated GLB corrects that local normal patch without moving vertices;
 regenerate from a true multi-view reference before a final commercial hero-asset pass.
+
+## Shipping status
+
+V8.1 runtime B loads the project-authored `reference_body.tscn`. The Meshy GLB
+is retained only as development provenance and is explicitly excluded from all
+release presets. It must not be restored to a build or used in marketing until
+the input-image rights, account receipt, and applicable commercial terms are
+attached and approved by the owner.

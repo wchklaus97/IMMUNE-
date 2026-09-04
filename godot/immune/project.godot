@@ -16,7 +16,7 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 
 config/name="IMMUNE"
 config/description="3D immune-cell tower defense plus the permanent research-network HUD."
-config/version="0.4.0"
+config/version="0.5.0-rc.1"
 config/icon="res://ui_icons/symbols/SYM-CORE.png"
 run/main_scene="res://ui/research/research_network.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
@@ -37,13 +37,22 @@ window/size/viewport_height=1080
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/v8_5_raw_export/plugin.cfg", "res://addons/v8_6_raw_export/plugin.cfg")
+
 [gui]
 
 theme/custom_font="res://fonts/NotoSansHK-VF.ttf"
+theme/custom_font.editor_hint=""
 
 [internationalization]
 
 locale/translations=PackedStringArray("res://translations/game.zh_HK.translation", "res://translations/game.en.translation", "res://translations/research_catalog.zh_HK.translation", "res://translations/research_catalog.en.translation")
+
+[immune]
+
+visual/gel_look="v8_6"
 
 [input]
 
@@ -75,6 +84,11 @@ demo_back={
 demo_toggle_duty={
 "deadzone": 0.5,
 "events": Array[InputEvent]([Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":0,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":32,"key_label":0,"unicode":0,"location":0,"echo":false,"script":null)
+])
+}
+demo_active_skill={
+"deadzone": 0.5,
+"events": Array[InputEvent]([Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":0,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":69,"key_label":0,"unicode":0,"location":0,"echo":false,"script":null)
 ])
 }
 demo_research={

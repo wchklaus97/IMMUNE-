@@ -5,10 +5,12 @@ extends Node
 ## Run:
 ##   godot --path <proj> --resolution 1920x1080 res://tools/gameplay_shot.tscn -- \
 ##     --out=<absolute-dir> [--family=B] [--mission=MISSION-01] [--tag=B-v2] \
-##     [--locale=zh_HK|en] --portrait-expected=visible|hidden
+##     [--locale=zh_HK|en] --portrait-expected=visible|hidden \
+##     [--store-framing=on|off] [--pause-capture=auto|on|off]
 
 const ALLOWED_ARGS: Array[String] = [
 	"out", "family", "mission", "tag", "locale", "portrait-expected", "save-path",
+	"store-framing", "pause-capture",
 ]
 const QA_STARTUP_FAILURE_EXIT_CODE := 74
 const IMAGE_SAMPLE_GRID := 16
@@ -26,6 +28,8 @@ var _mission := "MISSION-01"
 var _tag := "gameplay"
 var _locale := "zh_HK"
 var _portrait_expected := ""
+var _store_framing := false
+var _pause_capture := "auto"
 var _combat: Node
 var _presentation_samples: Array[Dictionary] = []
 var _baseline_live_scale := Vector3.ONE
@@ -47,6 +51,8 @@ func _ready() -> void:
 	_tag = String(_args.get("tag", "%s-v2" % _family))
 	_locale = String(_args.get("locale", "zh_HK"))
 	_portrait_expected = String(_args.get("portrait-expected", "")).to_lower()
+	var store_framing_value := String(_args.get("store-framing", "off")).to_lower()
+	_pause_capture = String(_args.get("pause-capture", "auto")).to_lower()
 	if not ResearchState.VALID_FAMILIES.has(_family):
 		push_error("gameplay_shot.gd: unsupported --family=%s" % _family)
 		get_tree().quit(2)
@@ -65,6 +71,15 @@ func _ready() -> void:
 		)
 		get_tree().quit(2)
 		return
+	if store_framing_value not in ["on", "off"]:
+		push_error("gameplay_shot.gd: --store-framing must be on or off")
+		get_tree().quit(2)
+		return
+	if _pause_capture not in ["auto", "on", "off"]:
+		push_error("gameplay_shot.gd: --pause-capture must be auto, on, or off")
+		get_tree().quit(2)
+		return
+	_store_framing = store_framing_value == "on"
 	if not _is_safe_tag(_tag):
 		push_error(
 			"gameplay_shot.gd: --tag must be a non-empty safe filename component "
@@ -72,6 +87,10 @@ func _ready() -> void:
 		)
 		get_tree().quit(2)
 		return
+	# Keep the pause-menu selector and translated copy in the same in-memory QA
+	# locale without calling SettingsState.set_locale(), which would persist over
+	# the player's real settings file.
+	SettingsState.locale_code = _locale
 	TranslationServer.set_locale(_locale)
 	if _out_dir.is_empty():
 		push_error("gameplay_shot.gd: --out=<dir> required")
@@ -108,9 +127,14 @@ func _ready() -> void:
 		_combat = null
 		get_tree().quit(3)
 		return
+	if _store_framing:
+		_configure_store_camera()
 	_capture_presentation_baseline()
-	_combat.call("debug_spawn_regular")
-	await _settle(1)
+	if _store_framing:
+		await _stage_store_fixed_encounter()
+	else:
+		_combat.call("debug_spawn_regular")
+		await _settle(1)
 	# Stop gameplay simulation while leaving renderers, AnimationPlayers, and
 	# one-shot particles alive long enough to finish a valid visual frame.
 	_freeze_simulation()
@@ -127,6 +151,8 @@ func _ready() -> void:
 	_combat.call("debug_advance_phase")
 	await _settle(3)
 	_force_visual_duty()
+	if _store_framing:
+		await _stage_store_mobile_encounter()
 	_restore_camera()
 	# Frame-count waits run far faster than real time in this harness. The duty
 	# animation is one second long, so wait on the clock before readback or the
@@ -137,6 +163,9 @@ func _ready() -> void:
 	_record_presentation_contract("mobile")
 	_evidence_ok = (await _save("%s-combat-mobile.png" % _tag) == OK) and _evidence_ok
 	_combat.call("debug_advance_phase")
+	await _settle(3)
+	if _store_framing:
+		await _stage_store_boss_encounter()
 	_restore_camera()
 	_freeze_simulation()
 	await get_tree().create_timer(0.2).timeout
@@ -244,6 +273,91 @@ func _restore_camera() -> void:
 	var camera := _combat.get("_camera") as Camera3D
 	if camera != null:
 		camera.position = _combat.get("_camera_home")
+
+
+func _configure_store_camera() -> void:
+	# The production camera intentionally shows the complete lane. Steam captures
+	# need a closer, still-authentic gameplay composition so characters and enemy
+	# silhouettes remain legible at capsule-preview scale. This harness-only camera
+	# never changes combat scenes or player settings.
+	var camera := _combat.get("_camera") as Camera3D
+	if camera == null:
+		return
+	camera.position = Vector3(0.0, 10.8, 11.8)
+	camera.rotation_degrees = Vector3(-50.0, 0.0, 0.0)
+	camera.fov = 54.0
+	_combat.set("_camera_home", camera.position)
+
+
+func _stage_store_fixed_encounter() -> void:
+	var player := _combat.get("_player") as ImmuneCharacter
+	if player != null:
+		player.global_position = Vector3(-0.35, 0.55, 1.4)
+	await _stage_store_regulars([
+		Vector2(-2.45, 7.6),
+		Vector2(-1.25, 6.1),
+		Vector2(0.0, 8.4),
+		Vector2(1.35, 5.3),
+		Vector2(2.5, 7.0),
+		Vector2(0.2, 4.2),
+	])
+	print("GAMEPLAY_STORE_STAGE fixed regulars=%d" % _store_regulars().size())
+
+
+func _stage_store_mobile_encounter() -> void:
+	var player := _combat.get("_player") as ImmuneCharacter
+	if player != null:
+		player.global_position = Vector3(-1.45, 0.55, 5.0)
+	await _stage_store_regulars([
+		Vector2(-2.55, 8.2),
+		Vector2(-0.45, 7.3),
+		Vector2(1.35, 6.0),
+		Vector2(2.65, 8.4),
+		Vector2(0.15, 4.0),
+	])
+	print("GAMEPLAY_STORE_STAGE mobile regulars=%d" % _store_regulars().size())
+
+
+func _stage_store_boss_encounter() -> void:
+	var player := _combat.get("_player") as ImmuneCharacter
+	if player != null:
+		player.global_position = Vector3(-0.85, 0.55, 1.8)
+	var boss := _combat.get("_boss") as Node3D
+	if boss != null:
+		boss.global_position = Vector3(0.65, float(boss.get("ground_y")), 6.8)
+	await _stage_store_regulars([
+		Vector2(-2.45, 6.0),
+		Vector2(2.65, 5.3),
+		Vector2(-1.4, 8.4),
+	])
+	print(
+		"GAMEPLAY_STORE_STAGE boss=%s escorts=%d"
+		% [str(boss != null), _store_regulars().size()]
+	)
+
+
+func _stage_store_regulars(layout: Array[Vector2]) -> void:
+	var regulars := _store_regulars()
+	while regulars.size() < layout.size():
+		_combat.call("debug_spawn_regular")
+		await _settle(1)
+		regulars = _store_regulars()
+	for index in mini(regulars.size(), layout.size()):
+		var enemy := regulars[index]
+		var xz := layout[index]
+		enemy.global_position = Vector3(xz.x, float(enemy.get("ground_y")), xz.y)
+
+
+func _store_regulars() -> Array[Node3D]:
+	var regulars: Array[Node3D] = []
+	for node in get_tree().get_nodes_in_group("bacterium"):
+		if not node is Node3D or not _combat.is_ancestor_of(node):
+			continue
+		var enemy := node as Node3D
+		if bool(enemy.get("is_boss")):
+			continue
+		regulars.append(enemy)
+	return regulars
 
 
 func _force_visual_duty() -> void:
@@ -413,11 +527,13 @@ func _narrow_phone_contract_passes() -> bool:
 
 func _capture_narrow_pause() -> bool:
 	var physical_size := DisplayServer.window_get_size()
-	if physical_size.x > 430 or physical_size.y <= physical_size.x:
+	var narrow_phone := physical_size.x <= 430 and physical_size.y > physical_size.x
+	var should_capture := _pause_capture == "on" or (_pause_capture == "auto" and narrow_phone)
+	if not should_capture:
 		return true
 	var pause_menu := _combat.get("_pause_menu") as ImmunePauseMenu
 	if pause_menu == null or not pause_menu.has_method("responsive_contract"):
-		push_error("gameplay_shot.gd: pause menu missing for narrow-phone evidence")
+		push_error("gameplay_shot.gd: pause menu missing for requested evidence")
 		return false
 	pause_menu.set_open(true)
 	# Keep the deterministic capture coroutine advancing while retaining the
@@ -431,7 +547,7 @@ func _capture_narrow_pause() -> bool:
 	pause_menu.set_open(false)
 	get_tree().paused = false
 	if not contract_ok:
-		push_error("gameplay_shot.gd: narrow-phone pause contract failed")
+		push_error("gameplay_shot.gd: pause responsive contract failed")
 	return contract_ok and save_ok
 
 

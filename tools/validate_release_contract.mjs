@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-import { readFile, stat } from "node:fs/promises";
-import { dirname, isAbsolute, join, resolve } from "node:path";
+import { lstat, readFile, readdir, stat } from "node:fs/promises";
+import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -19,6 +19,26 @@ const EXPECTED_EXPORTS = [
   ["web/index.wasm", 1_000_000],
   ["web/index.audio.worklet.js", 1_000],
   ["web/index.audio.position.worklet.js", 1_000],
+  ["web/index.png", 1_000],
+  ["web/index.icon.png", 1_000],
+  ["web/index.apple-touch-icon.png", 1_000],
+];
+const EXPECTED_EXPORT_PATHS = new Set(EXPECTED_EXPORTS.map(([path]) => path));
+const EXCLUDED_RELEASE_RESOURCES = [
+  "res://characters/base_b/CHAR-BASE-B-meshy-t2.glb",
+  "res://characters/base_m/CHAR-BASE-M-meshy-t2.glb",
+  "res://characters/base_t/CHAR-BASE-T-tripo-5k.glb",
+  "res://characters/base_t/CHAR-BASE-T-tripo-5k_orange+alien+blob+3d+model-+remesh_basecolor.jpg",
+  "res://characters/base_t/CHAR-BASE-T-fix.glb",
+  "res://characters/base_t/CHAR-BASE-T-fix_orange+alien+blob+3d+model-+remesh_basecolor.jpg",
+];
+const V86_SHIPPING_FEATURE = "v8_6_shipping";
+const V86_ACTIVE_RESOURCE = "res://characters/base_t/CHAR-BASE-T-v8-6-authored-sculpt-r7-2.glb";
+const V86_INTERMEDIATE_RESOURCES = [
+  "res://characters/base_t/CHAR-BASE-T-v8-6-authored-sculpt-r5.glb",
+  "res://characters/base_t/CHAR-BASE-T-v8-6-authored-sculpt-r6.glb",
+  "res://characters/base_t/CHAR-BASE-T-v8-6-authored-sculpt-r7.glb",
+  "res://characters/base_t/CHAR-BASE-T-v8-6-authored-sculpt-r7-1.glb",
 ];
 
 export function parseConfig(source, file = "config") {
@@ -63,6 +83,20 @@ function expectText(errors, value, label) {
   if (typeof value !== "string" || !value.trim()) errors.push(`${label}: expected a non-empty string`);
 }
 
+export function nativeVersionIdentity(version) {
+  const match = /^(\d+)\.(\d+)\.(\d+)(?:-rc\.(\d+))?$/u.exec(String(version));
+  if (!match) return null;
+  const marketing = `${match[1]}.${match[2]}.${match[3]}`;
+  const rc = match[4] ?? "";
+  return {
+    source: String(version),
+    windowsFile: rc ? `${marketing}.${rc}` : marketing,
+    windowsProduct: String(version),
+    macShort: marketing,
+    macBuild: rc || marketing,
+  };
+}
+
 function presetByName(sections, name) {
   for (const [section, values] of sections) {
     if (/^preset\.\d+$/u.test(section) && values.name === name) {
@@ -72,12 +106,56 @@ function presetByName(sections, name) {
   return null;
 }
 
+function presetExcludesResource(preset, resource) {
+  const relative = resource.slice("res://".length);
+  return String(preset.base.export_files ?? "").includes(resource)
+    || String(preset.base.exclude_filter ?? "").split(",").map((value) => value.trim()).includes(relative);
+}
+
 function projectResourcePath(root, resourcePath) {
   if (typeof resourcePath !== "string" || !resourcePath.startsWith("res://")) return "";
   return join(root, "godot/immune", resourcePath.slice("res://".length));
 }
 
+export async function validateArtifactInventory(artifactRoot) {
+  const errors = [];
+  const discovered = [];
+  async function visit(directory) {
+    const entries = await readdir(directory, { withFileTypes: true });
+    entries.sort((a, b) => a.name.localeCompare(b.name, "en"));
+    for (const entry of entries) {
+      const target = join(directory, entry.name);
+      const info = await lstat(target);
+      const path = relative(artifactRoot, target).split(sep).join("/");
+      if (info.isSymbolicLink()) {
+        errors.push(`artifact ${path}: symbolic links are not allowed`);
+      } else if (info.isDirectory()) {
+        await visit(target);
+      } else if (info.isFile()) {
+        discovered.push(path);
+      } else {
+        errors.push(`artifact ${path}: expected a regular file`);
+      }
+    }
+  }
+  try {
+    await visit(artifactRoot);
+  } catch (error) {
+    if (error?.code === "ENOENT") errors.push(`artifact root: missing ${artifactRoot}`);
+    else throw error;
+  }
+  for (const path of discovered) {
+    if (!EXPECTED_EXPORT_PATHS.has(path)) errors.push(`unexpected artifact ${path}: file is not part of the release contract`);
+  }
+  for (const path of EXPECTED_EXPORT_PATHS) {
+    if (!discovered.includes(path)) errors.push(`artifact ${path}: missing`);
+  }
+  return { errors, files: discovered };
+}
+
 async function validateArtifactSet(errors, artifactRoot) {
+  const inventory = await validateArtifactInventory(artifactRoot);
+  errors.push(...inventory.errors);
   for (const [relative, minimumBytes] of EXPECTED_EXPORTS) {
     const target = join(artifactRoot, relative);
     try {
@@ -86,7 +164,7 @@ async function validateArtifactSet(errors, artifactRoot) {
         errors.push(`artifact ${relative}: expected a file of at least ${minimumBytes} bytes`);
       }
     } catch {
-      errors.push(`artifact ${relative}: missing`);
+      // Exact inventory check above reports missing paths once.
     }
   }
   try {
@@ -112,10 +190,11 @@ export async function validateReleaseContract({ root = ROOT, tag = "", artifacts
 
   const name = app["config/name"];
   const version = app["config/version"];
+  const nativeVersion = nativeVersionIdentity(version);
   const icon = app["config/icon"];
   expectText(errors, name, "project application/config/name");
-  if (typeof version !== "string" || !/^\d+\.\d+\.\d+$/u.test(version)) {
-    errors.push(`project application/config/version: expected numeric SemVer, got ${JSON.stringify(version)}`);
+  if (!nativeVersion) {
+    errors.push(`project application/config/version: expected numeric SemVer or an rc prerelease, got ${JSON.stringify(version)}`);
   }
   expect(errors, rendering["renderer/rendering_method"], "gl_compatibility", "project renderer");
   expectText(errors, icon, "project application/config/icon");
@@ -145,8 +224,8 @@ export async function validateReleaseContract({ root = ROOT, tag = "", artifacts
     expect(errors, windows.options["application/product_name"], name, "Windows product name");
     expectText(errors, windows.options["application/company_name"], "Windows company name");
     expectText(errors, windows.options["application/file_description"], "Windows file description");
-    expect(errors, windows.options["application/file_version"], version, "Windows file version");
-    expect(errors, windows.options["application/product_version"], version, "Windows product version");
+    expect(errors, windows.options["application/file_version"], nativeVersion?.windowsFile, "Windows file version");
+    expect(errors, windows.options["application/product_version"], nativeVersion?.windowsProduct, "Windows product version");
     expect(errors, windows.options["application/icon"], icon, "Windows icon");
   }
   if (linux) {
@@ -165,14 +244,36 @@ export async function validateReleaseContract({ root = ROOT, tag = "", artifacts
     expect(errors, mac.base.platform, "macOS", "macOS platform");
     expect(errors, mac.base.export_path, "build/releases/IMMUNE-macOS.zip", "macOS export path");
     expect(errors, mac.options["binary_format/architecture"], "universal", "macOS architecture");
-    expect(errors, mac.options["application/short_version"], version, "macOS short version");
-    expect(errors, mac.options["application/version"], version, "macOS build version");
+    expect(errors, mac.options["application/short_version"], nativeVersion?.macShort, "macOS short version");
+    expect(errors, mac.options["application/version"], nativeVersion?.macBuild, "macOS build version");
     expect(errors, mac.options["application/icon"], icon, "macOS icon");
     const bundle = mac.options["application/bundle_identifier"];
     if (typeof bundle !== "string" || !/^[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+$/u.test(bundle)) {
       errors.push(`macOS bundle identifier: invalid ${JSON.stringify(bundle)}`);
     }
     macSigning = mac.options["codesign/codesign"] === 1 && mac.options["codesign/identity"] === "-" ? "adhoc" : "configured";
+    expect(errors, mac.options["codesign/entitlements/allow_dyld_environment_variables"], true, "macOS Steam overlay DYLD entitlement");
+    expect(errors, mac.options["codesign/entitlements/disable_library_validation"], true, "macOS Steam overlay library entitlement");
+    expect(errors, mac.options["codesign/entitlements/debugging"], false, "macOS production debugging entitlement");
+    expect(errors, mac.options["codesign/entitlements/app_sandbox/enabled"], false, "macOS Steam App Sandbox entitlement");
+  }
+
+  for (const [label, preset] of [["Windows Desktop", windows], ["Linux/X11", linux], ["Web", web], ["macOS", mac]]) {
+    if (!preset) continue;
+    expect(errors, preset.base.export_filter, "exclude", `${label} release resource policy`);
+    expect(errors, preset.base.custom_features, V86_SHIPPING_FEATURE, `${label} V8.6 shipping feature`);
+    const excluded = String(preset.base.export_files ?? "");
+    for (const resource of EXCLUDED_RELEASE_RESOURCES) {
+      if (!excluded.includes(`\"${resource}\"`)) errors.push(`${label} release exclusions: missing ${resource}`);
+    }
+    if (presetExcludesResource(preset, V86_ACTIVE_RESOURCE)) {
+      errors.push(`${label} release exclusions: active V8.6 R7.2 body is excluded`);
+    }
+    for (const resource of V86_INTERMEDIATE_RESOURCES) {
+      if (!presetExcludesResource(preset, resource)) {
+        errors.push(`${label} release exclusions: intermediate V8.6 body leaked ${resource}`);
+      }
+    }
   }
 
   for (const [section, values] of presets) {
@@ -201,14 +302,22 @@ export async function validateReleaseContract({ root = ROOT, tag = "", artifacts
   };
 }
 
-function argument(name) {
-  const prefix = `--${name}=`;
-  const match = process.argv.slice(2).find((value) => value.startsWith(prefix));
-  return match ? match.slice(prefix.length) : "";
+export function releaseArguments(argv) {
+  const allowed = new Set(["tag", "artifacts"]);
+  const result = {};
+  for (const raw of argv) {
+    const match = /^--([^=]+)=(.*)$/u.exec(raw);
+    if (!match || !allowed.has(match[1])) throw new Error(`Unknown release-contract argument: ${raw}`);
+    if (Object.hasOwn(result, match[1])) throw new Error(`Duplicate release-contract argument: --${match[1]}`);
+    if (!match[2]) throw new Error(`Release-contract argument requires a value: --${match[1]}`);
+    result[match[1]] = match[2];
+  }
+  return result;
 }
 
 async function main() {
-  const report = await validateReleaseContract({ tag: argument("tag"), artifacts: argument("artifacts") });
+  const args = releaseArguments(process.argv.slice(2));
+  const report = await validateReleaseContract({ tag: args.tag ?? "", artifacts: args.artifacts ?? "" });
   console.log(`RELEASE_CONTRACT_OK version=${report.version} presets=${report.presetCount} icon=${report.icon} web=${report.webMode} mac_signing=${report.macSigning} artifacts=${report.artifacts} tag=${report.tag}`);
 }
 

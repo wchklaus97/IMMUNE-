@@ -11,6 +11,7 @@ extends RefCounted
 const SHADER_PATH := "res://characters/gel/wet_gel.gdshader"
 const MEMBRANE_SHADER_PATH := "res://characters/gel/jelly_shell.gdshader"
 const AUTHORED_HEIGHT_PATH := "res://characters/gel/jelly_micro_height.png"
+const _Profiles := preload("res://characters/gel/gel_profiles.gd")
 
 ## Uniforms that carry family identity. Everything else is shared look tuning.
 ## All four are derived from the one palette entry, so a family is one Color.
@@ -28,14 +29,102 @@ const MEMBRANE_OPTIONS: Array[StringName] = [
 	&"membrane_roughness",
 	&"membrane_rim_emission",
 	&"membrane_thickness",
+	&"membrane_shell_energy_scale",
+	&"membrane_shell_diffuse_strength",
+	&"membrane_shell_specular_level",
+	&"membrane_shell_emission_limit",
+	&"membrane_shell_alpha_limit",
+	&"membrane_shell_white_mix",
+	&"membrane_studio_reflection_strength",
+	&"membrane_studio_reflection_alpha",
+	&"membrane_studio_reflection_budget",
+	&"membrane_studio_streak_strength",
+	&"membrane_studio_card_broadening",
+	&"membrane_studio_card_tail_cut",
 ]
 
+const MEMBRANE_ENERGY_OPTIONS: Dictionary = {
+	&"membrane_shell_energy_scale": &"shell_energy_scale",
+	&"membrane_shell_diffuse_strength": &"shell_diffuse_strength",
+	&"membrane_shell_specular_level": &"shell_specular_level",
+	&"membrane_shell_emission_limit": &"shell_emission_limit",
+	&"membrane_shell_alpha_limit": &"shell_alpha_limit",
+	&"membrane_shell_white_mix": &"shell_white_mix",
+	&"membrane_studio_reflection_strength": &"studio_reflection_strength",
+	&"membrane_studio_reflection_alpha": &"studio_reflection_alpha",
+	&"membrane_studio_reflection_budget": &"studio_reflection_budget",
+	&"membrane_studio_streak_strength": &"studio_streak_strength",
+	&"membrane_studio_card_broadening": &"studio_card_broadening",
+	&"membrane_studio_card_tail_cut": &"studio_card_tail_cut",
+}
+
 const SHELL_V5_BOUNDS: Dictionary = {
-	&"shell_energy_scale": 0.38,
-	&"shell_diffuse_strength": 0.22,
-	&"shell_specular_level": 0.38,
-	&"shell_emission_limit": 0.02,
-	&"shell_alpha_limit": 0.24,
+	&"shell_energy_scale": 0.42,
+	&"shell_diffuse_strength": 0.18,
+	&"shell_specular_level": 0.48,
+	&"shell_emission_limit": 0.025,
+	&"shell_alpha_limit": 0.28,
+}
+
+const SHELL_V6_BOUNDS: Dictionary = {
+	&"shell_energy_scale": 0.68,
+	&"shell_diffuse_strength": 0.07,
+	&"shell_specular_level": 0.78,
+	&"shell_emission_limit": 0.065,
+	&"shell_alpha_limit": 0.40,
+	&"shell_white_mix": 0.28,
+	&"shell_thickness": 0.014,
+	&"studio_reflection_strength": 0.42,
+	&"studio_reflection_alpha": 0.045,
+	&"studio_reflection_budget": 0.065,
+}
+
+const SHELL_V7_BOUNDS: Dictionary = {
+	&"shell_energy_scale": 0.74,
+	&"shell_diffuse_strength": 0.045,
+	&"shell_specular_level": 0.86,
+	&"shell_emission_limit": 0.075,
+	&"shell_alpha_limit": 0.46,
+	&"shell_white_mix": 0.38,
+	&"shell_thickness": 0.018,
+	&"studio_reflection_strength": 0.52,
+	&"studio_reflection_alpha": 0.055,
+	&"studio_reflection_budget": 0.075,
+	&"studio_streak_strength": 0.62,
+}
+
+const SHELL_V8_2_BOUNDS: Dictionary = {
+	# Preserve one cheap transparent envelope, but narrow its diffuse/alpha read so
+	# the advected core remains visible beneath a sharper dielectric edge.
+	&"shell_energy_scale": 0.72,
+	&"shell_diffuse_strength": 0.035,
+	&"shell_specular_level": 0.90,
+	&"shell_emission_limit": 0.065,
+	&"shell_alpha_limit": 0.44,
+	&"shell_white_mix": 0.34,
+	&"shell_thickness": 0.019,
+	&"studio_reflection_strength": 0.58,
+	&"studio_reflection_alpha": 0.050,
+	&"studio_reflection_budget": 0.072,
+	&"studio_streak_strength": 0.68,
+}
+
+const SHELL_V8_4_BOUNDS: Dictionary = {
+	# R22 spends less energy on the family-coloured veil and more on broad neutral
+	# light cards. The envelope stays one thin Compatibility-safe transparent pass.
+	&"shell_energy_scale": 0.50,
+	&"shell_diffuse_strength": 0.016,
+	&"shell_specular_level": 0.86,
+	&"shell_emission_limit": 0.028,
+	&"shell_alpha_limit": 0.28,
+	&"shell_white_mix": 0.24,
+	&"shell_thickness": 0.012,
+	&"studio_reflection_strength": 0.68,
+	&"studio_reflection_alpha": 0.032,
+	&"studio_reflection_budget": 0.12,
+	&"studio_streak_strength": 0.64,
+	&"studio_card_broadening": 0.72,
+	&"studio_card_tail_cut": 0.32,
 }
 
 ## How far the palette colour's saturation is pushed for the body albedo. A gel
@@ -146,7 +235,7 @@ const DEFAULTS := {
 	# Not razor-tight. At 0.06 the dimple normals aliased inside the coat lobe and the
 	# crown sheen broke into a field of hard sparkle rather than the reference's smooth
 	# sheen with the cellular texture reading through it.
-	&"coat_roughness": 0.10,
+	&"coat_roughness": 0.045,
 	# Wet gloss comes from the tight coat, not from driving both lobes hard. At
 	# spec_energy 1.3 the broad lobe blew a single wide highlight across the crown --
 	# measurably, it was contributing eight points of the deep core's above-0.75 pixel
@@ -154,19 +243,24 @@ const DEFAULTS := {
 	# and saturated. Cutting the shared energy and leaving the coat tight keeps several
 	# small sharp highlights instead of one broad blown one.
 	&"coat_strength": 1.35,
-	&"spec_energy": 0.16,
+	&"spec_energy": 0.18,
 	&"spec_f0": 0.06,
 	&"env_specular": 0.0,
+	# V8.4 may broaden the analytic softboxes without changing any preserved look.
+	# Zero keeps the original Gaussian exponents byte-for-byte equivalent.
+	&"studio_card_broadening": 0.0,
+	# R23 tail remap is similarly V8.4-only; zero preserves the original cards.
+	&"studio_card_tail_cut": 0.0,
 	# Jelly V5 keeps the direct body below the ACES shoulder, then restores a
 	# broad, hue-preserving value ramp with the same macro thickness estimate
 	# already used by the spectral absorption. This is the anti-neon/readability
 	# layer shared by mission previews, combat bodies, and the close-up rig.
-	&"body_exposure_scale": 0.82,
+	&"body_exposure_scale": 0.90,
 	# Compatibility-safe per-pass share of the final body budget. Smoke enforces
 	# at most three directional lights per viewport and renders the worst-case topology.
 	&"direct_light_budget_share": 0.10,
-	&"thin_budget_scale": 0.74,
-	&"thickness_contrast": 0.06,
+	&"thin_budget_scale": 0.84,
+	&"thickness_contrast": 0.11,
 	&"thickness_power": 1.15,
 	# The V4 membrane lattice is retained as a bounded Compatibility-safe field,
 	# but its effective normal depth is capped, grazing-weighted, and broken up by
@@ -176,8 +270,8 @@ const DEFAULTS := {
 	&"membrane_grazing_floor": 0.10,
 	&"membrane_grazing_power": 1.35,
 	&"membrane_irregularity": 0.72,
-	&"wet_spec_breakup": 0.28,
-	&"coat_tint": 0.16,
+	&"wet_spec_breakup": 0.08,
+	&"coat_tint": 0.10,
 	&"detail_emission_scale": 0.08,
 	# Low on purpose. A heavily wrapped terminator plus a strong interior fill left
 	# almost nothing on the body dark, so the dominant channel had nowhere to fall to
@@ -187,7 +281,7 @@ const DEFAULTS := {
 	&"light_wrap": 0.16,
 	&"sss_amount": 0.5,
 	&"transmit_power": 2.6,
-	&"transmit_strength": 0.85,
+	&"transmit_strength": 1.02,
 	&"transmit_distort": 0.30,
 	# Transmitted light is mostly the lamp's own colour, tinted only by what the gel
 	# took out of it on the way through. This is the term that makes a thin edge come
@@ -246,12 +340,12 @@ const DEFAULTS := {
 	# uses the normal directly and stays smooth, so it carries the band and curvature
 	# only nudges genuinely convex tips.
 	&"thin_curvature": 0.06,
-	&"thin_glow": 0.22,
-	&"core_glow": 0.02,
+	&"thin_glow": 0.36,
+	&"core_glow": 0.44,
 	# Narrower than before: the rim needs to read as a ribbon on the turn of a solid
 	# body, not as a band wide enough to swallow a whole limb.
 	&"rim_power": 9.0,
-	&"rim_energy": 0.14,
+	&"rim_energy": 0.075,
 	# Absorption model, now almost purely spectral. These numbers are solved against
 	# the reference's own measured channel profile rather than tuned by eye: across the
 	# body its red holds 0.98 and only sags to 0.93 at the deepest core, while green
@@ -294,8 +388,8 @@ const DEFAULTS := {
 	# path by exp(-2.5); removing that raised the same paths tenfold, so the old budgets
 	# no longer bound anything. interior_budget now governs only the ambient core term --
 	# the thin-band glow it used to cap moved inside body_budget.
-	&"interior_budget": 0.10,
-	&"rim_budget": 0.05,
+	&"interior_budget": 0.60,
+	&"rim_budget": 0.045,
 	# Calibrated as a pair with albedo_gain, and the pairing is the point: the gain
 	# drives the dominant channel past clipping across the whole shell and this catches
 	# it just underneath. Set the ceiling too low and the drive is wasted; remove it and
@@ -346,7 +440,49 @@ const DEFAULTS := {
 	&"ink_high": 0.36,
 	&"ink_roughness": 0.05,
 	&"tex_tint_mix": 0.0,
-}
+	# V8 runtime controls are explicit zeroes in the shared builder so every
+	# preserved V5/V6/V7 material remains motion-inert even if shader defaults drift.
+	&"liquid_flow_strength": 0.0,
+	&"liquid_flow_idle_speed": 0.0,
+	&"liquid_flow_move_boost": 0.0,
+	&"liquid_flow_advection": 0.0,
+	&"liquid_flow_warp": 0.0,
+	&"liquid_flow_emission": 0.0,
+	&"liquid_flow_budget": 0.0,
+	&"liquid_flow_phase": 0.0,
+	&"liquid_flow_motion_mix": 0.0,
+	&"liquid_flow_direction": Vector3(0.0, 0.0, -1.0),
+	&"liquid_slime_strength": 0.0,
+	&"liquid_slime_scale": 0.85,
+	&"liquid_slime_threshold": 0.50,
+	&"liquid_slime_softness": 0.12,
+	&"liquid_slime_thinness": 0.0,
+	# V8.2 optical-volume controls stay explicitly inert in every rollback look.
+	&"liquid_core_color_mix": 0.0,
+	&"liquid_core_roughness_mix": 0.0,
+	&"liquid_bubble_advection": 0.0,
+	# V8.4 controls are explicit rollback zeroes. The corresponding shader paths
+	# branch out before doing work, preserving V5 through V8.3.
+	&"liquid_laminar_strength": 0.0,
+	&"liquid_laminar_scale": 1.0,
+	&"liquid_laminar_thinness": 0.0,
+	&"liquid_laminar_color_mix": 0.0,
+	&"liquid_laminar_roughness_mix": 0.0,
+	&"liquid_laminar_emission": 0.0,
+	&"liquid_laminar_budget": 0.0,
+	&"liquid_wobble_strength": 0.0,
+	&"liquid_wobble_speed": 0.0,
+	&"liquid_wobble_scale": 1.0,
+	&"liquid_wobble_phase": 0.0,
+	&"liquid_wobble_normal_follow": 0.0,
+	# V8.5 analytic orange-peel relief. Zero is both the visual and ALU rollback.
+	&"orange_peel_micro_depth": 0.0,
+	&"orange_peel_micro_scale": 86.0,
+	&"orange_peel_micro_grazing": 0.0,
+	&"liquid_body_deform_strength": 0.0,
+	&"liquid_body_lag": Vector3.ZERO,
+	&"liquid_body_squash": 0.0,
+	}
 
 
 ## Body albedo: the palette hue at near-full saturation, pre-rotated for ACES by
@@ -394,6 +530,7 @@ static func _make_membrane(jelly: Color, opts: Dictionary) -> ShaderMaterial:
 	var membrane := ShaderMaterial.new()
 	membrane.shader = shader
 	apply_v5_shell_bounds(membrane)
+	apply_membrane_energy_options(membrane, opts)
 	var clear_tint := rim_color(jelly).lerp(Color.WHITE, 0.16)
 	membrane.set_shader_parameter(&"shell_color", _option(opts, &"membrane_color", clear_tint))
 	membrane.set_shader_parameter(&"face_alpha", _option(opts, &"membrane_face_alpha", 0.012))
@@ -402,15 +539,48 @@ static func _make_membrane(jelly: Color, opts: Dictionary) -> ShaderMaterial:
 	membrane.set_shader_parameter(&"shell_roughness", _option(opts, &"membrane_roughness", 0.025))
 	membrane.set_shader_parameter(&"rim_emission", _option(opts, &"membrane_rim_emission", 0.22))
 	membrane.set_shader_parameter(&"shell_thickness", _option(opts, &"membrane_thickness", 0.006))
+	for wobble_parameter in [
+		&"liquid_wobble_strength",
+		&"liquid_wobble_speed",
+		&"liquid_wobble_scale",
+		&"liquid_wobble_phase",
+		&"liquid_wobble_normal_follow",
+	]:
+		membrane.set_shader_parameter(
+			wobble_parameter,
+			_option(opts, wobble_parameter, 0.0 if wobble_parameter != &"liquid_wobble_scale" else 1.0)
+		)
 	membrane.render_priority = 1
 	return membrane
+
+
+static func apply_membrane_energy_options(shell: ShaderMaterial, opts: Dictionary) -> void:
+	if shell == null:
+		return
+	for option in MEMBRANE_ENERGY_OPTIONS:
+		if opts.has(option) or opts.has(String(option)):
+			shell.set_shader_parameter(MEMBRANE_ENERGY_OPTIONS[option], _option(opts, option, 0.0))
 
 
 static func apply_v5_shell_bounds(shell: ShaderMaterial) -> void:
 	if shell == null:
 		return
-	for key in SHELL_V5_BOUNDS:
-		shell.set_shader_parameter(key, SHELL_V5_BOUNDS[key])
+	# Existing authored bodies also call this function on prebuilt shell materials,
+	# so seed the V8.4 extension here rather than only in _make_membrane().
+	shell.set_shader_parameter(&"studio_card_broadening", 0.0)
+	shell.set_shader_parameter(&"studio_card_tail_cut", 0.0)
+	shell.set_shader_parameter(&"liquid_wobble_normal_follow", 0.0)
+	var bounds := SHELL_V5_BOUNDS
+	if _Profiles.reference_viscosity_enabled():
+		bounds = SHELL_V8_4_BOUNDS
+	elif _Profiles.living_volume_enabled():
+		bounds = SHELL_V8_2_BOUNDS
+	elif _Profiles.gummy_glass_enabled():
+		bounds = SHELL_V7_BOUNDS
+	elif _Profiles.banner_match_enabled():
+		bounds = SHELL_V6_BOUNDS
+	for key in bounds:
+		shell.set_shader_parameter(key, bounds[key])
 
 
 static func make_material(jelly: Color, opts: Dictionary = {}) -> ShaderMaterial:

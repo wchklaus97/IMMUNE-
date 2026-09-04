@@ -27,35 +27,38 @@ const BASE: Dictionary = {
 # call with_v5_surface() as well, so their locally-authored colour/silhouette
 # dictionaries cannot accidentally retain the V4 crystalline membrane response.
 const V5_SURFACE: Dictionary = {
-	&"body_exposure_scale": 0.82,
+	# V5.3 keeps the measured per-light ceiling but raises the light-independent
+	# interior enough for gameplay scale. The former profile only became readable
+	# under the three-light look-dev rig and read as dark hard plastic in combat.
+	&"body_exposure_scale": 0.90,
 	&"direct_light_budget_share": 0.10,
 	# Compatibility adds EMISSION only in the base colour pass for this opaque
 	# material, so this bounded hue-preserving fill is not multiplied by shadowed
 	# additive lights. This slight V5.1 lift restores the reference's readable core;
 	# the zero-light probe below guards it from becoming a self-lit lantern.
-	&"core_glow": 0.35,
-	&"interior_budget": 0.50,
-	&"thin_budget_scale": 0.74,
-	&"thickness_contrast": 0.06,
+	&"core_glow": 0.44,
+	&"interior_budget": 0.60,
+	&"thin_budget_scale": 0.84,
+	&"thickness_contrast": 0.11,
 	&"thickness_power": 1.15,
 	&"thin_bias": 2.7,
 	&"glow_power": 2.0,
 	&"curv_low": 18.0,
 	&"curv_high": 48.0,
 	&"thin_curvature": 0.06,
-	&"transmit_strength": 0.85,
-	&"thin_glow": 0.28,
-	&"rim_energy": 0.055,
-	&"rim_budget": 0.035,
-	&"coat_roughness": 0.060,
-	&"coat_strength": 1.20,
-	&"spec_energy": 0.16,
+	&"transmit_strength": 1.02,
+	&"thin_glow": 0.36,
+	&"rim_energy": 0.075,
+	&"rim_budget": 0.045,
+	&"coat_roughness": 0.045,
+	&"coat_strength": 1.35,
+	&"spec_energy": 0.18,
 	&"membrane_depth_cap": 0.014,
 	&"membrane_grazing_floor": 0.10,
 	&"membrane_grazing_power": 1.35,
 	&"membrane_irregularity": 0.72,
-	&"wet_spec_breakup": 0.28,
-	&"coat_tint": 0.16,
+	&"wet_spec_breakup": 0.08,
+	&"coat_tint": 0.10,
 	&"detail_emission_scale": 0.08,
 	# V5.1 replaces the procedural sphere/island normals with one deterministic,
 	# mipmapped height source. The former fields produced circular stamps, closed
@@ -65,7 +68,7 @@ const V5_SURFACE: Dictionary = {
 	# with grazing weighting in the shader, it keeps the face-on core calm while
 	# retaining compact wet pebbles on turning edges and thin limbs.
 	&"authored_height_scale": 0.45,
-	&"authored_height_depth": 0.0040,
+	&"authored_height_depth": 0.0015,
 	&"authored_height_blend": 2.0,
 	&"authored_height_lod_bias": 0.35,
 	&"bubble_depth": 0.0,
@@ -91,11 +94,727 @@ const V5_SURFACE: Dictionary = {
 	&"inclusion_emission": 0.0,
 }
 
-# The production Fizzy language already approved on M/N/A/D: a smooth clear
-# coat, softened absorption, three readable interior scales, and no directional
-# triplanar dimples. T and B still keep their own sculpt, face texture, colour,
-# bubble scale, and seeds; this layer only makes their material response belong
-# to the same poured-gel family.
+# Banner-match production profile. The project selects it by default after the
+# six-family, mission-preview, combat-portrait, motion, and performance gates.
+# IMMUNE_GEL_LOOK=v5 remains a reversible A/B control for regression diagnosis.
+#
+# V6 does not bring back the rejected procedural bubble/island normals. Its visual
+# change comes from a darker optical core, a broader transmitted edge, a clearer
+# dielectric membrane, and bounded analytic studio reflections in wet_gel.gdshader.
+const V6_BANNER_MATCH: Dictionary = {
+	&"albedo_gain": 0.84,
+	&"body_exposure_scale": 0.82,
+	&"body_roughness": 0.26,
+	&"direct_light_budget_share": 0.10,
+	&"core_glow": 0.22,
+	&"interior_budget": 0.38,
+	&"thin_budget_scale": 0.82,
+	&"thickness_contrast": 0.24,
+	&"thickness_power": 0.90,
+	&"body_absorb": 0.99,
+	&"light_wrap": 0.13,
+	&"sss_amount": 0.62,
+	&"thin_power": 1.15,
+	&"thin_fresnel": 1.0,
+	&"thin_floor": 0.04,
+	&"transmit_strength": 1.42,
+	&"transmit_tint": 0.34,
+	&"thin_glow": 0.58,
+	&"thin_bias": 1.90,
+	&"glow_power": 1.15,
+	&"rim_power": 6.0,
+	&"rim_energy": 0.18,
+	&"rim_budget": 0.10,
+	&"coat_roughness": 0.038,
+	&"coat_strength": 1.52,
+	&"spec_energy": 0.24,
+	&"wet_spec_breakup": 0.065,
+	&"coat_tint": 0.06,
+	&"detail_emission_scale": 0.28,
+	&"bubble_enabled": true,
+	&"bubble_depth": 0.0,
+	&"bubble_thinness": 0.0,
+	&"bubble_shell_shadow": 0.0,
+	&"bubble_emission": 0.0,
+	&"bubble_shell_emission": 0.0,
+	&"authored_fleck_strength": 0.56,
+	&"authored_fleck_threshold": 0.31,
+	&"authored_fleck_softness": 0.012,
+	&"authored_fleck_budget": 0.14,
+	&"authored_inclusion_strength": 0.34,
+	&"authored_inclusion_scale": 0.13,
+	&"authored_inclusion_threshold": 0.23,
+	&"authored_inclusion_softness": 0.015,
+	&"authored_inclusion_thinness": 0.08,
+	&"authored_inclusion_budget": 0.085,
+	&"authored_inclusion_lod_bias": 0.18,
+	&"authored_caustic_strength": 0.58,
+	&"authored_caustic_threshold": 0.255,
+	&"authored_caustic_width": 0.020,
+	&"authored_caustic_budget": 0.095,
+	&"studio_reflection_strength": 0.66,
+	&"studio_reflection_budget": 0.28,
+	&"studio_reflection_edge_share": 0.62,
+	&"studio_key_color": Color(0.90, 0.97, 1.0, 1.0),
+	&"studio_cool_color": Color(0.24, 0.48, 1.0, 1.0),
+	&"studio_warm_color": Color(1.0, 0.28, 0.16, 1.0),
+	&"membrane_face_alpha": 0.006,
+	&"membrane_edge_alpha": 0.58,
+	&"membrane_edge_power": 2.05,
+	&"membrane_roughness": 0.020,
+	&"membrane_rim_emission": 0.38,
+	&"membrane_thickness": 0.018,
+}
+
+const V6_FAMILY: Dictionary = {
+	"T": {
+		&"body_color": Color(0.92, 0.20, 0.005, 1.0),
+		&"deep_color": Color(0.54, 0.055, 0.002, 1.0),
+		&"transmit_color": Color(1.0, 0.62, 0.16, 1.0),
+		&"rim_color": Color(1.0, 0.75, 0.28, 1.0),
+	},
+	"B": {
+		&"body_color": Color(0.42, 0.025, 0.74, 1.0),
+		&"deep_color": Color(0.115, 0.006, 0.29, 1.0),
+		&"transmit_color": Color(0.70, 0.42, 1.0, 1.0),
+		&"rim_color": Color(0.84, 0.66, 1.0, 1.0),
+	},
+	"M": {
+		&"body_color": Color(0.38, 0.10, 0.68, 1.0),
+		&"deep_color": Color(0.12, 0.018, 0.29, 1.0),
+		&"transmit_color": Color(0.72, 0.56, 1.0, 1.0),
+		&"rim_color": Color(0.88, 0.78, 1.0, 1.0),
+	},
+	"N": {
+		&"body_color": Color(0.34, 0.70, 0.018, 1.0),
+		&"deep_color": Color(0.06, 0.23, 0.002, 1.0),
+		&"transmit_color": Color(0.70, 1.0, 0.22, 1.0),
+		&"rim_color": Color(0.84, 1.0, 0.38, 1.0),
+	},
+	"A": {
+		&"body_color": Color(0.94, 0.43, 0.008, 1.0),
+		&"deep_color": Color(0.47, 0.10, 0.001, 1.0),
+		&"transmit_color": Color(1.0, 0.76, 0.20, 1.0),
+		&"rim_color": Color(1.0, 0.88, 0.38, 1.0),
+	},
+	"D": {
+		&"body_color": Color(0.94, 0.24, 0.004, 1.0),
+		&"deep_color": Color(0.50, 0.045, 0.001, 1.0),
+		&"transmit_color": Color(1.0, 0.58, 0.12, 1.0),
+		&"rim_color": Color(1.0, 0.72, 0.24, 1.0),
+	},
+}
+
+# V7 is an additive refinement over the preserved V6 checkpoint. It keeps the
+# V6 optical model, then replaces the evenly dotted read with anisotropic
+# object-space strands and a longer broken reflection card. Every new shader
+# control defaults to zero, so selecting v5 or v6 retains the earlier response.
+const V7_GUMMY_GLASS: Dictionary = {
+	&"albedo_gain": 0.88,
+	&"body_exposure_scale": 0.76,
+	&"body_roughness": 0.22,
+	&"core_glow": 0.14,
+	&"interior_budget": 0.30,
+	&"thickness_contrast": 0.32,
+	&"body_absorb": 1.0,
+	&"transmit_strength": 1.56,
+	&"thin_glow": 0.64,
+	&"rim_energy": 0.20,
+	&"rim_budget": 0.11,
+	&"coat_roughness": 0.032,
+	&"coat_strength": 1.70,
+	&"spec_energy": 0.27,
+	&"wet_spec_breakup": 0.055,
+	&"detail_emission_scale": 0.26,
+	&"authored_fleck_strength": 0.38,
+	&"authored_fleck_threshold": 0.325,
+	&"authored_fleck_softness": 0.014,
+	&"authored_fleck_budget": 0.105,
+	&"authored_inclusion_strength": 0.44,
+	&"authored_inclusion_scale": 0.12,
+	&"authored_inclusion_threshold": 0.225,
+	&"authored_inclusion_softness": 0.016,
+	&"authored_inclusion_thinness": 0.10,
+	&"authored_inclusion_budget": 0.105,
+	&"authored_caustic_strength": 0.32,
+	&"authored_caustic_threshold": 0.255,
+	&"authored_caustic_width": 0.014,
+	&"authored_caustic_budget": 0.055,
+	&"authored_fiber_strength": 0.58,
+	&"authored_fiber_scale": 0.18,
+	&"authored_fiber_threshold": 0.30,
+	&"authored_fiber_width": 0.016,
+	&"authored_fiber_thinness": 0.055,
+	&"authored_fiber_budget": 0.105,
+	&"authored_fiber_lod_bias": 0.22,
+	&"studio_reflection_strength": 0.74,
+	&"studio_reflection_budget": 0.32,
+	&"studio_reflection_edge_share": 0.54,
+	&"studio_streak_strength": 0.72,
+	&"membrane_face_alpha": 0.004,
+	&"membrane_edge_alpha": 0.56,
+	&"membrane_edge_power": 1.90,
+	&"membrane_roughness": 0.016,
+	&"membrane_rim_emission": 0.42,
+	&"membrane_thickness": 0.020,
+}
+
+const V7_FAMILY: Dictionary = {
+	"T": {
+		&"body_color": Color(0.98, 0.20, 0.002, 1.0),
+		&"deep_color": Color(0.43, 0.028, 0.001, 1.0),
+		&"transmit_color": Color(1.0, 0.64, 0.13, 1.0),
+		&"rim_color": Color(1.0, 0.78, 0.30, 1.0),
+	},
+	"B": {
+		&"body_color": Color(0.56, 0.006, 0.74, 1.0),
+		&"deep_color": Color(0.11, 0.001, 0.22, 1.0),
+		&"transmit_color": Color(0.68, 0.40, 1.0, 1.0),
+		&"rim_color": Color(0.86, 0.70, 1.0, 1.0),
+	},
+	"M": {
+		&"body_color": Color(0.32, 0.10, 0.72, 1.0),
+		&"deep_color": Color(0.065, 0.010, 0.24, 1.0),
+		&"transmit_color": Color(0.66, 0.53, 1.0, 1.0),
+		&"rim_color": Color(0.84, 0.77, 1.0, 1.0),
+	},
+	"N": {
+		&"body_color": Color(0.44, 0.78, 0.004, 1.0),
+		&"deep_color": Color(0.04, 0.20, 0.001, 1.0),
+		&"transmit_color": Color(0.72, 1.0, 0.16, 1.0),
+		&"rim_color": Color(0.86, 1.0, 0.35, 1.0),
+	},
+	"A": {
+		&"body_color": Color(0.98, 0.47, 0.002, 1.0),
+		&"deep_color": Color(0.42, 0.075, 0.001, 1.0),
+		&"transmit_color": Color(1.0, 0.76, 0.16, 1.0),
+		&"rim_color": Color(1.0, 0.89, 0.39, 1.0),
+	},
+	"D": {
+		&"body_color": Color(0.98, 0.27, 0.002, 1.0),
+		&"deep_color": Color(0.46, 0.030, 0.001, 1.0),
+		&"transmit_color": Color(1.0, 0.59, 0.10, 1.0),
+		&"rim_color": Color(1.0, 0.74, 0.25, 1.0),
+	},
+}
+
+# V8 is an additive motion layer over the exact V7 gummy-glass foundation. The
+# authored skin and silhouette remain unchanged; only the internal inclusion and
+# fiber coordinates circulate. Runtime movement supplies direction and a 0..1
+# blend, while these values guarantee that idle characters never become static.
+const V8_LIVING_LIQUID: Dictionary = {
+	# V8 trades V7's dense suspended-fleck read for fewer, quieter anchors so the
+	# new broad slime folds remain the dominant internal cue. V7 itself is untouched.
+	&"authored_fleck_strength": 0.18,
+	&"authored_fleck_budget": 0.050,
+	&"authored_inclusion_strength": 0.30,
+	&"authored_inclusion_thinness": 0.060,
+	&"authored_inclusion_budget": 0.070,
+	&"authored_caustic_strength": 0.20,
+	&"authored_caustic_budget": 0.040,
+	&"authored_fiber_strength": 0.30,
+	&"authored_fiber_thinness": 0.035,
+	&"authored_fiber_budget": 0.070,
+	&"liquid_flow_strength": 0.78,
+	&"liquid_flow_idle_speed": 0.21,
+	&"liquid_flow_move_boost": 0.50,
+	&"liquid_flow_advection": 0.25,
+	&"liquid_flow_warp": 0.14,
+	&"liquid_flow_emission": 0.46,
+	&"liquid_flow_budget": 0.070,
+	&"liquid_flow_motion_mix": 0.0,
+	&"liquid_slime_strength": 0.94,
+	&"liquid_slime_scale": 0.92,
+	&"liquid_slime_threshold": 0.49,
+	&"liquid_slime_softness": 0.14,
+	&"liquid_slime_thinness": 0.15,
+	&"liquid_body_deform_strength": 0.82,
+}
+
+const V8_FAMILY: Dictionary = {
+	"T": {&"liquid_flow_phase": 0.31},
+	"B": {&"liquid_flow_phase": 1.17},
+	"M": {&"liquid_flow_phase": 2.03},
+	"N": {&"liquid_flow_phase": 2.89},
+	"A": {&"liquid_flow_phase": 3.73},
+	"D": {&"liquid_flow_phase": 4.61},
+}
+
+# V8.2 is an additive optical-volume slice over the exact V8.1 foundation. It
+# reuses one existing eight-cell bubble field and the existing analytic slime;
+# no screen read, raymarch, microbubble field, or extra transparent material is
+# introduced. T/B start strongest because they are the reference vertical slice,
+# while every family receives a bounded core and a distinct phase/density tune.
+const V8_2_LIVING_VOLUME: Dictionary = {
+	# Calm the old suspended-detail layer so the broad moving mass, rather than a
+	# field of bright fragments, owns the interior read. Surface height stays on.
+	&"authored_fleck_strength": 0.10,
+	&"authored_fleck_budget": 0.035,
+	&"authored_inclusion_strength": 0.16,
+	&"authored_inclusion_budget": 0.045,
+	&"authored_caustic_strength": 0.12,
+	&"authored_caustic_budget": 0.025,
+	&"authored_fiber_strength": 0.18,
+	&"authored_fiber_budget": 0.045,
+	&"liquid_core_color_mix": 0.42,
+	&"liquid_core_roughness_mix": 0.40,
+	&"liquid_bubble_advection": 0.82,
+	&"liquid_flow_emission": 0.30,
+	&"liquid_flow_budget": 0.052,
+	&"bubble_enabled": true,
+	# A few broad pockets remain trackable through motion; the former denser field
+	# read as noisy texture and competed with the reference's smooth optical core.
+	&"bubble_scale": 4.8,
+	&"bubble_density": 0.12,
+	&"bubble_radius_min": 0.15,
+	&"bubble_radius_max": 0.30,
+	&"bubble_jitter": 0.14,
+	&"bubble_softness": 0.12,
+	&"bubble_depth": 0.0004,
+	&"bubble_thinness": 0.06,
+	&"bubble_shell_shadow": 0.012,
+	&"bubble_emission": 0.0,
+	&"bubble_shell_emission": 0.012,
+	# One macro field is the V8.2 inclusion budget. Keeping the second field off
+	# avoids another eight hashes per fragment and distance-scale fizz.
+	&"microbubble_enabled": false,
+	&"microbubble_depth": 0.0,
+	&"microbubble_thinness": 0.0,
+	&"microbubble_shell_shadow": 0.0,
+	&"microbubble_emission": 0.0,
+	&"microbubble_shell_emission": 0.0,
+	# Thin face alpha exposes the moving core; a narrow Fresnel edge and the
+	# existing bounded studio cards retain the distinct wet outer membrane.
+	&"membrane_face_alpha": 0.0028,
+	&"membrane_edge_alpha": 0.58,
+	&"membrane_edge_power": 2.20,
+	&"membrane_roughness": 0.014,
+	&"membrane_rim_emission": 0.36,
+	&"membrane_thickness": 0.020,
+}
+
+const V8_2_FAMILY: Dictionary = {
+	"T": {
+		&"liquid_flow_phase": 0.43,
+		&"liquid_core_color_mix": 0.70,
+		&"liquid_core_roughness_mix": 0.55,
+		&"liquid_bubble_advection": 0.90,
+		&"bubble_scale": 4.8,
+		&"bubble_density": 0.14,
+		&"bubble_radius_min": 0.15,
+		&"bubble_radius_max": 0.32,
+		&"bubble_depth": 0.0004,
+		&"bubble_thinness": 0.07,
+		&"bubble_shell_shadow": 0.012,
+		&"bubble_shell_emission": 0.012,
+		&"membrane_face_alpha": 0.0018,
+		&"membrane_edge_alpha": 0.62,
+		&"membrane_edge_power": 2.30,
+		&"membrane_roughness": 0.012,
+		&"membrane_thickness": 0.021,
+	},
+	"B": {
+		&"liquid_flow_phase": 1.31,
+		&"liquid_core_color_mix": 0.78,
+		&"liquid_core_roughness_mix": 0.60,
+		&"liquid_bubble_advection": 0.92,
+		&"bubble_scale": 4.6,
+		&"bubble_density": 0.12,
+		&"bubble_radius_min": 0.16,
+		&"bubble_radius_max": 0.34,
+		&"bubble_depth": 0.0004,
+		&"bubble_thinness": 0.06,
+		&"bubble_shell_shadow": 0.012,
+		&"bubble_shell_emission": 0.012,
+		&"membrane_face_alpha": 0.0018,
+		&"membrane_edge_alpha": 0.61,
+		&"membrane_edge_power": 2.25,
+		&"membrane_roughness": 0.013,
+		&"membrane_thickness": 0.021,
+	},
+	"M": {
+		&"liquid_flow_phase": 2.17,
+		&"liquid_core_color_mix": 0.50,
+		&"liquid_core_roughness_mix": 0.44,
+		&"liquid_bubble_advection": 0.80,
+		&"bubble_scale": 4.8,
+		&"bubble_density": 0.11,
+	},
+	"N": {
+		&"liquid_flow_phase": 3.07,
+		&"liquid_core_color_mix": 0.42,
+		&"liquid_core_roughness_mix": 0.38,
+		&"liquid_bubble_advection": 0.76,
+		&"bubble_scale": 5.2,
+		&"bubble_density": 0.10,
+	},
+	"A": {
+		&"liquid_flow_phase": 3.91,
+		&"liquid_core_color_mix": 0.46,
+		&"liquid_core_roughness_mix": 0.40,
+		&"liquid_bubble_advection": 0.78,
+		&"bubble_scale": 5.0,
+		&"bubble_density": 0.11,
+	},
+	"D": {
+		&"liquid_flow_phase": 4.83,
+		&"liquid_core_color_mix": 0.52,
+		&"liquid_core_roughness_mix": 0.45,
+		&"liquid_bubble_advection": 0.82,
+		&"bubble_scale": 4.7,
+		&"bubble_density": 0.13,
+	},
+}
+
+# V8.3 keeps the accepted V8.2 living core but removes every detail that can
+# read as a loose cell, pellet, or fragment. Topology is handled by the matching
+# single-mass body branch; these values make the optical volume equally clean.
+const V8_3_SINGLE_MASS: Dictionary = {
+	&"bubble_enabled": false,
+	&"bubble_density": 0.0,
+	&"bubble_depth": 0.0,
+	&"bubble_thinness": 0.0,
+	&"bubble_shell_shadow": 0.0,
+	&"bubble_emission": 0.0,
+	&"bubble_shell_emission": 0.0,
+	&"microbubble_enabled": false,
+	&"microbubble_density": 0.0,
+	&"microbubble_depth": 0.0,
+	&"microbubble_thinness": 0.0,
+	&"microbubble_shell_shadow": 0.0,
+	&"microbubble_emission": 0.0,
+	&"microbubble_shell_emission": 0.0,
+	&"inclusion_enabled": false,
+	&"inclusion_depth": 0.0,
+	&"inclusion_emission": 0.0,
+	&"authored_fleck_strength": 0.0,
+	&"authored_fleck_budget": 0.0,
+	&"authored_inclusion_strength": 0.0,
+	&"authored_inclusion_budget": 0.0,
+	&"authored_caustic_strength": 0.08,
+	&"authored_caustic_budget": 0.018,
+	&"authored_fiber_strength": 0.12,
+	&"authored_fiber_budget": 0.026,
+	&"authored_height_depth": 0.0008,
+	&"detail_emission_scale": 0.06,
+	&"liquid_flow_emission": 0.26,
+	&"liquid_flow_budget": 0.046,
+	&"liquid_body_deform_strength": 0.64,
+	&"membrane_face_alpha": 0.0022,
+	&"membrane_edge_alpha": 0.56,
+	&"membrane_edge_power": 2.30,
+	&"membrane_roughness": 0.015,
+	&"membrane_rim_emission": 0.32,
+	&"membrane_thickness": 0.018,
+}
+
+# V8.4 keeps every V8.3 clean-topology zero, then restores the reference's
+# saturated optical range, mip-filtered wet micro-relief, broad continuous
+# laminar folds, and low-frequency shared-surface wobble. No thresholded cell,
+# particle, or detached inclusion field is reintroduced.
+const V8_4_REFERENCE_VISCOSITY: Dictionary = {
+	&"albedo_gain": 1.84,
+	&"body_exposure_scale": 0.86,
+	&"body_roughness": 0.18,
+	&"coat_roughness": 0.034,
+	&"coat_strength": 1.65,
+	&"spec_energy": 0.14,
+	&"coat_tint": 0.06,
+	&"core_glow": 0.12,
+	&"interior_budget": 0.22,
+	&"thickness_contrast": 0.33,
+	&"body_budget": 1.36,
+	&"body_absorb": 1.0,
+	&"extinction_density": 3.80,
+	&"extinction_spread": 2.0,
+	&"extinction_shape": 3.20,
+	&"thin_floor": 0.0,
+	&"thin_glow": 0.22,
+	&"transmit_strength": 1.28,
+	&"transmit_tint": 0.38,
+	&"studio_reflection_strength": 0.72,
+	&"studio_reflection_budget": 0.22,
+	&"studio_reflection_edge_share": 0.25,
+	&"studio_streak_strength": 0.64,
+	&"studio_card_broadening": 0.72,
+	&"studio_card_tail_cut": 0.32,
+	&"authored_height_scale": 0.46,
+	&"authored_height_depth": 0.00145,
+	&"authored_height_lod_bias": 0.74,
+	&"membrane_grazing_floor": 0.035,
+	&"membrane_grazing_power": 1.75,
+	# The former caustic source was gated behind the intentionally disabled
+	# inclusion field, so these values spent budget without producing a signal.
+	# Keep V8.4 cell-free and let the broad laminar field carry internal variation.
+	&"authored_caustic_strength": 0.0,
+	&"authored_caustic_budget": 0.0,
+	# R22's broad laminar/slime fields carry the interior read; disabling this
+	# triplanar strand removes three texture reads and any fleck-like particle cue.
+	&"authored_fiber_strength": 0.0,
+	&"authored_fiber_budget": 0.0,
+	&"detail_emission_scale": 0.06,
+	&"liquid_flow_strength": 0.82,
+	&"liquid_flow_idle_speed": 0.28,
+	&"liquid_flow_move_boost": 0.42,
+	&"liquid_flow_advection": 0.30,
+	&"liquid_flow_warp": 0.12,
+	&"liquid_flow_emission": 0.08,
+	&"liquid_flow_budget": 0.014,
+	&"liquid_slime_strength": 0.82,
+	&"liquid_slime_scale": 0.78,
+	&"liquid_slime_threshold": 0.48,
+	&"liquid_slime_softness": 0.18,
+	&"liquid_slime_thinness": 0.09,
+	&"liquid_core_color_mix": 0.38,
+	&"liquid_core_roughness_mix": 0.44,
+	&"liquid_body_deform_strength": 0.70,
+	&"liquid_laminar_strength": 0.78,
+	&"liquid_laminar_scale": 1.55,
+	&"liquid_laminar_thinness": 0.10,
+	&"liquid_laminar_color_mix": 0.26,
+	&"liquid_laminar_roughness_mix": 0.46,
+	&"liquid_laminar_emission": 0.035,
+	&"liquid_laminar_budget": 0.008,
+	&"liquid_wobble_strength": 0.012,
+	&"liquid_wobble_speed": 0.78,
+	&"liquid_wobble_scale": 2.40,
+	&"membrane_face_alpha": 0.0010,
+	&"membrane_edge_alpha": 0.30,
+	&"membrane_edge_power": 3.35,
+	&"membrane_roughness": 0.018,
+	&"membrane_rim_emission": 0.08,
+	&"membrane_thickness": 0.012,
+}
+
+# V8.5 is an exact opt-in presentation revision. It inherits the frozen V8.4
+# optical/motion foundation, then locks the authored sculpt to the measured wet
+# amber reference. The warm cards remove the former magenta/red screen-shaped
+# patches, while the mip-filtered authored height carries continuous orange-peel
+# relief without reintroducing bubbles, cells, particles, or detached geometry.
+# Older selectors keep explicit zeroes and the frozen V8.4 values.
+const V8_5_REFERENCE_SCULPT: Dictionary = {
+	&"liquid_wobble_normal_follow": 1.0,
+	&"albedo_gain": 1.82,
+	&"body_roughness": 0.17,
+	&"coat_roughness": 0.038,
+	&"coat_strength": 1.44,
+	&"spec_energy": 0.11,
+	&"wet_spec_breakup": 0.36,
+	&"studio_key_color": Color(1.0, 0.9569, 0.8667, 1.0),
+	&"studio_cool_color": Color(1.0, 0.8863, 0.7412, 1.0),
+	&"studio_warm_color": Color(1.0, 0.7098, 0.4196, 1.0),
+	&"studio_reflection_strength": 0.52,
+	&"studio_reflection_budget": 0.14,
+	&"studio_reflection_edge_share": 0.38,
+	&"studio_streak_strength": 0.28,
+	&"studio_card_broadening": 0.58,
+	&"studio_card_tail_cut": 0.36,
+	&"liquid_flow_emission": 0.12,
+	&"liquid_flow_budget": 0.020,
+	&"liquid_core_color_mix": 0.25,
+	&"liquid_core_roughness_mix": 0.30,
+	&"liquid_laminar_color_mix": 0.16,
+	&"liquid_laminar_roughness_mix": 0.30,
+	&"liquid_laminar_emission": 0.050,
+	&"liquid_laminar_budget": 0.012,
+	&"membrane_face_alpha": 0.0007,
+	&"membrane_edge_alpha": 0.12,
+	&"membrane_edge_power": 4.0,
+	&"membrane_roughness": 0.024,
+	&"membrane_rim_emission": 0.025,
+	&"membrane_thickness": 0.007,
+	&"orange_peel_micro_depth": 0.0012,
+	&"orange_peel_micro_scale": 34.0,
+	&"orange_peel_micro_grazing": 0.30,
+	# One continuous surface height field supplies the visible reference grain.
+	# A coarser positive LOD bias keeps it stable at gameplay distance, and the
+	# all-angle floor avoids a smooth plastic patch across the face-on core.
+	&"authored_height_scale": 0.30,
+	&"authored_height_depth": 0.0014,
+	&"authored_height_lod_bias": 0.50,
+	&"membrane_grazing_floor": 1.0,
+	&"membrane_grazing_power": 1.0,
+}
+
+const V8_5_FAMILY: Dictionary = {
+	"T": {
+		&"body_color": Color(1.0, 0.2392, 0.0, 1.0),
+		&"deep_color": Color(0.7882, 0.0941, 0.0, 1.0),
+		&"transmit_color": Color(1.0, 0.4941, 0.0510, 1.0),
+		&"rim_color": Color(1.0, 0.6118, 0.1373, 1.0),
+	},
+}
+
+# V8.6 is a T-only optical overlay on the frozen V8.5 material foundation.
+# The accepted R3 values remain named and immutable so every captured revision
+# can be reconstructed. R4 merges after R3 and corrects the remaining pale,
+# opaque-gummy read without adding a texture, branch, pass, or draw call.
+# R3 keeps the moving liquid fields intact, but consolidates their roughness
+# response into one broad wet card and narrows the clear envelope so it stays
+# bonded to the R6 silhouette. Older looks and non-T V8.6 families never merge
+# these values.
+const V8_6_REFERENCE_CONVERGENCE_R3: Dictionary = {
+	&"albedo_gain": 1.76,
+	&"body_exposure_scale": 0.84,
+	&"thickness_contrast": 0.37,
+	&"coat_roughness": 0.050,
+	&"coat_strength": 1.25,
+	&"spec_energy": 0.12,
+	&"wet_spec_breakup": 0.10,
+	&"studio_reflection_strength": 0.55,
+	&"studio_reflection_budget": 0.18,
+	&"studio_reflection_edge_share": 0.32,
+	&"studio_streak_strength": 0.36,
+	&"studio_card_broadening": 0.84,
+	&"studio_card_tail_cut": 0.12,
+	&"liquid_core_roughness_mix": 0.16,
+	&"liquid_laminar_roughness_mix": 0.14,
+	&"authored_height_scale": 0.42,
+	&"authored_height_depth": 0.00085,
+	&"authored_height_lod_bias": 0.90,
+	&"membrane_grazing_floor": 0.42,
+	&"membrane_grazing_power": 1.60,
+	&"orange_peel_micro_depth": 0.00055,
+	&"orange_peel_micro_scale": 48.0,
+	&"orange_peel_micro_grazing": 0.72,
+	&"membrane_face_alpha": 0.0005,
+	&"membrane_edge_alpha": 0.13,
+	&"membrane_edge_power": 3.65,
+	&"membrane_roughness": 0.045,
+	&"membrane_rim_emission": 0.025,
+	&"membrane_thickness": 0.0055,
+}
+
+const V8_6_REFERENCE_CONVERGENCE_R4: Dictionary = {
+	&"body_color": Color(1.0, 0.185, 0.0, 1.0),
+	&"deep_color": Color(0.80, 0.052, 0.0, 1.0),
+	&"transmit_color": Color(1.0, 0.465, 0.025, 1.0),
+	&"rim_color": Color(1.0, 0.59, 0.085, 1.0),
+	&"albedo_gain": 1.84,
+	&"body_exposure_scale": 0.88,
+	&"thickness_contrast": 0.39,
+	&"coat_roughness": 0.058,
+	&"coat_strength": 1.18,
+	&"spec_energy": 0.10,
+	&"wet_spec_breakup": 0.20,
+	&"studio_reflection_strength": 0.74,
+	&"studio_reflection_budget": 0.24,
+	&"studio_reflection_edge_share": 0.18,
+	&"studio_streak_strength": 0.58,
+	&"studio_card_broadening": 0.70,
+	&"studio_card_tail_cut": 0.28,
+	&"liquid_core_color_mix": 0.32,
+	&"liquid_core_roughness_mix": 0.22,
+	&"liquid_laminar_color_mix": 0.22,
+	&"liquid_laminar_roughness_mix": 0.20,
+	&"authored_height_scale": 0.36,
+	&"authored_height_depth": 0.00110,
+	&"authored_height_lod_bias": 0.70,
+	&"membrane_grazing_floor": 0.52,
+	&"membrane_grazing_power": 1.45,
+	&"orange_peel_micro_depth": 0.00080,
+	&"orange_peel_micro_scale": 42.0,
+	&"orange_peel_micro_grazing": 0.58,
+	&"membrane_face_alpha": 0.0010,
+	&"membrane_edge_alpha": 0.18,
+	&"membrane_edge_power": 3.25,
+	&"membrane_roughness": 0.032,
+	&"membrane_rim_emission": 0.040,
+	&"membrane_thickness": 0.0065,
+	&"membrane_shell_energy_scale": 0.56,
+	&"membrane_shell_diffuse_strength": 0.010,
+	&"membrane_shell_specular_level": 0.92,
+	&"membrane_shell_emission_limit": 0.040,
+	&"membrane_shell_alpha_limit": 0.22,
+	&"membrane_shell_white_mix": 0.44,
+	&"membrane_studio_reflection_strength": 0.74,
+	&"membrane_studio_reflection_alpha": 0.036,
+	&"membrane_studio_reflection_budget": 0.15,
+	&"membrane_studio_streak_strength": 0.58,
+	&"membrane_studio_card_broadening": 0.70,
+	&"membrane_studio_card_tail_cut": 0.28,
+}
+
+# R4.1 keeps R4's saturation, flow, eye, pore, and shell-boundary choices while
+# softening the hard card contour and oversized normal patches found in the
+# Compatibility/Metal A/B capture. R3 and R4 remain preserved above.
+const V8_6_REFERENCE_CONVERGENCE_R4_1: Dictionary = {
+	&"studio_reflection_strength": 0.64,
+	&"studio_reflection_budget": 0.20,
+	&"studio_card_broadening": 0.78,
+	&"studio_card_tail_cut": 0.16,
+	&"wet_spec_breakup": 0.12,
+	&"authored_height_depth": 0.00090,
+	&"authored_height_lod_bias": 0.84,
+	&"membrane_grazing_floor": 0.44,
+	&"orange_peel_micro_depth": 0.00060,
+	&"membrane_studio_reflection_strength": 0.64,
+	&"membrane_studio_reflection_alpha": 0.030,
+	&"membrane_studio_reflection_budget": 0.13,
+	&"membrane_studio_card_broadening": 0.78,
+	&"membrane_studio_card_tail_cut": 0.16,
+}
+
+const V8_4_FAMILY: Dictionary = {
+	"T": {
+		&"body_color": Color(1.0, 0.185, 0.0, 1.0),
+		&"deep_color": Color(0.76, 0.047, 0.0, 1.0),
+		&"transmit_color": Color(1.0, 0.447, 0.0, 1.0),
+		&"rim_color": Color(1.0, 0.57, 0.06, 1.0),
+		&"liquid_flow_phase": 0.53,
+		&"liquid_core_color_mix": 0.38,
+		&"liquid_wobble_phase": 0.31,
+	},
+	"B": {
+		&"body_color": Color(0.60, 0.010, 0.86, 1.0),
+		&"deep_color": Color(0.12, 0.001, 0.28, 1.0),
+		&"transmit_color": Color(0.72, 0.44, 1.0, 1.0),
+		&"rim_color": Color(0.88, 0.72, 1.0, 1.0),
+		&"liquid_flow_phase": 1.39,
+		&"liquid_core_color_mix": 0.42,
+		&"liquid_wobble_phase": 1.17,
+	},
+	"M": {
+		&"body_color": Color(0.39, 0.12, 0.80, 1.0),
+		&"deep_color": Color(0.08, 0.010, 0.27, 1.0),
+		&"transmit_color": Color(0.70, 0.57, 1.0, 1.0),
+		&"rim_color": Color(0.87, 0.79, 1.0, 1.0),
+		&"liquid_flow_phase": 2.23,
+		&"liquid_core_color_mix": 0.38,
+		&"liquid_wobble_phase": 2.03,
+	},
+	"N": {
+		&"body_color": Color(0.48, 0.82, 0.006, 1.0),
+		&"deep_color": Color(0.045, 0.23, 0.001, 1.0),
+		&"transmit_color": Color(0.75, 1.0, 0.18, 1.0),
+		&"rim_color": Color(0.88, 1.0, 0.36, 1.0),
+		&"liquid_flow_phase": 3.13,
+		&"liquid_core_color_mix": 0.36,
+		&"liquid_wobble_phase": 2.89,
+	},
+	"A": {
+		&"body_color": Color(1.0, 0.51, 0.004, 1.0),
+		&"deep_color": Color(0.48, 0.09, 0.001, 1.0),
+		&"transmit_color": Color(1.0, 0.78, 0.17, 1.0),
+		&"rim_color": Color(1.0, 0.90, 0.39, 1.0),
+		&"liquid_flow_phase": 3.97,
+		&"liquid_core_color_mix": 0.36,
+		&"liquid_wobble_phase": 3.73,
+	},
+	"D": {
+		&"body_color": Color(1.0, 0.34, 0.004, 1.0),
+		&"deep_color": Color(0.54, 0.045, 0.001, 1.0),
+		&"transmit_color": Color(1.0, 0.63, 0.13, 1.0),
+		&"rim_color": Color(1.0, 0.77, 0.27, 1.0),
+		&"liquid_flow_phase": 4.89,
+		&"liquid_core_color_mix": 0.38,
+		&"liquid_wobble_phase": 4.61,
+	},
+}
+
+# Historical Fizzy/V5 base values retained as the reversible material control.
+# V6 overrides its production-facing response after this dictionary is merged;
+# legacy look-dev callers can still request these values directly.
 const FIZZY: Dictionary = {
 	&"albedo_gain": 0.90,
 	&"body_roughness": 0.17,
@@ -238,19 +957,207 @@ static func options(family: String, overrides: Dictionary = {}) -> Dictionary:
 		merged[key] = family_values[key]
 	for key in V5_SURFACE:
 		merged[key] = V5_SURFACE[key]
+	if banner_match_enabled():
+		for key in V6_BANNER_MATCH:
+			merged[key] = V6_BANNER_MATCH[key]
+		var v6_family_values: Dictionary = V6_FAMILY.get(family, {})
+		for key in v6_family_values:
+			merged[key] = v6_family_values[key]
+	if gummy_glass_enabled():
+		for key in V7_GUMMY_GLASS:
+			merged[key] = V7_GUMMY_GLASS[key]
+		var v7_family_values: Dictionary = V7_FAMILY.get(family, {})
+		for key in v7_family_values:
+			merged[key] = v7_family_values[key]
+	if v8_enabled():
+		for key in V8_LIVING_LIQUID:
+			merged[key] = V8_LIVING_LIQUID[key]
+		var v8_family_values: Dictionary = V8_FAMILY.get(family, {})
+		for key in v8_family_values:
+			merged[key] = v8_family_values[key]
+	if living_volume_enabled():
+		for key in V8_2_LIVING_VOLUME:
+			merged[key] = V8_2_LIVING_VOLUME[key]
+		var v8_2_family_values: Dictionary = V8_2_FAMILY.get(family, {})
+		for key in v8_2_family_values:
+			merged[key] = v8_2_family_values[key]
+	if single_mass_enabled():
+		for key in V8_3_SINGLE_MASS:
+			merged[key] = V8_3_SINGLE_MASS[key]
+	if reference_viscosity_enabled():
+		for key in V8_4_REFERENCE_VISCOSITY:
+			merged[key] = V8_4_REFERENCE_VISCOSITY[key]
+		var v8_4_family_values: Dictionary = V8_4_FAMILY.get(family, {})
+		for key in v8_4_family_values:
+			merged[key] = v8_4_family_values[key]
+	if reference_sculpt_behavior_enabled():
+		for key in V8_5_REFERENCE_SCULPT:
+			merged[key] = V8_5_REFERENCE_SCULPT[key]
+		var v8_5_family_values: Dictionary = V8_5_FAMILY.get(family, {})
+		for key in v8_5_family_values:
+			merged[key] = v8_5_family_values[key]
+	if v8_6_enabled() and family == "T":
+		for key in V8_6_REFERENCE_CONVERGENCE_R3:
+			merged[key] = V8_6_REFERENCE_CONVERGENCE_R3[key]
+		for key in V8_6_REFERENCE_CONVERGENCE_R4:
+			merged[key] = V8_6_REFERENCE_CONVERGENCE_R4[key]
+		for key in V8_6_REFERENCE_CONVERGENCE_R4_1:
+			merged[key] = V8_6_REFERENCE_CONVERGENCE_R4_1[key]
 	for key in overrides:
 		merged[key] = overrides[key]
 	return merged
 
 
-static func with_v5_surface(values: Dictionary) -> Dictionary:
+static func with_v5_surface(values: Dictionary, family: String = "") -> Dictionary:
 	var merged := values.duplicate(true)
 	for key in V5_SURFACE:
 		merged[key] = V5_SURFACE[key]
+	if banner_match_enabled():
+		for key in V6_BANNER_MATCH:
+			merged[key] = V6_BANNER_MATCH[key]
+		var v6_family_values: Dictionary = V6_FAMILY.get(family, {})
+		for key in v6_family_values:
+			merged[key] = v6_family_values[key]
+	if gummy_glass_enabled():
+		for key in V7_GUMMY_GLASS:
+			merged[key] = V7_GUMMY_GLASS[key]
+		var v7_family_values: Dictionary = V7_FAMILY.get(family, {})
+		for key in v7_family_values:
+			merged[key] = v7_family_values[key]
+	if v8_enabled():
+		for key in V8_LIVING_LIQUID:
+			merged[key] = V8_LIVING_LIQUID[key]
+		var v8_family_values: Dictionary = V8_FAMILY.get(family, {})
+		for key in v8_family_values:
+			merged[key] = v8_family_values[key]
+	if living_volume_enabled():
+		for key in V8_2_LIVING_VOLUME:
+			merged[key] = V8_2_LIVING_VOLUME[key]
+		var v8_2_family_values: Dictionary = V8_2_FAMILY.get(family, {})
+		for key in v8_2_family_values:
+			merged[key] = v8_2_family_values[key]
+	if single_mass_enabled():
+		for key in V8_3_SINGLE_MASS:
+			merged[key] = V8_3_SINGLE_MASS[key]
+	if reference_viscosity_enabled():
+		for key in V8_4_REFERENCE_VISCOSITY:
+			merged[key] = V8_4_REFERENCE_VISCOSITY[key]
+		var v8_4_family_values: Dictionary = V8_4_FAMILY.get(family, {})
+		for key in v8_4_family_values:
+			merged[key] = v8_4_family_values[key]
+	if reference_sculpt_behavior_enabled():
+		for key in V8_5_REFERENCE_SCULPT:
+			merged[key] = V8_5_REFERENCE_SCULPT[key]
+		var v8_5_family_values: Dictionary = V8_5_FAMILY.get(family, {})
+		for key in v8_5_family_values:
+			merged[key] = v8_5_family_values[key]
+	if v8_6_enabled() and family == "T":
+		for key in V8_6_REFERENCE_CONVERGENCE_R3:
+			merged[key] = V8_6_REFERENCE_CONVERGENCE_R3[key]
+		for key in V8_6_REFERENCE_CONVERGENCE_R4:
+			merged[key] = V8_6_REFERENCE_CONVERGENCE_R4[key]
+		for key in V8_6_REFERENCE_CONVERGENCE_R4_1:
+			merged[key] = V8_6_REFERENCE_CONVERGENCE_R4_1[key]
 	return merged
 
 
+static func selected_look() -> String:
+	if OS.has_feature("v8_6_candidate"):
+		return "v8_6"
+	if OS.has_feature("v8_5_candidate"):
+		return "v8_5"
+	var override := OS.get_environment("IMMUNE_GEL_LOOK").strip_edges().to_lower()
+	if override in ["v5", "v6", "v7", "v8", "v8_1", "v8_2", "v8_3", "v8_4", "v8_5", "v8_6"]:
+		return override
+	if OS.has_feature("v8_6_shipping"):
+		return "v8_6"
+	var configured := str(ProjectSettings.get_setting("immune/visual/gel_look", "v6")).strip_edges().to_lower()
+	return configured if configured in ["v5", "v6", "v7", "v8", "v8_1", "v8_2", "v8_3", "v8_4", "v8_5", "v8_6"] else "v6"
+
+
+static func banner_match_enabled() -> bool:
+	return selected_look() in ["v6", "v7", "v8", "v8_1", "v8_2", "v8_3", "v8_4", "v8_5", "v8_6"]
+
+
+static func gummy_glass_enabled() -> bool:
+	return selected_look() in ["v7", "v8", "v8_1", "v8_2", "v8_3", "v8_4", "v8_5", "v8_6"]
+
+
+static func v7_enabled() -> bool:
+	return selected_look() == "v7"
+
+
+static func v8_enabled() -> bool:
+	return selected_look() in ["v8", "v8_1", "v8_2", "v8_3", "v8_4", "v8_5", "v8_6"]
+
+
+## V8.1 inherits the accepted V8 material and clip foundation, then enables the
+## motion-truth, release-timing and attachment-coherence hardening layer. Keeping
+## this selector separate makes IMMUNE_GEL_LOOK=v8 an exact rollback.
+static func v8_1_enabled() -> bool:
+	return selected_look() == "v8_1"
+
+
+static func v8_2_enabled() -> bool:
+	return selected_look() == "v8_2"
+
+
+static func v8_3_enabled() -> bool:
+	return selected_look() == "v8_3"
+
+
+static func v8_4_enabled() -> bool:
+	return selected_look() == "v8_4"
+
+
+static func v8_5_enabled() -> bool:
+	return selected_look() == "v8_5"
+
+
+static func v8_6_enabled() -> bool:
+	return selected_look() == "v8_6"
+
+
+## V8.6 shares V8.5's reference-sculpt behavior gate for common motion/body
+## routing, then applies its own fail-closed T-only R7.2 geometry and R4.1
+## optical overrides. Exact helpers remain available for rollback checks.
+static func reference_sculpt_behavior_enabled() -> bool:
+	return selected_look() in ["v8_5", "v8_6"]
+
+
+## V8.4 through V8.6 deliberately share the reference-viscosity behavior layer,
+## while exact helpers continue to protect asset identity and rollback tests.
+static func reference_viscosity_enabled() -> bool:
+	return selected_look() in ["v8_4", "v8_5", "v8_6"]
+
+
+## V8.3 through V8.6 share the one-piece topology contract. Exact selectors remain
+## available for rollback-specific material and evidence checks.
+static func single_mass_enabled() -> bool:
+	return selected_look() in ["v8_3", "v8_4", "v8_5", "v8_6"]
+
+
+## V8.3+ inherits V8.2's fourteen-clip and living-volume foundation while the
+## exact v8_2_enabled() selector remains available for rollback assertions.
+static func living_volume_enabled() -> bool:
+	return selected_look() in ["v8_2", "v8_3", "v8_4", "v8_5", "v8_6"]
+
+
+## V8.2 inherits V8.1's shared-coordinate attachment and release hardening while
+## v8_1_enabled() remains an exact rollback selector for material/smoke checks.
+static func motion_truth_enabled() -> bool:
+	return selected_look() in ["v8_1", "v8_2", "v8_3", "v8_4", "v8_5", "v8_6"]
+
+
 static func profile_name(family: String) -> StringName:
+	if v8_6_enabled() and family == "T":
+		return &"reference_convergence"
+	if reference_sculpt_behavior_enabled():
+		return &"reference_sculpt"
+	if v8_4_enabled():
+		return &"reference_viscous"
+	if v8_3_enabled():
+		return &"single_mass_clean"
 	if family == "B":
 		return &"round_bubbles"
 	if family == "T":

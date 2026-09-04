@@ -112,6 +112,7 @@ func prompt(action: StringName) -> String:
 		&"demo_confirm": "A",
 		&"demo_next_family": "RB",
 		&"demo_prev_family": "LB",
+		&"demo_active_skill": "RB",
 	}
 	var keyboard := {
 		&"demo_pause": "Esc",
@@ -122,6 +123,7 @@ func prompt(action: StringName) -> String:
 		&"demo_confirm": "Enter",
 		&"demo_next_family": "E",
 		&"demo_prev_family": "Q",
+		&"demo_active_skill": "E",
 	}
 	return str(gamepad.get(action, "A")) if is_using_gamepad else str(keyboard.get(action, "?"))
 
@@ -155,6 +157,7 @@ func _ensure_demo_actions() -> void:
 	_add_action(&"demo_confirm", KEY_ENTER, JOY_BUTTON_A)
 	_add_action(&"demo_next_family", KEY_E, JOY_BUTTON_RIGHT_SHOULDER)
 	_add_action(&"demo_prev_family", KEY_Q, JOY_BUTTON_LEFT_SHOULDER)
+	_add_action(&"demo_active_skill", KEY_E, JOY_BUTTON_RIGHT_SHOULDER)
 	_add_joy_button(&"demo_back", JOY_BUTTON_B)
 	_add_joy_button(&"demo_toggle_duty", JOY_BUTTON_A)
 	_add_joy_button(&"demo_research", JOY_BUTTON_Y)

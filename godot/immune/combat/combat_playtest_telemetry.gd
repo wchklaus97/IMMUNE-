@@ -21,11 +21,16 @@ var _damage_dealt: int = 0
 var _boss_damage_dealt: int = 0
 var _enemies_defeated: int = 0
 var _bosses_defeated: int = 0
+var _objective_kills: int = 0
+var _reinforcements_defeated: int = 0
 var _core_damage_taken: int = 0
 var _core_hp: int = 0
 var _core_max_hp: int = 0
 var _last_core_hp: int = -1
 var _duty_switches: int = 0
+var _active_skills_used: int = 0
+var _active_skill_hits: int = 0
+var _encounter_events: int = 0
 var _frame_count: int = 0
 var _frame_delta_total: float = 0.0
 var _max_frame_delta: float = 0.0
@@ -94,10 +99,14 @@ func record_hit(amount: int, was_boss: bool) -> void:
 		_boss_damage_dealt += maxi(amount, 0)
 
 
-func record_enemy_defeated(was_boss: bool) -> void:
+func record_enemy_defeated(was_boss: bool, objective_credit: bool = true) -> void:
 	_enemies_defeated += 1
 	if was_boss:
 		_bosses_defeated += 1
+	elif objective_credit:
+		_objective_kills += 1
+	else:
+		_reinforcements_defeated += 1
 
 
 func record_core_hp(hp: int, max_hp: int) -> void:
@@ -110,6 +119,15 @@ func record_core_hp(hp: int, max_hp: int) -> void:
 
 func record_duty_switch() -> void:
 	_duty_switches += 1
+
+
+func record_active_skill(_skill_id: StringName, targets_hit: int) -> void:
+	_active_skills_used += 1
+	_active_skill_hits += maxi(targets_hit, 0)
+
+
+func record_encounter_event(_event_id: StringName) -> void:
+	_encounter_events += 1
 
 
 func finish(victory: bool) -> void:
@@ -145,6 +163,9 @@ func snapshot() -> Dictionary:
 		"phase_durations": _rounded_dictionary(_phase_snapshot()),
 		"duty_seconds": _rounded_dictionary(_duty_seconds),
 		"duty_switches": _duty_switches,
+		"active_skills_used": _active_skills_used,
+		"active_skill_hits": _active_skill_hits,
+		"encounter_events": _encounter_events,
 		"shots_fired": _shots_fired,
 		"shots_hit": _shots_hit,
 		"accuracy": snappedf(accuracy, 0.001),
@@ -152,6 +173,8 @@ func snapshot() -> Dictionary:
 		"boss_damage_dealt": _boss_damage_dealt,
 		"enemies_defeated": _enemies_defeated,
 		"bosses_defeated": _bosses_defeated,
+		"objective_kills": _objective_kills,
+		"reinforcements_defeated": _reinforcements_defeated,
 		"core_damage_taken": _core_damage_taken,
 		"core_hp": _core_hp,
 		"core_max_hp": _core_max_hp,

@@ -66,6 +66,27 @@ uniform float spec_f0 : hint_range(0.0, 0.3) = 0.06;
 // all the reflection this material needs.
 uniform float env_specular : hint_range(0.0, 1.0) = 0.0;
 
+group_uniforms studio_reflection;
+// Compatibility/Web cannot depend on screen-texture refraction or a desktop-only
+// reflection pipeline. These three bounded view-space softboxes recreate the broad
+// white/cyan/warm environment streaks that make the key art read as wet dielectric
+// gel. Strength defaults to zero so V5 remains an exact visual control.
+uniform float studio_reflection_strength : hint_range(0.0, 1.0) = 0.0;
+uniform float studio_reflection_budget : hint_range(0.0, 0.6) = 0.16;
+uniform float studio_reflection_edge_share : hint_range(0.0, 1.0) = 0.70;
+uniform vec4 studio_key_color : source_color = vec4(0.90, 0.97, 1.0, 1.0);
+uniform vec4 studio_cool_color : source_color = vec4(0.24, 0.48, 1.0, 1.0);
+uniform vec4 studio_warm_color : source_color = vec4(1.0, 0.28, 0.16, 1.0);
+// V7-only long diagonal reflection. Zero leaves the preserved V5/V6 cards
+// unchanged while the new profile can approach the stretched key-art streaks.
+uniform float studio_streak_strength : hint_range(0.0, 1.0) = 0.0;
+// V8.4 widens the same analytic cards rather than adding a screen/refraction
+// sample. Zero preserves the reviewed V5-V8.3 Gaussian footprints exactly.
+uniform float studio_card_broadening : hint_range(0.0, 1.0) = 0.0;
+// R23 trims only the low-energy Gaussian tails after broadening. The zero branch
+// returns the original card exactly, keeping every older selector rollback-inert.
+uniform float studio_card_tail_cut : hint_range(0.0, 0.5) = 0.0;
+
 group_uniforms gel;
 // Diffuse wrap: how far light creeps past the terminator.
 uniform float light_wrap : hint_range(0.0, 0.95) = 0.60;
@@ -274,11 +295,125 @@ uniform bool authored_height_enabled = false;
 // The source carries fine shallow pores. A repeat below one enlarges them toward
 // the reference's pebble scale; grazing weighting below keeps the face-on core calm.
 uniform float authored_height_scale : hint_range(0.20, 2.0) = 0.75;
-uniform float authored_height_depth : hint_range(0.0, 0.030) = 0.012;
+uniform float authored_height_depth : hint_range(0.0, 0.030) = 0.0015;
 uniform float authored_height_blend : hint_range(1.0, 4.0) = 2.0;
 // Positive bias intentionally selects a slightly coarser mip. It trades tiny
 // close-up sparkle for stable detail during half-degree turns and minification.
 uniform float authored_height_lod_bias : hint_range(0.0, 1.25) = 0.35;
+// Stable bright inclusions reuse the already-filtered authored height sample.
+// They add no texture fetch and fade through the same mip chain during motion.
+uniform float authored_fleck_strength : hint_range(0.0, 1.0) = 0.0;
+uniform float authored_fleck_threshold : hint_range(0.0, 1.0) = 0.57;
+uniform float authored_fleck_softness : hint_range(0.005, 0.25) = 0.04;
+uniform float authored_fleck_budget : hint_range(0.0, 0.3) = 0.0;
+// A second, lower-frequency read of the same licensed/mipmapped source gives V6
+// irregular internal inclusions without the circular sphere stamps of the retired
+// procedural bubble normal. Strength zero removes all extra texture work in V5.
+uniform float authored_inclusion_strength : hint_range(0.0, 1.0) = 0.0;
+uniform float authored_inclusion_scale : hint_range(0.02, 0.5) = 0.13;
+uniform float authored_inclusion_threshold : hint_range(0.0, 1.0) = 0.55;
+uniform float authored_inclusion_softness : hint_range(0.005, 0.25) = 0.045;
+uniform float authored_inclusion_thinness : hint_range(0.0, 0.6) = 0.0;
+uniform float authored_inclusion_budget : hint_range(0.0, 0.3) = 0.0;
+uniform float authored_inclusion_lod_bias : hint_range(0.0, 1.25) = 0.18;
+// Thin, broken contour bands from that low-frequency signal approximate the
+// folded internal caustics in the key art. They are object-space and mip-filtered,
+// so unlike a screen-space sparkle pass they stay attached during motion.
+uniform float authored_caustic_strength : hint_range(0.0, 1.0) = 0.0;
+uniform float authored_caustic_threshold : hint_range(0.0, 1.0) = 0.255;
+uniform float authored_caustic_width : hint_range(0.005, 0.15) = 0.020;
+uniform float authored_caustic_budget : hint_range(0.0, 0.3) = 0.0;
+// V7-only anisotropic internal strand. It is another mip-filtered read from the
+// existing licensed texture, rotated and stretched in object space. This avoids
+// the even circular-dot read without introducing screen-space shimmer.
+uniform float authored_fiber_strength : hint_range(0.0, 1.0) = 0.0;
+uniform float authored_fiber_scale : hint_range(0.02, 0.6) = 0.18;
+uniform float authored_fiber_threshold : hint_range(0.0, 1.0) = 0.255;
+uniform float authored_fiber_width : hint_range(0.005, 0.15) = 0.016;
+uniform float authored_fiber_thinness : hint_range(0.0, 0.3) = 0.0;
+uniform float authored_fiber_budget : hint_range(0.0, 0.3) = 0.0;
+uniform float authored_fiber_lod_bias : hint_range(0.0, 1.25) = 0.22;
+
+group_uniforms liquid_motion;
+// V8 keeps the material's inner phase alive independently of AnimationPlayer.
+// Every control is inert by default, so V5/V6/V7 retain their reviewed pixels.
+// The outer authored-height normal is deliberately not advected: the membrane
+// stays attached to the character while only the lower-frequency interior reads
+// circulate underneath it.
+uniform float liquid_flow_strength : hint_range(0.0, 1.0) = 0.0;
+uniform float liquid_flow_idle_speed : hint_range(0.0, 1.5) = 0.0;
+uniform float liquid_flow_move_boost : hint_range(0.0, 2.0) = 0.0;
+uniform float liquid_flow_advection : hint_range(0.0, 1.0) = 0.0;
+uniform float liquid_flow_warp : hint_range(0.0, 0.3) = 0.0;
+uniform float liquid_flow_emission : hint_range(0.0, 1.0) = 0.0;
+uniform float liquid_flow_budget : hint_range(0.0, 0.3) = 0.0;
+uniform float liquid_flow_phase : hint_range(0.0, 6.2832) = 0.0;
+// Low-frequency cohesive mass. Unlike the authored fiber/fleck texture, this
+// analytic field spans large parts of the body and folds through itself, which
+// reads as viscous slime instead of independent particles drifting in suspension.
+uniform float liquid_slime_strength : hint_range(0.0, 1.0) = 0.0;
+uniform float liquid_slime_scale : hint_range(0.2, 3.0) = 0.85;
+uniform float liquid_slime_threshold : hint_range(0.1, 0.9) = 0.50;
+uniform float liquid_slime_softness : hint_range(0.02, 0.3) = 0.12;
+uniform float liquid_slime_thinness : hint_range(0.0, 0.3) = 0.0;
+// V8.2 lets the broad analytic slime mass affect ordinary reflected light as
+// well as the bounded emissive cue. Both controls are zero by default so the
+// accepted V5-V8.1 response takes the exact pre-V8.2 branch.
+uniform float liquid_core_color_mix : hint_range(0.0, 1.0) = 0.0;
+uniform float liquid_core_roughness_mix : hint_range(0.0, 1.0) = 0.0;
+// V8.4 continuous layered flow. This is a few broad analytic waves rather than
+// a thresholded cell field, so it reads as one folded liquid mass and can never
+// produce a free-floating pellet silhouette. Zero preserves V5 through V8.3.
+uniform float liquid_laminar_strength : hint_range(0.0, 1.0) = 0.0;
+uniform float liquid_laminar_scale : hint_range(0.2, 4.0) = 1.0;
+uniform float liquid_laminar_thinness : hint_range(0.0, 0.3) = 0.0;
+uniform float liquid_laminar_color_mix : hint_range(0.0, 1.0) = 0.0;
+uniform float liquid_laminar_roughness_mix : hint_range(0.0, 1.0) = 0.0;
+uniform float liquid_laminar_emission : hint_range(0.0, 0.5) = 0.0;
+uniform float liquid_laminar_budget : hint_range(0.0, 0.2) = 0.0;
+// Macro bubbles used to be fixed in each primitive's local space. V8.2 opts
+// them into the same shared, advected body coordinate as the cohesive liquid;
+// zero retains the historical local-space distribution byte-for-byte.
+uniform float liquid_bubble_advection : hint_range(0.0, 1.0) = 0.0;
+// Runtime-owned values. CharacterRoot eases these instead of switching them, so
+// stopping, turning, and resuming never reset the TIME-driven idle circulation.
+uniform float liquid_flow_motion_mix : hint_range(0.0, 1.0) = 0.0;
+uniform vec3 liquid_flow_direction = vec3(0.0, 0.0, -1.0);
+// Direction-aware secondary deformation. CharacterRoot drives a damped spring
+// into these values; defaults are inert for every preserved look.
+uniform float liquid_body_deform_strength : hint_range(0.0, 1.0) = 0.0;
+uniform vec3 liquid_body_lag = vec3(0.0);
+uniform float liquid_body_squash : hint_range(0.0, 0.2) = 0.0;
+// V8.1 maps every authored primitive into one shared character space before
+// deforming it. Defaults deliberately select the preserved V8 local-space path.
+uniform float liquid_body_space_enabled : hint_range(0.0, 1.0) = 0.0;
+uniform vec3 liquid_part_origin = vec3(0.0);
+uniform vec3 liquid_part_scale = vec3(1.0);
+uniform mat3 liquid_part_basis = mat3(1.0);
+uniform float liquid_turn_shear : hint_range(-0.2, 0.2) = 0.0;
+uniform float liquid_contact_amount : hint_range(-1.0, 1.0) = 0.0;
+uniform vec3 liquid_contact_normal = vec3(0.0);
+// V8.4 low-frequency secondary surface motion. Character-space coordinates and
+// identical values on core, shell, eyes, and mouth keep the character coherent.
+uniform float liquid_wobble_strength : hint_range(0.0, 0.04) = 0.0;
+uniform float liquid_wobble_speed : hint_range(0.0, 2.0) = 0.0;
+uniform float liquid_wobble_scale : hint_range(0.2, 6.0) = 1.0;
+uniform float liquid_wobble_phase : hint_range(0.0, 6.2832) = 0.0;
+// V8.5-only analytic normal correction. The existing wobble displaced vertices
+// without transforming their normals, so the wet cards appeared to slide over
+// the moving mass. Zero retains the reviewed V8.4 normal path exactly.
+uniform float liquid_wobble_normal_follow : hint_range(0.0, 1.0) = 0.0;
+
+group_uniforms v8_5_surface;
+// Fine continuous orange-peel relief made from a band-limited analytic field.
+// It introduces no texture read and fades before its frequency becomes sub-pixel.
+// Depth is physical height in body units. Zero skips the complete path and
+// preserves every earlier selector.
+uniform float orange_peel_micro_depth : hint_range(0.0, 0.003, 0.00005) = 0.0;
+uniform float orange_peel_micro_scale : hint_range(12.0, 180.0, 1.0) = 86.0;
+// At one, the detail stays calm face-on and becomes clearest in grazing wet
+// highlights; at zero it has an even physical depth around the whole membrane.
+uniform float orange_peel_micro_grazing : hint_range(0.0, 1.0) = 0.0;
 
 group_uniforms v5_readability;
 // Pulls direct body light below the ACES shoulder. V4 sat close to 1.0 linear
@@ -333,6 +468,10 @@ uniform float tex_tint_mix : hint_range(0.0, 1.0) = 0.0;
 
 varying vec3 v_obj_pos;
 varying vec3 v_obj_normal;
+// V8.1-only shared character coordinate. Unlike v_obj_pos, this does not restart
+// at the origin of every authored sphere/capsule, so advected interior fields join
+// cleanly across overlapping body, limb, foot, crown, and facial primitives.
+varying vec3 v_liquid_body_pos;
 // fragment -> light handoff
 varying float v_ink;
 varying vec3 v_filter;
@@ -559,15 +698,20 @@ float cell_triplanar(vec3 p, vec3 n) {
 // Soft triplanar blending avoids UV seams and the cracked borders of the retired
 // Voronoi path. Each plane uses the same periodic texture with decorrelated offsets;
 // implicit texture derivatives select mip levels during motion and minification.
-float authored_height_triplanar(vec3 obj_pos, vec3 obj_normal) {
+float authored_texture_triplanar(
+	vec3 obj_pos,
+	vec3 obj_normal,
+	float sample_scale,
+	vec3 sample_offset,
+	float lod_bias
+) {
 	vec3 p = membrane_cell_frame(
-		obj_pos * authored_height_scale
-		+ vec3(inclusion_seed * 0.017, inclusion_seed * 0.029, inclusion_seed * 0.043));
+		obj_pos * sample_scale + sample_offset);
 	vec3 n = normalize(membrane_cell_frame(obj_normal));
 	vec3 w = pow(abs(n), vec3(authored_height_blend));
 	w /= max(w.x + w.y + w.z, 1e-4);
-	vec3 dx = dFdx(p) * exp2(authored_height_lod_bias);
-	vec3 dy = dFdy(p) * exp2(authored_height_lod_bias);
+	vec3 dx = dFdx(p) * exp2(lod_bias);
+	vec3 dy = dFdy(p) * exp2(lod_bias);
 	float hx = textureGrad(
 		authored_height_tex, p.zy + vec2(0.173, 0.619), dx.zy, dy.zy).r;
 	float hy = textureGrad(
@@ -579,6 +723,16 @@ float authored_height_triplanar(vec3 obj_pos, vec3 obj_normal) {
 		inversesqrt(max(dot(w, w), 0.3333)),
 		1.35);
 	return 0.5 + (height - 0.5) * variance_gain;
+}
+
+
+float authored_height_triplanar(vec3 obj_pos, vec3 obj_normal) {
+	return authored_texture_triplanar(
+		obj_pos,
+		obj_normal,
+		authored_height_scale,
+		vec3(inclusion_seed * 0.017, inclusion_seed * 0.029, inclusion_seed * 0.043),
+		authored_height_lod_bias);
 }
 
 
@@ -594,6 +748,23 @@ vec3 bump_normal(vec3 n, vec3 view_pos, float height, float strength) {
 	float det = dot(dpx, r1);
 	vec3 grad = sign(det) * (dhx * r1 + dhy * r2);
 	return normalize(abs(det) * n - strength * grad);
+}
+
+
+// A continuous three-axis interference field gives the shallow, irregular
+// dimpling of orange peel without discrete cell borders. Coordinate footprint
+// attenuation removes the signal before it can shimmer at gameplay distance.
+float orange_peel_micro_height(vec3 body_position) {
+	float scale = max(orange_peel_micro_scale, 0.001);
+	vec3 q = body_position * scale;
+	float footprint = max(length(dFdx(q)), length(dFdy(q)));
+	float retained_detail = 1.0 - smoothstep(0.42, 1.35, footprint);
+	float wave_a = sin(dot(q, vec3(0.811107, 0.324443, 0.486664)) + 0.31);
+	float wave_b = sin(dot(q, vec3(-0.371391, 0.928477, 0.0)) + 2.17);
+	float wave_c = sin(dot(q, vec3(-0.451856, -0.180743, 0.873589)) + 4.03);
+	float field = (wave_a + wave_b + wave_c) * 0.22
+		+ (wave_a * wave_b + wave_b * wave_c + wave_c * wave_a) * 0.11;
+	return 0.5 + field * retained_detail;
 }
 
 
@@ -622,7 +793,172 @@ float spec_lobe(vec3 n, vec3 v, vec3 l, float rough) {
 }
 
 
+vec3 liquid_wobble_offset(vec3 body_position) {
+	if (liquid_wobble_strength <= 0.0001) {
+		return vec3(0.0);
+	}
+	float phase = TIME * liquid_wobble_speed + liquid_wobble_phase;
+	float scale = liquid_wobble_scale;
+	float sole_anchor = smoothstep(-0.02, 0.34, body_position.y);
+	float activity = mix(0.46, 1.0, clamp(liquid_flow_motion_mix, 0.0, 1.0));
+	vec3 wave = vec3(
+		sin(body_position.y * scale * 1.70
+			+ body_position.z * scale * 0.55 + phase) * 0.72,
+		sin(body_position.x * scale * 1.15
+			- body_position.z * scale * 0.82 + phase * 0.71) * 0.30,
+		cos(body_position.y * scale * 1.43
+			- body_position.x * scale * 0.48 - phase * 0.83) * 0.56);
+	return wave * liquid_wobble_strength * sole_anchor * activity;
+}
+
+
+// Transform a body-space normal by the inverse transpose of the wobble
+// deformation Jacobian. The cofactor form avoids a general matrix inverse and
+// remains well behaved for the deliberately shallow (<= 0.04 m) displacement.
+vec3 liquid_wobble_surface_normal(vec3 body_position, vec3 body_normal) {
+	if (liquid_wobble_normal_follow <= 0.0001
+			|| liquid_wobble_strength <= 0.0001) {
+		return body_normal;
+	}
+	float phase = TIME * liquid_wobble_speed + liquid_wobble_phase;
+	float scale = liquid_wobble_scale;
+	float activity = mix(0.46, 1.0, clamp(liquid_flow_motion_mix, 0.0, 1.0));
+	float amplitude = liquid_wobble_strength * activity;
+	float anchor_t = clamp((body_position.y + 0.02) / 0.36, 0.0, 1.0);
+	float sole_anchor = anchor_t * anchor_t * (3.0 - 2.0 * anchor_t);
+	float anchor_dy = 6.0 * anchor_t * (1.0 - anchor_t) / 0.36;
+
+	float phase_x = body_position.y * scale * 1.70
+		+ body_position.z * scale * 0.55 + phase;
+	float phase_y = body_position.x * scale * 1.15
+		- body_position.z * scale * 0.82 + phase * 0.71;
+	float phase_z = body_position.y * scale * 1.43
+		- body_position.x * scale * 0.48 - phase * 0.83;
+	float sin_x = sin(phase_x);
+	float cos_x = cos(phase_x);
+	float sin_y = sin(phase_y);
+	float cos_y = cos(phase_y);
+	float sin_z = sin(phase_z);
+	float cos_z = cos(phase_z);
+	vec3 wave = vec3(
+		sin_x * 0.72,
+		sin_y * 0.30,
+		cos_z * 0.56);
+	vec3 displacement_dx = amplitude * sole_anchor * vec3(
+		0.0,
+		cos_y * 0.30 * scale * 1.15,
+		sin_z * 0.56 * scale * 0.48);
+	vec3 displacement_dy = amplitude * (
+		sole_anchor * vec3(
+			cos_x * 0.72 * scale * 1.70,
+			0.0,
+			-sin_z * 0.56 * scale * 1.43)
+		+ wave * anchor_dy);
+	vec3 displacement_dz = amplitude * sole_anchor * vec3(
+		cos_x * 0.72 * scale * 0.55,
+		-cos_y * 0.30 * scale * 0.82,
+		0.0);
+
+	vec3 jacobian_x = vec3(1.0, 0.0, 0.0) + displacement_dx;
+	vec3 jacobian_y = vec3(0.0, 1.0, 0.0) + displacement_dy;
+	vec3 jacobian_z = vec3(0.0, 0.0, 1.0) + displacement_dz;
+	vec3 followed_normal = normalize(
+		cross(jacobian_y, jacobian_z) * body_normal.x
+		+ cross(jacobian_z, jacobian_x) * body_normal.y
+		+ cross(jacobian_x, jacobian_y) * body_normal.z);
+	return normalize(mix(
+		body_normal,
+		followed_normal,
+		clamp(liquid_wobble_normal_follow, 0.0, 1.0)));
+}
+
+
 void vertex() {
+	// Keep the reviewed V5-V8 deformation instruction-for-instruction when the
+	// V8.1 body-space switch is off. This also avoids changing imported bodies
+	// whose material does not receive authored primitive metadata.
+	if (liquid_body_space_enabled < 0.5) {
+		float body_squash = liquid_body_squash * liquid_body_deform_strength;
+		float vertical_scale = max(1.0 - body_squash, 0.8);
+		float lateral_scale = 1.0 + body_squash * 0.55;
+		VERTEX.y *= vertical_scale;
+		VERTEX.xz *= lateral_scale;
+		vec2 move_direction = liquid_flow_direction.xz;
+		if (length(move_direction) > 0.001) {
+			move_direction = normalize(move_direction);
+			float along = dot(VERTEX.xz, move_direction);
+			VERTEX.xz += move_direction * along
+				* liquid_flow_motion_mix * liquid_body_deform_strength * 0.035;
+		}
+		float upper_mass = smoothstep(-0.48, 0.56, VERTEX.y);
+		VERTEX += liquid_body_lag * upper_mass * liquid_body_deform_strength;
+		NORMAL = normalize(vec3(
+			NORMAL.x / lateral_scale,
+			NORMAL.y / vertical_scale,
+			NORMAL.z / lateral_scale));
+		v_liquid_body_pos = VERTEX;
+	} else {
+		vec3 safe_part_scale = max(abs(liquid_part_scale), vec3(0.0001));
+		mat3 body_to_part = transpose(liquid_part_basis);
+		vec3 body_position = liquid_part_origin
+			+ liquid_part_basis * (VERTEX * safe_part_scale);
+		vec3 original_body_position = body_position;
+		vec3 body_normal = normalize(
+			liquid_part_basis * (NORMAL / safe_part_scale));
+
+		float body_squash = liquid_body_squash * liquid_body_deform_strength;
+		float vertical_scale = max(1.0 - body_squash, 0.8);
+		float lateral_scale = 1.0 + body_squash * 0.55;
+		body_position.y *= vertical_scale;
+		body_position.xz *= lateral_scale;
+
+		vec2 move_direction = liquid_flow_direction.xz;
+		if (length(move_direction) > 0.001) {
+			move_direction = normalize(move_direction);
+			float along = dot(body_position.xz, move_direction);
+			body_position.xz += move_direction * along
+				* liquid_flow_motion_mix * liquid_body_deform_strength * 0.035;
+		}
+
+		float upper_mass = smoothstep(0.0, 1.10, body_position.y);
+		body_position += liquid_body_lag * upper_mass * liquid_body_deform_strength;
+
+		vec3 turn_axis = vec3(-liquid_flow_direction.z, 0.0, liquid_flow_direction.x);
+		if (length(turn_axis) > 0.001) {
+			turn_axis = normalize(turn_axis);
+			body_position += turn_axis * liquid_turn_shear * upper_mass;
+			// Approximate the inverse-transpose of the height-dependent shear so
+			// wet highlights bend with the mass instead of sliding over it.
+			body_normal.y -= dot(body_normal, turn_axis) * liquid_turn_shear * 0.91;
+		}
+
+		vec3 contact_normal = liquid_contact_normal;
+		float positive_contact = max(liquid_contact_amount, 0.0);
+		if (positive_contact > 0.001 && length(contact_normal) > 0.001) {
+			contact_normal = normalize(contact_normal);
+			float contact_side = smoothstep(
+				-0.08, 0.62, dot(body_position, -contact_normal));
+			body_position += contact_normal * positive_contact * 0.055 * contact_side;
+		}
+		vec3 wobble_position = body_position;
+		body_position += liquid_wobble_offset(wobble_position);
+
+		vec3 scaled_body_normal = normalize(vec3(
+			body_normal.x / lateral_scale,
+			body_normal.y / vertical_scale,
+			body_normal.z / lateral_scale));
+		if (liquid_wobble_normal_follow > 0.0001) {
+			body_normal = liquid_wobble_surface_normal(
+				wobble_position,
+				scaled_body_normal);
+		} else {
+			body_normal = scaled_body_normal;
+		}
+		VERTEX += (body_to_part * (body_position - original_body_position))
+			/ safe_part_scale;
+		NORMAL = normalize((body_to_part * body_normal) * safe_part_scale);
+		v_liquid_body_pos = body_position;
+	}
 	v_obj_pos = VERTEX;
 	v_obj_normal = NORMAL;
 }
@@ -640,6 +976,90 @@ void fragment() {
 	float lum_g = sqrt(max(lum, 0.0));
 	float ink = 1.0 - smoothstep(ink_low, max(ink_high, ink_low + 0.001), lum_g);
 	float gel_mask = 1.0 - ink;
+
+	// --- continuous V8 internal circulation --------------------------------
+	// TIME is never restarted by idle/move/attack animation transitions. The
+	// slow vertical drift therefore remains continuous; velocity only tilts and
+	// accelerates the bounded swirl layered over it. The dynamic direction never
+	// multiplies unbounded time, avoiding a pop when the player turns late in a run.
+	// V8.1 selects the interpolated shared-character coordinate; the explicit branch
+	// keeps V5-V8 sampling the original v_obj_pos path exactly.
+	vec3 liquid_field_position = v_obj_pos;
+	if (liquid_body_space_enabled >= 0.5) {
+		liquid_field_position = v_liquid_body_pos;
+	}
+	float liquid_motion = clamp(liquid_flow_motion_mix, 0.0, 1.0);
+	float liquid_phase = TIME * (
+		liquid_flow_idle_speed + liquid_flow_move_boost * liquid_motion)
+		+ liquid_flow_phase;
+	vec3 liquid_direction = liquid_flow_direction;
+	if (length(liquid_direction) < 0.001) {
+		liquid_direction = vec3(0.0, 0.0, -1.0);
+	}
+	liquid_direction = normalize(liquid_direction);
+	vec3 liquid_idle_axis = normalize(vec3(0.18, 1.0, -0.14));
+	vec3 liquid_move_axis = normalize(vec3(
+		liquid_direction.x,
+		0.24,
+		liquid_direction.z));
+	vec3 liquid_axis = normalize(mix(
+		liquid_idle_axis,
+		liquid_move_axis,
+		liquid_motion * 0.78));
+	vec3 liquid_side = normalize(cross(liquid_axis, vec3(1.0, 0.0, 0.0)));
+	vec3 liquid_curl = normalize(cross(liquid_side, liquid_axis));
+	vec3 liquid_sample_position = liquid_field_position;
+	float liquid_pulse = 0.5;
+	if (liquid_flow_strength > 0.001) {
+		float side_wave = sin(
+			liquid_phase * 1.17 + dot(liquid_field_position, liquid_side) * 3.4);
+		float curl_wave = cos(
+			liquid_phase * 0.83 + dot(liquid_field_position, liquid_curl) * 4.1);
+		float travel_wave = sin(
+			liquid_phase * 1.41 + dot(liquid_field_position, liquid_direction) * 3.0);
+		vec3 idle_drift = liquid_idle_axis * liquid_phase * liquid_flow_advection;
+		vec3 circulation = (
+			liquid_side * side_wave + liquid_curl * curl_wave * 0.72)
+			* liquid_flow_warp * (1.0 + liquid_motion * 0.65);
+		vec3 travel_overlay = liquid_direction * travel_wave
+			* liquid_flow_advection * liquid_motion * 0.42;
+		liquid_sample_position = liquid_field_position - (
+			idle_drift + circulation + travel_overlay) * liquid_flow_strength;
+		liquid_pulse = 0.5 + 0.5 * sin(
+			liquid_phase * 1.63 + dot(liquid_field_position, liquid_axis) * 4.8);
+	}
+	float liquid_slime_volume = 0.0;
+	float liquid_slime_ridge = 0.0;
+	if (liquid_flow_strength > 0.001 && liquid_slime_strength > 0.001) {
+		vec3 slime_position = liquid_sample_position * liquid_slime_scale;
+		float slime_field = 0.5
+			+ 0.22 * sin(dot(slime_position, vec3(0.83, 1.19, 0.47)) + liquid_phase * 0.53)
+			+ 0.17 * sin(dot(slime_position, vec3(-1.11, 0.54, 0.91)) - liquid_phase * 0.37)
+			+ 0.11 * cos(dot(slime_position, vec3(0.38, -0.76, 1.27)) + liquid_phase * 0.23);
+		slime_field = clamp(slime_field, 0.0, 1.0);
+		float slime_aa = max(fwidth(slime_field) * 1.5, 0.008);
+		liquid_slime_volume = smoothstep(
+			liquid_slime_threshold - liquid_slime_softness - slime_aa,
+			liquid_slime_threshold + liquid_slime_softness + slime_aa,
+			slime_field) * liquid_slime_strength;
+		liquid_slime_ridge = (1.0 - smoothstep(
+			liquid_slime_softness * 0.42,
+			liquid_slime_softness * 0.42 + slime_aa * 2.0,
+			abs(slime_field - liquid_slime_threshold))) * liquid_slime_strength;
+	}
+	float liquid_laminar_mask = 0.0;
+	if (liquid_flow_strength > 0.001 && liquid_laminar_strength > 0.001) {
+		vec3 laminar_position = liquid_sample_position * liquid_laminar_scale;
+		float laminar_field = 0.50
+			+ 0.24 * sin(dot(laminar_position, vec3(0.46, 1.31, 0.38))
+				+ liquid_phase * 0.74)
+			+ 0.16 * sin(dot(laminar_position, vec3(-0.92, 0.34, 0.71))
+				- liquid_phase * 0.49)
+			+ 0.10 * cos(dot(laminar_position, vec3(0.65, -0.47, 1.08))
+				+ liquid_phase * 0.31);
+		liquid_laminar_mask = clamp(laminar_field, 0.0, 1.0)
+			* liquid_laminar_strength;
+	}
 
 	// --- thinness, measured before dimples so creases do not read as limbs ---
 	vec3 base_n = normalize(NORMAL);
@@ -661,7 +1081,7 @@ void fragment() {
 	// was already sampled for inclusions in V4; reusing it adds no texture fetch
 	// and no second noise evaluation on production Fizzy profiles. At a coarse
 	// pixel footprint it converges toward 0.5, preventing gameplay-distance shimmer.
-	vec3 inclusion_coord = v_obj_pos * inclusion_scale
+	vec3 inclusion_coord = liquid_field_position * inclusion_scale
 		+ vec3(inclusion_seed, inclusion_seed * 1.31, inclusion_seed * 2.17);
 	float coord_footprint = max(
 		length(dFdx(inclusion_coord)),
@@ -681,6 +1101,10 @@ void fragment() {
 	// --- cellular dimples + volumetric round bubbles ----------------------
 	vec3 n = base_n;
 	float authored_height_signal = 0.5;
+	float authored_inclusion_signal = 0.5;
+	float authored_inclusion = 0.0;
+	float authored_fiber_signal = 0.5;
+	float authored_fiber = 0.0;
 	if (authored_height_enabled && authored_height_depth > 0.0001) {
 		authored_height_signal = authored_height_triplanar(
 			v_obj_pos,
@@ -700,15 +1124,96 @@ void fragment() {
 			authored_height_depth * authored_grazing * gel_mask
 				/ max(authored_height_scale, 0.001));
 	}
+	if (orange_peel_micro_depth > 0.00001) {
+		float orange_peel_height = orange_peel_micro_height(liquid_field_position);
+		float orange_peel_grazing = mix(
+			1.0,
+			mix(0.22, 1.0, pow(base_fres, 1.25)),
+			clamp(orange_peel_micro_grazing, 0.0, 1.0));
+		n = bump_normal(
+			n,
+			VERTEX,
+			orange_peel_height,
+			orange_peel_micro_depth * orange_peel_grazing * gel_mask);
+	}
+	if (authored_height_enabled && authored_inclusion_strength > 0.001) {
+		authored_inclusion_signal = authored_texture_triplanar(
+			liquid_sample_position,
+			normalize(v_obj_normal),
+			authored_inclusion_scale,
+			vec3(
+				inclusion_seed * 0.071 + 0.37,
+				inclusion_seed * 0.053 + 0.61,
+				inclusion_seed * 0.097 + 0.83),
+			authored_inclusion_lod_bias);
+		float authored_inclusion_width = max(
+			authored_inclusion_softness,
+			fwidth(authored_inclusion_signal) * 1.5);
+		authored_inclusion = smoothstep(
+			authored_inclusion_threshold - authored_inclusion_width,
+			authored_inclusion_threshold + authored_inclusion_width,
+			authored_inclusion_signal) * authored_inclusion_strength;
+	}
+	if (authored_height_enabled && authored_fiber_strength > 0.001) {
+		// Fixed orthonormal-ish basis keeps the direction deterministic per object.
+		// Stretching the rotated frame before triplanar sampling produces long,
+		// broken inclusions rather than a second field of round stamps.
+		vec3 fiber_position = vec3(
+			dot(liquid_sample_position, vec3(0.819, 0.242, 0.521)),
+			dot(liquid_sample_position, vec3(0.000, 0.907, -0.421)),
+			dot(liquid_sample_position, vec3(-0.574, 0.346, 0.745))
+		) * vec3(1.85, 0.46, 1.20);
+		vec3 fiber_normal = normalize(vec3(
+			dot(v_obj_normal, vec3(0.819, 0.242, 0.521)),
+			dot(v_obj_normal, vec3(0.000, 0.907, -0.421)),
+			dot(v_obj_normal, vec3(-0.574, 0.346, 0.745))
+		));
+		authored_fiber_signal = authored_texture_triplanar(
+			fiber_position,
+			fiber_normal,
+			authored_fiber_scale,
+			vec3(
+				inclusion_seed * 0.113 + 0.19,
+				inclusion_seed * 0.067 + 0.47,
+				inclusion_seed * 0.149 + 0.73),
+			authored_fiber_lod_bias);
+		float authored_fiber_aa = max(
+			authored_fiber_width,
+			fwidth(authored_fiber_signal) * 1.35);
+		float fiber_fill = smoothstep(
+			authored_fiber_threshold - authored_fiber_aa,
+			authored_fiber_threshold + authored_fiber_aa,
+			authored_fiber_signal);
+		float coarse_gate = mix(
+			0.30,
+			1.0,
+			smoothstep(0.18, 0.34, authored_inclusion_signal));
+		authored_fiber = pow(fiber_fill, 1.35)
+			* coarse_gate * authored_fiber_strength;
+	}
 	if (dimple_depth > 0.001) {
 		float height = cell_triplanar(v_obj_pos * dimple_scale, normalize(v_obj_normal));
 		float strength = dimple_depth * gel_mask / max(dimple_scale, 0.001);
 		n = bump_normal(n, VERTEX, height, strength);
 	}
 	vec2 bubble = vec2(0.0);
-	if (bubble_enabled && bubble_depth > 0.001 && bubble_density > 0.001) {
+	if (bubble_enabled && bubble_density > 0.001 && (
+		bubble_depth > 0.001
+		|| bubble_thinness > 0.001
+		|| bubble_emission > 0.001
+		|| bubble_shell_emission > 0.001)) {
+		vec3 bubble_position = v_obj_pos;
+		if (liquid_bubble_advection > 0.001) {
+			// Shared body space prevents the procedural field restarting at every
+			// overlapping primitive. Blending toward the already-computed advected
+			// coordinate makes the pockets circulate continuously in idle and move.
+			bubble_position = mix(
+				liquid_field_position,
+				liquid_sample_position,
+				clamp(liquid_bubble_advection, 0.0, 1.0));
+		}
 		bubble = bubble_volume_at(
-			v_obj_pos * bubble_scale,
+			bubble_position * bubble_scale,
 			bubble_density,
 			bubble_radius_min,
 			bubble_radius_max,
@@ -787,7 +1292,11 @@ void fragment() {
 	float local_thickness = clamp(
 		1.0 - thin
 		- bubble.x * bubble_thinness
-		- microbubble.x * microbubble_thinness,
+		- microbubble.x * microbubble_thinness
+		- authored_inclusion * authored_inclusion_thinness
+		- authored_fiber * authored_fiber_thinness
+		- liquid_slime_volume * liquid_slime_thinness
+		- liquid_laminar_mask * liquid_laminar_thinness,
 		0.0,
 		1.0);
 	vec3 through = gel_throughput(local_thickness);
@@ -798,6 +1307,31 @@ void fragment() {
 	body *= 1.0 - (
 		bubble.y * bubble_shell_shadow
 		+ microbubble.y * microbubble_shell_shadow) * gel_mask;
+	float liquid_core_mask = clamp(
+		liquid_slime_volume * 0.84 + liquid_slime_ridge * 0.16,
+		0.0,
+		1.0) * gel_mask;
+	if (liquid_core_color_mix > 0.001) {
+		// This is a bounded optical-density proxy, not a second transparent
+		// volume. It keeps the opaque Compatibility core stable while letting the
+		// moving inner mass read under ordinary lighting instead of bloom alone.
+		vec3 liquid_core_target = mix(
+			body,
+			deep_color.rgb * albedo_gain,
+			0.72);
+		body = mix(
+			body,
+			liquid_core_target,
+			liquid_core_mask * clamp(liquid_core_color_mix, 0.0, 1.0));
+	}
+	if (liquid_laminar_color_mix > 0.001) {
+		vec3 laminar_target = mix(deep_color.rgb, transmit_color.rgb, 0.40)
+			* albedo_gain;
+		body = mix(
+			body,
+			laminar_target,
+			liquid_laminar_mask * clamp(liquid_laminar_color_mix, 0.0, 1.0));
+	}
 	v_surface_color = mix(body, ink_color.rgb, ink);
 	ALBEDO = vec3(1.0);
 	METALLIC = 0.0;
@@ -805,6 +1339,19 @@ void fragment() {
 		body_roughness,
 		max(body_roughness * 0.72, 0.04),
 		max(bubble.x, microbubble.x));
+	if (liquid_core_roughness_mix > 0.001) {
+		gel_roughness = mix(
+			gel_roughness,
+			max(body_roughness * 0.58, 0.04),
+			liquid_core_mask * clamp(liquid_core_roughness_mix, 0.0, 1.0));
+	}
+	if (liquid_laminar_roughness_mix > 0.001) {
+		gel_roughness = mix(
+			gel_roughness,
+			max(body_roughness * 0.46, 0.04),
+			liquid_laminar_mask
+				* clamp(liquid_laminar_roughness_mix, 0.0, 1.0));
+	}
 	gel_roughness = clamp(gel_roughness, 0.04, 1.0);
 	ROUGHNESS = mix(gel_roughness, ink_roughness, ink);
 	SPECULAR = env_specular;
@@ -849,9 +1396,128 @@ void fragment() {
 		+ microbubble_shell_emission * microbubble.y
 		+ inclusion_emission * inclusion) * (0.25 + 0.75 * fres)
 		* detail_emission_scale;
+	float authored_fleck_width = max(
+		authored_fleck_softness,
+		fwidth(authored_height_signal) * 1.5);
+	float authored_fleck = authored_height_enabled
+		? smoothstep(
+			authored_fleck_threshold - authored_fleck_width,
+			authored_fleck_threshold + authored_fleck_width,
+			authored_height_signal) * authored_fleck_strength
+		: 0.0;
+	vec3 fleck_glow = mix(
+		transmit_color.rgb,
+		studio_key_color.rgb,
+		0.58) * authored_fleck * (0.22 + 0.78 * fres) * gel_mask;
+	vec3 authored_inclusion_glow = mix(
+		transmit_color.rgb,
+		studio_key_color.rgb,
+		0.42) * authored_inclusion * (0.35 + 0.65 * fres) * gel_mask;
+	float authored_caustic = 0.0;
+	// The caustic contours are derived from the authored inclusion signal. If that
+	// source is disabled there is neither a valid signal nor a reason to spend the
+	// derivative/shape ALU. V8.4 keeps both controls at zero; older active pairs are
+	// visually unchanged.
+	if (authored_height_enabled
+			&& authored_inclusion_strength > 0.001
+			&& authored_caustic_strength > 0.001) {
+		float authored_caustic_aa = max(
+			authored_caustic_width,
+			fwidth(authored_inclusion_signal) * 1.5);
+		authored_caustic = (1.0 - smoothstep(
+			authored_caustic_width,
+			authored_caustic_width + authored_caustic_aa,
+			abs(authored_inclusion_signal - authored_caustic_threshold)))
+			* mix(
+				0.18,
+				1.0,
+				smoothstep(0.20, 0.34, authored_height_signal))
+			* authored_caustic_strength;
+	}
+	vec3 authored_caustic_glow = mix(
+		transmit_color.rgb,
+		studio_key_color.rgb,
+		0.70) * authored_caustic * (0.18 + 0.82 * fres) * gel_mask;
+	vec3 authored_fiber_glow = mix(
+		transmit_color.rgb,
+		studio_key_color.rgb,
+		0.76) * authored_fiber * (0.24 + 0.76 * fres) * gel_mask;
+	float liquid_current = max(
+		max(authored_fiber, authored_inclusion * 0.62),
+		max(liquid_slime_ridge, liquid_slime_volume * 0.34))
+		* liquid_flow_strength
+		* mix(0.38, 1.0, liquid_pulse)
+		* mix(0.72, 1.0, liquid_motion);
+	vec3 liquid_flow_glow = mix(
+		deep_color.rgb,
+		transmit_color.rgb,
+		0.68) * liquid_current * liquid_flow_emission
+		* (0.22 + 0.78 * fres) * gel_mask;
+	vec3 liquid_laminar_glow = mix(
+		deep_color.rgb,
+		transmit_color.rgb,
+		0.54) * liquid_laminar_mask * liquid_laminar_emission
+		* (0.18 + 0.82 * fres) * gel_mask;
+	// A fixed studio light-card rig in view space. Unlike screen-space refraction it
+	// is deterministic on Compatibility/Web, follows the surface normal during motion,
+	// and is independently energy-limited before it reaches the display transform.
+	vec3 reflection_vector = reflect(-normalize(VIEW), normalize(n));
+	float studio_card_scale = mix(
+		1.0,
+		0.42,
+		clamp(studio_card_broadening, 0.0, 1.0));
+	float studio_front = smoothstep(-0.18, 0.62, reflection_vector.z);
+	vec2 key_delta = reflection_vector.xy - vec2(-0.38, 0.42);
+	vec2 cool_delta = reflection_vector.xy - vec2(0.62, 0.02);
+	vec2 warm_delta = reflection_vector.xy - vec2(-0.08, -0.72);
+	float studio_key = exp(-(
+		key_delta.x * key_delta.x * 4.0 * studio_card_scale
+		+ key_delta.y * key_delta.y * 13.0 * studio_card_scale));
+	float studio_cool = exp(-(
+		cool_delta.x * cool_delta.x * 16.0 * studio_card_scale
+		+ cool_delta.y * cool_delta.y * 3.5 * studio_card_scale));
+	float studio_warm = exp(-(
+		warm_delta.x * warm_delta.x * 5.0 * studio_card_scale
+		+ warm_delta.y * warm_delta.y * 14.0 * studio_card_scale));
+	vec2 streak_delta = reflection_vector.xy - vec2(-0.08, 0.06);
+	float streak_across = dot(streak_delta, vec2(0.78, -0.63));
+	float streak_along = dot(streak_delta, vec2(0.63, 0.78));
+	float studio_streak = exp(-(
+		streak_across * streak_across * 42.0 * studio_card_scale
+		+ streak_along * streak_along * 2.4 * studio_card_scale));
+	if (studio_card_tail_cut > 0.0) {
+		float card_tail_cut = clamp(studio_card_tail_cut, 0.0, 0.5);
+		float card_tail_range = max(1.0 - card_tail_cut, 0.001);
+		studio_key = clamp((studio_key - card_tail_cut) / card_tail_range, 0.0, 1.0);
+		studio_cool = clamp((studio_cool - card_tail_cut) / card_tail_range, 0.0, 1.0);
+		studio_warm = clamp((studio_warm - card_tail_cut) / card_tail_range, 0.0, 1.0);
+		studio_streak = clamp((studio_streak - card_tail_cut) / card_tail_range, 0.0, 1.0);
+	}
+	studio_key *= studio_front;
+	studio_cool *= studio_front;
+	studio_warm *= studio_front;
+	studio_streak *= studio_front * studio_streak_strength
+		* mix(0.72, 1.0, smoothstep(0.18, 0.40, authored_height_signal));
+	float studio_edge = mix(
+		1.0 - studio_reflection_edge_share,
+		1.0,
+		pow(fres, 1.35));
+	vec3 studio = (
+		studio_key_color.rgb * studio_key
+		+ studio_cool_color.rgb * studio_cool * 0.72
+		+ studio_warm_color.rgb * studio_warm * 0.32
+		+ studio_key_color.rgb * studio_streak
+	) * studio_reflection_strength * studio_edge * mix(0.34, 1.0, gel_mask);
 	EMISSION = (
 		peak_limit(inner + bubble_glow, interior_budget)
-		+ peak_limit(rim, rim_budget)) * gel_mask;
+		+ peak_limit(rim, rim_budget)) * gel_mask
+		+ peak_limit(studio, studio_reflection_budget)
+		+ peak_limit(fleck_glow, authored_fleck_budget)
+		+ peak_limit(authored_inclusion_glow, authored_inclusion_budget)
+		+ peak_limit(authored_caustic_glow, authored_caustic_budget)
+		+ peak_limit(authored_fiber_glow, authored_fiber_budget)
+		+ peak_limit(liquid_flow_glow, liquid_flow_budget)
+		+ peak_limit(liquid_laminar_glow, liquid_laminar_budget);
 
 	v_ink = ink;
 	v_hot = hot;

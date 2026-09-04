@@ -72,3 +72,53 @@ python3 tools/meshy/validate_hero_glb.py \
 godot --headless --editor --path godot/immune --import --quit
 godot --headless --path godot/immune --script res://tools/smoke.gd
 ```
+
+## CHAR-BASE-T local single-mass review derivative
+
+`build_t_single_mass_body.py` performs no network request and spends no provider
+credits. It requires Assimp on `PATH` plus the Python `vtk` package. The builder
+welds the preserved T development GLB, retains its largest connected body,
+closes the three removed face-insert holes, regenerates normals, proves one
+closed manifold, and refuses to overwrite an existing output. The final Assimp
+conversion is first written and container-validated in a same-filesystem
+temporary directory, then atomically promoted, so a failed generation leaves no
+partial destination that could poison the next retry.
+
+```sh
+python3 tools/meshy/build_t_single_mass_body.py \
+  --source godot/immune/characters/base_t/CHAR-BASE-T-tripo-5k.glb \
+  --output /tmp/CHAR-BASE-T-v8-4-single-mass-r1.glb
+python3 tools/meshy/validate_hero_glb.py \
+  --glb /tmp/CHAR-BASE-T-v8-4-single-mass-r1.glb
+```
+
+The checked-in result and builder are hash-bound in
+`characters/base_t/ASSET_PROVENANCE.md`. This derivative inherits the source
+model's unresolved commercial-rights status. It is available only to the exact
+V8.4 development selector and is deliberately excluded from all release
+presets and the accepted PCK policy until the owner supplies the missing rights
+records.
+
+## CHAR-BASE-T V8.5 project-authored sculpt candidate
+
+`build_t_v8_5_authored_sculpt.py` is a separate, provider-independent path. It
+does not read the V8.4 derivative, any Meshy/Tripo asset, or any reference-image
+pixels. Numeric implicit-shape parameters create one closed surface; the builder
+then audits connected regions, boundary and non-manifold edges, winding, Euler
+characteristic, degenerate faces, volume, GLB structure, and forbidden payloads
+before atomically promoting a new immutable output. Existing destinations are
+never overwritten.
+
+The checked-in r4 was reproduced byte-for-byte with Python 3, NumPy 2.4.4, and
+VTK 9.6.1. Use the same dependency versions when reproducing the evidence:
+
+```sh
+python3 tools/meshy/build_t_v8_5_authored_sculpt.py \
+  --output /tmp/CHAR-BASE-T-v8-5-authored-sculpt-r4.glb
+shasum -a 256 /tmp/CHAR-BASE-T-v8-5-authored-sculpt-r4.glb
+```
+
+The expected asset hash and complete topology record live in
+`characters/base_t/ASSET_PROVENANCE.md`. V8.5 is an opt-in source-tree review
+selector and the candidate GLB remains excluded from every release preset until
+the owner resolves concept/reference rights and approves commercial promotion.

@@ -1,6 +1,652 @@
 # IMMUNE demo handoff
 
-Updated: 2026-08-31
+Updated: 2026-09-04
+
+## V8.6 R7.2 promoted shipping RC1
+
+V8.6 R7.2 is now the unpublished four-platform shipping default for version
+`0.5.0-rc.1`. The promotion implementation is commit
+`2f61c39187b253bb72d87d4a79a5c24b6ede6d35`; its authoritative GitHub Actions
+run is <https://github.com/wchklaus97/IMMUNE-/actions/runs/33875825213>. All seven
+jobs pass: main validation/export plus shipping and preserved-candidate native
+smoke on Ubuntu, Windows, and macOS.
+
+The four normal export presets carry `v8_6_shipping`. Their SHA-bound export
+plugin injects only
+`CHAR-BASE-T-v8-6-authored-sculpt-r7-2.glb`; R5, R6, R7, and R7.1 remain
+preserved source/evidence and excluded from shipping. A mounted shipping-PCK
+probe proves one body, one shell, one wet and one shell material, all 14
+animations, no loose burst, no fallback, and no build failure. A second mounted
+probe with `IMMUNE_GEL_LOOK=v8_3` proves the exact V8.3 rollback from that same
+shipping pack. Candidate features remain higher-priority for isolated candidate
+testing; explicit environment rollback remains higher-priority than the
+shipping-default feature.
+
+The exact 14-file remote release inventory, native evidence hashes, source
+commit, and honest external gates are recorded in
+`steam/build-candidate-v0.5.0-rc.1.md`. The downloaded remote run is preserved
+under `outputs/v8.6-promotion-rc1/remote-ci-33875825213/`; local R1 and corrected
+R2 preflights are preserved separately. The remote Windows/Linux/Web PCKs are
+byte-identical at 58,246,448 bytes, SHA-256
+`fd8afee9f8653acfd8a13f16dd0ab10e88a1dcae72ae8e64dd4317058d5452d1`.
+Read-only revalidation accepts the release inventory, V8.6 PCK policy, and Steam
+repository readiness with seven owner/platform gate groups deliberately open.
+
+Local R2 official-Godot-4.7.2 validation passes 139/139 tool tests, 53/53 UI
+tests, 14 animations / 154 sampled poses / zero detached bodies, four platform
+exports, universal macOS launch, Apple-Metal Web QA, translation/catalog/audio/
+Steam-art contracts, six-family MISSION-01, and T/B MISSION-01/MISSION-06
+bookends. The first strict exported rollback investigation caught a real
+selector-precedence failure that an earlier non-fail-fast shell had masked; the
+selector and CI were corrected, then the entire PCK and R2 pipeline was rerun
+with fail-fast semantics.
+
+This promotion does not close the publisher boundary. The V8.6 rights
+attestation and content survey remain unsigned; macOS remains ad-hoc rather than
+Developer ID signed/notarized; real Steam App/depot IDs, SteamPipe preview and
+private-client installs, physical minimum-spec/Steam Deck sessions, human QA,
+Valve review, and explicit owner release authorization remain open. No merge,
+tag, GitHub Release, Steam upload, signing, notarization, submission, or public
+release was performed.
+
+## V8.6 R7.2 opt-in technical candidate — reference convergence
+
+V8.6 is implemented as an additive, opt-in T-cell candidate. It does not
+replace the release-safe V8.3 default, V8.5 R4, or any earlier model, selector,
+look-dev capture, animation evidence, or export. The locked active mesh is
+`godot/immune/characters/base_t/CHAR-BASE-T-v8-6-authored-sculpt-r7-2.glb`
+(SHA-256
+`3fc0b00e7ee8bdf2696fbf7ef97a8044abf8dc60d49c3b917a5471c60945f6a3`):
+one watertight component, one node/mesh/primitive, 6,002 vertices, and 12,000
+triangles. It presents one coherent character with no detached cell, satellite,
+or debris body. The R4.1 V8.6-only optical tuning adds the locked orange wet-gel
+response, clear edge, internal laminar/core flow, softer highlights, embedded
+eyes, and body-bound pore without changing gameplay collision.
+
+Final six-angle look-dev is preserved under
+`outputs/v8.6-reference-convergence/lookdev-r7-2-r4-1-face-lock/`. The official
+Godot 4.7.2 animation gate covers all 14 exact clips and 154 sampled poses with
+zero collapse or detached meshes. Idle circulation remains active; locomotion,
+reversal, stopping, combat, and defeat preserve viscosity, squash, directional
+lag, and settling. The 127 frame captures and 23 review sheets are under
+`outputs/v8.6-reference-convergence/animation-r7-2-r4-1-face-lock/`.
+
+Fresh, isolated technical PCKs are preserved under
+`outputs/v8.6-reference-convergence/export-runtime-mesh-lock-20260904T0400Z/`.
+The V8.5 PCK is 59,318,780 bytes with SHA-256
+`d84a2e07c71bcfd08683647945cae28d9a76f52a8732879ff98e4c5893e9c87b`;
+the V8.6 PCK is 59,317,556 bytes with SHA-256
+`825df57307a15801cea0eb4a7a289889988f8b3ddeaf05cf26b278bd673801ea`.
+The V8.6 validator finds exactly 546 files and its official mounted-PCK probe
+loads one R7.2 body, one shell, one wet material, all 14 animations, no loose
+burst, no fallback, and no build failure while retaining V8.3 as the default.
+The complete current Node tool suite passes 138/138, including a real child
+process with an injected `ENOSPC` command-log write failure; the runner records
+the error and terminates that exact owned process through its tracked cleanup.
+It also includes a real Git worktree regression proving that binary diffs larger
+than Node's default 1 MiB subprocess buffer are captured under a separate,
+bounded 16 MiB fingerprint ceiling.
+
+The disk promotion gate is now materially cleared. APFS free space increased
+from about 12 GiB to 41 GiB after removing only rebuildable uv/npm/npx caches,
+six shut-down stale/duplicate Simulator devices, and the exact local Time
+Machine snapshot that retained those deleted blocks. Active npx sandboxes,
+CoreSimulator devices used recently, the codebase graph, the repository, all
+historical models/exports, and every R5/R6/R7 GPU evidence root were preserved.
+
+V8.6 now also has four isolated candidate presets without changing the V8.3
+shipping default. A fresh official-4.7.2 Windows/Linux/macOS/Web preflight is
+preserved under
+`outputs/v8.6-reference-convergence/export-four-platform-r7-2-preflight-r1/`.
+All four exports emitted the exact raw-body hash marker. The three platform PCK
+copies are byte-identical at 59,317,556 bytes, SHA-256
+`e81ca5510553cd04669aea4910e27c921ecdd4f36762bea25c59109ec313c9f4`,
+and the mounted probe validates 546 resources, V8.6 selection over a retained
+V8.3 default, one body/shell/wet material, all 14 animations, no loose burst,
+fallback, or build failure. The universal x86_64/arm64 macOS app passes strict
+ad-hoc code-sign verification and real local native release smoke. Gatekeeper
+rejection is expected until owner Developer ID signing and notarization. The
+Web baseline passes at 60.002 mean FPS; SwiftShader compatibility stress passes
+at 13.720 mean FPS and is explicitly not hardware evidence. The Linux ELF also
+passes an offline, read-only, unprivileged Ubuntu 24.04 amd64-container smoke
+under Apple-Silicon emulation. Its first run was rejected because `nobody` used
+`/nonexistent` for `user://`; R2 supplied only tmpfs HOME/XDG storage and passed
+without diagnostics. This is compatibility evidence, not native/min-spec
+hardware. The Windows PE is ready for target-OS transfer but remains unexecuted
+on Windows.
+CI now contains a fail-closed, commit-bound V8.6 four-platform exporter, Web QA,
+and Linux/Windows/macOS native-smoke evidence matrix. It is syntactically valid
+and locked by the V8.6 validator. The owner has explicitly authorized committing
+and pushing this candidate branch; remote CI must still be assessed from the
+GitHub run itself, and no remote result is embedded or pre-claimed here.
+The first authorized remote run (`33861253886`) stopped at the fresh-cache warm
+import before any export or native job: Godot reports the four ignored/generated
+CSV translation outputs as missing while it bootstraps them, and the old generic
+`ERROR:` grep rejected those known first-pass diagnostics even though import then
+created all four files. The workflow now allowlists only the exact four
+`Cannot open`/`Failed loading` translation-resource messages during that warm
+pass, asserts all four generated files are non-empty, and keeps the second import
+fully fail-closed for every diagnostic. The failed run remains retained; the
+authoritative follow-up outcome is the GitHub run attached to the fix commit.
+
+The final repository-controlled performance gate is the formal same-host
+Forward+/Metal ABBA run (`A1=v8_5, B1=v8_6, B2=v8_6, A2=v8_5`). The hardened
+runner binds exact PIDs, source and imported-mesh fingerprints, Godot/Xcode/
+xctrace identities, authoritative trace times, and four 300-frame post-warmup
+windows from exact-PID traces requested with an exact 8-second time limit.
+Pinned xctrace stop latency may expand the authoritative TOC envelope to a
+bounded 7.95-12.0 seconds; the full envelope must remain inside the 35-second
+render hold and none of that extra tail expands the fixed analysis window. It
+validates each report immediately and
+fails closed on source, host, artifact, trace, repeatability, or disk drift. A
+30-second A1 attempt was deliberately interrupted when its incomplete trace and
+Xcode staging consumed about 15 GiB; no comparison verdict was claimed. After
+verifying that no Godot/xctrace process remained, only that incomplete
+task-owned trace and exact same-birth-time staging were removed. Runtime logs
+and the failure manifest remain; previous game/model/evidence versions were not
+removed.
+
+A fresh plan-only preflight on 2026-09-04 failed before reserving its evidence
+root with 24,995,209,216 bytes available versus the locked 25,769,803,776-byte
+(24 GiB) minimum, and the absent root was verified. macOS later reclaimed
+purgeable space without deleting any project artifact; a new plan passed with
+36,229,648,384 bytes free. Its A1 completed the exact V8.5 workload and
+requested 8-second trace, but the then-current TOC guard rejected pinned
+xctrace's 9.745658-second authoritative recording envelope before B1. Sanitized
+inspection confirmed the exact PID, Metal schema, exact time-limit/end reason,
+zero forbidden environment keys, and full hold containment. This is
+harness-validation-inconclusive, not GPU evidence. The failed root and manifest
+remain immutable, no B run occurred, and the corrected contract must use a
+brand-new root. At that point V8.6 still had no formal GPU-regression verdict.
+
+The next fresh R6 plan initially stopped before root reservation because the
+dirty binary Git diff was 2,657,667 bytes and exceeded the old 1 MiB subprocess
+buffer. After the bounded fingerprint fix and regression passed, R6 A1 completed
+the exact 4,000-sample V8.5 workload, 35,005 ms hold, requested 8-second trace,
+and 300-frame measurement. The then-current analyzer classified seven legal
+nullable Frame-column `<sentinel/>` rows as malformed and stopped before B1.
+The R6 root remains immutable. Read-only reanalysis outside that root proves
+22,860 target rows reconcile exactly as 18,670 channel top-level + 4,183 nested
++ 7 unframed + 0 malformed; none of the seven overlaps frames 61-360, and the
+unchanged diagnostic A1 metrics are mean 7.127 ms, p95 7.488 ms, max 9.540 ms.
+The parser now validates the first six columns positionally, rejects unresolved
+or contradictory references, duplicate attributes and IDs, inconsistent
+process identities, and merged rows, while both immediate and aggregate gates
+require zero malformed rows, zero analyzed-window unframed overlap, and exact
+row accounting. This diagnosed R6 only; it did not alter or replace that failed
+root.
+
+The subsequent fresh R7 campaign completed all four exact workloads and passed
+the aggregate gate on Apple M4 Pro. Every run analyzed frames 61-360 (300
+contiguous frames), reported zero malformed rows and zero unframed overlap, and
+stayed below the 16.67 ms per-window maximum ceiling. V8.5 A1/A2 measured
+mean 7.881/7.717 ms and p95 8.186/8.084 ms; V8.6 B1/B2 measured mean
+7.744/7.698 ms and p95 8.076/8.056 ms. Aggregate V8.6 is 7.721 ms mean and
+8.066 ms p95 versus V8.5's 7.799/8.135 ms: -0.078 ms (-1.00%) mean and
+-0.069 ms (-0.85%) p95. Baseline/candidate repeat spreads pass, and candidate
+max is 10.204 ms. The independent post-run validator reproduced a byte-identical
+gate, and an independent audit re-hashed all 42 retained artifacts with zero
+mismatches and reported no P0/P1 findings. The immutable local evidence root is
+`/var/folders/s3/8ntnh5c12bv7njyr38rvftcw0000gn/T/v86-r7-2-r4-1-final-r7-20260904T-current`;
+its raw provenance SHA-256 is
+`8bbde87e7f1d1d42158bc0d64e1f402ea43235305d42a376222ba3cd44346c53`
+and gate SHA-256 is
+`469e41dd340f3e02935501b209dfbf58b8d6fa09bc2797567718ce4fb50d01d7`.
+Host, Godot, Xcode/xctrace, source fingerprints, and Git snapshot remained
+unchanged throughout; every runner-owned raw/export temporary directory was
+removed. Post-campaign edits are documentation only.
+
+This is a locally validated technical candidate, not a public Steam release.
+Owner rights signatures, native Windows/Linux and physical minimum-spec/Steam
+Deck evidence, Steam App/depot IDs and onboarding, Developer ID signing and
+notarization, private SteamPipe/client-install rehearsal, human visual/gameplay
+QA, Valve review, and explicit owner publishing authorization remain external
+open gates. No commit, push, tag, upload, signing, notarization, submission, or
+release was performed. Full rationale, rejected prototypes, exact metrics,
+failure discipline, and reproduction contract are in
+`docs/godot-prompter/specs/2026-09-04-v8-6-reference-convergence.md`; raw Metal
+retention rules are in `docs/metal-trace-security.md`.
+
+## V8.1 exact local release candidate — authored slime and release convergence
+
+V8.1 is rebuilt and preserved as the current exact local candidate. Its 14
+Windows/Linux/macOS/Web artifacts come from clean source commit
+`52e05f2562470bc6cbe6db505f8df7ded3f53bf0`; follow-up commit
+`695fd3181abbdd15d45e8e26686a9308f8c07add` hardens only release validation and
+tests, without changing Godot source or artifact bytes. Exact sizes, SHA-256
+values, evidence hashes, and open gates are recorded in
+`steam/build-candidate-v0.4.0-v8.1.md`. The historical V5.4 record remains at
+`steam/build-candidate-v0.4.0.md`.
+
+All six playable families now ship only authored procedural jelly bodies. The
+PCK gate checks 534 entries, requires compiled authored body scenes and T/B
+logical remaps, and rejects every Meshy/Tripo hero experiment and damaged T
+variant. Those generated development sources and all earlier V5/V6/V7/V8
+checkpoints remain preserved outside the shipping PCKs. The prior intermediate
+V8.1 artifact set is preserved as the verified recoverable archive
+`godot/immune/build/history/v8-1-intermediate-5bed69d.tar.zst`.
+
+All nine runtime sounds now have deterministic project-authored generation,
+locked hashes, documented provenance, and a CI drift check; existing channel
+pools and playback behavior are retained. Six current 1920x1080 Steam
+screenshots are real V8.1 gameplay captures covering every family and mission.
+
+Official Godot `4.7.2.stable.official.ed1daf0bf` imports, source smoke, the
+strict 14-file contract, Steam repository readiness, translation/catalog,
+audio/assets, and all `64/64` release-tool tests pass. Exported-Web QA completes
+the research-to-pause lifecycle at desktop and throttled compatibility
+profiles. Exact macOS evidence binds the source commit and ZIP, passes a real
+universal `arm64+x86_64` app launch, and ends with
+`RELEASE_SMOKE_OK platform=macOS nodes=200`.
+
+This closes the repository-controlled V8.1 candidate work, not public release.
+Native Windows/Linux launch evidence, owner rights/content attestations, real
+Steam App/depot IDs and onboarding, Developer ID signing/notarization,
+SteamPipe/private-branch client installs, physical minimum-spec/Steam Deck and
+human playtests, Valve review/timing, and explicit owner release authorization
+remain open. No push, tag, upload, submission, notarization, or public release
+occurred.
+
+## V8 source checkpoint — living-slime idle and locomotion
+
+V8 is implemented and preserved at local source checkpoint
+`884198eaf28a6370363e74af8c155122d828da40`. It is an additive visual version
+over the V7 gummy-glass foundation: V5.1, V6, V7, their selectors/checkpoints,
+earlier r1/r2 captures, generated models, and the existing `web/` / historical `web-v7/`
+builds remain intact. V8 is now the project default; `IMMUNE_GEL_LOOK=v5`, `v6`,
+`v7`, and `v8` all pass content smoke. No Meshy task was submitted and no
+generation credit was consumed.
+
+Idle characters now retain slow cohesive internal circulation from an
+uninterrupted shader clock. Movement smoothly adds local speed/direction,
+direction-aware spring lag, acceleration squash, lateral volume compensation,
+and a separate grounded 1.12-second compression-wave move loop. The wet core
+and clear membrane receive identical deformation state. Gameplay still uses the
+unchanged stable collision sphere; six-family smoke proves visual flow cannot
+change its transform or shape and settles without residual wobble after stopping.
+
+Preserved/current verification evidence lives under
+`outputs/v8-liquid-motion/`: r1, slime-r2, current slime-r3 idle/move strips,
+real B gameplay/portrait captures, two order-varied V7/V8 ten-body performance
+pairs, and exported-Web QA. The V8 Web build is separate at
+`godot/immune/build/history/web-v8/`. The first export correctly stopped when
+that new directory did not exist; pre-creating only the V8 target fixed the
+workflow without touching older builds.
+
+Local Godot 4.6.1 import, default V8 plus explicit V5/V6/V7 smoke, 58/58 root
+tools, playtest template, bilingual overflow, headed image contracts,
+fixed/mobile/boss/pause gameplay presentation, and the two-profile exported-Web
+lifecycle all pass. Baseline Web is `60.003/59.88` mean/p05 FPS; 4x CPU plus
+SwiftShader is `12.593/11.99` and remains compatibility stress, not hardware
+evidence. The order-varied performance pairs show no measured V8 CPU/wall
+regression, but the Metal GPU timer is unavailable.
+
+Full architecture, exact parameters, preservation map, failure diagnosis,
+performance table, evidence paths, and reproduction commands are in
+`docs/godot-prompter/specs/2026-09-01-jelly-v8-living-slime-motion.md`.
+
+V8 is a tested local development checkpoint, not a public release. The
+repository's exact release baseline used Godot 4.7.2, so V8 still needs a clean
+4.7.2 rerun plus human motion/texture preference, physical minimum-spec/native
+target evidence, owner-approved storefront material, rights/IDs,
+signing/notarization, Steamworks/Valve review, and explicit owner publishing
+authorization. No push, tag, release, public upload, notarization, or storefront
+submission occurred.
+
+## V7 exact local candidate and blinded-preference handoff
+
+V7 is now rebuilt sequentially for Windows, Linux, macOS, and Web into the new
+non-overwriting directory `godot/immune/build/history/v7-exact-5747a52/`.
+All 14 files are bound to exact documentation checkpoint
+`5747a52c5c0466a12b5ff3fdd5e9c2fc92bab906`, whose game source is the preserved
+V7 checkpoint `f9cb6609ec00f483cb33fda2223fe6d52ea1f379`. The later V6 hash correction
+`b97888119a4d1512830a55aaf8b555f9f016a21a` is documentation-only. Older V5,
+V6, current `web/`, historical `web-v7/`, model, capture, and evidence versions remain intact.
+
+The exact release contract passes for version `0.4.0`, four presets, and the
+unpublished state. The extracted universal macOS app passes deep/strict ad-hoc
+signature, bundle/version/icon/entitlement checks and a real launch ending in
+`RELEASE_SMOKE_OK platform=macOS nodes=200`. Exact exported-Web QA completes
+the eight ordered research-to-pause events at `60.002/59.524` mean/p05 FPS on
+ANGLE Metal and `12/10` under 4x CPU plus SwiftShader. SwiftShader remains
+compatibility stress, not real minimum-spec hardware evidence. Windows and
+Linux still require runtime smoke on their native target platforms.
+
+A new atomic, non-overwriting V5.1/V6/V7 visual-preference tool and campaign
+are ready. Campaign `visual-preference-bc2edd0017f5e93c` contains six anonymous
+participant kits, all six order permutations, balanced candidate positions,
+and 53 checksum entries under
+`outputs/visual-preference-campaigns/immune-v0.4.0-v5-v6-v7-5747a52/`.
+Participant files expose no version labels or commits; the mapping remains in a
+facilitator-only answer key. The first front-only comparison was held back
+because historical character scale could bias texture judgement. The accepted
+stimulus preserves that strip and adds a second row of equal-detail face
+close-ups.
+
+Desktop and 390x844 in-app-browser QA loads every image, keeps page-level
+overflow off, validates responsive one-column controls, blocks an incomplete
+export, completes all 18 score fields and 26 required controls, and downloads a
+valid anonymous local JSON report with no console warning/error or version
+leak. The synthetic report is QA only: the campaign still contains zero human
+results. Root tools now pass `58/58`; Web UI `53/53` plus build, Meshy offline
+safety `6/6`, catalog/translation, Steam assets/readiness, and the exact release
+contract all pass. Full hashes, browser workflow, failure diagnosis, and
+reproduction are in
+`docs/godot-prompter/specs/2026-09-01-v7-exact-candidate-and-visual-preference.md`.
+
+V7 is therefore an exact, locally verified candidate and a ready-to-run human
+study, not a completed public Steam release. Independent adult preference
+results, native Windows/Linux smoke, real minimum-spec Windows/Deck/phone
+evidence, final storefront approval, rights/IDs, signing/notarization,
+Steamworks/Valve review, and owner-authorized publishing remain open. No push,
+tag, release, public upload, notarization, or storefront submission occurred.
+
+## V7 source checkpoint handoff — additive gummy-glass refinement
+
+V7 is implemented, promoted as the project default, and preserved at exact
+local source checkpoint `f9cb6609ec00f483cb33fda2223fe6d52ea1f379`.
+No push, tag, public release, notarization, or Steam upload was performed. The
+previous V6 source remains immutable at
+`c45c3eb07e8a944c9205dcf14d13ca4b3260c0df`; V5/V6 source, generated GLBs,
+selectors, exports, and ignored evidence were not removed or overwritten.
+
+`immune/visual/gel_look="v7"` is the new default. `IMMUNE_GEL_LOOK=v5`, `v6`,
+and `v7` are all tested selectors. Every V7-only shader control defaults to
+zero, and V7 geometry lives in a separate branch, so the earlier two paths do
+not inherit the new fiber, reflection streak, eye, or proportion changes.
+
+V7 keeps V6's Web-safe pseudo-translucent response while adding rounder body
+proportions, cleaner black eyes, a clearer membrane, a longer studio highlight,
+and irregular filled internal strands. A receives two small cosmetic lower
+lobes without changing hover movement, collision, Relay duty, or combat. The
+first B prototype produced excessive contour rings; generation stopped, the
+failure was diagnosed, and the accepted second prototype replaced the rings
+with stretched mip-filtered object-space fibers before the six-family batch.
+No Meshy task was submitted and no generation credit was consumed.
+
+Accepted ignored evidence is under `outputs/v7-gummy-glass/`: the six-family
+contact strip and 36 family views, B motion strip, 6/6 mission previews, B
+fixed/mobile/boss and portrait lifecycle, V6 rollback captures, real 390x844
+and 1280x720 bilingual overflow checks, two V6/V7 performance pairs, and
+exported-Web browser evidence. V7 Web was exported separately to
+`godot/immune/build/history/web-v7/`; the older current-slot `web/` export remains intact.
+
+Two official Godot 4.7.2 imports are clean. Default V7, explicit V6, and
+explicit V5 smoke pass. Root tools pass 55/55, Web UI 53/53, Meshy offline
+safety 6/6, catalog/localization 200 nodes and 628 rows, UI build, Steam asset
+and repository readiness checks, character/mission/gameplay/motion gates,
+responsive overflow, and Web export all pass. Real-browser QA completes all
+eight research-to-pause events on ANGLE Metal (`60.002/59.88` mean/p05 FPS)
+and 4x-throttled SwiftShader (`13.26/11.99`); the latter remains compatibility
+stress, not hardware evidence.
+
+The order-varied ten-B-body sentinel found no measured V7 CPU regression:
+V6/V7 CPU means were `0.883/0.809 ms` in the 600-frame pair and
+`0.843/0.784 ms` in the reversed 1,200-frame pair. V7 wall means were
+approximately 0.04-0.09 ms (1.8-3.8%) higher. The viewport GPU timer returned
+zero, so no GPU-parity claim is made. Full rationale, rejected-prototype
+history, hashes, evidence, and reproduction are in
+`docs/godot-prompter/specs/2026-09-01-jelly-v7-gummy-glass.md`.
+
+At this source checkpoint V7 was a source-complete local visual version, not a
+public Steam-ready release. The newer exact handoff above closes the local
+cross-platform rebuild and creates the blinded study, while human preference,
+native target/minimum hardware, refreshed owner-approved storefront captures,
+rights/IDs, signing/notarization, Steamworks/Valve review, and final owner
+authorization remain open.
+
+## V6 working-tree handoff — banner-match visual convergence
+
+V6 is implemented, verified, and preserved at source checkpoint
+`c45c3eb07e8a944c9205dcf14d13ca4b3260c0df`. It is not the checksum-locked V5.4
+artifact candidate described below, and no release artifact or Steam submission
+should be labelled V6 until every platform is rebuilt from this exact source
+checkpoint. The later handoff/documentation commit does not change game source.
+
+The production project now defaults to `immune/visual/gel_look="v6"` while
+`IMMUNE_GEL_LOOK=v5` remains a tested rollback. T, B, and M no longer depend on
+their old generated geometry for the playable body; they join N/A/D on the
+source-controlled authored builder. The shared V6 response adds a darker optical
+core, clear membrane, broad studio reflections, glossy black eyes, and stable
+object-space flecks/inclusions/caustic contours. Mission preview, character
+captures, and the combat portrait use the same studio environment and corrected
+framing. The combat arena environment and gameplay logic remain unchanged.
+
+Accepted ignored evidence is under `outputs/v6-banner-ab/`, including the final
+six-family contact strip, B yaw sequence, mission framing, gameplay portrait,
+V5/V6 performance sentinel, and exported-Web screenshots/report. Two official
+Godot 4.7.2 imports are clean. Default V6 and explicit V5 smoke pass; 6/6 mission
+previews, B fixed/mobile/boss gameplay, root tools `55/55`, Web UI `53/53`, Meshy
+offline safety `6/6`, 200-node catalog, 628 translation rows, Steam repository
+checks, overflow, UI build, and Web export pass. Real-browser QA completes all
+eight research-to-pause events on both ANGLE Metal (`60.003/59.88` mean/p05 FPS)
+and SwiftShader (`13.095/11.99`). The latter is compatibility stress only.
+
+The matched ten-body sentinel measured V5/V6 CPU means of `0.622/0.609 ms` and
+wall means of `1.553/1.454 ms`; the Compatibility GPU timer was unavailable, so
+no GPU-parity claim is made. V6 is a Web-safe pseudo-translucent style, not true
+screen-space refraction. Human preference, real minimum-spec hardware, physical
+phone/Deck checks, refreshed V6 storefront captures, and every publisher gate
+remain open. Full rationale, evidence, rollback, and reproduction are recorded
+in `docs/godot-prompter/specs/2026-09-01-jelly-v6-banner-match.md`.
+
+## V5.4 current handoff — responsive and exact Steam-candidate hardening
+
+The exact artifact source is
+`80ae5affc90165871a73e11312d744fbaa57808d` on local `main`. This source commit
+has not been pushed, tagged, uploaded, submitted to Valve, Developer ID signed,
+or notarized. All four release exports use official signed Godot
+`4.7.2.stable.official.ed1daf0bf` and matching templates. This handoff and the
+artifact hash record are a later documentation-only commit so the record cannot
+silently change the source that produced the candidate.
+
+### V5.4 work completed
+
+- The NUL/Unicode import warning was traced to GDScript literals containing
+  `"\\u0000"`, not to the real player save. Five path validators now inspect
+  UTF-8 buffers for byte zero. Two consecutive official imports are clean of
+  Unicode, script, parse, compile, engine-error, and warning diagnostics.
+- `responsive_layout.gd` now classifies compact 1100-1600 by 650-900 landscape
+  displays and derives physical scaling from height. Mission, Research, Combat,
+  and Pause preserve at least 44px actions and 14px critical copy at 1280x720
+  and 1280x800 without degrading 1600x900 or 1920x1080.
+- Research's manually drawn map labels participate in the same physical type
+  contract. Compact cover framing retains all six bases plus the core, and
+  viewport-size changes reapply the overview until the player deliberately
+  pans, zooms, or focuses a node.
+- Mission/gameplay/research QA always enforces the responsive contract.
+  Gameplay can explicitly capture Pause, test locale changes stay in memory,
+  and the QA save path remains isolated from the real player save.
+- Pause volume labels and Boss are localized in `zh_HK`; translation validation
+  now covers 628 rows.
+- Release tooling now rejects unknown, empty, and duplicate CLI arguments,
+  requires the exact 14-file artifact inventory, scans PCK shipping/exclusion
+  policy, binds native smoke evidence to a full commit plus artifact/log hashes,
+  stages Steam depots transactionally, and copies all Godot/Noto/third-party
+  notices into every native depot.
+- macOS exports with Steam overlay-compatible non-sandbox entitlements. The
+  current local build is intentionally ad-hoc signed; no claim of Developer ID
+  signing or notarization is made.
+
+### Accepted exact-candidate evidence
+
+- Root tools pass `55/55`, Web research tests pass `53/53`, Meshy offline tests
+  pass `6/6`, translation validation passes 628 rows, UI production build
+  succeeds, `git diff --check` passes, two official imports are clean, and the
+  isolated content smoke reports six missions/families/active skills/encounter
+  patterns plus save/audio/gamepad/touch and accepted jelly identities.
+- Responsive visual/contract evidence passes 360x800 and 390x844 with simulated
+  safe insets and both locales, plus 1280x720, 1280x800, 1600x900, and
+  1920x1080 Mission/Research/Combat/Pause coverage. Research at 360x800 reports
+  44.82px actions and 14.44px copy/map labels; 1280x800 reports 44px actions,
+  16px copy, and 17px map labels. Automated runs are not physical-device proof.
+- The full same-tree 1x campaign soak passes 36/36 over six missions and six
+  families: all victories, one defeated boss per run, real hits and active
+  skills, fixed/mobile duty round trips, increasing M01->M06 durations, 1,913.284
+  aggregate game seconds, and 6-12 surviving core HP. It completed immediately
+  before the clean tree was committed; its report schema does not contain a Git
+  SHA, so it remains labelled pre-commit same-tree evidence.
+- Windows, Linux, macOS, and Web were then rebuilt sequentially from exact
+  commit `80ae5af`. The release contract accepts exactly 14 files; readiness
+  reports 17 Steam assets, six gameplay screenshots, 13 rights hashes, and seven
+  open external gate groups. Exact bytes and SHA-256 values are in
+  `steam/build-candidate-v0.4.0.md`.
+- The exported macOS ZIP passes deep/strict code-signature validation, bundle ID
+  `com.wchklaus97.immune`, version `0.4.0`, ICNS, `arm64+x86_64`, entitlement
+  inspection, and a real launch from inside the extracted bundle ending with
+  `RELEASE_SMOKE_OK platform=macOS nodes=200`. Evidence JSON binds full commit
+  `80ae5af`, ZIP SHA-256
+  `26b4dae9213be78c8b65336113bb83215540c3b765a22cecff16ce73f401b594`,
+  and the runtime-log hash.
+- Exact exported-Web QA completes research -> mission -> B -> combat -> mobile
+  duty -> Pause with no page/resource/request failure and exact canvas fit.
+  Metal is `119.998/101.010` mean/p05 FPS at 1600x900. The 4x CPU + SwiftShader
+  compatibility profile is `13.092/9.346` at 1280x720 with no watchdog stall.
+  This is compatibility stress, not a lower-end-hardware benchmark.
+- Fresh synthetic-ID Steam staging contains 22 checksummed native content
+  files, all three licence records per platform, a preserved Linux executable
+  bit, and `preview=1`. The manifest records `upload_performed=false`; no
+  SteamCMD process, login, credential, or network upload was used.
+
+Ignored local evidence roots include:
+
+- `outputs/v5.4-release-hardening/`
+- `godot/immune/build/releases/`
+
+### Diagnosed failures retained as workflow lessons
+
+- The first clean local Web export failed because the manual rebuild command
+  omitted `build/releases/web`. Inspection confirmed CI already creates it; the
+  directory was added locally and the unchanged source export passed. No false
+  CI fix was committed.
+- The first macOS output was named `IMMUNE-macOS-universal.zip`. The strict
+  inventory rejected the extra name and missing contractual name. The unchanged
+  bytes were renamed `IMMUNE-macOS.zip`, after which the exact 14-file contract
+  passed.
+- Old generated artifacts, extracted apps, and synthetic staging were replaced
+  before validation so no previous PCK or depot file could be mixed into this
+  candidate. Generated release output remains ignored and reproducible.
+
+### Honest completion boundary
+
+Repository-controlled demo development and packaging are complete for this
+candidate. A public Steam release is not 100% complete and cannot be made so
+inside the repository. Native exact-candidate Windows/Linux launch, Developer
+ID signing/notarization, real App/depot IDs, Steamworks onboarding/fee/tax/bank,
+audio and Tripo receipt/terms provenance, conditional rights confirmations,
+SteamCMD preview, private Steam-client installs, real minimum-spec/Deck/phone
+testing, six-family human playtests, store metadata/crops, Coming Soon timing,
+Valve review, and explicit owner release authorization remain open.
+
+The next safe owner-controlled step is to review the rights register, supply
+private publisher inputs and real Steam IDs, then authorize a push so the exact
+commit can run native Windows/Linux CI. Do not reuse synthetic `4800000`-
+`4800003` IDs, and do not tag or upload merely because local repository gates
+are green.
+
+## V5.3 historical handoff — gameplay, jelly, and Steam submission candidate
+
+V5.3 completes every repository-controlled gate in the approved
+`2026-09-01-immune-v53-gameplay-and-steam-readiness.md` plan. The candidate is
+the current local `main` tip containing this section; it has not been pushed,
+tagged, uploaded to Steam, Developer ID signed/notarized, or reviewed by Valve.
+All final imports, smoke, and exports use official signed Godot
+`4.7.2.stable.official.ed1daf0bf` with matching templates.
+
+### What changed
+
+- All six families now reference a typed `FamilyActiveSkillProfile` and expose
+  a deliberate cooldown action on E/right bumper and the fourth HUD button.
+  Targeting, radius, damage, execute/mark behavior, target cap, and optional
+  core repair remain designer-owned Resource data. `ActiveSkillController`
+  owns cooldown only; `CombatLane` owns world resolution and telemetry.
+- Six mission Resources now declare `steady`, `surge`, `cytokine`, `adaptive`,
+  `biofilm`, or alternating `systemic` encounter pacing. Encounter
+  reinforcements are recorded separately from objective kills, preventing
+  pressure waves from accidentally shortening a mission.
+- The real-time playtest autopilot now uses the same active-skill path as a
+  player. The balance harness rejects all non-1x `--time-scale` values after an
+  8x experiment proved non-equivalent projectile/physics outcomes.
+- Combat has four desktop actions, a two-by-two narrow-phone tray, localized
+  compact labels/tooltips, and a reusable four-button touch pad. Held touch
+  movement cancels on hide or window focus loss. Safe-area evidence reports
+  every critical control rectangle instead of only a combined Boolean.
+- The accepted jelly tune raises bounded core/thin-volume readability,
+  transmission, and smooth wet coat response while reducing noisy authored
+  height. Combat, hero portrait, and mission preview retain one shadowed key
+  plus two unshadowed directional fills; the debug light-class contract remains
+  enforced.
+- Six real 1920x1080 gameplay screenshots, current-dimension store/library
+  art, transparent logo, shortcut/app/mac icons, bilingual copy, and a truthful
+  pre-generated-AI disclosure draft are checked into `steam/`.
+- `validate_steam_assets.mjs` and `prepare_steam_build.mjs` fail closed on asset
+  dimensions/alpha, placeholders, duplicate IDs, symlinks, unsafe ZIP paths,
+  missing artifacts, and existing output. Staging only writes preview VDFs and
+  never invokes SteamCMD or uploads.
+
+### Accepted V5.3 evidence
+
+- Exact Godot 4.7.2 imports twice and isolated smoke passes:
+  `missions=6 families=6 save=v2 audio=ready gamepad=ready active_skills=6
+  encounters=6 touch=ready` plus the existing signature/trait/Meshy/jelly
+  identities.
+- The final canonical 1x campaign matrix passes 36/36 runs. Every run reaches
+  victory, defeats one boss, exercises real projectile fire, uses and hits with
+  an active skill, completes the mobile/relay duty round trip, preserves core
+  HP, and maintains a strictly increasing M01→M06 duration ladder. M06 spans
+  79.817–91.950 seconds with 8–12/12 core HP.
+- Final narrow evidence passes 390x844 and 360x800 with simulated
+  `24,47,24,34` insets, both locales, Mission/Research/Combat/Pause, four action
+  buttons, and touch. At 360px, actions are at least 119.625x44.820 physical px,
+  touch buttons 45.570px high, and critical copy 14.440px.
+- V5.3 jelly light-probe evidence stays bounded: median luminance progresses
+  `0.0734 → 0.1925 → 0.2669 → 0.3090` across zero through three lights; the
+  three-light clip ratio is 1.17%. At 1920x1080/10 bodies/300 frames, gel and
+  standard both report 0.910ms mean CPU. Compatibility Metal GPU timing is
+  unavailable and is not converted into a GPU claim.
+- Root release/tool tests pass 45/45, Web research tests 53/53, Meshy workflow
+  tests 6/6, catalog localization 200 nodes/406 rows, translation validation
+  623 rows, and Steam graphical assets 17 files/6 screenshots/transparent logo.
+- Four release exports are rebuilt after the final code review change. The
+  artifact contract passes. Local macOS release smoke verifies ad-hoc
+  codesign, `com.wchklaus97.immune`, version 0.4.0, ICNS, arm64+x86_64, and
+  `RELEASE_SMOKE_OK platform=macOS nodes=200`.
+- Final exported-Web QA completes research → mission → B → combat → mobile duty
+  → Pause in both profiles. Metal is 120.003/106.383 mean/p05 FPS; 4x CPU +
+  SwiftShader is 13.469/9.940. SwiftShader is compatibility stress only.
+- Synthetic-ID native Steam staging passes for 13 files with `preview=1` and
+  `upload=false`. Exact artifact hashes and byte sizes are checked into
+  `steam/build-candidate-v0.4.0.md`.
+
+Ignored local evidence roots include:
+
+- `outputs/v5.3-balance/realtime-final-2/`
+- `outputs/v5.3-jelly-candidate-2/`
+- `outputs/v5.3-steam-store-captures/`
+- `outputs/v5.3-web-release-qa-final/`
+- `outputs/v5.3-export-472/`
+- `outputs/v5.3-steam-stage-final-smoke/`
+- `godot/immune/build/releases/`
+
+### Honest completion boundary and next safest task
+
+- Repository-controlled development is complete and locally ready for an owner
+  submission rehearsal. Public Steam release is not 100% complete: the owner
+  must finish onboarding/content survey/rights review, choose full App versus
+  separate demo, supply real App/depot IDs and support/pricing/date metadata,
+  sign/notarize macOS, and authorize a private SteamPipe upload.
+- This exact V5.3 candidate has not run natively on Windows or Linux. Their
+  PE/ELF headers, sidecars, sizes, hashes, permissions, and depot staging pass;
+  native launch must be completed on those OSes or by an authorized push to
+  the existing three-OS CI. The green V5.2 run `33361771002` is historical, not
+  relabelled as V5.3 evidence.
+- Real minimum-spec, Steam Deck, and six-family human play sessions remain
+  mandatory external evidence. No automated compatibility profile is presented
+  as human/device proof, and no Steam Deck Verified claim is made.
+- Next safest owner-authorized task: push the local candidate, require all CI
+  native release-smoke jobs green, then substitute real IDs into a fresh
+  `prepare:steam` stage and inspect it before any SteamCMD command. Do not reuse
+  the synthetic `4800000`–`4800003` staging IDs.
 
 ## V5.2 current handoff — supersedes the V5.1 layout status below
 
@@ -988,26 +1634,24 @@ Run exports sequentially. Parallel Godot exporters race on the shared
 
 ## Honest status and next development tranche
 
-The six-mission vertical slice, all six base-cell playable bodies, V5.1 jelly
-surface, portrait lifecycle, 390x844/360x800 safe-area layouts, desktop/tall
-regressions, local smoke/capture gates, fresh four-platform exports, final
-exported-Web browser gate, and four-job remote CI gate are complete. The
-previous checksum-locked V5.1 private playtest campaign remains historically
-valid for commit `2d011b1`, but it does not contain V5.2. The exact V5.2 release
-artifact from run `33361771002` is now packaged as a verified, checksum-locked
-six-person V5.2 campaign. It is ready for private distribution, but contains no
-completed human result. This is not a content-complete commercial release.
-Remaining work is:
+The six-mission vertical slice, six playable families, V8.6 R7.2 T-cell visual
+lock, all-14-animation viscous motion contract, responsive bilingual UI, local
+four-platform R2 preflight, exported Web/macOS runtime checks, and exact-source
+seven-job GitHub CI run are complete. Linux, Windows, and macOS native release
+smoke is now sealed for the corresponding target runner. The earlier
+checksum-locked V5/V5.2 campaigns and V8.1 build remain valid historical
+records, but they do not represent this RC1. This remains a technical release
+candidate rather than a content-complete commercial release. Remaining work is:
 
 1. Keep the N/A/D Meshy manifests as optional comparisons only. Any paid task
    still needs a separate exact 5-credit approval; never batch paid retries after
-   a failed task. V5.2 made no Meshy call and the playable demo does not depend on
+   a failed task. RC1 made no Meshy call and the playable demo does not depend on
    further generation.
-2. Use the existing checksum-locked V5.2 campaign to run real six-family
-   human playtesting for material direction, phone readability, accessibility,
-   and control feel,
-   followed by an agreed lower-end Windows/Web machine. SwiftShader and
-   deterministic captures prove neither human judgement nor hardware speed.
+2. Build a checksum-locked RC1 campaign from the exact CI artifacts and run real
+   six-family human playtesting for material direction, motion readability,
+   phone accessibility, difficulty, and control feel. Follow with agreed
+   lower-end Windows/Web hardware. SwiftShader and deterministic captures prove
+   neither human judgement nor minimum-spec speed.
 3. If exact V4/V5 cost comparison is required, approve launching the
    checksum-identified V4 worktree and run the same 10-body/300-frame harness.
    The current standard-material sentinel is green but is not a historical V4
@@ -1018,8 +1662,34 @@ Remaining work is:
 5. Add a Developer ID Application identity, notarization credentials, privacy /
    storefront metadata, and store-specific packaging before public distribution.
 6. A future tag/release remains an explicit owner-approved publishing action.
-   Run `node tools/validate_release_contract.mjs --tag=v0.4.0` first. No tag,
+   Run `node tools/validate_release_contract.mjs --tag=v0.5.0-rc.1` first. No tag,
    GitHub Release, public upload, notarization, or storefront submission has
    been performed.
 
 These are explicit external/product gates, not hidden broken demo work.
+
+【交接狀態】
+- CODEX_HANDOFF.md 是否已更新：是；已新增 V8.6 R7.2 promoted shipping
+  RC1、exact source commit、CI run、remote hashes、回退修正同誠實發佈邊界。
+- 本次修改檔案：promotion implementation 涵蓋 project/export presets、V8.6
+  raw export plugin、selector、V8.3 rollback probe、release/V8.5/V8.6/Steam
+  validators、CI、RC semver tooling/tests、rights/store/spec 文件；follow-up
+  新增 `steam/build-candidate-v0.5.0-rc.1.md` 並更新 Steam README/checklist 同
+  本 handoff。舊模型、候選 presets、build records、captures 同 GPU evidence
+  全部保留。
+- 測試結果：本機 tools 139/139、UI 53/53、官方 Godot 4.7.2 import、14/14
+  animations（154 poses、0 detached）、shipping/candidate PCK、V8.3 exported
+  rollback、四平台 R2 export、macOS universal native smoke、Apple-Metal +
+  SwiftShader Web QA、六家族/首末關 regression、語言/audio/Steam assets 全綠。
+  GitHub run `33875825213` 7/7 jobs 通過，正式 Linux/Windows/macOS target-OS
+  smoke 已 hash-bound；remote 三份 PCK byte-identical，SHA-256
+  `fd8afee9f8653acfd8a13f16dd0ab10e88a1dcae72ae8e64dd4317058d5452d1`。
+- 目前風險：技術 RC gate 已綠，但 V8.6 rights/content survey 未由 owner
+  簽署；macOS 未 Developer ID/notarize；Steam IDs/onboarding、SteamPipe 私人
+  branch/client install、physical min-spec/Deck、真人視覺/玩法/無障礙 QA、
+  Valve review 同最終 owner release authorization 未完成，所以唔可以聲稱
+  100% storefront-ready。
+- 下一個最安全任務：先由權利持有人完成 V8.6 attestation/content survey，
+  再用 exact CI artifacts 建立 checksum-locked RC1 真人 playtest campaign；
+  取得真實 Steam IDs 後先做 preview-only depot staging。任何 merge、tag、
+  upload、Developer ID signing、notarization 或 release 仍需另外明確授權。

@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="FamilyCombatProfile" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="FamilyCombatProfile" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://resources/combat/family_combat_profile.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/skills/active_a_relay_beam.tres" id="2"]
 
 [resource]
 script = ExtResource("1")
@@ -13,5 +14,6 @@ mobile_fire_cooldown = 0.58
 fire_range = 13.5
 move_speed = 7.0
 projectile_color = Color(1, 0.78, 0.3, 1)
+active_skill = ExtResource("2")
 signature_name = "遠距中繼"
 signature_description = "擁有最長射程並可在移動勤務保持火力。"

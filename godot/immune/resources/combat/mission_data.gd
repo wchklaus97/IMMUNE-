@@ -18,6 +18,11 @@ extends Resource
 @export_range(0.4, 8.0, 0.05) var late_spawn_interval: float = 3.2
 @export_range(1, 8, 1) var total_war_enemy_cap: int = 4
 
+@export_group("Encounter")
+@export_enum("steady", "surge", "cytokine", "adaptive", "biofilm", "systemic") var encounter_pattern: String = "steady"
+@export_range(2.0, 30.0, 0.25) var encounter_interval: float = 10.0
+@export_range(0, 6, 1) var encounter_strength: int = 0
+
 @export_group("Content")
 @export var regular_enemy: PathogenProfile
 @export var boss_enemy: PathogenProfile

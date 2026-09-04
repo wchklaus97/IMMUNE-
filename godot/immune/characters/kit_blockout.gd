@@ -5,6 +5,7 @@ extends RefCounted
 ## replacement by approved GLBs, while the shared wet-gel shader ships today.
 
 const _Look := preload("res://characters/family_look.gd")
+const _GelProfiles := preload("res://characters/gel/gel_profiles.gd")
 
 
 static func apply(host: Node) -> void:
@@ -20,6 +21,13 @@ static func apply(host: Node) -> void:
 	var relay_dish := host.get("relay_dish") as Node3D
 	_paint_core(host, jelly)
 	_ensure_collision(host)
+	if _GelProfiles.single_mass_enabled():
+		# V8.3's family silhouette already includes its appendage and footing cues
+		# in one watertight body. Do not even allocate the old blockout limbs,
+		# wheels, relay props, bubbles, or identity pieces: hidden geometry can be
+		# made visible later by a duty swap and read as detached mini-cells.
+		_hide_single_mass_attachments(host, base_kit, locomotion_kit, relay_dish)
+		return
 	_build_face(host, family)
 	_build_limbs(host, family, jelly)
 	if not bool(host.get("imported_replaces_identity")):
@@ -45,6 +53,20 @@ static func apply(host: Node) -> void:
 		# Compatibility renderer when the kit becomes visible. The character body
 		# keeps its shadow; only the cosmetic mobile attachments opt out.
 		_disable_geometry_shadows(locomotion_kit)
+
+
+static func _hide_single_mass_attachments(
+	host: Node, base_kit: Node3D, locomotion_kit: Node3D, relay_dish: Node3D
+) -> void:
+	var face := host.get_node_or_null("Face") as Node3D
+	if face != null:
+		face.visible = false
+	var limb_kit := host.get_node_or_null("LimbKit") as Node3D
+	if limb_kit != null:
+		limb_kit.visible = false
+	for kit in [base_kit, locomotion_kit, relay_dish]:
+		if kit != null:
+			kit.visible = false
 
 
 static func add_mesh(parent: Node3D, mesh: Mesh, mat: Material, pos: Vector3, rot_deg: Vector3 = Vector3.ZERO, scale := Vector3.ONE) -> MeshInstance3D:

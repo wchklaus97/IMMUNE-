@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="FamilyCombatProfile" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="FamilyCombatProfile" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://resources/combat/family_combat_profile.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/skills/active_d_sentinel_pulse.tres" id="2"]
 
 [resource]
 script = ExtResource("1")
@@ -13,5 +14,6 @@ mobile_fire_cooldown = 0.76
 fire_range = 11.5
 move_speed = 6.6
 projectile_color = Color(1, 0.44, 0.2, 1)
+active_skill = ExtResource("2")
 signature_name = "先鋒標定"
 signature_description = "以均衡射程、傷害與機動維持穩定命中。"

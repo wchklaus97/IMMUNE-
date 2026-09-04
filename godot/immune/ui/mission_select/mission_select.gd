@@ -3,19 +3,19 @@ extends Node3D
 const _Content := preload("res://resources/combat/combat_content.gd")
 const _Look := preload("res://characters/family_look.gd")
 const _Responsive := preload("res://ui/responsive_layout.gd")
+const _GelStudio := preload("res://characters/gel/gel_studio_environment.gd")
+const _GelProfiles := preload("res://characters/gel/gel_profiles.gd")
 const RESEARCH_SCENE := "res://ui/research/research_network.tscn"
 const FAMILIES: PackedStringArray = ["T", "B", "M", "N", "A", "D"]
 const PREVIEW_SCALE := {
-	"T": 1.72,
-	"B": 1.58,
-	"M": 1.32,
-	"N": 1.62,
-	"A": 1.32,
+	"T": 1.52,
+	"B": 1.48,
+	"M": 1.34,
+	"N": 1.50,
+	"A": 1.40,
 	"D": 1.36,
 }
-const PREVIEW_Y := {
-	"B": 0.64,
-}
+const PREVIEW_Y := -0.12
 const TEXT := Color("d8e9f4")
 const MUTED := Color("91a8b8")
 const ACCENT := Color("72e7ff")
@@ -117,6 +117,7 @@ func _build_preview_stage(host: Control) -> void:
 	environment.ambient_light_color = Color(0.46, 0.58, 0.72)
 	environment.ambient_light_energy = 0.46
 	environment.tonemap_mode = Environment.TONE_MAPPER_ACES
+	_GelStudio.apply_banner_preview(environment)
 	env.environment = environment
 	_preview_stage.add_child(env)
 	var key := DirectionalLight3D.new()
@@ -135,6 +136,12 @@ func _build_preview_stage(host: Control) -> void:
 	rim.light_color = Color(0.34, 0.58, 1.0)
 	rim.light_energy = 0.85
 	_preview_stage.add_child(rim)
+	var fill := DirectionalLight3D.new()
+	fill.name = "CellPreviewFill"
+	fill.rotation_degrees = Vector3(-12, 62, 0)
+	fill.light_color = Color(0.72, 0.82, 1.0)
+	fill.light_energy = 0.32
+	_preview_stage.add_child(fill)
 	var camera := Camera3D.new()
 	camera.name = "CellPreviewCamera"
 	camera.position = Vector3(1.0, 1.45, 3.75)
@@ -286,7 +293,7 @@ func _apply_responsive_layout(force: bool = false) -> void:
 	if _safe_margin == null or not is_instance_valid(_safe_margin):
 		return
 	var narrow := _Responsive.is_narrow_phone(get_viewport())
-	var next_scale := _Responsive.layout_scale(get_viewport()) if narrow else 1.0
+	var next_scale := _Responsive.layout_scale(get_viewport())
 	var next_insets := _Responsive.logical_safe_insets(get_viewport())
 	if (
 		not force
@@ -334,38 +341,44 @@ func _apply_responsive_layout(force: bool = false) -> void:
 	else:
 		_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 		_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-		_safe_margin.custom_minimum_size = Vector2(1268, 700)
+		_safe_margin.custom_minimum_size = Vector2(_metric(1268), _metric(700))
 		_set_safe_margins(42, 34, 42, 34)
 		_columns.columns = 2
-		_columns.add_theme_constant_override("h_separation", 34)
-		_columns.add_theme_constant_override("v_separation", 34)
-		_left_column.custom_minimum_size.x = 650
-		_right_column.custom_minimum_size.x = 500
-		_left_column.add_theme_constant_override("separation", 12)
-		_right_column.add_theme_constant_override("separation", 12)
-		_heading.add_theme_font_size_override("font_size", 38)
-		_subtitle.add_theme_font_size_override("font_size", 16)
-		_family_label.add_theme_font_size_override("font_size", 23)
+		_columns.add_theme_constant_override("h_separation", _metric(34))
+		_columns.add_theme_constant_override("v_separation", _metric(34))
+		_left_column.custom_minimum_size.x = _metric(650)
+		_right_column.custom_minimum_size.x = _metric(500)
+		_left_column.add_theme_constant_override("separation", _metric(12))
+		_right_column.add_theme_constant_override("separation", _metric(12))
+		_heading.add_theme_font_size_override("font_size", _metric(38))
+		_subtitle.add_theme_font_size_override("font_size", _metric(16))
+		_family_label.add_theme_font_size_override("font_size", _metric(23))
 		_family_grid.columns = 3
-		_family_grid.add_theme_constant_override("h_separation", 8)
-		_family_grid.add_theme_constant_override("v_separation", 8)
-		_preview_space.custom_minimum_size.y = 250
-		_title.add_theme_font_size_override("font_size", 30)
-		_difficulty.add_theme_font_size_override("font_size", 18)
-		_briefing.add_theme_font_size_override("font_size", 16)
-		_briefing.custom_minimum_size.y = 70
-		_family_title.add_theme_font_size_override("font_size", 24)
-		_family_role.add_theme_font_size_override("font_size", 16)
+		_family_grid.add_theme_constant_override("h_separation", _metric(8))
+		_family_grid.add_theme_constant_override("v_separation", _metric(8))
+		_preview_space.custom_minimum_size.y = _metric(250)
+		_title.add_theme_font_size_override("font_size", _metric(30))
+		_difficulty.add_theme_font_size_override("font_size", _metric(18))
+		_briefing.add_theme_font_size_override("font_size", _metric(16))
+		_briefing.custom_minimum_size.y = _metric(70)
+		_family_title.add_theme_font_size_override("font_size", _metric(24))
+		_family_role.add_theme_font_size_override("font_size", _metric(16))
 		for button in _mission_buttons:
-			button.custom_minimum_size = Vector2(0, 56)
-			button.add_theme_font_size_override("font_size", 16)
+			button.custom_minimum_size = Vector2(0, _metric(56))
+			button.add_theme_font_size_override("font_size", _metric(16))
 		for button in _family_buttons:
-			button.custom_minimum_size = Vector2(190, 48)
-			button.add_theme_font_size_override("font_size", 16)
-		_start_button.custom_minimum_size.y = 58
-		_back_button.custom_minimum_size.y = 48
-		_start_button.add_theme_font_size_override("font_size", 16)
-		_back_button.add_theme_font_size_override("font_size", 16)
+			button.custom_minimum_size = Vector2(_metric(190), _metric(48))
+			button.add_theme_font_size_override("font_size", _metric(16))
+		_start_button.custom_minimum_size.y = _metric(58)
+		_back_button.custom_minimum_size.y = _metric(48)
+		_start_button.add_theme_font_size_override("font_size", _metric(16))
+		_back_button.add_theme_font_size_override("font_size", _metric(16))
+	for button in _mission_buttons:
+		_style_button(button)
+	for button in _family_buttons:
+		_style_button(button)
+	_style_button(_start_button, true)
+	_style_button(_back_button)
 	_safe_margin.queue_redraw()
 
 
@@ -384,6 +397,7 @@ func responsive_contract() -> Dictionary:
 	var viewport_size := get_viewport().get_visible_rect().size
 	var physical_size := _Responsive.physical_window_size()
 	var narrow := _Responsive.is_narrow_phone(get_viewport())
+	var compact := _Responsive.is_compact_landscape(get_viewport())
 	var button_physical := minf(
 		_Responsive.logical_height_to_physical(get_viewport(), _start_button.size.y),
 		_Responsive.logical_height_to_physical(get_viewport(), _back_button.size.y)
@@ -406,9 +420,9 @@ func responsive_contract() -> Dictionary:
 		and _safe_margin.get_theme_constant("margin_right") >= roundi(_safe_insets.z)
 		and _safe_margin.get_theme_constant("margin_bottom") >= roundi(_safe_insets.w)
 	)
-	var layout_pass := (
-		not narrow
-		or (
+	var layout_pass := true
+	if narrow:
+		layout_pass = (
 			_columns.columns == 1
 			and _family_grid.columns == 2
 			and no_horizontal_scroll
@@ -416,9 +430,16 @@ func responsive_contract() -> Dictionary:
 			and copy_physical >= 14.0
 			and safe_pass
 		)
-	)
+	elif compact:
+		layout_pass = (
+			_columns.columns == 2
+			and _family_grid.columns == 3
+			and button_physical >= 44.0
+			and copy_physical >= 14.0
+			and safe_pass
+		)
 	return {
-		"mode": "narrow-phone" if narrow else "wide",
+		"mode": "narrow-phone" if narrow else ("compact-landscape" if compact else "wide"),
 		"physical": [physical_size.x, physical_size.y],
 		"logical": [viewport_size.x, viewport_size.y],
 		"layout_scale": _layout_scale,
@@ -499,11 +520,19 @@ func _refresh_preview(family: StringName) -> void:
 	_preview = scene.instantiate() as ImmuneCharacter
 	if _preview == null:
 		return
-	_preview.position = Vector3(0.0, float(PREVIEW_Y.get(String(family), -0.12)), 0.0)
+	_preview.position = Vector3(0.0, PREVIEW_Y, 0.0)
 	_preview.rotation_degrees.y = -18
-	_preview.scale = Vector3.ONE * float(PREVIEW_SCALE.get(String(family), 1.45))
+	var preview_scale := float(PREVIEW_SCALE.get(String(family), 1.45))
+	if _GelProfiles.reference_sculpt_behavior_enabled() and family == &"T":
+		# Keep the taller authored head and the widened feet inside the 800x360
+		# preview with visible breathing room instead of touching the top border.
+		preview_scale = 1.10
+	_preview.scale = Vector3.ONE * preview_scale
 	_preview_stage.add_child(_preview)
-	_preview.transform_duty(&"mobile")
+	# The desk is a family/silhouette review, not a combat-duty preview. The
+	# authored bodies already initialize in fixed duty; forcing mobile here added
+	# legacy wheel/relay props below the new feet and made the banner match look
+	# broken before a mission had even started.
 
 
 func _shutdown_preview() -> void:
@@ -540,12 +569,12 @@ func _button_box(fill: Color, border: Color, border_width: int) -> StyleBoxFlat:
 	var box := StyleBoxFlat.new()
 	box.bg_color = fill
 	box.border_color = border
-	box.set_border_width_all(border_width)
-	box.set_corner_radius_all(8)
-	box.content_margin_left = 14.0
-	box.content_margin_right = 14.0
-	box.content_margin_top = 8.0
-	box.content_margin_bottom = 8.0
+	box.set_border_width_all(_metric(border_width))
+	box.set_corner_radius_all(_metric(8))
+	box.content_margin_left = float(_metric(14))
+	box.content_margin_right = float(_metric(14))
+	box.content_margin_top = float(_metric(8))
+	box.content_margin_bottom = float(_metric(8))
 	return box
 
 
