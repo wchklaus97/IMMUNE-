@@ -73,6 +73,8 @@ group_uniforms studio_reflection;
 // gel. Strength defaults to zero so V5 remains an exact visual control.
 uniform float studio_reflection_strength : hint_range(0.0, 1.0) = 0.0;
 uniform float studio_reflection_budget : hint_range(0.0, 0.6) = 0.16;
+uniform float studio_rational_rolloff_mix : hint_range(0.0, 1.0) = 0.0;
+uniform float studio_strip_shape_mix : hint_range(0.0, 1.0) = 0.0;
 uniform float studio_reflection_edge_share : hint_range(0.0, 1.0) = 0.70;
 uniform vec4 studio_key_color : source_color = vec4(0.90, 0.97, 1.0, 1.0);
 uniform vec4 studio_cool_color : source_color = vec4(0.24, 0.48, 1.0, 1.0);
@@ -438,6 +440,10 @@ uniform float thin_budget_scale : hint_range(0.5, 1.0) = 0.74;
 // broad value ramp between a deep core and a thin, luminous edge.
 uniform float thickness_contrast : hint_range(0.0, 0.5) = 0.06;
 uniform float thickness_power : hint_range(0.25, 4.0) = 1.15;
+// Optional rest-pose thickness proxy in vertex red, normalized to 1.64 units.
+// Zero preserves every pre-bake material; not camera/light-path ray tracing.
+uniform float baked_thickness_mix : hint_range(0.0, 1.0) = 0.0;
+uniform float baked_thickness_view_mix : hint_range(0.0, 1.0) = 0.0;
 // V4's dense lattice asked a 0.035 normal depth to cover the whole body. Cap it
 // before applying a grazing mask, then vary its amplitude with the already-paid
 // inclusion noise. The cells survive in wet highlights without quilting the face.
@@ -1299,6 +1305,10 @@ void fragment() {
 		- liquid_laminar_mask * liquid_laminar_thinness,
 		0.0,
 		1.0);
+	// Convex chord approximation: use the macro normal, not micro-bump normals,
+	// so surface relief does not flicker the inferred bulk optical path.
+	float baked_view_factor = mix(1.0, abs(dot(normalize(base_n), normalize(VIEW))), baked_thickness_view_mix);
+	local_thickness = mix(local_thickness, clamp(COLOR.r * 1.64 * baked_view_factor, 0.0, 1.0), baked_thickness_mix);
 	vec3 through = gel_throughput(local_thickness);
 	vec3 body = body_color.rgb * albedo_gain * mix(vec3(1.0), through, body_absorb);
 	float macro_thickness = pow(local_thickness, max(thickness_power, 0.001));
@@ -1493,6 +1503,14 @@ void fragment() {
 		studio_warm = clamp((studio_warm - card_tail_cut) / card_tail_range, 0.0, 1.0);
 		studio_streak = clamp((studio_streak - card_tail_cut) / card_tail_range, 0.0, 1.0);
 	}
+	float strip_left = (1.0 - smoothstep(0.075, 0.14, abs(reflection_vector.x + 0.48)))
+		* (1.0 - smoothstep(0.38, 0.55, abs(reflection_vector.y - 0.20)));
+	float strip_right = (1.0 - smoothstep(0.055, 0.115, abs(reflection_vector.x - 0.62)))
+		* (1.0 - smoothstep(0.32, 0.52, abs(reflection_vector.y - 0.10)));
+	studio_key = mix(studio_key, strip_left, studio_strip_shape_mix);
+	studio_cool = mix(studio_cool, strip_right, studio_strip_shape_mix);
+	studio_warm *= 1.0 - studio_strip_shape_mix;
+	studio_streak *= 1.0 - studio_strip_shape_mix;
 	studio_key *= studio_front;
 	studio_cool *= studio_front;
 	studio_warm *= studio_front;
@@ -1508,10 +1526,13 @@ void fragment() {
 		+ studio_warm_color.rgb * studio_warm * 0.32
 		+ studio_key_color.rgb * studio_streak
 	) * studio_reflection_strength * studio_edge * mix(0.34, 1.0, gel_mask);
+	float studio_peak = max(max(studio.r, studio.g), studio.b);
+	vec3 studio_rational = studio * studio_reflection_budget
+		/ max(studio_reflection_budget + studio_peak, 0.0001);
 	EMISSION = (
 		peak_limit(inner + bubble_glow, interior_budget)
 		+ peak_limit(rim, rim_budget)) * gel_mask
-		+ peak_limit(studio, studio_reflection_budget)
+		+ mix(peak_limit(studio, studio_reflection_budget), studio_rational, studio_rational_rolloff_mix)
 		+ peak_limit(fleck_glow, authored_fleck_budget)
 		+ peak_limit(authored_inclusion_glow, authored_inclusion_budget)
 		+ peak_limit(authored_caustic_glow, authored_caustic_budget)

@@ -1,6 +1,46 @@
 # IMMUNE demo handoff
 
-Updated: 2026-09-04
+Updated: 2026-09-06
+
+## Visual quality audit remains open (supersedes completion claims)
+
+Latest diagnostic checkpoint: GH/GI, still unpromoted. GF's complete Vulkan
+captures are NOT the shipping game. They still show broad pale chest/forehead
+reflections, an orange-peel surface and insufficient interior depth. GH replaces
+only the diagnostic body material and localizes dominant cost to the custom body
+shader: GPU CLI opaque sample ~0.325ms versus prior full-transport samples in the
+hundreds of milliseconds. This is not a shipping-game FPS comparison. Both native
+Metal and Vulkan full-transport captures have failed; Vulkan is not a proven fix.
+GI's CPU live-density quadrature does not offer convincing cost savings and has
+not been integrated. Stop expanding that per-fragment integration branch.
+
+Next visual acceptance work must address dominant reflection placement, internal
+orange/red depth with golden thin edges, and substantial integrated eye/pore rims.
+Use matched character framing before judging proportions; static screenshots
+cannot prove idle flow or viscous locomotion. A simpler opaque control is never
+a replacement for the requested jelly. See the audit's GJ checkpoint for the
+evidence/acceptance matrix. All earlier versions and production selectors remain.
+
+RC1 technical checks do not establish reference-match visual acceptance. The
+2026-09-06 audit found broad artificial reflection patches, shoulder proportion
+issues and facial depth mismatch. Additive local candidates B–W, authored E/H/K/O
+meshes and GPU comparisons are documented in
+`docs/godot-prompter/specs/2026-09-06-model-quality-audit.md`. All historical
+models and shipping selectors are retained. The eye shader now exposes a
+specular uniform with its original default; candidates disable it only for the
+pore. K's high-detail mesh has 48,000 triangles and only limited idle/reversal
+preview evidence, not a full animation/performance acceptance. L corrects eye
+centre depth but still has a hard lens perimeter. N restores highlights over
+M's fitted eye perimeter and has six velocity-overlay samples, not full
+animation acceptance. O's smaller cavity exposed and fixed an optional local
+minimum locator, but loses the wet pore lip and remains visually rejected.
+T fixes the pore-centre grey specular patch; R has twelve movement-overlay
+samples but no continuous-motion acceptance. U's brighter direct-light ceiling
+was rejected. W tests verified five-ray baked thickness plus a convex view-chord
+proxy; its six static views recover V's lost rim but remain waxy. The wet shader's
+new thickness controls default to zero. No candidate after RC1 is promoted.
+The pore appearance and waxy skin remain. Visual repair is unfinished;
+do not present this state as 100% game quality or release readiness.
 
 ## V8.6 R7.2 promoted shipping RC1
 

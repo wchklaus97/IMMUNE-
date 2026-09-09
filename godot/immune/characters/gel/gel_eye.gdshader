@@ -5,6 +5,11 @@ uniform vec4 eye_color : source_color = vec4(0.003, 0.002, 0.006, 1.0);
 uniform float studio_strength : hint_range(0.0, 1.0) = 0.55;
 uniform float studio_budget : hint_range(0.0, 1.0) = 0.42;
 uniform float surface_roughness : hint_range(0.0, 1.0) = 0.055;
+uniform float surface_specular : hint_range(0.0, 1.0) = 1.0;
+// Opt-in cavity test; zero preserves every existing eye and face material.
+uniform float cavity_edge_mix : hint_range(0.0, 1.0) = 0.0;
+uniform float cavity_specular_edge_only : hint_range(0.0, 1.0) = 0.0;
+uniform vec4 cavity_edge_color : source_color = vec4(0.20, 0.025, 0.002, 1.0);
 uniform vec2 main_card_center = vec2(-0.34, 0.42);
 uniform vec2 main_card_shape = vec2(7.0, 16.0);
 uniform vec2 pin_card_center = vec2(0.42, 0.58);
@@ -224,8 +229,11 @@ void fragment() {
 		studio *= studio_budget / max(peak, 0.0001);
 	}
 	ALBEDO = eye_color.rgb;
+	float cavity_edge = smoothstep(0.45, 1.0, length(UV * 2.0 - 1.0));
+	ALBEDO = mix(ALBEDO, cavity_edge_color.rgb, cavity_edge * cavity_edge_mix);
 	ROUGHNESS = surface_roughness;
 	METALLIC = 0.0;
-	SPECULAR = 1.0;
+	SPECULAR = surface_specular * mix(1.0,
+		smoothstep(0.70, 1.0, length(UV * 2.0 - 1.0)), cavity_specular_edge_only);
 	EMISSION = studio;
 }
