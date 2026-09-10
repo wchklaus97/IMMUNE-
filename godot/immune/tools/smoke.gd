@@ -3,6 +3,7 @@ extends SceneTree
 ## Headless check: six base scenes load and A has no walk kit.
 
 const _LightContract := preload("res://characters/gel/light_contract.gd")
+const _GelProfiles := preload("res://characters/gel/gel_profiles.gd")
 const JELLY_DIRECT_LIGHT_LIMIT := 3
 const JELLY_SHADOWED_DIRECT_LIGHT_LIMIT := 1
 const JELLY_DIRECT_LIGHT_RIG_SOURCES := [
@@ -17,8 +18,19 @@ const REGULAR_SMOKE_ALLOWED_ARGS: Array[String] = ["save-path"]
 const JELLY_PROBE_SHARE_MIN := 0.09
 const JELLY_PROBE_SHARE_MAX := 0.105
 const QA_STARTUP_FAILURE_EXIT_CODE := 74
+const GEL_LEGACY_ANIMATIONS: PackedStringArray = [
+	"idle", "plant", "uproot", "move", "hit", "attack", "relay_open", "relay_close",
+]
+const GEL_V8_1_ANIMATIONS: PackedStringArray = [
+	"move_start", "move_stop", "relay_glide", "skill_cast",
+]
+const GEL_V8_2_ANIMATIONS: PackedStringArray = ["victory", "defeat"]
+const GEL_V8_1_BASIC_RELEASE_TIME := 0.345
+const GEL_V8_1_ACTIVE_RELEASE_TIME := 0.48
 
 var _jelly_probe_args := {}
+var _v8_1_release_events: Array[Dictionary] = []
+var _v8_1_cancel_events: Array[Dictionary] = []
 
 
 func _init() -> void:
@@ -41,11 +53,33 @@ func _run() -> void:
 	if not _parse_regular_smoke_args():
 		quit(2)
 		return
+	# A new visual selector must fail closed while it is being introduced. This
+	# catches a misspelled/unregistered override before the broad inherited smoke
+	# path can silently exercise the configured default instead.
+	var requested_look := OS.get_environment("IMMUNE_GEL_LOOK").strip_edges().to_lower()
+	if requested_look == "v8_4" and _GelProfiles.selected_look() != "v8_4":
+		push_error("IMMUNE_GEL_LOOK=v8_4 must resolve to the exact V8.4 selector")
+		quit(1)
+		return
+	if requested_look == "v8_5" and _GelProfiles.selected_look() != "v8_5":
+		push_error("IMMUNE_GEL_LOOK=v8_5 must resolve to the exact V8.5 selector")
+		quit(1)
+		return
+	if requested_look == "v8_6" and _GelProfiles.selected_look() != "v8_6":
+		push_error("IMMUNE_GEL_LOOK=v8_6 must resolve to the exact V8.6 selector")
+		quit(1)
+		return
 	var jelly_rig_error := _jelly_direct_light_rig_error()
 	if not jelly_rig_error.is_empty():
 		push_error(jelly_rig_error)
 		quit(1)
 		return
+	if _GelProfiles.living_volume_enabled():
+		var tooling_error := _gel_v8_2_tooling_error()
+		if not tooling_error.is_empty():
+			push_error(tooling_error)
+			quit(1)
+			return
 	if not TranslationServer.get_loaded_locales().has("en") or not TranslationServer.get_loaded_locales().has("zh_HK"):
 		push_error("Expected English and zh_HK translations to be registered")
 		quit(1)
@@ -125,14 +159,25 @@ func _run() -> void:
 	var by_family := {}
 	for unit in units:
 		by_family[str(unit.get("family_id"))] = unit
-		if unit.get_node_or_null("Face/Mouth") == null:
-			push_error("%s missing Face/Mouth" % unit.get("family_id"))
-			quit(1)
-			return
-		if unit.get_node_or_null("LimbKit/ArmL") == null or unit.get_node_or_null("LimbKit/ArmR") == null:
-			push_error("%s missing stubby arms" % unit.get("family_id"))
-			quit(1)
-			return
+		if _GelProfiles.single_mass_enabled():
+			var legacy_face := unit.get_node_or_null("Face") as Node3D
+			if legacy_face == null or legacy_face.get_child_count() != 0:
+				push_error("%s V8.3 must not allocate the legacy floating face" % unit.get("family_id"))
+				quit(1)
+				return
+			if unit.get_node_or_null("LimbKit") != null:
+				push_error("%s V8.3 must not allocate detached procedural limbs" % unit.get("family_id"))
+				quit(1)
+				return
+		else:
+			if unit.get_node_or_null("Face/Mouth") == null:
+				push_error("%s missing Face/Mouth" % unit.get("family_id"))
+				quit(1)
+				return
+			if unit.get_node_or_null("LimbKit/ArmL") == null or unit.get_node_or_null("LimbKit/ArmR") == null:
+				push_error("%s missing stubby arms" % unit.get("family_id"))
+				quit(1)
+				return
 		if str(unit.get("family_id")) == "A":
 			if unit.get_node_or_null("DutyKits/RelayDish") == null:
 				push_error("CHAR-BASE-A missing RelayDish")
@@ -151,142 +196,11 @@ func _run() -> void:
 				push_error("CHAR-BASE-A core should hover above the line")
 				quit(1)
 				return
-		elif unit.get_node_or_null("LimbKit/FootL") == null:
+		elif not _GelProfiles.single_mass_enabled() and unit.get_node_or_null("LimbKit/FootL") == null:
 			push_error("%s missing grounded feet" % unit.get("family_id"))
 			quit(1)
 			return
-		if str(unit.get("family_id")) == "T":
-			var t_runtime_gel := _find_wet_gel_material(unit)
-			if t_runtime_gel == null or t_runtime_gel.get_shader_parameter("bubble_enabled") != true:
-				push_error("CHAR-BASE-T runtime body must receive its Fizzy bubble profile")
-				quit(1)
-				return
-			if t_runtime_gel.get_shader_parameter("authored_height_enabled") != true:
-				push_error("CHAR-BASE-T V5.1 runtime profile must keep the mipmapped authored height")
-				quit(1)
-				return
-			var t_runtime_surface_error := _gel_surface_noise_error(t_runtime_gel)
-			if not t_runtime_surface_error.is_empty():
-				push_error("CHAR-BASE-T runtime %s" % t_runtime_surface_error)
-				quit(1)
-				return
-			var t_runtime_membrane_error := _gel_membrane_error(t_runtime_gel)
-			if not t_runtime_membrane_error.is_empty():
-				push_error("CHAR-BASE-T runtime %s" % t_runtime_membrane_error)
-				quit(1)
-				return
-		if str(unit.get("family_id")) == "B":
-			var b_real_mesh := unit.get_node_or_null("CoreMesh/RealMesh")
-			if b_real_mesh == null or unit.get("real_mesh") == null:
-				push_error("CHAR-BASE-B must realize its imported Meshy T2 body")
-				quit(1)
-				return
-			var b_face := unit.get_node_or_null("Face") as Node3D
-			var b_limbs := unit.get_node_or_null("LimbKit") as Node3D
-			if b_face == null or not b_face.visible or b_limbs == null or b_limbs.visible:
-				push_error("CHAR-BASE-B must overlay its ink face and replace procedural limbs")
-				quit(1)
-				return
-			var b_mouth := unit.get_node_or_null("Face/Mouth") as Node3D
-			if b_mouth == null or not b_mouth.visible or b_mouth.scale.x < 2.0:
-				push_error("CHAR-BASE-B must align its readable ink mouth with the sculpted cavity")
-				quit(1)
-				return
-			var b_runtime_gel := _find_wet_gel_material(b_real_mesh)
-			if b_runtime_gel == null or b_runtime_gel.get_shader_parameter("bubble_enabled") != true:
-				push_error("CHAR-BASE-B imported body must receive its round-bubble runtime profile")
-				quit(1)
-				return
-			if b_runtime_gel.get_shader_parameter("authored_height_enabled") != true:
-				push_error("CHAR-BASE-B V5.1 runtime profile must keep the mipmapped authored height")
-				quit(1)
-				return
-			var b_runtime_surface_error := _gel_surface_noise_error(b_runtime_gel)
-			if not b_runtime_surface_error.is_empty():
-				push_error("CHAR-BASE-B runtime %s" % b_runtime_surface_error)
-				quit(1)
-				return
-			var b_runtime_membrane_error := _gel_membrane_error(b_runtime_gel)
-			if not b_runtime_membrane_error.is_empty():
-				push_error("CHAR-BASE-B runtime %s" % b_runtime_membrane_error)
-				quit(1)
-				return
-		elif str(unit.get("family_id")) == "M":
-			var m_real_mesh := unit.get_node_or_null("CoreMesh/RealMesh")
-			if m_real_mesh == null or unit.get("real_mesh") == null:
-				push_error("CHAR-BASE-M must realize its accepted reference body")
-				quit(1)
-				return
-			var m_face := unit.get_node_or_null("Face") as Node3D
-			var m_limbs := unit.get_node_or_null("LimbKit") as Node3D
-			if m_face == null or m_face.visible:
-				push_error("CHAR-BASE-M accepted body must replace the procedural face")
-				quit(1)
-				return
-			if m_limbs == null or m_limbs.visible:
-				push_error("CHAR-BASE-M accepted body must replace procedural base limbs")
-				quit(1)
-				return
-			if unit.get_node_or_null("WeaponSocket").get_child_count() != 0:
-				push_error("CHAR-BASE-M accepted body must replace procedural identity props")
-				quit(1)
-				return
-			if unit.get_node_or_null("CoreMesh/Bubble0") != null:
-				push_error("CHAR-BASE-M accepted body must replace procedural bubble geometry")
-				quit(1)
-				return
-			var m_base := unit.get_node_or_null("DutyKits/BaseKit") as Node3D
-			if m_base == null or m_base.get_child_count() != 0:
-				push_error("CHAR-BASE-M fused feet must replace the procedural fixed kit")
-				quit(1)
-				return
-			var m_body := m_real_mesh.get_node_or_null("Body") as MeshInstance3D
-			var m_shell := m_real_mesh.get_node_or_null("BodyShell") as MeshInstance3D
-			if m_body == null or m_shell == null:
-				push_error("CHAR-BASE-M accepted body must expose Body and BodyShell")
-				quit(1)
-				return
-			var m_mesh_error := _shared_authored_sphere_error(
-				m_body, m_shell, "CHAR-BASE-M body and membrane"
-			)
-			if not m_mesh_error.is_empty():
-				push_error(m_mesh_error)
-				quit(1)
-				return
-			for authored_path in ["EyeL", "EyeR", "MouthCavity"]:
-				if m_real_mesh.get_node_or_null(authored_path) == null:
-					push_error("CHAR-BASE-M accepted body missing %s" % authored_path)
-					quit(1)
-					return
-			var m_runtime_gel := m_body.material_override as ShaderMaterial
-			if m_runtime_gel == null or m_runtime_gel.get_shader_parameter("bubble_enabled") != true:
-				push_error("CHAR-BASE-M accepted body must keep its authored bubble material")
-				quit(1)
-				return
-			if m_runtime_gel.get_shader_parameter("authored_height_enabled") != true:
-				push_error("CHAR-BASE-M V5.1 profile must keep the mipmapped authored height")
-				quit(1)
-				return
-			var m_noise_error := _gel_surface_noise_error(m_runtime_gel)
-			if not m_noise_error.is_empty():
-				push_error("CHAR-BASE-M %s" % m_noise_error)
-				quit(1)
-				return
-			var m_shell_material := m_shell.material_override as ShaderMaterial
-			if m_shell_material == null or m_shell_material.shader == null or not m_shell_material.shader.resource_path.ends_with("jelly_shell.gdshader"):
-				push_error("CHAR-BASE-M accepted body must keep its authored clear membrane")
-				quit(1)
-				return
-			var m_shell_error := _gel_shell_energy_error(m_shell_material)
-			if not m_shell_error.is_empty():
-				push_error("CHAR-BASE-M %s" % m_shell_error)
-				quit(1)
-				return
-			if not bool(unit.get("imported_preserves_materials")) or str(unit.get("imported_model_path")) != "res://characters/base_m/reference_body.tscn":
-				push_error("CHAR-BASE-M scene must lock the accepted fizzy production adapter")
-				quit(1)
-				return
-		elif str(unit.get("family_id")) in ["N", "A", "D"]:
+		if str(unit.get("family_id")) in ["T", "B", "M", "N", "A", "D"]:
 			var authored_error := _authored_jelly_error(unit, str(unit.get("family_id")))
 			if not authored_error.is_empty():
 				push_error(authored_error)
@@ -318,6 +232,73 @@ func _run() -> void:
 				push_error("%s missing %s duty animation" % [unit.get("family_id"), animation_name])
 				quit(1)
 				return
+		var selector_animation_error := _gel_selector_animation_error(
+			unit, animator, str(unit.get("family_id"))
+		)
+		if not selector_animation_error.is_empty():
+			push_error(selector_animation_error)
+			quit(1)
+			return
+		var move_animation := animator.get_animation(&"move")
+		var expected_move_length := 1.12 if _GelProfiles.v8_enabled() else 0.92
+		if not is_equal_approx(move_animation.length, expected_move_length):
+			push_error(
+				"%s move loop length drifted for gel look %s"
+				% [unit.get("family_id"), _GelProfiles.selected_look()]
+			)
+			quit(1)
+			return
+		if _GelProfiles.v8_enabled():
+			var core_track := move_animation.find_track(NodePath("CoreMesh:position"), Animation.TYPE_VALUE)
+			if core_track < 0:
+				push_error("%s V8 move loop must drive the visible core" % unit.get("family_id"))
+				quit(1)
+				return
+			var min_move_y := INF
+			var max_move_y := -INF
+			for sample in 25:
+				var sample_time := move_animation.length * float(sample) / 24.0
+				var sample_position: Vector3 = move_animation.value_track_interpolate(core_track, sample_time)
+				min_move_y = minf(min_move_y, sample_position.y)
+				max_move_y = maxf(max_move_y, sample_position.y)
+			if max_move_y - min_move_y > 0.22:
+				push_error("%s V8 viscous locomotion must not become a solid-body hop" % unit.get("family_id"))
+				quit(1)
+				return
+			if _GelProfiles.reference_viscosity_enabled():
+				var move_scale_error := _gel_v8_4_loop_scale_error(
+					move_animation, "move", str(unit.get("family_id")), 0.045, 0.120
+				)
+				if not move_scale_error.is_empty():
+					push_error(move_scale_error)
+					quit(1)
+					return
+				var idle_scale_error := _gel_v8_4_loop_scale_error(
+					animator.get_animation(&"idle"), "idle", str(unit.get("family_id")), 0.018, 0.090
+				)
+				if not idle_scale_error.is_empty():
+					push_error(idle_scale_error)
+					quit(1)
+					return
+				for transition_name in [&"move_start", &"move_stop"]:
+					var transition_scale_error := _gel_v8_4_loop_scale_error(
+						animator.get_animation(transition_name),
+						String(transition_name),
+						str(unit.get("family_id")),
+						0.040,
+						0.120
+					)
+					if not transition_scale_error.is_empty():
+						push_error(transition_scale_error)
+						quit(1)
+						return
+				var move_planar_error := _gel_v8_4_move_planar_error(
+					move_animation, str(unit.get("family_id"))
+				)
+				if not move_planar_error.is_empty():
+					push_error(move_planar_error)
+					quit(1)
+					return
 		if unit.has_method("transform_duty"):
 			unit.call("transform_duty", &"mobile")
 			var duty_burst := unit.get_node_or_null("KitSwapBurst") as GPUParticles3D
@@ -329,6 +310,26 @@ func _run() -> void:
 				push_error("%s duty particle placeholder must not cast world shadows" % unit.get("family_id"))
 				quit(1)
 				return
+			if _GelProfiles.single_mass_enabled():
+				var clean_duty_kits := unit.get_node_or_null("DutyKits") as Node3D
+				var clean_body := unit.get_node_or_null("CoreMesh/RealMesh") as Node3D
+				if clean_body == null or not clean_body.visible:
+					push_error("%s V8.3 duty swap must preserve the one-piece body" % unit.get("family_id"))
+					quit(1)
+					return
+				if clean_duty_kits == null or clean_duty_kits.visible:
+					push_error("%s V8.3 duty geometry must stay hidden" % unit.get("family_id"))
+					quit(1)
+					return
+				if _count_mesh_instances(clean_duty_kits) != 0:
+					push_error("%s V8.3 must not allocate loose duty geometry" % unit.get("family_id"))
+					quit(1)
+					return
+				if duty_burst != null and (duty_burst.visible or duty_burst.emitting):
+					push_error("%s V8.3 duty swap must keep loose particles disabled" % unit.get("family_id"))
+					quit(1)
+					return
+				continue
 			if str(unit.get("family_id")) == "B":
 				var b_base := unit.get_node_or_null("DutyKits/BaseKit") as Node3D
 				var b_loco := unit.get_node_or_null("DutyKits/LocomotionKit") as Node3D
@@ -389,12 +390,23 @@ func _run() -> void:
 					push_error("CHAR-BASE-A RelayDish must not cast oversized world shadows")
 					quit(1)
 					return
-				var a_relay_ring := a_relay.get_node_or_null("RelayRing") as MeshInstance3D
+				var a_relay_ring := a_relay.find_child("RelayRing", true, false) as MeshInstance3D
 				var a_relay_material := a_relay_ring.material_override as StandardMaterial3D if a_relay_ring != null else null
 				if a_relay_material == null or a_relay_material.transparency != BaseMaterial3D.TRANSPARENCY_DISABLED:
 					push_error("CHAR-BASE-A RelayRing must use the Compatibility-safe relay material")
 					quit(1)
 					return
+	var hardened_motion_error := ""
+	if _GelProfiles.motion_truth_enabled():
+		hardened_motion_error = _gel_v8_1_runtime_error(by_family)
+		if hardened_motion_error.is_empty() and _GelProfiles.living_volume_enabled():
+			hardened_motion_error = _gel_v8_2_terminal_error(by_family)
+	elif _GelProfiles.selected_look() == "v8":
+		hardened_motion_error = _gel_v8_preservation_error(by_family)
+	if not hardened_motion_error.is_empty():
+		push_error(hardened_motion_error)
+		quit(1)
+		return
 	# Do not leave the two-light lineup stage alive while later combat and mission
 	# scenes use the same main viewport. A subtree-only audit would miss those
 	# sibling lights and silently test an unsupported four-light composite.
@@ -555,16 +567,88 @@ func _run() -> void:
 			push_error("Missing family skill VFX %s" % skill_vfx)
 			quit(1)
 			return
+	for component_path in [
+		"res://combat/active_skill_controller.gd",
+		"res://combat/combat_encounter_director.gd",
+		"res://ui/combat_touch_controls.gd",
+		"res://resources/combat/family_active_skill_profile.gd",
+	]:
+		if not ResourceLoader.exists(component_path):
+			push_error("Missing V5.3 gameplay component %s" % component_path)
+			quit(1)
+			return
 	for action in [
 		&"demo_pause", &"demo_confirm", &"demo_back", &"demo_toggle_duty",
 		&"demo_research", &"demo_combat", &"demo_next_family", &"demo_prev_family",
 		&"demo_move_left", &"demo_move_right", &"demo_move_forward", &"demo_move_back",
+		&"demo_active_skill",
 	]:
 		if not InputMap.has_action(action) or not _has_gamepad_event(action):
 			push_error("Input action %s is missing its gamepad mapping" % action)
 			quit(1)
 			return
 	var content := load("res://resources/combat/combat_content.gd")
+	var active_skill_ids: Array[StringName] = []
+	for family_id in ["T", "B", "M", "N", "A", "D"]:
+		var family: FamilyCombatProfile = content.call("load_family", StringName(family_id))
+		var active_skill := family.get("active_skill") as Resource if family != null else null
+		if active_skill == null:
+			push_error("Family %s is missing its active-skill profile" % family_id)
+			quit(1)
+			return
+		var active_id := StringName(active_skill.get("id"))
+		if active_id.is_empty() or active_skill_ids.has(active_id):
+			push_error("Family %s has an empty or duplicate active-skill id" % family_id)
+			quit(1)
+			return
+		if float(active_skill.get("cooldown_seconds")) <= 0.0:
+			push_error("Family %s active skill requires a positive cooldown" % family_id)
+			quit(1)
+			return
+		active_skill_ids.append(active_id)
+	var active_controller_script := load("res://combat/active_skill_controller.gd")
+	var active_controller: Node = active_controller_script.new()
+	root.add_child(active_controller)
+	var active_events: Array[StringName] = []
+	active_controller.connect("activation_requested", func(profile: Resource) -> void:
+		active_events.append(StringName(profile.get("id")))
+	)
+	var t_family: FamilyCombatProfile = content.call("load_family", &"T")
+	active_controller.call("configure", t_family.get("active_skill"))
+	if not bool(active_controller.call("request_activation")):
+		push_error("Active skill must fire when its cooldown is ready")
+		quit(1)
+		return
+	if bool(active_controller.call("request_activation")) or active_events.size() != 1:
+		push_error("Active skill must reject repeated activation during cooldown")
+		quit(1)
+		return
+	active_controller.call("tick", float(t_family.get("active_skill").get("cooldown_seconds")) + 0.01)
+	if not bool(active_controller.call("request_activation")) or active_events.size() != 2:
+		push_error("Active skill must become available after its authored cooldown")
+		quit(1)
+		return
+	active_controller.queue_free()
+	var touch_script := load("res://ui/combat_touch_controls.gd")
+	var touch_controls: Control = touch_script.new()
+	root.add_child(touch_controls)
+	await process_frame
+	if int(touch_controls.call("directional_button_count")) != 4:
+		push_error("Combat touch controls must expose four directional buttons")
+		quit(1)
+		return
+	touch_controls.call("set_direction_pressed", &"right", true)
+	if (touch_controls.call("movement_vector") as Vector2).x < 0.9:
+		push_error("Combat touch controls did not produce a rightward movement vector")
+		quit(1)
+		return
+	touch_controls.hide()
+	if not (touch_controls.call("movement_vector") as Vector2).is_zero_approx():
+		push_error("Combat touch controls must cancel held movement when hidden")
+		quit(1)
+		return
+	touch_controls.queue_free()
+	await process_frame
 	var mission_ids: Array[StringName] = content.call("mission_ids")
 	if mission_ids.size() != 6:
 		push_error("Expected 6 authored missions, got %d" % mission_ids.size())
@@ -573,6 +657,8 @@ func _run() -> void:
 	var previous_rank := 0
 	var previous_mission_id: StringName = &""
 	var seen_mission_ids: Array[StringName] = []
+	var seen_encounter_patterns: Array[StringName] = []
+	var encounter_mission: ImmuneMissionData
 	for mission_id in mission_ids:
 		var mission: ImmuneMissionData = content.call("load_mission", mission_id)
 		if mission == null or mission.regular_enemy == null or mission.boss_enemy == null or mission.difficulty == null:
@@ -592,8 +678,43 @@ func _run() -> void:
 			push_error("Mission %s prerequisite chain is invalid" % mission_id)
 			quit(1)
 			return
+		var encounter_pattern := StringName(mission.get("encounter_pattern"))
+		if encounter_pattern.is_empty():
+			push_error("Mission %s is missing its encounter pattern" % mission_id)
+			quit(1)
+			return
+		if mission_id != &"MISSION-01":
+			if encounter_pattern == &"steady" or seen_encounter_patterns.has(encounter_pattern):
+				push_error("Mission %s requires a distinct non-tutorial encounter pattern" % mission_id)
+				quit(1)
+				return
+			seen_encounter_patterns.append(encounter_pattern)
+			if encounter_mission == null:
+				encounter_mission = mission
+		if mission_id == &"MISSION-03" and (
+			mission.briefing.contains("最高難度")
+			or mission.briefing.to_lower().contains("highest difficulty")
+		):
+			push_error("MISSION-03 briefing still claims it is the highest difficulty")
+			quit(1)
+			return
 		previous_rank = mission.difficulty.rank
 		previous_mission_id = mission.id
+	var encounter_script := load("res://combat/combat_encounter_director.gd")
+	var encounter_director: Node = encounter_script.new()
+	root.add_child(encounter_director)
+	var encounter_events: Array[StringName] = []
+	encounter_director.connect("event_triggered", func(event_id: StringName, _strength: int, _occurrence: int) -> void:
+		encounter_events.append(event_id)
+	)
+	encounter_director.call("configure", encounter_mission)
+	encounter_director.call("enter_phase", &"core")
+	encounter_director.call("tick", float(encounter_mission.get("encounter_interval")) + 0.01)
+	if encounter_events.size() != 1 or encounter_events[0].is_empty():
+		push_error("Encounter director did not emit its authored mission event")
+		quit(1)
+		return
+	encounter_director.queue_free()
 	var combat_packed := load("res://scenes/combat_lane.tscn") as PackedScene
 	if combat_packed == null:
 		push_error("combat_lane.tscn missing")
@@ -661,7 +782,7 @@ func _run() -> void:
 		push_error("Cleanse zone must retain two rings and eight signal markers")
 		quit(1)
 		return
-	for property in ["_duty_button", "_intel_button", "_back_button"]:
+	for property in ["_ability_button", "_duty_button", "_intel_button", "_back_button"]:
 		var action_button := combat.get(property) as Button
 		if action_button == null or not action_button.visible:
 			push_error("Combat HUD action button %s is missing or hidden" % property)
@@ -681,6 +802,93 @@ func _run() -> void:
 			push_error("Combat HUD action button %s escaped the bottom action tray" % property)
 			quit(1)
 			return
+	var desktop_responsive: Dictionary = combat.call("responsive_contract")
+	if int(desktop_responsive.get("action_columns", 0)) != 4:
+		push_error("Desktop combat HUD must expose a four-column action tray")
+		quit(1)
+		return
+	if combat.get("_touch_controls") == null:
+		push_error("Combat lane is missing reusable touch movement controls")
+		quit(1)
+		return
+	combat.call("debug_spawn_regular")
+	await process_frame
+	var active_target: Node = null
+	for candidate in combat.get_tree().get_nodes_in_group("bacterium"):
+		if combat.is_ancestor_of(candidate):
+			active_target = candidate
+			break
+	if active_target == null:
+		push_error("Combat active-skill integration requires a spawned target")
+		quit(1)
+		return
+	var active_target_hp := int(active_target.get("hp"))
+	combat.call("_request_active_skill")
+	await process_frame
+	if _GelProfiles.motion_truth_enabled():
+		# V8.1 commits gameplay at the authored 0.48 s release pose. Advance the
+		# live presentation deterministically after the controller's requested
+		# signal has reached CombatLane. Production uses immediate method callbacks;
+		# the following frame lets the released gameplay payload settle in the scene.
+		var combat_player := combat.get("_player") as Node
+		var combat_animator := combat_player.get_node_or_null("AnimationPlayer") as AnimationPlayer if combat_player != null else null
+		if combat_animator == null:
+			push_error("Combat V8.1 active-skill integration requires the live animator")
+			quit(1)
+			return
+		combat_animator.advance(GEL_V8_1_ACTIVE_RELEASE_TIME + 0.01)
+		await process_frame
+	var combat_active_controller := combat.get("_active_skill_controller") as Node
+	if combat_active_controller == null or float(combat_active_controller.call("remaining_seconds")) <= 0.0:
+		push_error("Combat lane did not consume the active-skill cooldown")
+		quit(1)
+		return
+	if is_instance_valid(active_target) and int(active_target.get("hp")) >= active_target_hp:
+		push_error("Combat active skill did not damage its selected pathogen")
+		quit(1)
+		return
+	if _GelProfiles.living_volume_enabled():
+		# Let the active one-shot release its presentation lane, then verify that a
+		# real CombatLane core-damage notification selects the existing hit clip
+		# without mutating core gameplay state itself.
+		var hit_player := combat.get("_player") as Node
+		var hit_animator := hit_player.get_node_or_null("AnimationPlayer") as AnimationPlayer if hit_player != null else null
+		var hit_core := combat.get("_core") as Node
+		if hit_animator == null or hit_core == null:
+			push_error("Combat V8.2 hit integration requires the live player and core")
+			quit(1)
+			return
+		hit_animator.advance(1.0)
+		var core_hp_before_hit_presentation := int(hit_core.get("hp"))
+		var core_max_hp := int(combat.get("_core_last_hp"))
+		combat.call(
+			"_on_core_hit",
+			maxi(core_hp_before_hit_presentation - 1, 1),
+			core_max_hp
+		)
+		hit_animator.advance(0.0)
+		if hit_animator.current_animation != &"hit":
+			push_error("Combat V8.2 core shock did not select the player hit clip")
+			quit(1)
+			return
+		if int(hit_core.get("hp")) != core_hp_before_hit_presentation:
+			push_error("Combat V8.2 hit presentation must not own core damage resolution")
+			quit(1)
+			return
+		hit_animator.advance(0.40)
+	var enemies_before_surge := 0
+	for candidate in combat.get_tree().get_nodes_in_group("bacterium"):
+		if combat.is_ancestor_of(candidate):
+			enemies_before_surge += 1
+	combat.call("_on_encounter_event", &"surge", 2, 1)
+	var enemies_after_surge := 0
+	for candidate in combat.get_tree().get_nodes_in_group("bacterium"):
+		if combat.is_ancestor_of(candidate):
+			enemies_after_surge += 1
+	if enemies_after_surge != enemies_before_surge + 2:
+		push_error("Combat encounter handler did not spawn its authored surge")
+		quit(1)
+		return
 	var gel_material: ShaderMaterial = look.call("gel_material", "T")
 	if gel_material == null:
 		push_error("T wet-gel material failed to build")
@@ -690,7 +898,11 @@ func _run() -> void:
 		push_error("Wet-gel rim is above the anti-neon limit")
 		quit(1)
 		return
-	if float(gel_material.get_shader_parameter("coat_strength")) > 1.6:
+	var coat_limit := (
+		1.85 if _GelProfiles.reference_viscosity_enabled()
+		else (1.75 if _GelProfiles.gummy_glass_enabled() else 1.6)
+	)
+	if float(gel_material.get_shader_parameter("coat_strength")) > coat_limit:
 		push_error("Wet-gel coat is too strong for the soft reference")
 		quit(1)
 		return
@@ -698,18 +910,31 @@ func _run() -> void:
 		push_error("T Fizzy profile must disable directional legacy dimples")
 		quit(1)
 		return
-	if gel_material.get_shader_parameter("bubble_enabled") != true or gel_material.get_shader_parameter("authored_height_enabled") != true:
-		push_error("T Fizzy profile must retain its family profile and V5.1 authored height")
+	var expected_loose_bubbles := not _GelProfiles.single_mass_enabled()
+	if (
+		gel_material.get_shader_parameter("bubble_enabled") != expected_loose_bubbles
+		or gel_material.get_shader_parameter("authored_height_enabled") != true
+	):
+		push_error("T gel profile lost its selector-specific detail contract")
 		quit(1)
 		return
-	var t_membrane_error := _gel_membrane_error(gel_material)
+	var t_membrane_error := _gel_membrane_error(gel_material, "T")
 	if not t_membrane_error.is_empty():
 		push_error("T Fizzy profile %s" % t_membrane_error)
 		quit(1)
 		return
-	var t_noise_error := _gel_surface_noise_error(gel_material)
+	var t_noise_error := _gel_surface_noise_error(gel_material, "T")
 	if not t_noise_error.is_empty():
 		push_error("T Fizzy profile %s" % t_noise_error)
+		quit(1)
+		return
+	var expected_t_profile: StringName = (
+		&"reference_convergence"
+		if _GelProfiles.v8_6_enabled()
+		else _GelProfiles.profile_name("T")
+	)
+	if look.call("gel_profile_name", "T") != expected_t_profile:
+		push_error("T gel profile name is not stable for the selected look")
 		quit(1)
 		return
 	var b_gel_material: ShaderMaterial = look.call("gel_material", "B")
@@ -717,8 +942,8 @@ func _run() -> void:
 		push_error("B wet-gel material failed to build")
 		quit(1)
 		return
-	if b_gel_material.get_shader_parameter("bubble_enabled") != true:
-		push_error("B Jelly V2 profile must enable object-space round bubbles")
+	if b_gel_material.get_shader_parameter("bubble_enabled") != expected_loose_bubbles:
+		push_error("B gel profile lost its selector-specific bubble contract")
 		quit(1)
 		return
 	if float(b_gel_material.get_shader_parameter("dimple_depth")) > 0.001:
@@ -729,12 +954,12 @@ func _run() -> void:
 		push_error("B Fizzy profile must enable the V5.1 authored height")
 		quit(1)
 		return
-	var b_membrane_error := _gel_membrane_error(b_gel_material)
+	var b_membrane_error := _gel_membrane_error(b_gel_material, "B")
 	if not b_membrane_error.is_empty():
 		push_error("B Fizzy profile %s" % b_membrane_error)
 		quit(1)
 		return
-	var b_noise_error := _gel_surface_noise_error(b_gel_material)
+	var b_noise_error := _gel_surface_noise_error(b_gel_material, "B")
 	if not b_noise_error.is_empty():
 		push_error("B Fizzy profile %s" % b_noise_error)
 		quit(1)
@@ -744,8 +969,15 @@ func _run() -> void:
 		push_error("Jelly V2 call-site fallback must override the B family profile")
 		quit(1)
 		return
-	if look.call("gel_profile_name", "B") != &"round_bubbles":
-		push_error("B Jelly V2 profile name is not stable")
+	var expected_b_profile := (
+		&"reference_sculpt"
+		if _GelProfiles.reference_sculpt_behavior_enabled()
+		else (&"reference_viscous" if _GelProfiles.v8_4_enabled()
+		else (&"single_mass_clean" if _GelProfiles.v8_3_enabled() else &"round_bubbles")
+		)
+	)
+	if look.call("gel_profile_name", "B") != expected_b_profile:
+		push_error("B gel profile name is not stable for the selected look")
 		quit(1)
 		return
 	var m_gel_material: ShaderMaterial = look.call("gel_material", "M")
@@ -753,16 +985,23 @@ func _run() -> void:
 		push_error("M wet-gel material failed to build")
 		quit(1)
 		return
-	if m_gel_material.get_shader_parameter("bubble_enabled") != true:
-		push_error("M Jelly V2 profile must enable object-space round bubbles")
+	if m_gel_material.get_shader_parameter("bubble_enabled") != expected_loose_bubbles:
+		push_error("M gel profile lost its selector-specific bubble contract")
 		quit(1)
 		return
 	if not is_zero_approx(float(m_gel_material.get_shader_parameter("dimple_depth"))):
 		push_error("M Jelly V2 profile must disable directional legacy dimples")
 		quit(1)
 		return
-	if look.call("gel_profile_name", "M") != &"macrophage_bubbles":
-		push_error("M Jelly V2 profile name is not stable")
+	var expected_m_profile := (
+		&"reference_sculpt"
+		if _GelProfiles.reference_sculpt_behavior_enabled()
+		else (&"reference_viscous" if _GelProfiles.v8_4_enabled()
+		else (&"single_mass_clean" if _GelProfiles.v8_3_enabled() else &"macrophage_bubbles")
+		)
+	)
+	if look.call("gel_profile_name", "M") != expected_m_profile:
+		push_error("M gel profile name is not stable for the selected look")
 		quit(1)
 		return
 	var telemetry_script := load("res://combat/combat_playtest_telemetry.gd")
@@ -773,6 +1012,10 @@ func _run() -> void:
 	telemetry.tick(0.5, &"fixed")
 	telemetry.record_shot()
 	telemetry.record_hit(2, false)
+	telemetry.call("record_active_skill", &"SKILL-T-EXECUTION-BURST", 2)
+	telemetry.call("record_encounter_event", &"surge")
+	telemetry.record_enemy_defeated(false, true)
+	telemetry.record_enemy_defeated(false, false)
 	telemetry.enter_phase("expedition")
 	telemetry.record_duty_switch()
 	telemetry.tick(0.25, &"mobile")
@@ -793,6 +1036,22 @@ func _run() -> void:
 		return
 	if int(telemetry_snapshot.get("shots_fired", 0)) != 1 or int(telemetry_snapshot.get("shots_hit", 0)) != 1:
 		push_error("Playtest telemetry shot contract is invalid")
+		quit(1)
+		return
+	if int(telemetry_snapshot.get("active_skills_used", 0)) != 1 or int(telemetry_snapshot.get("active_skill_hits", 0)) != 2:
+		push_error("Playtest telemetry active-skill contract is invalid")
+		quit(1)
+		return
+	if int(telemetry_snapshot.get("encounter_events", 0)) != 1:
+		push_error("Playtest telemetry encounter-event contract is invalid")
+		quit(1)
+		return
+	if (
+		int(telemetry_snapshot.get("enemies_defeated", 0)) != 2
+		or int(telemetry_snapshot.get("objective_kills", 0)) != 1
+		or int(telemetry_snapshot.get("reinforcements_defeated", 0)) != 1
+	):
+		push_error("Playtest telemetry objective/reinforcement contract is invalid")
 		quit(1)
 		return
 	if float(telemetry_snapshot.get("phase_durations", {}).get("core", 0.0)) != 0.5:
@@ -862,6 +1121,18 @@ func _run() -> void:
 		push_error("Combat did not reach Victory")
 		quit(1)
 		return
+	if _GelProfiles.living_volume_enabled():
+		var terminal_player := combat.get("_player") as Node
+		var terminal_animator := terminal_player.get_node_or_null("AnimationPlayer") as AnimationPlayer if terminal_player != null else null
+		if (
+			terminal_animator == null
+			or terminal_animator.current_animation != &"victory"
+			or StringName(terminal_player.call("current_animation_kind")) != &"terminal"
+			or int(terminal_player.call("current_animation_priority")) != 100
+		):
+			push_error("Combat victory must enter the V8.2 priority-100 terminal pose")
+			quit(1)
+			return
 	if int(research_state.get("resources").get("antigen", 0)) != antigen_before + 40:
 		push_error("Victory did not grant the demo antigen reward")
 		quit(1)
@@ -1018,12 +1289,11 @@ func _run() -> void:
 		mission_desk.call("_select_family", i)
 		await process_frame
 		var preview := mission_desk.get("_preview") as Node3D
-		var expected_duty: StringName = &"relay" if family_ids[i] == "A" else &"mobile"
 		if preview == null or preview.get_parent() != preview_stage:
 			push_error("Mission desk preview escaped its frame for family %s" % family_ids[i])
 			quit(1)
 			return
-		if StringName(preview.get("family_id")) != StringName(family_ids[i]) or StringName(preview.get("duty")) != expected_duty:
+		if StringName(preview.get("family_id")) != StringName(family_ids[i]) or StringName(preview.get("duty")) != &"fixed":
 			push_error("Mission desk preview state mismatch for family %s" % family_ids[i])
 			quit(1)
 			return
@@ -1034,7 +1304,12 @@ func _run() -> void:
 	if requested_save_path.is_empty():
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(active_save_path))
 	research_state.call("seed_demo")
-	print("SMOKE_OK missions=6 families=6 save=v2 audio=ready gamepad=ready signatures=T+B traits=enrage+regen meshy=B authored_jelly=M+N+A+D gel_fizzy=T+B+M+N+A+D")
+	print(
+		"SMOKE_OK missions=6 families=6 save=v2 audio=ready gamepad=ready "
+		+ "active_skills=6 encounters=6 touch=ready signatures=T+B traits=enrage+regen "
+		+ "authored_jelly=T+B+M+N+A+D gel_fizzy=T+B+M+N+A+D gel_look=%s"
+		% _GelProfiles.selected_look()
+	)
 	var audio_director := root.get_node_or_null("AudioDirector")
 	if audio_director != null:
 		audio_director.call("stop_all")
@@ -1542,6 +1817,55 @@ func _jelly_direct_light_rig_error() -> String:
 	return ""
 
 
+func _gel_v8_2_tooling_error() -> String:
+	# Review and profiling must default to production-authored subjects. Retired
+	# generated GLBs stay available only behind an explicit, noisy diagnostic
+	# selector so a successful lookdev capture cannot accidentally certify them.
+	var source_contracts := {
+		"res://tools/anim_preview.gd": [
+			'String(_args.get("body", "production"))',
+			'body_mode == "legacy-glb"',
+			'static func selection_error(',
+			'get_tree().quit(2)',
+		],
+		"res://tools/gel_preview.gd": [
+			'var source := "reference"',
+			'if source == "legacy-glb"',
+			'--source=legacy-glb requires an explicit --mesh=',
+			'"flow-velocity-sequence"',
+		],
+		"res://tools/gel_perf.gd": [
+			'var _source := "character"',
+			'_source = String(args.get("source", "character"))',
+			'_source == "legacy-glb"',
+			'if _mesh_path.is_empty():',
+			'--mesh=<known excluded GLB>',
+		],
+		"res://tools/shot.gd": [
+			'"family", "source", "mesh", "set", "body", "duty", "ground", "variant"',
+			'String(_args["source"]) not in ["reference", "character", "legacy-glb"]',
+			'String(_args["body"]) not in ["production", "legacy-glb"]',
+			'String(_args["duty"]) not in ["fixed", "mobile", "relay"]',
+			'_AnimPreview.selection_error(',
+			'velocity_values.append(float(parsed_component["value"]))',
+		],
+		"res://tools/shot_contract.gd": [
+			'SHOT_CONTRACT_OK',
+			'_scalar_flow_error()',
+			'_sequence_flow_error()',
+			'_preview_provenance_error()',
+		],
+	}
+	for source_path in source_contracts:
+		if not FileAccess.file_exists(source_path):
+			return "V8.2 tooling audit cannot read %s" % source_path
+		var source := FileAccess.get_file_as_string(source_path)
+		for marker in source_contracts[source_path]:
+			if not source.contains(String(marker)):
+				return "V8.2 production-subject tooling contract drifted in %s" % source_path
+	return ""
+
+
 func _jelly_runtime_light_error(label: String, node: Node) -> String:
 	return _LightContract.error(node, label)
 
@@ -1559,17 +1883,772 @@ func _has_gamepad_event(action: StringName) -> bool:
 	return false
 
 
+func _gel_selector_animation_error(
+	unit: Node, animator: AnimationPlayer, family: String
+) -> String:
+	if animator == null:
+		return "CHAR-BASE-%s missing its generated gel AnimationPlayer" % family
+	for animation_name in GEL_LEGACY_ANIMATIONS:
+		if not animator.has_animation(StringName(animation_name)):
+			return "CHAR-BASE-%s selector %s lost legacy animation %s" % [
+				family, _GelProfiles.selected_look(), animation_name,
+			]
+	var attack := animator.get_animation(&"attack")
+	if _GelProfiles.motion_truth_enabled():
+		for animation_name in GEL_V8_1_ANIMATIONS:
+			if not animator.has_animation(StringName(animation_name)):
+				return "CHAR-BASE-%s hardened gel missing animation %s" % [family, animation_name]
+		var expected_clip_count := GEL_LEGACY_ANIMATIONS.size() + GEL_V8_1_ANIMATIONS.size()
+		if _GelProfiles.living_volume_enabled():
+			expected_clip_count += GEL_V8_2_ANIMATIONS.size()
+			for animation_name in GEL_V8_2_ANIMATIONS:
+				if not animator.has_animation(StringName(animation_name)):
+					return "CHAR-BASE-%s V8.2 missing terminal animation %s" % [
+						family, animation_name,
+					]
+		else:
+			for animation_name in GEL_V8_2_ANIMATIONS:
+				if animator.has_animation(StringName(animation_name)):
+					return "CHAR-BASE-%s exact V8.1 must not inherit V8.2 clip %s" % [
+						family, animation_name,
+					]
+		if animator.get_animation_list().size() != expected_clip_count:
+			return "CHAR-BASE-%s selector %s animation set must be additive and exact" % [
+				family, _GelProfiles.selected_look(),
+			]
+		var expected_lengths := {
+			&"move_start": 0.28,
+			&"move_stop": 0.52,
+			&"relay_glide": 1.60,
+			&"skill_cast": 0.96,
+		}
+		for animation_name in expected_lengths:
+			var animation := animator.get_animation(animation_name)
+			if not is_equal_approx(animation.length, float(expected_lengths[animation_name])):
+				return "CHAR-BASE-%s V8.1 %s timing drifted" % [family, animation_name]
+		if animator.get_animation(&"relay_glide").loop_mode != Animation.LOOP_LINEAR:
+			return "CHAR-BASE-%s V8.1 relay glide must remain a loop" % family
+		var basic_markers := _animation_method_marker_times(
+			attack, &"_on_combat_release_marker"
+		)
+		var active_markers := _animation_method_marker_times(
+			animator.get_animation(&"skill_cast"), &"_on_combat_release_marker"
+		)
+		if basic_markers.size() != 1 or not is_equal_approx(
+			basic_markers[0], GEL_V8_1_BASIC_RELEASE_TIME
+		):
+			return "CHAR-BASE-%s V8.1 basic attack must release once at 0.345 s" % family
+		if active_markers.size() != 1 or not is_equal_approx(
+			active_markers[0], GEL_V8_1_ACTIVE_RELEASE_TIME
+		):
+			return "CHAR-BASE-%s V8.1 active skill must release once at 0.48 s" % family
+		if _GelProfiles.living_volume_enabled():
+			var terminal_lengths := {&"victory": 1.30, &"defeat": 1.18}
+			for animation_name in terminal_lengths:
+				var terminal_animation := animator.get_animation(animation_name)
+				if not is_equal_approx(
+					terminal_animation.length, float(terminal_lengths[animation_name])
+				):
+					return "CHAR-BASE-%s V8.2 %s timing drifted" % [family, animation_name]
+				if terminal_animation.loop_mode != Animation.LOOP_NONE:
+					return "CHAR-BASE-%s V8.2 %s must remain a one-shot" % [
+						family, animation_name,
+					]
+				if _animation_method_track_count(terminal_animation) != 0:
+					return "CHAR-BASE-%s V8.2 %s must remain presentation-only" % [
+						family, animation_name,
+					]
+		if _GelProfiles.single_mass_enabled():
+			var integrity_error := _gel_single_mass_animation_integrity_error(animator, family)
+			if not integrity_error.is_empty():
+				return integrity_error
+		if _GelProfiles.reference_sculpt_behavior_enabled():
+			var v8_5_error := _gel_v8_5_animation_contract_error(animator, family)
+			if not v8_5_error.is_empty():
+				return v8_5_error
+		return ""
+
+	# V8 is a named rollback path, not an alias for the hardened controller.
+	# Its clip set and method-free attack are kept byte-for-behaviour compatible.
+	if _GelProfiles.selected_look() == "v8":
+		if animator.get_animation_list().size() != GEL_LEGACY_ANIMATIONS.size():
+			return "CHAR-BASE-%s explicit V8 must retain exactly eight legacy clips" % family
+		for animation_name in GEL_V8_1_ANIMATIONS:
+			if animator.has_animation(StringName(animation_name)):
+				return "CHAR-BASE-%s explicit V8 must not inherit V8.1 clip %s" % [
+					family, animation_name,
+				]
+		for animation_name in GEL_V8_2_ANIMATIONS:
+			if animator.has_animation(StringName(animation_name)):
+				return "CHAR-BASE-%s explicit V8 must not inherit V8.2 clip %s" % [
+					family, animation_name,
+				]
+		if _animation_method_track_count(attack) != 0:
+			return "CHAR-BASE-%s explicit V8 attack must remain method-track free" % family
+	return ""
+
+
+func _gel_v8_4_loop_scale_error(
+	animation: Animation,
+	animation_name: String,
+	family: String,
+	minimum_y_range: float,
+	maximum_y_range: float
+) -> String:
+	if animation == null:
+		return "CHAR-BASE-%s V8.4 missing %s animation" % [family, animation_name]
+	var scale_track := animation.find_track(NodePath("CoreMesh:scale"), Animation.TYPE_VALUE)
+	if scale_track < 0:
+		return "CHAR-BASE-%s V8.4 %s must drive its coherent body scale" % [
+			family, animation_name,
+		]
+	var min_scale_y := INF
+	var max_scale_y := -INF
+	for sample in 49:
+		var sample_time := animation.length * float(sample) / 48.0
+		var sample_scale: Vector3 = animation.value_track_interpolate(scale_track, sample_time)
+		min_scale_y = minf(min_scale_y, sample_scale.y)
+		max_scale_y = maxf(max_scale_y, sample_scale.y)
+	var scale_range := max_scale_y - min_scale_y
+	if scale_range < minimum_y_range:
+		return "CHAR-BASE-%s V8.4 %s lost its living viscous mass transfer" % [
+			family, animation_name,
+		]
+	if scale_range > maximum_y_range:
+		return "CHAR-BASE-%s V8.4 %s reads as uniform solid-body scaling" % [
+			family, animation_name,
+		]
+	return ""
+
+
+func _gel_v8_4_move_planar_error(animation: Animation, family: String) -> String:
+	var position_track := animation.find_track(
+		NodePath("CoreMesh:position"), Animation.TYPE_VALUE
+	)
+	if position_track < 0:
+		return "CHAR-BASE-%s V8.4 move lost its coherent body position" % family
+	var min_z := INF
+	var max_z := -INF
+	for sample in 49:
+		var sample_time := animation.length * float(sample) / 48.0
+		var position: Vector3 = animation.value_track_interpolate(position_track, sample_time)
+		min_z = minf(min_z, position.z)
+		max_z = maxf(max_z, position.z)
+	if max_z - min_z > 0.065:
+		return "CHAR-BASE-%s V8.4 move must leave directional drag to the liquid spring" % family
+	return ""
+
+
+func _gel_single_mass_animation_integrity_error(animator: AnimationPlayer, family: String) -> String:
+	for animation_name in animator.get_animation_list():
+		var animation := animator.get_animation(animation_name)
+		var scale_track := animation.find_track(NodePath("CoreMesh:scale"), Animation.TYPE_VALUE)
+		if scale_track < 0:
+			return "CHAR-BASE-%s V8.3 %s must drive one coherent core scale" % [
+				family, animation_name,
+			]
+		var samples := maxi(int(ceil(animation.length * 72.0)), 2)
+		for sample in samples + 1:
+			var sample_time := animation.length * float(sample) / float(samples)
+			var scale_value: Vector3 = animation.value_track_interpolate(scale_track, sample_time)
+			if not scale_value.is_finite():
+				return "CHAR-BASE-%s V8.3 %s produced a non-finite body scale" % [
+					family, animation_name,
+				]
+			for component in [scale_value.x, scale_value.y, scale_value.z]:
+				if component < 0.80 or component > 1.22:
+					return "CHAR-BASE-%s V8.3 %s escaped the non-collapse scale guard" % [
+						family, animation_name,
+					]
+			var volume_ratio := scale_value.x * scale_value.y * scale_value.z
+			if volume_ratio < 0.95 or volume_ratio > 1.04:
+				return "CHAR-BASE-%s V8.3 %s lost coherent gel volume" % [
+					family, animation_name,
+				]
+	return ""
+
+
+func _gel_v8_5_animation_contract_error(animator: AnimationPlayer, family: String) -> String:
+	# Presentation deformation is deliberately isolated from gameplay physics.
+	# A future authoring pass must not smuggle collision tracks into any clip.
+	for animation_name in animator.get_animation_list():
+		var animation := animator.get_animation(animation_name)
+		for track_index in animation.get_track_count():
+			if String(animation.track_get_path(track_index)).contains("Collision"):
+				return "CHAR-BASE-%s V8.5 %s must not animate gameplay collision" % [
+					family, animation_name,
+				]
+
+		var scale_track := animation.find_track(
+			NodePath("CoreMesh:scale"), Animation.TYPE_VALUE
+		)
+		if scale_track < 0:
+			return "CHAR-BASE-%s V8.5 %s lost its coherent mass scale" % [
+				family, animation_name,
+			]
+		var samples := maxi(int(ceil(animation.length * 72.0)), 2)
+		for sample in samples + 1:
+			var sample_time := animation.length * float(sample) / float(samples)
+			var scale_value: Vector3 = animation.value_track_interpolate(
+				scale_track, sample_time
+			)
+			if scale_value.y < 0.86 - 0.0001 or scale_value.y > 1.14 + 0.0001:
+				return "CHAR-BASE-%s V8.5 %s escaped the authored-sculpt collapse guard" % [
+					family, animation_name,
+				]
+			var volume_ratio := scale_value.x * scale_value.y * scale_value.z
+			if volume_ratio < 0.97 or volume_ratio > 1.03:
+				return "CHAR-BASE-%s V8.5 %s escaped the coherent-volume window" % [
+					family, animation_name,
+				]
+
+	# Both perpetual clips must join without a visible position, rotation, or
+	# scale discontinuity. Internal shader TIME remains independent of this seam.
+	for loop_name in [&"idle", &"move"]:
+		var loop_animation := animator.get_animation(loop_name)
+		for property_name in ["position", "rotation", "scale"]:
+			var track := loop_animation.find_track(
+				NodePath("CoreMesh:%s" % property_name), Animation.TYPE_VALUE
+			)
+			if track < 0:
+				return "CHAR-BASE-%s V8.5 %s lost CoreMesh:%s" % [
+					family, loop_name, property_name,
+				]
+			var first_value: Vector3 = loop_animation.value_track_interpolate(track, 0.0)
+			var last_value: Vector3 = loop_animation.value_track_interpolate(
+				track, loop_animation.length
+			)
+			if first_value.distance_to(last_value) > 0.0001:
+				return "CHAR-BASE-%s V8.5 %s has a visible %s loop seam" % [
+					family, loop_name, property_name,
+				]
+
+	var expected_y_ranges := {
+		&"move": Vector2(0.075, 0.095),
+		# The source beats sit at 0.075/0.160 and 0.075/0.170 seconds, while
+		# the production clip is baked at 36 Hz. These windows lock the actual
+		# baked extrema players see, rather than unreachable source-key values.
+		&"move_start": Vector2(0.055, 0.075),
+		&"move_stop": Vector2(0.065, 0.085),
+	}
+	for animation_name in expected_y_ranges:
+		var animation := animator.get_animation(animation_name)
+		var scale_track := animation.find_track(
+			NodePath("CoreMesh:scale"), Animation.TYPE_VALUE
+		)
+		var min_y := INF
+		var max_y := -INF
+		for sample in 73:
+			var sample_time := animation.length * float(sample) / 72.0
+			var scale_value: Vector3 = animation.value_track_interpolate(
+				scale_track, sample_time
+			)
+			min_y = minf(min_y, scale_value.y)
+			max_y = maxf(max_y, scale_value.y)
+		var expected_range: Vector2 = expected_y_ranges[animation_name]
+		var actual_range := max_y - min_y
+		if actual_range < expected_range.x or actual_range > expected_range.y:
+			return "CHAR-BASE-%s V8.5 %s viscous pulse %.4f drifted outside %.3f..%.3f" % [
+				family, animation_name, actual_range, expected_range.x, expected_range.y,
+			]
+	return ""
+
+
+func _animation_method_marker_times(
+	animation: Animation, method_name: StringName
+) -> PackedFloat32Array:
+	var times := PackedFloat32Array()
+	if animation == null:
+		return times
+	for track_index in animation.get_track_count():
+		if animation.track_get_type(track_index) != Animation.TYPE_METHOD:
+			continue
+		if animation.track_get_path(track_index) != NodePath("."):
+			continue
+		for key_index in animation.track_get_key_count(track_index):
+			var value: Variant = animation.track_get_key_value(track_index, key_index)
+			if value is Dictionary and StringName(value.get("method", &"")) == method_name:
+				times.append(animation.track_get_key_time(track_index, key_index))
+	return times
+
+
+func _animation_method_track_count(animation: Animation) -> int:
+	var count := 0
+	if animation == null:
+		return count
+	for track_index in animation.get_track_count():
+		if animation.track_get_type(track_index) == Animation.TYPE_METHOD:
+			count += 1
+	return count
+
+
+func _gel_v8_1_runtime_error(by_family: Dictionary) -> String:
+	var unit := by_family.get("T") as Node
+	var relay_unit := by_family.get("A") as Node
+	if unit == null or relay_unit == null:
+		return "V8.1 runtime contract requires representative T and A characters"
+	var animator := unit.get_node_or_null("AnimationPlayer") as AnimationPlayer
+	var relay_animator := relay_unit.get_node_or_null("AnimationPlayer") as AnimationPlayer
+	if animator == null or relay_animator == null:
+		return "V8.1 runtime contract requires both representative animators"
+	# The lineup loop has just requested the mobile/relay duty. Resolve those
+	# authored one-shots before exercising the combat and locomotion lanes.
+	animator.advance(2.0)
+	relay_animator.advance(2.0)
+
+	var release_error := _gel_v8_1_release_timing_error(unit, animator)
+	if not release_error.is_empty():
+		return release_error
+	var locomotion_error := _gel_v8_1_locomotion_error(unit, animator)
+	if not locomotion_error.is_empty():
+		return locomotion_error
+	var low_render_error := _gel_v8_1_low_render_motion_truth_error(unit)
+	if not low_render_error.is_empty():
+		return low_render_error
+	var contact_error := _gel_v8_1_contact_error(unit)
+	if not contact_error.is_empty():
+		return contact_error
+	var reversal_error := _gel_v8_1_reversal_error(unit)
+	if not reversal_error.is_empty():
+		return reversal_error
+	var relay_error := _gel_v8_1_relay_error(relay_unit, relay_animator)
+	if not relay_error.is_empty():
+		return relay_error
+	return _gel_v8_1_attachment_error(unit)
+
+
+func _gel_v8_2_terminal_error(by_family: Dictionary) -> String:
+	var terminal_cases := {"T": &"victory", "B": &"defeat"}
+	for family in terminal_cases:
+		var result := StringName(terminal_cases[family])
+		var unit := by_family.get(family) as Node3D
+		if unit == null or not unit.has_method("enter_terminal"):
+			return "CHAR-BASE-%s V8.2 is missing its terminal presentation bridge" % family
+		var animator := unit.get_node_or_null("AnimationPlayer") as AnimationPlayer
+		var core := unit.get_node_or_null("CoreMesh") as Node3D
+		var collision := unit.get_node_or_null("CollisionShape3D") as CollisionShape3D
+		if animator == null or core == null or collision == null or collision.shape == null:
+			return "CHAR-BASE-%s V8.2 terminal audit is missing animation or collision nodes" % family
+		animator.advance(2.0)
+		var core_home := core.transform
+		var collision_transform := collision.transform
+		var collision_shape := collision.shape
+		var requested_duty := &"fixed" if StringName(unit.get("duty")) != &"fixed" else &"mobile"
+		if not bool(unit.call("enter_terminal", result, 1.0 / 60.0)):
+			return "CHAR-BASE-%s V8.2 rejected terminal result %s" % [family, result]
+		animator.advance(0.0)
+		if animator.current_animation != result:
+			return "CHAR-BASE-%s V8.2 terminal result did not own its authored clip" % family
+		if (
+			StringName(unit.call("current_animation_kind")) != &"terminal"
+			or int(unit.call("current_animation_priority")) != 100
+		):
+			return "CHAR-BASE-%s V8.2 terminal result must latch priority 100" % family
+		if bool(unit.call("request_combat_action", 8201, &"basic", &"BASIC-T", 0.0)):
+			return "CHAR-BASE-%s V8.2 terminal state accepted a combat request" % family
+		var terminal_duty := StringName(unit.get("duty"))
+		unit.call("transform_duty", requested_duty)
+		if StringName(unit.get("duty")) != terminal_duty:
+			return "CHAR-BASE-%s V8.2 terminal state accepted a duty request" % family
+		var terminal_animation := animator.get_animation(result)
+		animator.advance(terminal_animation.length + 0.05)
+		# AnimationPlayer clears current_animation when a non-loop one-shot ends;
+		# assigned_animation identifies the held final sample. Requiring the clip to
+		# keep playing would turn the terminal pose into an accidental loop.
+		if animator.assigned_animation != result:
+			return "CHAR-BASE-%s V8.2 terminal final pose returned to a rest clip" % family
+		if core.transform.is_equal_approx(core_home):
+			return "CHAR-BASE-%s V8.2 %s final pose must remain visibly non-neutral" % [
+				family, result,
+			]
+		if (
+			StringName(unit.call("current_animation_kind")) != &"terminal"
+			or int(unit.call("current_animation_priority")) != 100
+		):
+			return "CHAR-BASE-%s V8.2 terminal ownership was released after clip end" % family
+		if (
+			not collision.transform.is_equal_approx(collision_transform)
+			or collision.shape != collision_shape
+			or not unit.scale.is_equal_approx(Vector3.ONE)
+		):
+			return "CHAR-BASE-%s V8.2 terminal presentation altered gameplay collision" % family
+	return ""
+
+
+func _gel_v8_1_release_timing_error(unit: Node, animator: AnimationPlayer) -> String:
+	_v8_1_release_events.clear()
+	_v8_1_cancel_events.clear()
+	# Release markers are gameplay boundaries, so production V8.1 must process a
+	# marker before animation_finished even when one low-FPS advance crosses both.
+	if animator.callback_mode_method != AnimationMixer.ANIMATION_CALLBACK_MODE_METHOD_IMMEDIATE:
+		return "CHAR-BASE-T V8.1 production method callbacks must be immediate"
+	var release_callable := Callable(self, "_capture_v8_1_release")
+	var cancel_callable := Callable(self, "_capture_v8_1_cancel")
+	if not unit.is_connected("combat_action_released", release_callable):
+		unit.connect("combat_action_released", release_callable)
+	if not unit.is_connected("combat_action_cancelled", cancel_callable):
+		unit.connect("combat_action_cancelled", cancel_callable)
+	if not bool(unit.call("request_combat_action", 8101, &"basic", &"BASIC-T", 0.0)):
+		return "CHAR-BASE-T V8.1 rejected an idle basic-action presentation token"
+	animator.advance(0.0)
+	animator.advance(GEL_V8_1_BASIC_RELEASE_TIME - 0.002)
+	if not _v8_1_release_events.is_empty():
+		return "CHAR-BASE-T V8.1 basic gameplay released before its authored pose"
+	animator.advance(0.004)
+	if _v8_1_release_events.size() != 1:
+		return "CHAR-BASE-T V8.1 basic gameplay did not release exactly once at its pose"
+	var basic_event: Dictionary = _v8_1_release_events[0]
+	if int(basic_event.get("id", 0)) != 8101 or StringName(basic_event.get("kind", &"")) != &"basic":
+		return "CHAR-BASE-T V8.1 basic release token lost its request identity"
+	animator.advance(1.0)
+	if _v8_1_release_events.size() != 1:
+		return "CHAR-BASE-T V8.1 basic method track double-released"
+
+	_v8_1_release_events.clear()
+	if not bool(unit.call("request_combat_action", 8102, &"active", &"SKILL-T-ACTIVE", 0.0)):
+		return "CHAR-BASE-T V8.1 rejected an idle active-skill presentation token"
+	animator.advance(0.0)
+	animator.advance(GEL_V8_1_ACTIVE_RELEASE_TIME - 0.002)
+	if not _v8_1_release_events.is_empty():
+		return "CHAR-BASE-T V8.1 active gameplay released before its authored pose"
+	animator.advance(0.004)
+	if _v8_1_release_events.size() != 1:
+		return "CHAR-BASE-T V8.1 active gameplay did not release exactly once at its pose"
+	var active_event: Dictionary = _v8_1_release_events[0]
+	if int(active_event.get("id", 0)) != 8102 or StringName(active_event.get("kind", &"")) != &"active":
+		return "CHAR-BASE-T V8.1 active release token lost its request identity"
+	animator.advance(1.0)
+	if _v8_1_release_events.size() != 1 or not _v8_1_cancel_events.is_empty():
+		return "CHAR-BASE-T V8.1 completed combat actions must neither duplicate nor cancel"
+
+	# One production-mode advance crosses both the authored marker and clip end.
+	# The release must win deterministically; animation_finished must not observe
+	# an unreleased request and manufacture a missing_release cancellation.
+	_v8_1_release_events.clear()
+	_v8_1_cancel_events.clear()
+	if not bool(unit.call("request_combat_action", 8103, &"basic", &"BASIC-T", 0.0)):
+		return "CHAR-BASE-T V8.1 rejected the low-render release-order token"
+	animator.advance(0.0)
+	animator.advance(animator.get_animation(&"attack").length + 0.05)
+	if _v8_1_release_events.size() != 1:
+		return "CHAR-BASE-T V8.1 low-render advance did not release exactly once"
+	var crossed_event: Dictionary = _v8_1_release_events[0]
+	if int(crossed_event.get("id", 0)) != 8103 or StringName(crossed_event.get("kind", &"")) != &"basic":
+		return "CHAR-BASE-T V8.1 low-render release lost its request identity"
+	if not _v8_1_cancel_events.is_empty():
+		var crossed_cancel: Dictionary = _v8_1_cancel_events[0]
+		return "CHAR-BASE-T V8.1 low-render release was cancelled as %s" % String(
+			crossed_cancel.get("reason", &"")
+		)
+
+	# V8.3 keeps authored high-priority presentation without letting it throttle
+	# T's fixed gameplay cadence. Once the active hit has committed, a basic shot
+	# due during its recovery releases without replacing the cast pose.
+	_v8_1_release_events.clear()
+	_v8_1_cancel_events.clear()
+	if not bool(unit.call("request_combat_action", 8301, &"active", &"SKILL-T-ACTIVE", 0.0)):
+		return "CHAR-BASE-T V8.3 cadence audit could not start its active presentation"
+	animator.advance(0.0)
+	animator.advance(GEL_V8_1_ACTIVE_RELEASE_TIME - 0.002)
+	animator.advance(0.004)
+	if _v8_1_release_events.size() != 1:
+		return "CHAR-BASE-T V8.3 cadence audit active did not release before recovery"
+	var cadence_active_event: Dictionary = _v8_1_release_events[0]
+	if (
+		int(cadence_active_event.get("id", 0)) != 8301
+		or StringName(cadence_active_event.get("kind", &"")) != &"active"
+	):
+		return "CHAR-BASE-T V8.3 cadence audit lost its active release identity"
+	_v8_1_release_events.clear()
+	var basic_during_active := bool(
+		unit.call("request_combat_action", 8302, &"basic", &"BASIC-T", 0.55)
+	)
+	if _GelProfiles.single_mass_enabled():
+		if not basic_during_active or _v8_1_release_events.size() != 1:
+			return "CHAR-BASE-T V8.3 active presentation throttled its basic cadence"
+		var overlaid_event: Dictionary = _v8_1_release_events[0]
+		if (
+			int(overlaid_event.get("id", 0)) != 8302
+			or StringName(overlaid_event.get("kind", &"")) != &"basic"
+			or animator.current_animation != &"skill_cast"
+		):
+			return "CHAR-BASE-T V8.3 cadence release interrupted or lost its active pose"
+	elif basic_during_active:
+		return "CHAR-BASE-T legacy motion selector changed its active/basic arbitration"
+	animator.advance(1.0)
+	if _GelProfiles.single_mass_enabled() and _v8_1_release_events.size() != 1:
+		return "CHAR-BASE-T V8.3 recovery-overlaid basic must release exactly once"
+	if not _v8_1_cancel_events.is_empty():
+		return "CHAR-BASE-T V8.3 cadence overlay cancelled a completed action"
+	return ""
+
+
+func _capture_v8_1_release(request_id: int, action_kind: StringName) -> void:
+	_v8_1_release_events.append({"id": request_id, "kind": action_kind})
+
+
+func _capture_v8_1_cancel(
+	request_id: int, action_kind: StringName, reason: StringName
+) -> void:
+	_v8_1_cancel_events.append({"id": request_id, "kind": action_kind, "reason": reason})
+
+
+func _gel_v8_1_locomotion_error(unit: Node, animator: AnimationPlayer) -> String:
+	unit.set("duty", &"mobile")
+	unit.call("_apply_duty", &"mobile")
+	unit.call("settle_motion", 1.0 / 60.0, false)
+	unit.call("_cache_liquid_materials")
+	animator.play(&"idle")
+	animator.advance(0.0)
+	unit.call("submit_motion_truth", Vector3(2.4, 0.0, 0.0), Vector3(2.4, 0.0, 0.0), Vector3.ZERO, 1.0 / 60.0)
+	if StringName(unit.call("liquid_locomotion_state")) != &"idle":
+		return "CHAR-BASE-T V8.1 locomotion must debounce the first moving frame"
+	unit.call("submit_motion_truth", Vector3(2.4, 0.0, 0.0), Vector3(2.4, 0.0, 0.0), Vector3.ZERO, 1.0 / 60.0)
+	if StringName(unit.call("liquid_locomotion_state")) != &"starting" or animator.current_animation != &"move_start":
+		return "CHAR-BASE-T V8.1 locomotion must enter its viscous start clip after two frames"
+	animator.advance(0.30)
+	if StringName(unit.call("liquid_locomotion_state")) != &"moving" or animator.current_animation != &"move":
+		return "CHAR-BASE-T V8.1 start clip must hand off to the grounded move loop"
+	var release_anchor := unit.get_node_or_null("WeaponSocket/LiquidReleaseAnchor") as Node3D
+	if release_anchor == null:
+		return "CHAR-BASE-T V8.1 must expose a deformation-aware release anchor"
+	var anchor_home := release_anchor.transform
+	for frame in 30:
+		unit.call("submit_motion_truth", Vector3(2.4, 0.0, 0.0), Vector3(2.4, 0.0, 0.0), Vector3.ZERO, 1.0 / 60.0)
+	if release_anchor.transform.origin.distance_to(anchor_home.origin) < 0.004:
+		return "CHAR-BASE-T V8.1 release anchor must follow the viscous presentation mass"
+	for frame in 3:
+		unit.call("submit_motion_truth", Vector3.ZERO, Vector3.ZERO, Vector3.ZERO, 1.0 / 60.0)
+	if StringName(unit.call("liquid_locomotion_state")) != &"stopping" or animator.current_animation != &"move_stop":
+		return "CHAR-BASE-T V8.1 locomotion must enter its three-frame stop edge"
+	animator.advance(0.55)
+	if StringName(unit.call("liquid_locomotion_state")) != &"idle" or animator.current_animation != &"idle":
+		return "CHAR-BASE-T V8.1 stop clip must settle into idle"
+	return ""
+
+
+func _gel_v8_1_low_render_motion_truth_error(unit: Node) -> String:
+	var original_duty := StringName(unit.get("duty"))
+	unit.set("duty", &"fixed")
+	unit.call("_apply_duty", &"fixed")
+	unit.call("_cache_liquid_materials")
+	var moving_velocity := Vector3(2.4, 0.0, 0.0)
+	# Normal 60 Hz post-physics submissions precede a deliberately slow 100 ms
+	# render frame. Render delta alone must never expire the latest physics truth.
+	for physics_tick in 6:
+		unit.call(
+			"submit_motion_truth",
+			moving_velocity,
+			moving_velocity,
+			Vector3.ZERO,
+			1.0 / 60.0
+		)
+	var motion_before_render := float(unit.call("liquid_motion_mix"))
+	unit.call("_process", 0.10)
+	var resolved_after_render := unit.call("resolved_motion_velocity") as Vector3
+	var motion_after_render := float(unit.call("liquid_motion_mix"))
+	unit.call("settle_motion", 1.0 / 60.0, false)
+	unit.set("duty", original_duty)
+	unit.call("_apply_duty", original_duty)
+	unit.call("_cache_liquid_materials")
+	if resolved_after_render.distance_to(moving_velocity) > 0.001:
+		return "CHAR-BASE-T V8.1 expired fresh physics truth on a 100 ms render frame"
+	if motion_after_render + 0.0001 < motion_before_render:
+		return "CHAR-BASE-T V8.1 low render FPS incorrectly decayed fresh locomotion"
+	return ""
+
+
+func _gel_v8_1_contact_error(unit: Node) -> String:
+	var collision := unit.get_node_or_null("CollisionShape3D") as CollisionShape3D
+	if collision == null or collision.shape == null:
+		return "CHAR-BASE-T V8.1 wall-contact test requires stable gameplay collision"
+	var collision_transform := collision.transform
+	var collision_shape := collision.shape
+	unit.set("duty", &"mobile")
+	unit.call("_apply_duty", &"mobile")
+	unit.call("_cache_liquid_materials")
+	# Requested motion presses into the wall while resolved displacement is zero.
+	# Locomotion follows the latter; the former drives only the contact envelope.
+	for frame in 5:
+		unit.call("submit_motion_truth", Vector3(3.0, 0.0, 0.0), Vector3.ZERO, Vector3(-1.0, 0.0, 0.0), 1.0 / 60.0)
+	if StringName(unit.call("liquid_locomotion_state")) != &"idle":
+		return "CHAR-BASE-T V8.1 must not walk in place while resolved against a wall"
+	if float(unit.call("liquid_motion_mix")) > 0.01:
+		return "CHAR-BASE-T V8.1 wall pressure leaked requested speed into locomotion"
+	if float(unit.call("liquid_contact_amount")) <= 0.05:
+		return "CHAR-BASE-T V8.1 wall contact did not produce a readable viscous response"
+	for frame in 120:
+		unit.call("submit_motion_truth", Vector3.ZERO, Vector3.ZERO, Vector3.ZERO, 1.0 / 60.0)
+	if absf(float(unit.call("liquid_contact_amount"))) > 0.002:
+		return "CHAR-BASE-T V8.1 wall-contact envelope did not return to zero"
+	if (unit.call("liquid_body_lag") as Vector3).length() > 0.012 or float(unit.call("liquid_body_squash")) > 0.008:
+		return "CHAR-BASE-T V8.1 wall response retained visible residual deformation"
+	if not collision.transform.is_equal_approx(collision_transform) or collision.shape != collision_shape:
+		return "CHAR-BASE-T V8.1 visual contact must never deform gameplay collision"
+	return ""
+
+
+func _gel_v8_1_reversal_error(unit: Node) -> String:
+	var original_duty := StringName(unit.get("duty"))
+	unit.set("duty", &"fixed")
+	unit.call("_apply_duty", &"fixed")
+	var samples: Array[Vector3] = []
+	for fps in [30, 60, 120]:
+		unit.call("_cache_liquid_materials")
+		var delta := 1.0 / float(fps)
+		for frame in int(round(0.50 * fps)):
+			unit.call("submit_motion_truth", Vector3(2.4, 0.0, 0.0), Vector3(2.4, 0.0, 0.0), Vector3.ZERO, delta)
+		for frame in int(round(0.20 * fps)):
+			unit.call("submit_motion_truth", Vector3(-2.4, 0.0, 0.0), Vector3(-2.4, 0.0, 0.0), Vector3.ZERO, delta)
+		var direction := unit.call("liquid_flow_direction") as Vector3
+		if direction.length() < 0.999:
+			return "CHAR-BASE-T V8.1 180-degree reversal collapsed its flow direction at %d Hz" % fps
+		samples.append(direction)
+	unit.set("duty", original_duty)
+	unit.call("_apply_duty", original_duty)
+	unit.call("_cache_liquid_materials")
+	if samples[0].distance_to(samples[1]) > 0.035 or samples[1].distance_to(samples[2]) > 0.035:
+		return "CHAR-BASE-T V8.1 reversal steering drifted across 30/60/120 Hz"
+	return ""
+
+
+func _gel_v8_1_relay_error(unit: Node, animator: AnimationPlayer) -> String:
+	unit.set("duty", &"relay")
+	unit.call("_apply_duty", &"relay")
+	unit.call("settle_motion", 1.0 / 60.0, false)
+	unit.call("_cache_liquid_materials")
+	animator.play(&"idle")
+	animator.advance(0.0)
+	for frame in 2:
+		unit.call("submit_motion_truth", Vector3(2.4, 0.0, 0.0), Vector3(2.4, 0.0, 0.0), Vector3.ZERO, 1.0 / 60.0)
+	if animator.current_animation != &"move_start":
+		return "CHAR-BASE-A V8.1 relay travel must retain the viscous start edge"
+	animator.advance(0.30)
+	if StringName(unit.call("liquid_locomotion_state")) != &"moving" or animator.current_animation != &"relay_glide":
+		return "CHAR-BASE-A V8.1 relay travel must hand off to relay_glide"
+	if not animator.get_animation(&"relay_glide").loop_mode == Animation.LOOP_LINEAR:
+		return "CHAR-BASE-A V8.1 relay_glide must remain an analytic loop"
+	return ""
+
+
+func _gel_v8_1_attachment_error(unit: Node) -> String:
+	if not unit.has_method("liquid_attachment_material_count") or int(unit.call("liquid_attachment_material_count")) < 3:
+		return "CHAR-BASE-T V8.1 must bind both eyes and the mouth cavity to body-space deformation"
+	var release_anchor := unit.get_node_or_null("WeaponSocket/LiquidReleaseAnchor") as Node3D
+	if release_anchor == null or unit.get("weapon_socket") != release_anchor:
+		return "CHAR-BASE-T V8.1 gameplay VFX must emit from the liquid release anchor"
+	var real_mesh := unit.get_node_or_null("CoreMesh/RealMesh") as Node3D
+	var cavity := real_mesh.get_node_or_null("MouthCavity") as MeshInstance3D if real_mesh != null else null
+	var cavity_material := cavity.material_override as ShaderMaterial if cavity != null else null
+	if cavity_material == null or cavity_material.shader == null or not cavity_material.shader.resource_path.ends_with("gel_eye.gdshader"):
+		return "CHAR-BASE-T V8.1 mouth cavity must use the coherent gel attachment shader"
+	var materials := _shader_materials_with_suffix(unit, [
+		"wet_gel.gdshader", "jelly_shell.gdshader", "gel_eye.gdshader",
+	])
+	if materials.size() < 5:
+		return "CHAR-BASE-T V8.1 coherent-material audit found too few gel parts"
+	var expected_lag := unit.call("liquid_body_lag") as Vector3
+	var expected_squash := float(unit.call("liquid_body_squash"))
+	var expected_turn := float(unit.call("liquid_turn_shear"))
+	var expected_contact := float(unit.call("liquid_contact_amount"))
+	for material in materials:
+		if float(material.get_shader_parameter("liquid_body_space_enabled")) < 0.99:
+			return "CHAR-BASE-T V8.1 gel attachment escaped shared body-space deformation"
+		if not (material.get_shader_parameter("liquid_body_lag") as Vector3).is_equal_approx(expected_lag):
+			return "CHAR-BASE-T V8.1 wet core, shell and attachments disagree on body lag"
+		if not is_equal_approx(float(material.get_shader_parameter("liquid_body_squash")), expected_squash):
+			return "CHAR-BASE-T V8.1 wet core, shell and attachments disagree on squash"
+		if not is_equal_approx(float(material.get_shader_parameter("liquid_turn_shear")), expected_turn):
+			return "CHAR-BASE-T V8.1 wet core, shell and attachments disagree on turn shear"
+		if not is_equal_approx(float(material.get_shader_parameter("liquid_contact_amount")), expected_contact):
+			return "CHAR-BASE-T V8.1 wet core, shell and attachments disagree on contact"
+	return ""
+
+
+func _shader_materials_with_suffix(node: Node, suffixes: Array[String]) -> Array[ShaderMaterial]:
+	var materials: Array[ShaderMaterial] = []
+	var seen := {}
+	_shader_materials_with_suffix_recursive(node, suffixes, materials, seen)
+	return materials
+
+
+func _shader_materials_with_suffix_recursive(
+	node: Node,
+	suffixes: Array[String],
+	materials: Array[ShaderMaterial],
+	seen: Dictionary
+) -> void:
+	if node is MeshInstance3D:
+		var mesh_instance := node as MeshInstance3D
+		_append_matching_shader_material(mesh_instance.material_override, suffixes, materials, seen)
+		if mesh_instance.mesh != null:
+			for surface in mesh_instance.mesh.get_surface_count():
+				_append_matching_shader_material(mesh_instance.get_surface_override_material(surface), suffixes, materials, seen)
+				_append_matching_shader_material(mesh_instance.mesh.surface_get_material(surface), suffixes, materials, seen)
+	for child in node.get_children():
+		_shader_materials_with_suffix_recursive(child, suffixes, materials, seen)
+
+
+func _append_matching_shader_material(
+	material: Material,
+	suffixes: Array[String],
+	materials: Array[ShaderMaterial],
+	seen: Dictionary
+) -> void:
+	var current := material
+	while current != null:
+		var shader_material := current as ShaderMaterial
+		if shader_material != null and shader_material.shader != null:
+			var instance_id := shader_material.get_instance_id()
+			if not seen.has(instance_id):
+				for suffix in suffixes:
+					if shader_material.shader.resource_path.ends_with(suffix):
+						seen[instance_id] = true
+						materials.append(shader_material)
+						break
+		current = current.next_pass
+
+
+func _gel_v8_preservation_error(by_family: Dictionary) -> String:
+	var unit := by_family.get("T") as Node
+	if unit == null:
+		return "Explicit V8 rollback contract requires CHAR-BASE-T"
+	var animator := unit.get_node_or_null("AnimationPlayer") as AnimationPlayer
+	if animator != null and animator.callback_mode_method != AnimationMixer.ANIMATION_CALLBACK_MODE_METHOD_DEFERRED:
+		return "Explicit V8 must preserve the scene's deferred method callback mode"
+	if bool(unit.call("request_combat_action", 8001, &"basic", &"BASIC-T", 0.0)):
+		return "Explicit V8 must not enable V8.1 tokenized combat presentation"
+	if int(unit.call("liquid_attachment_material_count")) != 0:
+		return "Explicit V8 must not bind V8.1 attachment deformation materials"
+	if unit.get_node_or_null("WeaponSocket/LiquidReleaseAnchor") != null:
+		return "Explicit V8 must preserve the legacy WeaponSocket hierarchy"
+	var materials := _shader_materials_with_suffix(unit, [
+		"wet_gel.gdshader", "jelly_shell.gdshader", "gel_eye.gdshader",
+	])
+	for material in materials:
+		var body_space: Variant = material.get_shader_parameter("liquid_body_space_enabled")
+		var turn: Variant = material.get_shader_parameter("liquid_turn_shear")
+		var contact: Variant = material.get_shader_parameter("liquid_contact_amount")
+		if body_space != null and not is_zero_approx(float(body_space)):
+			return "Explicit V8 must keep V8.1 body-space attachment deformation disabled"
+		if turn != null and not is_zero_approx(float(turn)):
+			return "Explicit V8 must keep V8.1 turn shear disabled"
+		if contact != null and not is_zero_approx(float(contact)):
+			return "Explicit V8 must keep V8.1 contact response disabled"
+	return ""
+
+
 func _has_wet_gel_mesh(node: Node) -> bool:
 	return _find_wet_gel_material(node) != null
 
 
-func _gel_membrane_error(gel: ShaderMaterial) -> String:
+func _gel_membrane_error(gel: ShaderMaterial, family: String = "") -> String:
 	var membrane := gel.next_pass as ShaderMaterial
 	if membrane == null or membrane.shader == null:
 		return "must attach a clear membrane next pass"
 	if not membrane.shader.resource_path.ends_with("jelly_shell.gdshader"):
 		return "must use the Compatibility-safe clear membrane shader"
-	var energy_error := _gel_shell_energy_error(membrane)
+	var energy_error := _gel_shell_energy_error(membrane, family)
 	if not energy_error.is_empty():
 		return energy_error
 	if float(membrane.get_shader_parameter("shell_thickness")) <= 0.0:
@@ -1579,35 +2658,308 @@ func _gel_membrane_error(gel: ShaderMaterial) -> String:
 	return ""
 
 
-func _gel_shell_energy_error(shell: ShaderMaterial) -> String:
+func _gel_shell_energy_error(shell: ShaderMaterial, family: String = "") -> String:
+	if _GelProfiles.v8_6_enabled() and family == "T":
+		return _gel_v8_6_shell_error(shell)
+	if _GelProfiles.reference_sculpt_behavior_enabled():
+		return _gel_v8_5_shell_error(shell)
+	if _GelProfiles.v8_4_enabled():
+		return _gel_v8_4_shell_error(shell)
+	if _GelProfiles.single_mass_enabled():
+		return _gel_v8_3_shell_error(shell)
+	if _GelProfiles.v8_2_enabled():
+		return _gel_v8_2_shell_error(shell)
+	if _GelProfiles.gummy_glass_enabled():
+		return _gel_v7_shell_error(shell)
+	if _GelProfiles.banner_match_enabled():
+		return _gel_banner_shell_error(shell)
 	for required_parameter in [
 		"shell_energy_scale",
 		"shell_diffuse_strength",
 		"shell_specular_level",
 		"shell_emission_limit",
 		"shell_alpha_limit",
+		"studio_card_broadening",
+		"studio_card_tail_cut",
 	]:
 		if shell.get_shader_parameter(required_parameter) == null:
-			return "clear membrane must expose the V5 energy bounds"
+			return "clear membrane must expose the V5 energy bound %s" % required_parameter
 	var shell_energy := float(shell.get_shader_parameter("shell_energy_scale"))
 	var shell_diffuse := float(shell.get_shader_parameter("shell_diffuse_strength"))
 	var shell_specular := float(shell.get_shader_parameter("shell_specular_level"))
 	var shell_emission := float(shell.get_shader_parameter("shell_emission_limit"))
 	var shell_alpha := float(shell.get_shader_parameter("shell_alpha_limit"))
-	if shell_energy < 0.36 or shell_energy > 0.40:
-		return "clear membrane edge energy must stay in the accepted V5 window"
-	if shell_diffuse < 0.20 or shell_diffuse > 0.24:
-		return "clear membrane diffuse tint must stay in the accepted V5 window"
-	if shell_specular < 0.36 or shell_specular > 0.40:
-		return "clear membrane specular must stay in the accepted V5 window"
-	if shell_emission < 0.015 or shell_emission > 0.025:
-		return "clear membrane emission must stay in the accepted V5 anti-neon window"
-	if shell_alpha < 0.22 or shell_alpha > 0.26:
-		return "clear membrane alpha must stay in the accepted V5 boundary window"
+	if shell_energy < 0.40 or shell_energy > 0.44:
+		return "clear membrane edge energy must stay in the accepted V5.3 window"
+	if shell_diffuse < 0.16 or shell_diffuse > 0.20:
+		return "clear membrane diffuse tint must stay in the accepted V5.3 window"
+	if shell_specular < 0.46 or shell_specular > 0.50:
+		return "clear membrane specular must stay in the accepted V5.3 window"
+	if shell_emission < 0.020 or shell_emission > 0.030:
+		return "clear membrane emission must stay in the accepted V5.3 anti-neon window"
+	if shell_alpha < 0.27 or shell_alpha > 0.29:
+		return "clear membrane alpha must stay in the accepted V5.3 boundary window"
+	if not is_zero_approx(float(shell.get_shader_parameter("studio_card_broadening"))):
+		return "V5 clear membrane must keep V8.4 card broadening inert"
+	if not is_zero_approx(float(shell.get_shader_parameter("studio_card_tail_cut"))):
+		return "V5 clear membrane must keep V8.4 card-tail remap inert"
 	return ""
 
 
-func _gel_surface_noise_error(gel: ShaderMaterial) -> String:
+func _gel_v8_5_shell_error(shell: ShaderMaterial) -> String:
+	var inherited_error := _gel_v8_4_shell_error(shell, 1.0, {
+		"face_alpha": 0.0007,
+		"edge_alpha": 0.12,
+		"edge_power": 4.0,
+		"shell_roughness": 0.024,
+		"rim_emission": 0.025,
+		"shell_thickness": 0.007,
+	})
+	if not inherited_error.is_empty():
+		return inherited_error.replace("V8.4", "V8.5")
+	for marker in ["liquid_wobble_surface_normal"]:
+		if not shell.shader.code.contains(marker):
+			return "V8.5 membrane lost shader marker %s" % marker
+	return ""
+
+
+func _gel_v8_6_shell_error(shell: ShaderMaterial) -> String:
+	var inherited_error := _gel_v8_4_shell_error(shell, 1.0, {
+		"shell_energy_scale": 0.56,
+		"shell_diffuse_strength": 0.010,
+		"shell_specular_level": 0.92,
+		"shell_emission_limit": 0.040,
+		"shell_alpha_limit": 0.22,
+		"shell_white_mix": 0.44,
+		"studio_reflection_strength": 0.64,
+		"studio_reflection_alpha": 0.030,
+		"studio_reflection_budget": 0.13,
+		"studio_streak_strength": 0.58,
+		"studio_card_broadening": 0.78,
+		"studio_card_tail_cut": 0.16,
+		"face_alpha": 0.0010,
+		"edge_alpha": 0.18,
+		"edge_power": 3.25,
+		"shell_roughness": 0.032,
+		"rim_emission": 0.040,
+		"shell_thickness": 0.0065,
+	})
+	if not inherited_error.is_empty():
+		return inherited_error.replace("V8.4", "V8.6")
+	if not shell.shader.code.contains("liquid_wobble_surface_normal"):
+		return "V8.6 membrane lost its coherent surface-normal marker"
+	return ""
+
+
+func _gel_v8_4_shell_error(
+	shell: ShaderMaterial,
+	expected_normal_follow: float = 0.0,
+	expected_overrides: Dictionary = {}
+) -> String:
+	var expected := {
+		"shell_energy_scale": 0.50,
+		"shell_diffuse_strength": 0.016,
+		"shell_specular_level": 0.86,
+		"shell_emission_limit": 0.028,
+		"shell_alpha_limit": 0.28,
+		"shell_white_mix": 0.24,
+		"studio_reflection_strength": 0.68,
+		"studio_reflection_alpha": 0.032,
+		"studio_reflection_budget": 0.12,
+		"studio_streak_strength": 0.64,
+		"studio_card_broadening": 0.72,
+		"studio_card_tail_cut": 0.32,
+		"face_alpha": 0.0010,
+		"edge_alpha": 0.30,
+		"edge_power": 3.35,
+		"shell_roughness": 0.018,
+		"rim_emission": 0.08,
+		"shell_thickness": 0.012,
+		"liquid_wobble_strength": 0.012,
+		"liquid_wobble_speed": 0.78,
+		"liquid_wobble_scale": 2.40,
+		"liquid_wobble_normal_follow": expected_normal_follow,
+	}
+	for parameter in expected_overrides:
+		expected[parameter] = expected_overrides[parameter]
+	for parameter in expected:
+		if shell.get_shader_parameter(parameter) == null:
+			return "V8.4 reference membrane must expose %s" % parameter
+		if not is_equal_approx(
+			float(shell.get_shader_parameter(parameter)), float(expected[parameter])
+		):
+			return "V8.4 reference membrane %s drifted" % parameter
+	var shell_source := shell.shader.code
+	if not shell_source.contains("liquid_wobble_strength"):
+		return "V8.4 membrane must share the core's body-space wobble"
+	if not shell_source.contains("studio_card_tail_cut > 0.0"):
+		return "V8.4 membrane must gate its card-tail remap behind the rollback zero"
+	return ""
+
+
+func _gel_v8_3_shell_error(shell: ShaderMaterial) -> String:
+	var expected := {
+		"shell_energy_scale": 0.72,
+		"shell_diffuse_strength": 0.035,
+		"shell_specular_level": 0.90,
+		"shell_emission_limit": 0.065,
+		"shell_alpha_limit": 0.44,
+		"shell_white_mix": 0.34,
+		"studio_reflection_strength": 0.58,
+		"studio_reflection_alpha": 0.050,
+		"studio_reflection_budget": 0.072,
+		"studio_streak_strength": 0.68,
+		"studio_card_broadening": 0.0,
+		"studio_card_tail_cut": 0.0,
+		"face_alpha": 0.0022,
+		"edge_alpha": 0.56,
+		"edge_power": 2.30,
+		"shell_roughness": 0.015,
+		"rim_emission": 0.32,
+		"shell_thickness": 0.018,
+	}
+	for parameter in expected:
+		if shell.get_shader_parameter(parameter) == null:
+			return "V8.3 clean membrane must expose %s" % parameter
+		if not is_equal_approx(
+			float(shell.get_shader_parameter(parameter)), float(expected[parameter])
+		):
+			return "V8.3 clean membrane %s drifted" % parameter
+	return ""
+
+
+func _gel_v8_2_shell_error(shell: ShaderMaterial) -> String:
+	var expected := {
+		"shell_energy_scale": 0.72,
+		"shell_diffuse_strength": 0.035,
+		"shell_specular_level": 0.90,
+		"shell_emission_limit": 0.065,
+		"shell_alpha_limit": 0.44,
+		"shell_white_mix": 0.34,
+		"studio_reflection_strength": 0.58,
+		"studio_reflection_alpha": 0.050,
+		"studio_reflection_budget": 0.072,
+		"studio_streak_strength": 0.68,
+		"studio_card_broadening": 0.0,
+		"studio_card_tail_cut": 0.0,
+	}
+	for parameter in expected:
+		if shell.get_shader_parameter(parameter) == null:
+			return "V8.2 clear membrane must expose %s" % parameter
+		if not is_equal_approx(float(shell.get_shader_parameter(parameter)), float(expected[parameter])):
+			return "V8.2 clear membrane %s drifted from its bounded profile" % parameter
+	var face_alpha := float(shell.get_shader_parameter("face_alpha"))
+	var edge_alpha := float(shell.get_shader_parameter("edge_alpha"))
+	var edge_power := float(shell.get_shader_parameter("edge_power"))
+	var roughness := float(shell.get_shader_parameter("shell_roughness"))
+	var thickness := float(shell.get_shader_parameter("shell_thickness"))
+	var rim_emission := float(shell.get_shader_parameter("rim_emission"))
+	if face_alpha < 0.0017 or face_alpha > 0.0029:
+		return "V8.2 membrane face alpha must reveal the moving core"
+	if edge_alpha < 0.579 or edge_alpha > 0.621:
+		return "V8.2 membrane edge alpha escaped the clear dielectric window"
+	if edge_power < 2.19 or edge_power > 2.31:
+		return "V8.2 membrane edge power drifted"
+	if roughness < 0.011 or roughness > 0.015:
+		return "V8.2 membrane roughness escaped the glossy reference window"
+	if thickness < 0.018 or thickness > 0.022:
+		return "V8.2 membrane must remain one thin expanded envelope"
+	if rim_emission < 0.35 or rim_emission > 0.37:
+		return "V8.2 membrane rim emission escaped its bounded cue"
+	return ""
+
+
+func _gel_v7_shell_error(shell: ShaderMaterial) -> String:
+	var expected := {
+		"shell_energy_scale": 0.74,
+		"shell_diffuse_strength": 0.045,
+		"shell_specular_level": 0.86,
+		"shell_emission_limit": 0.075,
+		"shell_alpha_limit": 0.46,
+		"shell_white_mix": 0.38,
+		"studio_reflection_strength": 0.52,
+		"studio_reflection_alpha": 0.055,
+		"studio_reflection_budget": 0.075,
+		"studio_streak_strength": 0.62,
+		"studio_card_broadening": 0.0,
+		"studio_card_tail_cut": 0.0,
+	}
+	for parameter in expected:
+		if shell.get_shader_parameter(parameter) == null:
+			return "V7 clear membrane must expose %s" % parameter
+		if not is_equal_approx(float(shell.get_shader_parameter(parameter)), float(expected[parameter])):
+			return "V7 clear membrane %s drifted from its additive profile" % parameter
+	var face_alpha := float(shell.get_shader_parameter("face_alpha"))
+	if face_alpha < 0.0029 or face_alpha > 0.0041:
+		return "V7 authored membrane face alpha must preserve the clear core"
+	var edge_alpha := float(shell.get_shader_parameter("edge_alpha"))
+	if edge_alpha < 0.549 or edge_alpha > 0.561:
+		return "V7 authored membrane edge alpha drifted"
+	return ""
+
+
+func _gel_banner_shell_error(shell: ShaderMaterial) -> String:
+	for required_parameter in [
+		"shell_energy_scale",
+		"shell_diffuse_strength",
+		"shell_specular_level",
+		"shell_emission_limit",
+		"shell_alpha_limit",
+		"shell_white_mix",
+		"studio_reflection_strength",
+		"studio_reflection_alpha",
+		"studio_reflection_budget",
+		"studio_card_broadening",
+		"studio_card_tail_cut",
+	]:
+		if shell.get_shader_parameter(required_parameter) == null:
+			return "V6 clear membrane must expose its banner-match energy controls"
+	if not is_equal_approx(float(shell.get_shader_parameter("shell_energy_scale")), 0.68):
+		return "V6 clear membrane energy must remain at the reviewed banner-match value"
+	if not is_equal_approx(float(shell.get_shader_parameter("shell_diffuse_strength")), 0.07):
+		return "V6 clear membrane diffuse tint must remain subordinate to reflection"
+	if not is_equal_approx(float(shell.get_shader_parameter("shell_specular_level")), 0.78):
+		return "V6 clear membrane specular must preserve the wet dielectric response"
+	if not is_equal_approx(float(shell.get_shader_parameter("shell_emission_limit")), 0.065):
+		return "V6 clear membrane emission must keep its Compatibility-safe ceiling"
+	if not is_equal_approx(float(shell.get_shader_parameter("shell_alpha_limit")), 0.40):
+		return "V6 clear membrane alpha must keep the reviewed silhouette boundary"
+	if not is_equal_approx(float(shell.get_shader_parameter("shell_white_mix")), 0.28):
+		return "V6 clear membrane must retain the colourless outer-film cue"
+	if not is_equal_approx(float(shell.get_shader_parameter("studio_reflection_strength")), 0.42):
+		return "V6 clear membrane must retain its analytic softbox reflection"
+	if not is_equal_approx(float(shell.get_shader_parameter("studio_reflection_alpha")), 0.045):
+		return "V6 clear membrane softbox alpha drifted"
+	if not is_equal_approx(float(shell.get_shader_parameter("studio_reflection_budget")), 0.065):
+		return "V6 clear membrane softbox energy exceeded its reviewed budget"
+	if not is_zero_approx(float(shell.get_shader_parameter("studio_card_broadening"))):
+		return "V6 clear membrane must keep V8.4 card broadening inert"
+	if not is_zero_approx(float(shell.get_shader_parameter("studio_card_tail_cut"))):
+		return "V6 clear membrane must keep V8.4 card-tail remap inert"
+	return ""
+
+
+func _gel_surface_noise_error(gel: ShaderMaterial, family: String = "") -> String:
+	if not _GelProfiles.v8_enabled():
+		var legacy_motion_error := _gel_legacy_liquid_motion_error(gel)
+		if not legacy_motion_error.is_empty():
+			return legacy_motion_error
+	if _GelProfiles.v8_6_enabled() and family == "T":
+		return _gel_v8_6_surface_error(gel, family)
+	if _GelProfiles.reference_sculpt_behavior_enabled():
+		return _gel_v8_5_surface_error(gel, family)
+	if _GelProfiles.v8_4_enabled():
+		return _gel_v8_4_surface_error(gel, family)
+	if _GelProfiles.v8_3_enabled():
+		return _gel_v8_3_surface_error(gel, family)
+	if _GelProfiles.v8_2_enabled():
+		return _gel_v8_2_surface_error(gel, family)
+	if _GelProfiles.v8_enabled():
+		return _gel_v8_surface_error(gel)
+	if _GelProfiles.v7_enabled():
+		return _gel_v7_surface_error(gel)
+	if _GelProfiles.banner_match_enabled():
+		return _gel_banner_surface_error(gel)
 	var light_semantics_error := _gel_light_semantics_error(gel)
 	if not light_semantics_error.is_empty():
 		return light_semantics_error
@@ -1636,17 +2988,17 @@ func _gel_surface_noise_error(gel: ShaderMaterial) -> String:
 			return "must expose the V5 body response controls"
 	var body_exposure_value: Variant = gel.get_shader_parameter("body_exposure_scale")
 	var body_exposure_scale := float(body_exposure_value)
-	if body_exposure_scale < 0.72 or body_exposure_scale > 0.90:
-		return "V5 body exposure must preserve midtone and deep-core separation"
+	if body_exposure_scale < 0.86 or body_exposure_scale > 0.92:
+		return "V5.3 body exposure must preserve midtone and deep-core separation"
 	var core_glow := float(gel.get_shader_parameter("core_glow"))
-	if core_glow < 0.33 or core_glow > 0.37:
-		return "V5 base-pass volume fill must stay inside the measured core/ribbon window"
+	if core_glow < 0.42 or core_glow > 0.46:
+		return "V5.3 base-pass volume fill must stay inside the measured core/ribbon window"
 	var interior_budget := float(gel.get_shader_parameter("interior_budget"))
-	if interior_budget < 0.48 or interior_budget > 0.52:
-		return "V5 interior budget must remain below the zero-light readability ceiling"
+	if interior_budget < 0.58 or interior_budget > 0.62:
+		return "V5.3 interior budget must remain below the zero-light readability ceiling"
 	var thin_budget_scale := float(gel.get_shader_parameter("thin_budget_scale"))
-	if thin_budget_scale < 0.65 or thin_budget_scale > 0.82:
-		return "V5 thin-part ceiling is outside the non-neon transmission range"
+	if thin_budget_scale < 0.82 or thin_budget_scale > 0.86:
+		return "V5.3 thin-part ceiling is outside the non-neon transmission range"
 	var thickness_contrast := float(gel.get_shader_parameter("thickness_contrast"))
 	if thickness_contrast < 0.04 or thickness_contrast > 0.14:
 		return "V5 macro thickness contrast is outside the restrained gel range"
@@ -1666,8 +3018,8 @@ func _gel_surface_noise_error(gel: ShaderMaterial) -> String:
 	if membrane_irregularity < 0.55:
 		return "V5 membrane cells must use organic amplitude breakup"
 	var wet_spec_breakup := float(gel.get_shader_parameter("wet_spec_breakup"))
-	if wet_spec_breakup < 0.15 or wet_spec_breakup > 0.45:
-		return "V5 wet specular breakup is outside the restrained range"
+	if wet_spec_breakup < 0.06 or wet_spec_breakup > 0.12:
+		return "V5.3 wet specular breakup is outside the smooth-gel range"
 	var coat_tint := float(gel.get_shader_parameter("coat_tint"))
 	if coat_tint < 0.08 or coat_tint > 0.30:
 		return "V5 tight wet highlight must stay restrained and family-tinted"
@@ -1689,8 +3041,8 @@ func _gel_surface_noise_error(gel: ShaderMaterial) -> String:
 	if authored_scale < 0.40 or authored_scale > 0.50:
 		return "V5.1 authored height scale is outside the enlarged-pebble window"
 	var authored_depth := float(gel.get_shader_parameter("authored_height_depth"))
-	if authored_depth < 0.0030 or authored_depth > 0.0060:
-		return "V5.1 authored height depth is outside the restrained wet-skin window"
+	if authored_depth < 0.0010 or authored_depth > 0.0020:
+		return "V5.3 authored height depth is outside the smooth wet-skin window"
 	var authored_blend := float(gel.get_shader_parameter("authored_height_blend"))
 	if authored_blend < 1.5 or authored_blend > 2.5:
 		return "V5.1 triplanar blend is outside the seam-safe window"
@@ -1713,6 +3065,805 @@ func _gel_surface_noise_error(gel: ShaderMaterial) -> String:
 	]:
 		if not is_zero_approx(float(gel.get_shader_parameter(retired_parameter))):
 			return "V5.1 retired circular/island detail must remain disabled"
+	return ""
+
+
+func _gel_legacy_liquid_motion_error(gel: ShaderMaterial) -> String:
+	for parameter in [
+		"liquid_flow_strength",
+		"liquid_flow_idle_speed",
+		"liquid_flow_move_boost",
+		"liquid_flow_advection",
+		"liquid_flow_warp",
+		"liquid_flow_emission",
+		"liquid_flow_budget",
+		"liquid_flow_phase",
+		"liquid_flow_motion_mix",
+		"liquid_slime_strength",
+		"liquid_slime_thinness",
+		"liquid_core_color_mix",
+		"liquid_core_roughness_mix",
+		"liquid_bubble_advection",
+		"liquid_body_deform_strength",
+		"liquid_body_squash",
+	]:
+		if gel.get_shader_parameter(parameter) == null:
+			return "preserved gel looks must expose the inert V8 %s control" % parameter
+		if not is_zero_approx(float(gel.get_shader_parameter(parameter))):
+			return "V5/V6/V7 must keep V8 liquid motion disabled at %s" % parameter
+	return _gel_v8_4_extension_rollback_error(gel, "V5/V6/V7")
+
+
+func _gel_v8_4_extension_rollback_error(gel: ShaderMaterial, selector: String) -> String:
+	for parameter in [
+		"liquid_laminar_strength",
+		"liquid_laminar_thinness",
+		"liquid_laminar_color_mix",
+		"liquid_laminar_roughness_mix",
+		"liquid_laminar_emission",
+		"liquid_laminar_budget",
+		"liquid_wobble_strength",
+		"liquid_wobble_speed",
+		"liquid_wobble_phase",
+		"liquid_wobble_normal_follow",
+		"orange_peel_micro_depth",
+		"orange_peel_micro_grazing",
+		"studio_card_broadening",
+		"studio_card_tail_cut",
+	]:
+		if gel.get_shader_parameter(parameter) == null:
+			return "%s rollback must expose inert V8.4 control %s" % [selector, parameter]
+		if not is_zero_approx(float(gel.get_shader_parameter(parameter))):
+			return "%s rollback must keep V8.4 control %s disabled" % [selector, parameter]
+	for scale_parameter in ["liquid_laminar_scale", "liquid_wobble_scale"]:
+		if gel.get_shader_parameter(scale_parameter) == null:
+			return "%s rollback must expose inert V8.4 control %s" % [
+				selector, scale_parameter,
+			]
+		if not is_equal_approx(float(gel.get_shader_parameter(scale_parameter)), 1.0):
+			return "%s rollback default %s drifted" % [selector, scale_parameter]
+	if gel.get_shader_parameter("orange_peel_micro_scale") == null:
+		return "%s rollback must expose inert V8.5 orange-peel scale" % selector
+	if not is_equal_approx(float(gel.get_shader_parameter("orange_peel_micro_scale")), 86.0):
+		return "%s rollback orange-peel scale drifted" % selector
+	return ""
+
+
+func _gel_v8_5_surface_error(gel: ShaderMaterial, family: String) -> String:
+	return _gel_reference_sculpt_surface_error(gel, family, {}, "V8.5")
+
+
+func _gel_v8_6_surface_error(gel: ShaderMaterial, family: String) -> String:
+	return _gel_reference_sculpt_surface_error(gel, family, {
+		"albedo_gain": 1.84,
+		"body_exposure_scale": 0.88,
+		"thickness_contrast": 0.39,
+		"coat_roughness": 0.058,
+		"coat_strength": 1.18,
+		"spec_energy": 0.10,
+		"wet_spec_breakup": 0.12,
+		"studio_reflection_strength": 0.64,
+		"studio_reflection_budget": 0.20,
+		"studio_reflection_edge_share": 0.18,
+		"studio_streak_strength": 0.58,
+		"studio_card_broadening": 0.78,
+		"studio_card_tail_cut": 0.16,
+		"liquid_core_color_mix": 0.32,
+		"liquid_core_roughness_mix": 0.22,
+		"liquid_laminar_color_mix": 0.22,
+		"liquid_laminar_roughness_mix": 0.20,
+		"authored_height_scale": 0.36,
+		"authored_height_depth": 0.00090,
+		"authored_height_lod_bias": 0.84,
+		"membrane_grazing_floor": 0.44,
+		"membrane_grazing_power": 1.45,
+		"orange_peel_micro_depth": 0.00060,
+		"orange_peel_micro_scale": 42.0,
+		"orange_peel_micro_grazing": 0.58,
+	}, "V8.6")
+
+
+func _gel_reference_sculpt_surface_error(
+	gel: ShaderMaterial,
+	family: String,
+	expected_overrides: Dictionary,
+	revision: String
+) -> String:
+	var expected := {
+		"albedo_gain": 1.82,
+		"body_roughness": 0.17,
+		"coat_roughness": 0.038,
+		"coat_strength": 1.44,
+		"spec_energy": 0.11,
+		"studio_reflection_strength": 0.52,
+		"studio_reflection_budget": 0.14,
+		"studio_reflection_edge_share": 0.38,
+		"studio_streak_strength": 0.28,
+		"studio_card_broadening": 0.58,
+		"studio_card_tail_cut": 0.36,
+		"authored_height_scale": 0.30,
+		"authored_height_depth": 0.0014,
+		"authored_height_lod_bias": 0.50,
+		"membrane_grazing_floor": 1.0,
+		"membrane_grazing_power": 1.0,
+		"liquid_flow_emission": 0.12,
+		"liquid_flow_budget": 0.020,
+		"liquid_laminar_color_mix": 0.16,
+		"liquid_laminar_roughness_mix": 0.30,
+		"liquid_laminar_emission": 0.050,
+		"liquid_laminar_budget": 0.012,
+		"liquid_wobble_normal_follow": 1.0,
+		"orange_peel_micro_depth": 0.0012,
+		"orange_peel_micro_scale": 34.0,
+		"orange_peel_micro_grazing": 0.30,
+	}
+	for parameter in expected_overrides:
+		expected[parameter] = expected_overrides[parameter]
+	var expected_core_mix := float(expected_overrides.get("liquid_core_color_mix", 0.25))
+	var inherited_error := _gel_v8_4_surface_error(gel, family, expected, expected_core_mix)
+	if not inherited_error.is_empty():
+		return inherited_error.replace("V8.4", revision)
+	var exact_v8_5 := {
+		"wet_spec_breakup": 0.36,
+		"liquid_core_roughness_mix": 0.30,
+	}
+	for parameter in exact_v8_5:
+		var expected_value: float = float(
+			expected_overrides.get(parameter, exact_v8_5[parameter])
+		)
+		if not is_equal_approx(
+			float(gel.get_shader_parameter(parameter)), expected_value
+		):
+			return "%s family %s parameter %s drifted" % [revision, family, parameter]
+	var expected_studio_colors := {
+		"studio_key_color": Color(1.0, 0.9569, 0.8667, 1.0),
+		"studio_cool_color": Color(1.0, 0.8863, 0.7412, 1.0),
+		"studio_warm_color": Color(1.0, 0.7098, 0.4196, 1.0),
+	}
+	for parameter in expected_studio_colors:
+		var actual_color := gel.get_shader_parameter(parameter) as Color
+		if not actual_color.is_equal_approx(expected_studio_colors[parameter]):
+			return "%s family %s warm-card colour %s drifted" % [revision, family, parameter]
+	if family == "T":
+		var expected_t_colors := {
+			"body_color": Color(1.0, 0.2392, 0.0, 1.0),
+			"deep_color": Color(0.7882, 0.0941, 0.0, 1.0),
+			"transmit_color": Color(1.0, 0.4941, 0.0510, 1.0),
+			"rim_color": Color(1.0, 0.6118, 0.1373, 1.0),
+		}
+		if revision == "V8.6":
+			expected_t_colors = {
+				"body_color": Color(1.0, 0.185, 0.0, 1.0),
+				"deep_color": Color(0.80, 0.052, 0.0, 1.0),
+				"transmit_color": Color(1.0, 0.465, 0.025, 1.0),
+				"rim_color": Color(1.0, 0.59, 0.085, 1.0),
+			}
+		for parameter in expected_t_colors:
+			var actual_color := gel.get_shader_parameter(parameter) as Color
+			if not actual_color.is_equal_approx(expected_t_colors[parameter]):
+				return "%s T amber reference colour %s drifted" % [revision, parameter]
+	for source_marker in [
+		"liquid_wobble_surface_normal",
+		"orange_peel_micro_height",
+		"orange_peel_micro_depth > 0.00001",
+	]:
+		if not gel.shader.code.contains(source_marker):
+			return "%s shader lost coherent-surface marker %s" % [revision, source_marker]
+	return ""
+
+
+func _gel_v8_4_surface_error(
+	gel: ShaderMaterial,
+	family: String,
+	expected_overrides: Dictionary = {},
+	expected_core_mix: float = -1.0
+) -> String:
+	var light_semantics_error := _gel_light_semantics_error(gel)
+	if not light_semantics_error.is_empty():
+		return light_semantics_error
+	var expected := {
+		"albedo_gain": 1.84,
+		"body_exposure_scale": 0.86,
+		"body_roughness": 0.18,
+		"coat_roughness": 0.034,
+		"coat_strength": 1.65,
+		"coat_tint": 0.06,
+		"spec_energy": 0.14,
+		"core_glow": 0.12,
+		"interior_budget": 0.22,
+		"thickness_contrast": 0.33,
+		"body_budget": 1.36,
+		"thin_glow": 0.22,
+		"transmit_strength": 1.28,
+		"transmit_tint": 0.38,
+		"studio_reflection_strength": 0.72,
+		"studio_reflection_budget": 0.22,
+		"studio_reflection_edge_share": 0.25,
+		"studio_streak_strength": 0.64,
+		"studio_card_broadening": 0.72,
+		"studio_card_tail_cut": 0.32,
+		"authored_height_scale": 0.46,
+		"authored_height_depth": 0.00145,
+		"authored_height_lod_bias": 0.74,
+		"membrane_grazing_floor": 0.035,
+		"membrane_grazing_power": 1.75,
+		"authored_caustic_strength": 0.0,
+		"authored_caustic_budget": 0.0,
+		"authored_fiber_strength": 0.0,
+		"authored_fiber_budget": 0.0,
+		"liquid_flow_strength": 0.82,
+		"liquid_flow_idle_speed": 0.28,
+		"liquid_flow_move_boost": 0.42,
+		"liquid_flow_advection": 0.30,
+		"liquid_flow_warp": 0.12,
+		"liquid_flow_emission": 0.08,
+		"liquid_flow_budget": 0.014,
+		"liquid_slime_strength": 0.82,
+		"liquid_slime_scale": 0.78,
+		"liquid_slime_threshold": 0.48,
+		"liquid_slime_softness": 0.18,
+		"liquid_slime_thinness": 0.09,
+		"liquid_body_deform_strength": 0.70,
+		"liquid_laminar_strength": 0.78,
+		"liquid_laminar_scale": 1.55,
+		"liquid_laminar_thinness": 0.10,
+		"liquid_laminar_color_mix": 0.26,
+		"liquid_laminar_roughness_mix": 0.46,
+		"liquid_laminar_emission": 0.035,
+		"liquid_laminar_budget": 0.008,
+		"liquid_wobble_strength": 0.012,
+		"liquid_wobble_speed": 0.78,
+		"liquid_wobble_scale": 2.40,
+		"liquid_wobble_normal_follow": 0.0,
+		"orange_peel_micro_depth": 0.0,
+		"orange_peel_micro_scale": 86.0,
+		"orange_peel_micro_grazing": 0.0,
+		"bubble_density": 0.0,
+		"microbubble_density": 0.0,
+	}
+	for parameter in expected_overrides:
+		expected[parameter] = expected_overrides[parameter]
+	for parameter in expected:
+		if gel.get_shader_parameter(parameter) == null:
+			return "V8.4 reference volume must expose %s" % parameter
+		if not is_equal_approx(
+			float(gel.get_shader_parameter(parameter)), float(expected[parameter])
+		):
+			return "V8.4 family %s parameter %s drifted" % [family, parameter]
+	for disabled_flag in ["bubble_enabled", "microbubble_enabled", "inclusion_enabled"]:
+		if gel.get_shader_parameter(disabled_flag) == true:
+			return "V8.4 must not create detached cellular detail at %s" % disabled_flag
+	for zero_parameter in [
+		"bubble_depth",
+		"bubble_thinness",
+		"bubble_shell_shadow",
+		"bubble_emission",
+		"bubble_shell_emission",
+		"microbubble_depth",
+		"microbubble_thinness",
+		"microbubble_shell_shadow",
+		"microbubble_emission",
+		"microbubble_shell_emission",
+		"inclusion_depth",
+		"inclusion_emission",
+		"authored_fleck_strength",
+		"authored_inclusion_strength",
+	]:
+		if not is_zero_approx(float(gel.get_shader_parameter(zero_parameter))):
+			return "V8.4 must keep detached/interior particle cues zero at %s" % zero_parameter
+	var core_mix := float(gel.get_shader_parameter("liquid_core_color_mix"))
+	if expected_core_mix >= 0.0 and not is_equal_approx(core_mix, expected_core_mix):
+		return "V8.4 family %s moving optical core drifted" % family
+	if expected_core_mix < 0.0 and (core_mix < 0.34 or core_mix > 0.44):
+		return "V8.4 family %s moving optical core is outside the cohesive range" % family
+	if gel.get_shader_parameter("authored_height_enabled") != true:
+		return "V8.4 must retain its mip-filtered wet-skin relief"
+	var authored_height := gel.get_shader_parameter("authored_height_tex") as Texture2D
+	if authored_height == null or authored_height.resource_path != "res://characters/gel/jelly_micro_height.png":
+		return "V8.4 must reuse the reproducible authored height resource"
+	var authored_image := authored_height.get_image()
+	if authored_image == null or not authored_image.has_mipmaps():
+		return "V8.4 wet-skin relief must retain mipmaps"
+	var shader_source := gel.shader.code
+	for source_marker in [
+		"TIME * (",
+		"liquid_laminar_strength",
+		"liquid_laminar_mask",
+		"liquid_wobble_strength",
+		"studio_card_broadening",
+		"studio_card_tail_cut",
+		"authored_inclusion_strength > 0.001",
+		"authored_caustic_strength > 0.001",
+	]:
+		if not shader_source.contains(source_marker):
+			return "V8.4 shader lost continuous-flow marker %s" % source_marker
+	if shader_source.contains("hint_screen_texture") or shader_source.contains("raymarch"):
+		return "V8.4 reference volume must remain Compatibility/Web safe"
+	return ""
+
+
+func _gel_v8_3_surface_error(gel: ShaderMaterial, family: String) -> String:
+	var extension_error := _gel_v8_4_extension_rollback_error(gel, "V8.3")
+	if not extension_error.is_empty():
+		return extension_error
+	var light_semantics_error := _gel_light_semantics_error(gel)
+	if not light_semantics_error.is_empty():
+		return light_semantics_error
+	var expected := {
+		"authored_fleck_strength": 0.0,
+		"authored_fleck_budget": 0.0,
+		"authored_inclusion_strength": 0.0,
+		"authored_inclusion_budget": 0.0,
+		"authored_caustic_strength": 0.08,
+		"authored_caustic_budget": 0.018,
+		"authored_fiber_strength": 0.12,
+		"authored_fiber_budget": 0.026,
+		"authored_height_depth": 0.0008,
+		"detail_emission_scale": 0.06,
+		"liquid_flow_emission": 0.26,
+		"liquid_flow_budget": 0.046,
+		"liquid_body_deform_strength": 0.64,
+		"bubble_density": 0.0,
+		"microbubble_density": 0.0,
+	}
+	for parameter in expected:
+		if gel.get_shader_parameter(parameter) == null:
+			return "V8.3 clean volume must expose %s" % parameter
+		if not is_equal_approx(
+			float(gel.get_shader_parameter(parameter)), float(expected[parameter])
+		):
+			return "V8.3 family %s clean-volume parameter %s drifted" % [family, parameter]
+	for disabled_flag in ["bubble_enabled", "microbubble_enabled", "inclusion_enabled"]:
+		if gel.get_shader_parameter(disabled_flag) == true:
+			return "V8.3 must disable loose cellular detail at %s" % disabled_flag
+	for zero_parameter in [
+		"bubble_depth",
+		"bubble_thinness",
+		"bubble_shell_shadow",
+		"bubble_emission",
+		"bubble_shell_emission",
+		"microbubble_depth",
+		"microbubble_thinness",
+		"microbubble_shell_shadow",
+		"microbubble_emission",
+		"microbubble_shell_emission",
+		"inclusion_depth",
+		"inclusion_emission",
+	]:
+		if not is_zero_approx(float(gel.get_shader_parameter(zero_parameter))):
+			return "V8.3 must zero loose cellular detail at %s" % zero_parameter
+	if gel.get_shader_parameter("authored_height_enabled") != true:
+		return "V8.3 must retain its shallow mipmapped wet-skin relief"
+	var authored_height := gel.get_shader_parameter("authored_height_tex") as Texture2D
+	if authored_height == null or authored_height.resource_path != "res://characters/gel/jelly_micro_height.png":
+		return "V8.3 must reuse the reproducible authored height resource"
+	var authored_image := authored_height.get_image()
+	if authored_image == null or not authored_image.has_mipmaps():
+		return "V8.3 authored wet-skin relief must retain mipmaps"
+	var shader_source := gel.shader.code
+	if not shader_source.contains("TIME * ("):
+		return "V8.3 must retain uninterrupted idle liquid circulation"
+	if not shader_source.contains("liquid_core_mask"):
+		return "V8.3 clean volume must retain its moving optical core"
+	if shader_source.contains("hint_screen_texture"):
+		return "V8.3 clean volume must remain Compatibility/Web safe"
+	return ""
+
+
+func _gel_v8_2_surface_error(gel: ShaderMaterial, family: String) -> String:
+	var extension_error := _gel_v8_4_extension_rollback_error(gel, "V8.2")
+	if not extension_error.is_empty():
+		return extension_error
+	var light_semantics_error := _gel_light_semantics_error(gel)
+	if not light_semantics_error.is_empty():
+		return light_semantics_error
+	var expected := {
+		# The accepted V8 optical/motion foundation remains in place. V8.2 lowers
+		# only the emissive flow budget and adds a normally-lit moving core.
+		"body_exposure_scale": 0.76,
+		"core_glow": 0.14,
+		"interior_budget": 0.30,
+		"thickness_contrast": 0.32,
+		"studio_reflection_strength": 0.74,
+		"studio_reflection_budget": 0.32,
+		"studio_streak_strength": 0.72,
+		"authored_fleck_strength": 0.10,
+		"authored_fleck_budget": 0.035,
+		"authored_inclusion_strength": 0.16,
+		"authored_inclusion_thinness": 0.060,
+		"authored_inclusion_budget": 0.045,
+		"authored_caustic_strength": 0.12,
+		"authored_caustic_budget": 0.025,
+		"authored_fiber_strength": 0.18,
+		"authored_fiber_scale": 0.18,
+		"authored_fiber_threshold": 0.30,
+		"authored_fiber_width": 0.016,
+		"authored_fiber_thinness": 0.035,
+		"authored_fiber_budget": 0.045,
+		"authored_fiber_lod_bias": 0.22,
+		"liquid_flow_strength": 0.78,
+		"liquid_flow_idle_speed": 0.21,
+		"liquid_flow_move_boost": 0.50,
+		"liquid_flow_advection": 0.25,
+		"liquid_flow_warp": 0.14,
+		"liquid_flow_emission": 0.30,
+		"liquid_flow_budget": 0.052,
+		"liquid_flow_motion_mix": 0.0,
+		"liquid_slime_strength": 0.94,
+		"liquid_slime_scale": 0.92,
+		"liquid_slime_threshold": 0.49,
+		"liquid_slime_softness": 0.14,
+		"liquid_slime_thinness": 0.15,
+		"liquid_body_deform_strength": 0.82,
+		"liquid_core_color_mix": 0.42,
+		"liquid_core_roughness_mix": 0.40,
+		"liquid_bubble_advection": 0.82,
+		"bubble_scale": 4.8,
+		"bubble_density": 0.12,
+		"bubble_radius_min": 0.15,
+		"bubble_radius_max": 0.30,
+		"bubble_jitter": 0.14,
+		"bubble_softness": 0.12,
+		"bubble_depth": 0.0004,
+		"bubble_thinness": 0.06,
+		"bubble_shell_shadow": 0.012,
+		"bubble_emission": 0.0,
+		"bubble_shell_emission": 0.012,
+	}
+	var family_expected := {
+		"T": {
+			"liquid_flow_phase": 0.43,
+			"liquid_core_color_mix": 0.70,
+			"liquid_core_roughness_mix": 0.55,
+			"liquid_bubble_advection": 0.90,
+			"bubble_scale": 4.8,
+			"bubble_density": 0.14,
+			"bubble_radius_min": 0.15,
+			"bubble_radius_max": 0.32,
+			"bubble_depth": 0.0004,
+			"bubble_thinness": 0.07,
+			"bubble_shell_shadow": 0.012,
+			"bubble_shell_emission": 0.012,
+		},
+		"B": {
+			"liquid_flow_phase": 1.31,
+			"liquid_core_color_mix": 0.78,
+			"liquid_core_roughness_mix": 0.60,
+			"liquid_bubble_advection": 0.92,
+			"bubble_scale": 4.6,
+			"bubble_density": 0.12,
+			"bubble_radius_min": 0.16,
+			"bubble_radius_max": 0.34,
+			"bubble_depth": 0.0004,
+			"bubble_thinness": 0.06,
+			"bubble_shell_shadow": 0.012,
+			"bubble_shell_emission": 0.012,
+		},
+		"M": {
+			"liquid_flow_phase": 2.17,
+			"liquid_core_color_mix": 0.50,
+			"liquid_core_roughness_mix": 0.44,
+			"liquid_bubble_advection": 0.80,
+			"bubble_scale": 4.8,
+			"bubble_density": 0.11,
+		},
+		"N": {
+			"liquid_flow_phase": 3.07,
+			"liquid_core_color_mix": 0.42,
+			"liquid_core_roughness_mix": 0.38,
+			"liquid_bubble_advection": 0.76,
+			"bubble_scale": 5.2,
+			"bubble_density": 0.10,
+		},
+		"A": {
+			"liquid_flow_phase": 3.91,
+			"liquid_core_color_mix": 0.46,
+			"liquid_core_roughness_mix": 0.40,
+			"liquid_bubble_advection": 0.78,
+			"bubble_scale": 5.0,
+			"bubble_density": 0.11,
+		},
+		"D": {
+			"liquid_flow_phase": 4.83,
+			"liquid_core_color_mix": 0.52,
+			"liquid_core_roughness_mix": 0.45,
+			"liquid_bubble_advection": 0.82,
+			"bubble_scale": 4.7,
+			"bubble_density": 0.13,
+		},
+	}
+	if not family_expected.has(family):
+		return "V8.2 surface audit requires an explicit six-family identity"
+	var family_values: Dictionary = family_expected[family]
+	for parameter in family_values:
+		expected[parameter] = family_values[parameter]
+	for parameter in expected:
+		if gel.get_shader_parameter(parameter) == null:
+			return "V8.2 living volume must expose %s" % parameter
+		if not is_equal_approx(float(gel.get_shader_parameter(parameter)), float(expected[parameter])):
+			return "V8.2 family %s parameter %s drifted" % [family, parameter]
+	if gel.get_shader_parameter("bubble_enabled") != true:
+		return "V8.2 must enable its single shared macro-bubble field"
+	if gel.get_shader_parameter("microbubble_enabled") == true:
+		return "V8.2 must keep the second procedural bubble field disabled"
+	for disabled_parameter in [
+		"microbubble_depth",
+		"microbubble_thinness",
+		"microbubble_shell_shadow",
+		"microbubble_emission",
+		"microbubble_shell_emission",
+		"inclusion_depth",
+		"inclusion_emission",
+	]:
+		if not is_zero_approx(float(gel.get_shader_parameter(disabled_parameter))):
+			return "V8.2 must keep duplicate procedural detail disabled at %s" % disabled_parameter
+	if gel.get_shader_parameter("authored_height_enabled") != true:
+		return "V8.2 must retain its mipmapped authored surface relief"
+	var authored_height := gel.get_shader_parameter("authored_height_tex") as Texture2D
+	if authored_height == null or authored_height.resource_path != "res://characters/gel/jelly_micro_height.png":
+		return "V8.2 must reuse the reproducible authored height resource"
+	var authored_image := authored_height.get_image()
+	if authored_image == null or not authored_image.has_mipmaps():
+		return "V8.2 authored surface relief must retain mipmaps"
+	var shader_source := gel.shader.code
+	if not shader_source.contains("bubble_position = mix("):
+		return "V8.2 macro bubbles must use the shared advected body coordinate"
+	if not shader_source.contains("liquid_core_mask"):
+		return "V8.2 moving core must affect normally-lit colour and roughness"
+	if not shader_source.contains("authored_height_triplanar(\n\t\t\tv_obj_pos"):
+		return "V8.2 surface relief must remain attached to primitive-local geometry"
+	if shader_source.contains("hint_screen_texture"):
+		return "V8.2 liquid volume must remain Compatibility/Web safe"
+	return ""
+
+
+func _gel_v8_surface_error(gel: ShaderMaterial) -> String:
+	var extension_error := _gel_v8_4_extension_rollback_error(
+		gel, "V8.1" if _GelProfiles.motion_truth_enabled() else "V8"
+	)
+	if not extension_error.is_empty():
+		return extension_error
+	var light_semantics_error := _gel_light_semantics_error(gel)
+	if not light_semantics_error.is_empty():
+		return light_semantics_error
+	var expected := {
+		# Optical response stays on the exact V7 foundation. Only the suspended
+		# detail density is reduced so broad V8 slime folds dominate the read.
+		"body_exposure_scale": 0.76,
+		"core_glow": 0.14,
+		"interior_budget": 0.30,
+		"thickness_contrast": 0.32,
+		"studio_reflection_strength": 0.74,
+		"studio_reflection_budget": 0.32,
+		"studio_streak_strength": 0.72,
+		"authored_fleck_strength": 0.18,
+		"authored_fleck_budget": 0.050,
+		"authored_inclusion_strength": 0.30,
+		"authored_inclusion_thinness": 0.060,
+		"authored_inclusion_budget": 0.070,
+		"authored_caustic_strength": 0.20,
+		"authored_caustic_budget": 0.040,
+		"authored_fiber_strength": 0.30,
+		"authored_fiber_scale": 0.18,
+		"authored_fiber_threshold": 0.30,
+		"authored_fiber_width": 0.016,
+		"authored_fiber_thinness": 0.035,
+		"authored_fiber_budget": 0.070,
+		"authored_fiber_lod_bias": 0.22,
+		"liquid_flow_strength": 0.78,
+		"liquid_flow_idle_speed": 0.21,
+		"liquid_flow_move_boost": 0.50,
+		"liquid_flow_advection": 0.25,
+		"liquid_flow_warp": 0.14,
+		"liquid_flow_emission": 0.46,
+		"liquid_flow_budget": 0.070,
+		"liquid_flow_motion_mix": 0.0,
+		"liquid_slime_strength": 0.94,
+		"liquid_slime_scale": 0.92,
+		"liquid_slime_threshold": 0.49,
+		"liquid_slime_softness": 0.14,
+		"liquid_slime_thinness": 0.15,
+		"liquid_body_deform_strength": 0.82,
+	}
+	for parameter in expected:
+		if gel.get_shader_parameter(parameter) == null:
+			return "V8 living-liquid body must expose %s" % parameter
+		if not is_equal_approx(float(gel.get_shader_parameter(parameter)), float(expected[parameter])):
+			return "V8 living-liquid body %s drifted from its additive profile" % parameter
+	var phase := float(gel.get_shader_parameter("liquid_flow_phase"))
+	if phase <= 0.0 or phase >= TAU:
+		return "V8 family phase must remain deterministic and inside one cycle"
+	if gel.get_shader_parameter("authored_height_enabled") != true:
+		return "V8 must retain the mipmapped authored texture source"
+	var authored_height := gel.get_shader_parameter("authored_height_tex") as Texture2D
+	if authored_height == null or authored_height.resource_path != "res://characters/gel/jelly_micro_height.png":
+		return "V8 must reuse the reproducible CC0 authored height resource"
+	var authored_image := authored_height.get_image()
+	if authored_image == null or not authored_image.has_mipmaps():
+		return "V8 authored detail must retain generated mipmaps"
+	for v8_2_parameter in [
+		"liquid_core_color_mix",
+		"liquid_core_roughness_mix",
+		"liquid_bubble_advection",
+	]:
+		if gel.get_shader_parameter(v8_2_parameter) == null:
+			return "V8 rollback must expose inert V8.2 control %s" % v8_2_parameter
+		if not is_zero_approx(float(gel.get_shader_parameter(v8_2_parameter))):
+			return "V8/V8.1 rollback must keep V8.2 control %s disabled" % v8_2_parameter
+	for retired_parameter in [
+		"bubble_depth",
+		"bubble_emission",
+		"bubble_shell_emission",
+		"microbubble_depth",
+		"microbubble_emission",
+		"microbubble_shell_emission",
+		"inclusion_depth",
+		"inclusion_emission",
+	]:
+		if not is_zero_approx(float(gel.get_shader_parameter(retired_parameter))):
+			return "V8 must not re-enable retired procedural sphere/island relief"
+	var shader_source := gel.shader.code
+	if not shader_source.contains("TIME * ("):
+		return "V8 idle liquid flow must be driven by an uninterrupted shader clock"
+	if not shader_source.contains("liquid_sample_position"):
+		return "V8 must advect the internal authored inclusion coordinates"
+	if not shader_source.contains("liquid_slime_volume"):
+		return "V8 must retain its low-frequency cohesive slime field"
+	if not shader_source.contains("liquid_body_lag"):
+		return "V8 must retain direction-aware viscous vertex lag"
+	if shader_source.contains("hint_screen_texture"):
+		return "V8 liquid motion must remain Compatibility/Web safe"
+	return ""
+
+
+func _gel_v7_surface_error(gel: ShaderMaterial) -> String:
+	var light_semantics_error := _gel_light_semantics_error(gel)
+	if not light_semantics_error.is_empty():
+		return light_semantics_error
+	var expected := {
+		"body_exposure_scale": 0.76,
+		"core_glow": 0.14,
+		"interior_budget": 0.30,
+		"thickness_contrast": 0.32,
+		"authored_fleck_strength": 0.38,
+		"authored_inclusion_strength": 0.44,
+		"authored_caustic_strength": 0.32,
+		"authored_caustic_width": 0.014,
+		"authored_fiber_strength": 0.58,
+		"authored_fiber_scale": 0.18,
+		"authored_fiber_threshold": 0.30,
+		"authored_fiber_width": 0.016,
+		"authored_fiber_thinness": 0.055,
+		"authored_fiber_budget": 0.105,
+		"authored_fiber_lod_bias": 0.22,
+		"studio_reflection_strength": 0.74,
+		"studio_reflection_budget": 0.32,
+		"studio_streak_strength": 0.72,
+	}
+	for parameter in expected:
+		if gel.get_shader_parameter(parameter) == null:
+			return "V7 gummy-glass body must expose %s" % parameter
+		if not is_equal_approx(float(gel.get_shader_parameter(parameter)), float(expected[parameter])):
+			return "V7 gummy-glass body %s drifted from its additive profile" % parameter
+	if gel.get_shader_parameter("authored_height_enabled") != true:
+		return "V7 must retain the mipmapped authored texture source"
+	var authored_height := gel.get_shader_parameter("authored_height_tex") as Texture2D
+	if authored_height == null or authored_height.resource_path != "res://characters/gel/jelly_micro_height.png":
+		return "V7 must reuse the reproducible CC0 authored height resource"
+	var authored_image := authored_height.get_image()
+	if authored_image == null or not authored_image.has_mipmaps():
+		return "V7 authored detail must retain generated mipmaps"
+	for retired_parameter in [
+		"bubble_depth",
+		"bubble_emission",
+		"bubble_shell_emission",
+		"microbubble_depth",
+		"microbubble_emission",
+		"microbubble_shell_emission",
+		"inclusion_depth",
+		"inclusion_emission",
+	]:
+		if not is_zero_approx(float(gel.get_shader_parameter(retired_parameter))):
+			return "V7 must not re-enable retired procedural sphere/island relief"
+	var shader_source := gel.shader.code
+	if not shader_source.contains("authored_fiber_signal"):
+		return "V7 must retain the anisotropic object-space fiber signal"
+	if not shader_source.contains("studio_streak_strength"):
+		return "V7 must retain the Compatibility-safe long reflection card"
+	if shader_source.contains("hint_screen_texture"):
+		return "V7 must remain independent of screen-texture refraction"
+	return ""
+
+
+func _gel_banner_surface_error(gel: ShaderMaterial) -> String:
+	var light_semantics_error := _gel_light_semantics_error(gel)
+	if not light_semantics_error.is_empty():
+		return light_semantics_error
+	for required_parameter in [
+		"body_exposure_scale",
+		"core_glow",
+		"interior_budget",
+		"thickness_contrast",
+		"studio_reflection_strength",
+		"studio_reflection_budget",
+		"authored_fleck_strength",
+		"authored_fleck_threshold",
+		"authored_fleck_budget",
+		"authored_inclusion_strength",
+		"authored_inclusion_scale",
+		"authored_inclusion_threshold",
+		"authored_inclusion_thinness",
+		"authored_inclusion_budget",
+		"authored_caustic_strength",
+		"authored_caustic_threshold",
+		"authored_caustic_width",
+		"authored_caustic_budget",
+	]:
+		if gel.get_shader_parameter(required_parameter) == null:
+			return "must expose the V6 banner-match body controls"
+	if not is_equal_approx(float(gel.get_shader_parameter("body_exposure_scale")), 0.82):
+		return "V6 body exposure must preserve the reviewed deep-core separation"
+	if not is_equal_approx(float(gel.get_shader_parameter("core_glow")), 0.22):
+		return "V6 core fill must remain below the self-lit V5 look"
+	if not is_equal_approx(float(gel.get_shader_parameter("interior_budget")), 0.38):
+		return "V6 interior budget drifted from the reviewed banner match"
+	if not is_equal_approx(float(gel.get_shader_parameter("thickness_contrast")), 0.24):
+		return "V6 macro thickness must retain its deeper optical core"
+	if not is_equal_approx(float(gel.get_shader_parameter("studio_reflection_strength")), 0.66):
+		return "V6 body must retain its analytic softbox reflection"
+	if not is_equal_approx(float(gel.get_shader_parameter("studio_reflection_budget")), 0.28):
+		return "V6 body softbox reflection exceeded its reviewed budget"
+	if not is_equal_approx(float(gel.get_shader_parameter("authored_fleck_strength")), 0.56):
+		return "V6 fine internal flecks drifted from the reviewed density"
+	if not is_equal_approx(float(gel.get_shader_parameter("authored_fleck_threshold")), 0.31):
+		return "V6 fine internal fleck threshold drifted"
+	if not is_equal_approx(float(gel.get_shader_parameter("authored_fleck_budget")), 0.14):
+		return "V6 fine internal flecks exceeded their energy budget"
+	if not is_equal_approx(float(gel.get_shader_parameter("authored_inclusion_strength")), 0.34):
+		return "V6 coarse inclusions drifted from the reviewed strength"
+	if not is_equal_approx(float(gel.get_shader_parameter("authored_inclusion_scale")), 0.13):
+		return "V6 coarse inclusion scale drifted"
+	if not is_equal_approx(float(gel.get_shader_parameter("authored_inclusion_threshold")), 0.23):
+		return "V6 coarse inclusion threshold drifted"
+	if not is_equal_approx(float(gel.get_shader_parameter("authored_inclusion_thinness")), 0.08):
+		return "V6 coarse inclusions must continue to reveal optical depth"
+	if not is_equal_approx(float(gel.get_shader_parameter("authored_inclusion_budget")), 0.085):
+		return "V6 coarse inclusions exceeded their energy budget"
+	if not is_equal_approx(float(gel.get_shader_parameter("authored_caustic_strength")), 0.58):
+		return "V6 folded internal caustic cue drifted from the reviewed strength"
+	if not is_equal_approx(float(gel.get_shader_parameter("authored_caustic_threshold")), 0.255):
+		return "V6 internal caustic threshold drifted"
+	if not is_equal_approx(float(gel.get_shader_parameter("authored_caustic_width")), 0.020):
+		return "V6 internal caustic width must remain motion-stable"
+	if not is_equal_approx(float(gel.get_shader_parameter("authored_caustic_budget")), 0.095):
+		return "V6 internal caustics exceeded their energy budget"
+	if gel.get_shader_parameter("authored_height_enabled") != true:
+		return "V6 must keep the mipmapped authored texture source"
+	var authored_height := gel.get_shader_parameter("authored_height_tex") as Texture2D
+	if authored_height == null or authored_height.resource_path != "res://characters/gel/jelly_micro_height.png":
+		return "V6 must use the reproducible authored height resource"
+	var authored_image := authored_height.get_image()
+	if authored_image == null or not authored_image.has_mipmaps():
+		return "V6 authored detail texture must retain generated mipmaps"
+	for retired_parameter in [
+		"bubble_depth",
+		"bubble_emission",
+		"bubble_shell_emission",
+		"microbubble_depth",
+		"microbubble_emission",
+		"microbubble_shell_emission",
+		"inclusion_depth",
+		"inclusion_emission",
+	]:
+		if not is_zero_approx(float(gel.get_shader_parameter(retired_parameter))):
+			return "V6 must not re-enable rejected circular procedural stamps"
+	var shader_source := gel.shader.code
+	if not shader_source.contains("authored_inclusion_signal"):
+		return "V6 must retain the mip-stable coarse inclusion signal"
+	if not shader_source.contains("authored_caustic_glow"):
+		return "V6 must retain the object-space folded caustic cue"
+	if not shader_source.contains("studio_reflection_strength"):
+		return "V6 must retain the Compatibility-safe analytic softbox"
 	return ""
 
 
@@ -1756,9 +3907,20 @@ func _authored_jelly_error(unit: Node, family: String) -> String:
 		return "CHAR-BASE-%s must realize its zero-credit authored jelly body" % family
 	var face := unit.get_node_or_null("Face") as Node3D
 	var limbs := unit.get_node_or_null("LimbKit") as Node3D
-	if face == null or face.visible or limbs == null or limbs.visible:
-		return "CHAR-BASE-%s authored body must replace the procedural face and limbs" % family
-	if unit.get_node_or_null("WeaponSocket").get_child_count() != 0:
+	if face == null or face.visible:
+		return "CHAR-BASE-%s authored body must replace the procedural face" % family
+	if _GelProfiles.single_mass_enabled():
+		if face.get_child_count() != 0 or limbs != null:
+			return "CHAR-BASE-%s single-mass look must not allocate detached face/limb blockouts" % family
+	elif limbs == null or limbs.visible:
+		return "CHAR-BASE-%s authored body must replace the procedural limbs" % family
+	var weapon_socket := unit.get_node_or_null("WeaponSocket") as Node3D
+	if weapon_socket == null:
+		return "CHAR-BASE-%s authored body missing WeaponSocket" % family
+	if _GelProfiles.motion_truth_enabled():
+		if weapon_socket.get_child_count() != 1 or weapon_socket.get_node_or_null("LiquidReleaseAnchor") == null:
+			return "CHAR-BASE-%s hardened WeaponSocket must contain only its liquid release anchor" % family
+	elif weapon_socket.get_child_count() != 0:
 		return "CHAR-BASE-%s authored body must replace procedural identity props" % family
 	if unit.get_node_or_null("CoreMesh/Bubble0") != null:
 		return "CHAR-BASE-%s authored body must replace procedural bubble geometry" % family
@@ -1769,8 +3931,12 @@ func _authored_jelly_error(unit: Node, family: String) -> String:
 	var shell := real_mesh.get_node_or_null("BodyShell") as MeshInstance3D
 	if body == null or shell == null:
 		return "CHAR-BASE-%s authored body must expose Body and BodyShell" % family
-	var mesh_error := _shared_authored_sphere_error(
-		body, shell, "CHAR-BASE-%s body and membrane" % family
+	var mesh_error := (
+		_single_mass_mesh_error(real_mesh, body, shell, family)
+		if _GelProfiles.single_mass_enabled()
+		else _shared_authored_sphere_error(
+			body, shell, "CHAR-BASE-%s body and membrane" % family
+		)
 	)
 	if not mesh_error.is_empty():
 		return mesh_error
@@ -1778,20 +3944,86 @@ func _authored_jelly_error(unit: Node, family: String) -> String:
 		if real_mesh.get_node_or_null(authored_path) == null:
 			return "CHAR-BASE-%s authored body missing %s" % [family, authored_path]
 	var runtime_gel := body.material_override as ShaderMaterial
-	if runtime_gel == null or runtime_gel.get_shader_parameter("bubble_enabled") != true:
-		return "CHAR-BASE-%s authored body must keep its Fizzy bubble material" % family
+	var expected_bubbles := not _GelProfiles.single_mass_enabled()
+	if runtime_gel == null or runtime_gel.get_shader_parameter("bubble_enabled") != expected_bubbles:
+		return "CHAR-BASE-%s authored body lost its selector-specific detail contract" % family
 	if runtime_gel.get_shader_parameter("authored_height_enabled") != true:
 		return "CHAR-BASE-%s authored V5.1 profile must keep the mipmapped height" % family
-	var noise_error := _gel_surface_noise_error(runtime_gel)
+	var noise_error := _gel_surface_noise_error(runtime_gel, family)
 	if not noise_error.is_empty():
 		return "CHAR-BASE-%s %s" % [family, noise_error]
+	if _GelProfiles.v8_enabled():
+		if not unit.has_method("update_liquid_flow") or not unit.has_method("liquid_material_count"):
+			return "CHAR-BASE-%s V8 must expose its runtime liquid-flow bridge" % family
+		if int(unit.call("liquid_material_count")) <= 0:
+			return "CHAR-BASE-%s V8 must discover its per-instance wet-gel materials" % family
+		if not unit.has_method("liquid_shell_material_count") or int(unit.call("liquid_shell_material_count")) <= 0:
+			return "CHAR-BASE-%s V8 must bind viscosity to its clear membrane" % family
+		if _GelProfiles.reference_sculpt_behavior_enabled() and family == "T":
+			var wet_material_count := int(unit.call("liquid_material_count"))
+			var shell_material_count := int(unit.call("liquid_shell_material_count"))
+			if wet_material_count != 1 or shell_material_count != 1:
+				var revision: String = "V8.6" if _GelProfiles.v8_6_enabled() else "V8.5"
+				return (
+					"CHAR-BASE-T %s single mass must bind exactly one wet core and one "
+					+ "explicit membrane; got wet=%d shell=%d"
+				) % [revision, wet_material_count, shell_material_count]
+		var collision := unit.get_node_or_null("CollisionShape3D") as CollisionShape3D
+		if collision == null or collision.shape == null:
+			return "CHAR-BASE-%s V8 must retain its stable gameplay collision" % family
+		var collision_transform := collision.transform
+		var collision_shape := collision.shape
+		unit.call("update_liquid_flow", Vector3(3.0, 0.0, 0.0), 0.5)
+		var moving_mix := float(runtime_gel.get_shader_parameter("liquid_flow_motion_mix"))
+		var moving_direction := runtime_gel.get_shader_parameter("liquid_flow_direction") as Vector3
+		var moving_lag := runtime_gel.get_shader_parameter("liquid_body_lag") as Vector3
+		var moving_squash := float(runtime_gel.get_shader_parameter("liquid_body_squash"))
+		if moving_mix < 0.72:
+			return "CHAR-BASE-%s V8 walking must smoothly raise the liquid-motion overlay" % family
+		if moving_direction.x < 0.70:
+			return "CHAR-BASE-%s V8 liquid flow must follow local walking direction" % family
+		if moving_lag.x > -0.003 or moving_squash <= 0.004:
+			return "CHAR-BASE-%s V8 visible mass must lag and compress like viscous liquid" % family
+		for settle_step in 120:
+			unit.call("update_liquid_flow", Vector3.ZERO, 1.0 / 60.0)
+		var resting_mix := float(runtime_gel.get_shader_parameter("liquid_flow_motion_mix"))
+		var resting_lag := runtime_gel.get_shader_parameter("liquid_body_lag") as Vector3
+		var resting_squash := float(runtime_gel.get_shader_parameter("liquid_body_squash"))
+		if resting_mix >= 0.12 or resting_mix < 0.0:
+			return "CHAR-BASE-%s V8 liquid overlay must decay smoothly back to idle" % family
+		if resting_lag.length() >= 0.012 or resting_squash >= 0.008:
+			return "CHAR-BASE-%s V8 visible mass must settle without a residual wobble" % family
+		if (
+			not collision.transform.is_equal_approx(collision_transform)
+			or collision.shape != collision_shape
+		):
+			return "CHAR-BASE-%s V8 visual viscosity must not deform gameplay collision" % family
 	var shell_material := shell.material_override as ShaderMaterial
 	if shell_material == null or shell_material.shader == null or not shell_material.shader.resource_path.ends_with("jelly_shell.gdshader"):
 		return "CHAR-BASE-%s authored body must keep its clear membrane" % family
-	var shell_error := _gel_shell_energy_error(shell_material)
+	var shell_error := _gel_shell_energy_error(shell_material, family)
 	if not shell_error.is_empty():
 		return "CHAR-BASE-%s %s" % [family, shell_error]
+	if _GelProfiles.v8_enabled():
+		var expected_deform_strength := (
+			0.70 if _GelProfiles.reference_viscosity_enabled()
+			else (0.64 if _GelProfiles.v8_3_enabled() else 0.82)
+		)
+		if not is_equal_approx(float(shell_material.get_shader_parameter("liquid_body_deform_strength")), expected_deform_strength):
+			return "CHAR-BASE-%s V8 membrane must inherit the body deformation strength" % family
+		var body_lag := runtime_gel.get_shader_parameter("liquid_body_lag") as Vector3
+		var shell_lag := shell_material.get_shader_parameter("liquid_body_lag") as Vector3
+		if not body_lag.is_equal_approx(shell_lag):
+			return "CHAR-BASE-%s V8 wet core and clear shell must deform together" % family
+		if _GelProfiles.reference_viscosity_enabled():
+			var coherence_error := _gel_v8_4_material_coherence_error(
+				real_mesh, runtime_gel, family
+			)
+			if not coherence_error.is_empty():
+				return coherence_error
 	var expected_path := "res://characters/base_%s/reference_body.tscn" % family.to_lower()
+	if family == "M":
+		expected_path = "res://characters/base_m/authored_body.tscn"
 	if not bool(unit.get("imported_preserves_materials")) or str(unit.get("imported_model_path")) != expected_path:
 		return "CHAR-BASE-%s scene must lock its authored production adapter" % family
 	for replacement_flag in ["imported_replaces_limbs", "imported_replaces_identity", "imported_replaces_bubbles", "imported_replaces_fixed_kit"]:
@@ -1799,18 +4031,439 @@ func _authored_jelly_error(unit: Node, family: String) -> String:
 			return "CHAR-BASE-%s production adapter must lock %s" % [family, replacement_flag]
 	if not _all_geometry_shadows_disabled(real_mesh):
 		return "CHAR-BASE-%s authored body must not cast internal primitive shadows" % family
-	if family == "A":
-		if real_mesh.get_node_or_null("FootL") != null or real_mesh.get_node_or_null("FootR") != null:
-			return "CHAR-BASE-A authored body must preserve its footless hover silhouette"
+	if _GelProfiles.single_mass_enabled():
+		for detached_prefix in ["Arm", "Foot", "Crown", "Bubble"]:
+			for child in real_mesh.get_children():
+				if String(child.name).begins_with(detached_prefix):
+					return "CHAR-BASE-%s V8.3 must not contain detached %s geometry" % [
+						family, child.name,
+					]
+	elif family == "A":
+		if _GelProfiles.gummy_glass_enabled():
+			if real_mesh.get_node_or_null("FootL") == null or real_mesh.get_node_or_null("FootR") == null:
+				return "CHAR-BASE-A V7 body must preserve its banner lower lobes"
+		elif real_mesh.get_node_or_null("FootL") != null or real_mesh.get_node_or_null("FootR") != null:
+			return "CHAR-BASE-A V5/V6 body must preserve its footless hover silhouette"
 	else:
 		if real_mesh.get_node_or_null("FootL") == null or real_mesh.get_node_or_null("FootR") == null:
 			return "CHAR-BASE-%s authored body must preserve its grounded feet" % family
-	if family == "N" and real_mesh.get_node_or_null("MouthRim") == null:
+	if not _GelProfiles.single_mass_enabled() and family == "N" and real_mesh.get_node_or_null("MouthRim") == null:
 		return "CHAR-BASE-N authored body must preserve its short pill mouth"
-	if family == "D":
+	if not _GelProfiles.single_mass_enabled() and family == "D":
 		for crown_index in 5:
 			if real_mesh.get_node_or_null("Crown%d" % crown_index) == null:
 				return "CHAR-BASE-D authored body must preserve all five crown lobes"
+	return ""
+
+
+func _gel_v8_4_material_coherence_error(
+	real_mesh: Node3D, source_gel: ShaderMaterial, family: String
+) -> String:
+	var coherent_meshes := ["Body", "BodyShell", "EyeL", "EyeR", "MouthCavity"]
+	if family == "T":
+		coherent_meshes.append_array(["ForeheadPore", "ForeheadPoreRim"])
+	for mesh_name in coherent_meshes:
+		var mesh := real_mesh.get_node_or_null(mesh_name) as MeshInstance3D
+		if mesh == null:
+			return "CHAR-BASE-%s V8.4 coherent mass missing %s" % [family, mesh_name]
+		var material := mesh.material_override as ShaderMaterial
+		if material == null:
+			return "CHAR-BASE-%s V8.4 %s lost its deformable material" % [
+				family, mesh_name,
+			]
+		for parameter in [
+			"liquid_wobble_strength",
+			"liquid_wobble_speed",
+			"liquid_wobble_scale",
+			"liquid_wobble_phase",
+			"liquid_wobble_normal_follow",
+		]:
+			if material.get_shader_parameter(parameter) == null:
+				return "CHAR-BASE-%s V8.4 %s missing coherent %s" % [
+					family, mesh_name, parameter,
+				]
+			if not is_equal_approx(
+				float(material.get_shader_parameter(parameter)),
+				float(source_gel.get_shader_parameter(parameter))
+			):
+				return "CHAR-BASE-%s V8.4 %s wobble detached at %s" % [
+					family, mesh_name, parameter,
+				]
+		if float(material.get_shader_parameter("liquid_body_space_enabled")) < 0.5:
+			return "CHAR-BASE-%s V8.4 %s must deform in authored body space" % [
+				family, mesh_name,
+			]
+		if mesh_name in ["EyeL", "EyeR", "MouthCavity", "ForeheadPore", "ForeheadPoreRim"]:
+			var visibility_gate: Variant = material.get_shader_parameter("face_visibility_gate")
+			var expected_visibility_gate := 1.0
+			if (
+				visibility_gate == null
+				or not is_equal_approx(float(visibility_gate), expected_visibility_gate)
+			):
+				return "CHAR-BASE-%s V8.4 %s must be hidden from the back view" % [
+					family, mesh_name,
+				]
+			if not material.shader.code.contains("discard"):
+				return "CHAR-BASE-%s V8.4 face shader lost its back-view rejection" % family
+			if (
+				_GelProfiles.reference_sculpt_behavior_enabled()
+				and mesh_name == "ForeheadPoreRim"
+			):
+				var visibility_threshold: Variant = material.get_shader_parameter(
+					"face_visibility_threshold"
+				)
+				if (
+					visibility_threshold == null
+					or not is_equal_approx(float(visibility_threshold), 0.18)
+				):
+					return "CHAR-BASE-T V8.5+ pore rim must reject edge-on views"
+				var visibility_axis: Variant = material.get_shader_parameter(
+					"face_visibility_axis"
+				)
+				if visibility_axis == null or not Vector3(visibility_axis).is_equal_approx(Vector3.UP):
+					return "CHAR-BASE-T V8.5+ pore rim must use its torus aperture axis"
+			if mesh_name in ["EyeL", "EyeR"]:
+				var expected_eye_values := {
+					"studio_strength": 0.42,
+					"studio_budget": 0.65,
+					"surface_roughness": 0.035,
+					"main_card_center": Vector2(-0.22, 0.28),
+					"main_card_shape": Vector2(8.0, 13.0),
+					"pin_card_center": Vector2(0.30, 0.42),
+					"pin_card_shape": Vector2(42.0, 42.0),
+					"eye_catchlight_strength": 0.90,
+					"eye_catchlight_center": Vector2(-0.32, 0.32),
+					"eye_catchlight_shape": Vector2(38.0, 48.0),
+				}
+				if _GelProfiles.v8_6_enabled() and family == "T":
+					expected_eye_values = {
+						"studio_strength": 0.46,
+						"studio_budget": 0.56,
+						"surface_roughness": 0.042,
+						"main_card_center": Vector2(-0.26, 0.30),
+						"main_card_shape": Vector2(4.5, 7.0),
+						"pin_card_center": Vector2(0.30, 0.42),
+						"pin_card_shape": Vector2(52.0, 52.0),
+						"eye_catchlight_strength": 0.48,
+						"eye_catchlight_center": Vector2(-0.34, 0.31),
+						"eye_catchlight_shape": Vector2(24.0, 32.0),
+					}
+				for parameter in expected_eye_values:
+					var value: Variant = material.get_shader_parameter(parameter)
+					if value == null or value != expected_eye_values[parameter]:
+						return "CHAR-BASE-%s V8.4 %s catchlight %s drifted" % [
+							family, mesh_name, parameter,
+						]
+			elif mesh_name in ["MouthCavity", "ForeheadPore"]:
+				var mouth_studio: Variant = material.get_shader_parameter("studio_strength")
+				if mouth_studio == null or not is_zero_approx(float(mouth_studio)):
+					return "CHAR-BASE-%s V8.4 %s must remain a dark attached mark" % [
+						family, mesh_name,
+					]
+			elif mesh_name == "ForeheadPoreRim":
+				var expected_pore_values := {
+					"studio_strength": 0.10 if _GelProfiles.v8_6_enabled() else 0.18,
+					"studio_budget": 0.14 if _GelProfiles.v8_6_enabled() else 0.22,
+					"surface_roughness": 0.11 if _GelProfiles.v8_6_enabled() else 0.08,
+				}
+				for parameter in expected_pore_values:
+					if not is_equal_approx(
+						float(material.get_shader_parameter(parameter)),
+						float(expected_pore_values[parameter])
+					):
+						return "CHAR-BASE-T V8.4 pore rim %s drifted" % parameter
+				if _GelProfiles.v8_6_enabled():
+					var pore_body := source_gel.get_shader_parameter("body_color") as Color
+					var pore_deep := source_gel.get_shader_parameter("deep_color") as Color
+					var pore_color := material.get_shader_parameter("eye_color") as Color
+					if not pore_color.is_equal_approx(pore_deep.lerp(pore_body, 0.86)):
+						return "CHAR-BASE-T V8.6 pore rim colour lost body integration"
+	return ""
+
+
+func _single_mass_mesh_error(
+	real_mesh: Node3D,
+	body: MeshInstance3D,
+	shell: MeshInstance3D,
+	family: String
+) -> String:
+	var exact_v8_6_t: bool = _GelProfiles.v8_6_enabled() and family == "T"
+	var revision: String = "V8.3"
+	var meta_prefix: StringName = &"v8_3"
+	if _GelProfiles.v8_4_enabled():
+		revision = "V8.4"
+		meta_prefix = &"v8_4"
+	elif _GelProfiles.reference_sculpt_behavior_enabled():
+		revision = "V8.5"
+		meta_prefix = &"v8_5"
+	if exact_v8_6_t:
+		revision = "V8.6"
+		meta_prefix = &"v8_6"
+	var label := "CHAR-BASE-%s %s single mass" % [family, revision]
+	if body.mesh == null or shell.mesh == null or body.mesh != shell.mesh:
+		return "%s must share one body/shell mesh resource" % label
+	if body.mesh is not ArrayMesh:
+		return "%s must use the generated watertight ArrayMesh" % label
+	var expected_resource_name := "%s-SingleMass-%s" % [revision, family]
+	if exact_v8_6_t:
+		expected_resource_name = "V8.6-AuthoredSculpt-T-r7-2"
+	elif _GelProfiles.v8_5_enabled() and family == "T":
+		expected_resource_name = "V8.5-AuthoredSculpt-T-r4"
+	if body.mesh.resource_name != expected_resource_name:
+		return "%s resource identity drifted" % label
+	if not bool(body.get_meta(StringName("%s_single_mass" % meta_prefix), false)):
+		return "%s body metadata is missing" % label
+	if not bool(shell.get_meta(StringName("%s_single_mass_shell" % meta_prefix), false)):
+		return "%s membrane metadata is missing" % label
+	if body.mesh.get_surface_count() != 1:
+		return "%s must contain exactly one indexed surface" % label
+	var arrays := body.mesh.surface_get_arrays(0)
+	var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
+	var expected_vertices := 4514
+	var expected_indices := 27072
+	if exact_v8_6_t:
+		expected_vertices = 6002
+		expected_indices = 36000
+	elif _GelProfiles.v8_5_enabled() and family == "T":
+		expected_vertices = 6002
+		expected_indices = 36000
+	elif _GelProfiles.v8_4_enabled() and family == "T":
+		expected_vertices = 2253
+		expected_indices = 13506
+	if (
+		vertices.size() != expected_vertices or indices.size() != expected_indices
+	):
+		return "%s deterministic topology drifted (%d vertices, %d indices)" % [
+			label, vertices.size(), indices.size(),
+		]
+	if exact_v8_6_t and not bool(body.get_meta(&"v8_6_authored_sculpt", false)):
+		return "%s must use the verified project-authored R7.2 body" % label
+	if (
+		_GelProfiles.v8_5_enabled()
+		and family == "T"
+		and not bool(body.get_meta(&"v8_5_authored_sculpt", false))
+	):
+		return "%s must use the verified project-authored r4 body" % label
+	if (
+		_GelProfiles.v8_4_enabled()
+		and family == "T"
+		and not bool(body.get_meta(&"v8_4_reference_remesh", false))
+	):
+		return "%s must use the verified reference-derived watertight body" % label
+	if (
+		_GelProfiles.v8_6_enabled()
+		and family != "T"
+		and (
+			body.has_meta(&"v8_6_authored_sculpt")
+			or shell.has_meta(&"v8_6_single_mass_shell")
+		)
+	):
+		return "%s V8.6 R7.2 identity must remain T-only" % label
+	var manifold_error := _closed_triangle_manifold_error(vertices, indices, label)
+	if not manifold_error.is_empty():
+		return manifold_error
+	if exact_v8_6_t:
+		if (
+			not real_mesh.has_method("_v8_6_t_source_contract_error")
+			or not real_mesh.has_method("_v8_6_t_mesh_contract_error")
+		):
+			return "%s lost its fail-closed R7.2 loader contract" % label
+		var expected_path: String = (
+			"res://characters/base_t/CHAR-BASE-T-v8-6-authored-sculpt-r7-2.glb"
+		)
+		if not ResourceLoader.exists(expected_path):
+			return "%s exact R7.2 source path is unavailable; fallback is forbidden" % label
+		var missing_source_error: String = str(real_mesh.call(
+			"_v8_6_t_source_contract_error",
+			"res://characters/base_t/__missing-v8-6-negative.glb",
+			""
+		))
+		if missing_source_error.is_empty():
+			return "%s missing-source negative fixture was accepted" % label
+		var malformed_mesh_error: String = str(real_mesh.call(
+			"_v8_6_t_mesh_contract_error",
+			ArrayMesh.new()
+		))
+		if malformed_mesh_error.is_empty():
+			return "%s malformed-mesh negative fixture was accepted" % label
+		if _count_nodes_named(real_mesh, &"Body") != 1:
+			return "%s must contain exactly one Body node" % label
+		if _count_nodes_named(real_mesh, &"BodyShell") != 1:
+			return "%s must contain exactly one BodyShell node" % label
+		var bounds := body.mesh.get_aabb()
+		if (
+			not bounds.position.is_equal_approx(Vector3(-0.82, 0.0, -0.50))
+			or not bounds.size.is_equal_approx(Vector3(1.64, 1.46, 1.00))
+		):
+			return "%s authored bounds drifted: %s" % [label, bounds]
+	elif _GelProfiles.v8_5_enabled() and family == "T":
+		if (
+			not real_mesh.has_method("_v8_5_t_source_contract_error")
+			or not real_mesh.has_method("_v8_5_t_mesh_contract_error")
+		):
+			return "%s lost its fail-closed loader contract" % label
+		var missing_source_error := str(real_mesh.call(
+			"_v8_5_t_source_contract_error",
+			"res://characters/base_t/__missing-v8-5-negative.glb",
+			""
+		))
+		if missing_source_error.is_empty():
+			return "%s missing-source negative fixture was accepted" % label
+		var malformed_mesh_error := str(real_mesh.call(
+			"_v8_5_t_mesh_contract_error",
+			ArrayMesh.new()
+		))
+		if malformed_mesh_error.is_empty():
+			return "%s malformed-mesh negative fixture was accepted" % label
+		var bounds := body.mesh.get_aabb()
+		if (
+			not bounds.position.is_equal_approx(Vector3(-0.75, 0.0, -0.50))
+			or not bounds.size.is_equal_approx(Vector3(1.50, 1.46, 1.00))
+		):
+			return "%s authored bounds drifted: %s" % [label, bounds]
+	if not body.position.is_equal_approx(shell.position):
+		return "%s core and membrane centres must match" % label
+	if not shell.scale.is_equal_approx(Vector3.ONE * 1.006):
+		return "%s membrane must remain one thin expanded envelope" % label
+	if _count_shader_meshes(real_mesh, "characters/gel/wet_gel.gdshader") != 1:
+		return "%s must expose exactly one wet-gel surface" % label
+	var expected_mesh_instances := (
+		7 if _GelProfiles.reference_viscosity_enabled() and family == "T" else 5
+	)
+	if _count_mesh_instances(real_mesh) != expected_mesh_instances:
+		return "%s contains an unexpected body or face mesh count" % label
+	for eye_name in ["EyeL", "EyeR"]:
+		var eye := real_mesh.get_node_or_null(eye_name) as MeshInstance3D
+		if eye == null:
+			return "%s is missing embedded %s" % [label, eye_name]
+		# V8.4 deliberately flattens the larger reference-shaped eye cards. V8.3
+		# keeps its accepted 0.040 depth; rollback validation must not silently
+		# impose the successor's geometry contract on the preserved selector.
+		var eye_depth_limit := 0.025 if _GelProfiles.reference_viscosity_enabled() else 0.045
+		if absf(eye.position.x) > 0.24 or eye.scale.z > eye_depth_limit:
+			return "%s %s must stay inset so it cannot read as a loose cell" % [
+				label, eye_name,
+			]
+	if _GelProfiles.reference_viscosity_enabled() and family == "T":
+		var pore := real_mesh.get_node_or_null("ForeheadPore") as MeshInstance3D
+		var pore_rim := real_mesh.get_node_or_null("ForeheadPoreRim") as MeshInstance3D
+		if pore == null or pore_rim == null:
+			return "%s must preserve the two attached forehead-pore marks" % label
+		var expected_pore_z := (
+			0.438
+			if exact_v8_6_t
+			else (0.446 if _GelProfiles.reference_sculpt_behavior_enabled() else 0.430)
+		)
+		if pore.scale.z > 0.012 or not is_equal_approx(pore.position.z, expected_pore_z):
+			return "%s pore must remain shallow and embedded" % label
+		if exact_v8_6_t and not pore_rim.position.is_equal_approx(Vector3(0.0, 1.085, 0.438)):
+			return "%s pore rim no longer seats in the R7.2 surface" % label
+	if _GelProfiles.v8_5_enabled() and family == "T":
+		var eye_l := real_mesh.get_node_or_null("EyeL") as MeshInstance3D
+		if (
+			eye_l == null
+			or not eye_l.position.is_equal_approx(Vector3(-0.218, 0.835, 0.452))
+			or not is_equal_approx(eye_l.rotation_degrees.z, -30.0)
+		):
+			return "%s left eye no longer seats in the authored socket" % label
+	elif exact_v8_6_t:
+		var eye_l := real_mesh.get_node_or_null("EyeL") as MeshInstance3D
+		if (
+			eye_l == null
+			or not eye_l.position.is_equal_approx(Vector3(-0.238, 0.855, 0.436))
+			or not eye_l.scale.is_equal_approx(Vector3(0.205, 0.136, 0.014))
+			or not is_equal_approx(eye_l.rotation_degrees.z, -38.0)
+		):
+			return "%s left eye no longer seats in the R7.2 reference socket" % label
+	var burst := real_mesh.get_parent().get_parent().get_node_or_null("KitSwapBurst") as GPUParticles3D
+	if burst != null and (burst.visible or burst.emitting):
+		return "%s must keep loose duty particles hidden" % label
+	return ""
+
+
+func _count_nodes_named(node: Node, expected_name: StringName) -> int:
+	var count: int = 1 if node.name == expected_name else 0
+	for child in node.get_children():
+		count += _count_nodes_named(child, expected_name)
+	return count
+
+
+func _count_shader_meshes(node: Node, shader_suffix: String) -> int:
+	var count := 0
+	if node is MeshInstance3D:
+		var mesh_instance := node as MeshInstance3D
+		var material := mesh_instance.material_override as ShaderMaterial
+		if (
+			material != null
+			and material.shader != null
+			and material.shader.resource_path.ends_with(shader_suffix)
+		):
+			count += 1
+	for child in node.get_children():
+		count += _count_shader_meshes(child, shader_suffix)
+	return count
+
+
+func _count_mesh_instances(node: Node) -> int:
+	var count := 1 if node is MeshInstance3D else 0
+	for child in node.get_children():
+		count += _count_mesh_instances(child)
+	return count
+
+
+func _closed_triangle_manifold_error(
+	vertices: PackedVector3Array, indices: PackedInt32Array, label: String
+) -> String:
+	if indices.size() % 3 != 0:
+		return "%s index buffer must contain complete triangles" % label
+	var edges := {}
+	for triangle_start in range(0, indices.size(), 3):
+		var a := int(indices[triangle_start])
+		var b := int(indices[triangle_start + 1])
+		var c := int(indices[triangle_start + 2])
+		if (
+			a < 0 or b < 0 or c < 0
+			or a >= vertices.size() or b >= vertices.size() or c >= vertices.size()
+		):
+			return "%s contains an out-of-range triangle index" % label
+		if a == b or b == c or c == a:
+			return "%s contains a repeated-index triangle" % label
+		var area_squared := (
+			(vertices[b] - vertices[a]).cross(vertices[c] - vertices[a]).length_squared()
+		)
+		if not is_finite(area_squared) or area_squared <= 0.000000000001:
+			return "%s contains a degenerate triangle" % label
+		for pair in [Vector2i(a, b), Vector2i(b, c), Vector2i(c, a)]:
+			var edge := Vector2i(mini(pair.x, pair.y), maxi(pair.x, pair.y))
+			edges[edge] = int(edges.get(edge, 0)) + 1
+	for edge in edges:
+		if int(edges[edge]) != 2:
+			return "%s is open/non-manifold at edge %s" % [label, edge]
+	var adjacency := {}
+	for edge in edges:
+		var left_neighbors: Array = adjacency.get(edge.x, [])
+		left_neighbors.append(edge.y)
+		adjacency[edge.x] = left_neighbors
+		var right_neighbors: Array = adjacency.get(edge.y, [])
+		right_neighbors.append(edge.x)
+		adjacency[edge.y] = right_neighbors
+	var pending: Array[int] = [0]
+	var visited := {}
+	while not pending.is_empty():
+		var vertex := int(pending.pop_back())
+		if visited.has(vertex):
+			continue
+		visited[vertex] = true
+		for neighbor in adjacency.get(vertex, []):
+			var neighbor_index := int(neighbor)
+			if not visited.has(neighbor_index):
+				pending.append(neighbor_index)
+	if visited.size() != vertices.size():
+		return "%s contains disconnected surface components" % label
+	var triangle_count := indices.size() / 3
+	if vertices.size() - edges.size() + triangle_count != 2:
+		return "%s must have one closed genus-zero component" % label
 	return ""
 
 

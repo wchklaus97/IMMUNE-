@@ -61,7 +61,7 @@ func _ready() -> void:
 	_desk = packed.instantiate()
 	add_child(_desk)
 	await _settle(12)
-	_layout_contract_ok = _verify_narrow_phone_contract()
+	_layout_contract_ok = _verify_responsive_contract()
 	var saved_count := 0
 	for i in FAMILIES.size():
 		var requested_family := String(FAMILIES[i])
@@ -107,18 +107,14 @@ func _ready() -> void:
 	get_tree().quit(0)
 
 
-func _verify_narrow_phone_contract() -> bool:
-	var physical_size := DisplayServer.window_get_size()
-	var narrow_phone := physical_size.x <= 430 and physical_size.y > physical_size.x
-	if not narrow_phone:
-		return true
+func _verify_responsive_contract() -> bool:
 	if _desk == null or not _desk.has_method("responsive_contract"):
-		push_error("mission_select_shot.gd: narrow phone responsive contract missing")
+		push_error("mission_select_shot.gd: responsive contract missing")
 		return false
 	var contract: Dictionary = _desk.call("responsive_contract")
 	print("MISSION_SELECT_RESPONSIVE %s" % JSON.stringify(contract))
 	if not bool(contract.get("all_pass", false)):
-		push_error("mission_select_shot.gd: narrow phone responsive contract failed")
+		push_error("mission_select_shot.gd: responsive contract failed")
 		return false
 	return true
 
@@ -175,7 +171,7 @@ func _is_safe_tag(value: String) -> bool:
 
 func _validate_output_dir(raw_path: String) -> bool:
 	var normalized := raw_path.strip_edges().replace("\\", "/")
-	if normalized.is_empty() or normalized.contains("\u0000") or not normalized.is_absolute_path():
+	if normalized.is_empty() or normalized.to_utf8_buffer().has(0) or not normalized.is_absolute_path():
 		push_error("mission_select_shot.gd: --out must be an absolute directory")
 		return false
 	var absolute_path := normalized.simplify_path().trim_suffix("/")

@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="FamilyActiveSkillProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/combat/family_active_skill_profile.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"SKILL-T-EXECUTION-BURST"
+name_key = &"SKILL_T_ACTIVE_NAME"
+description_key = &"SKILL_T_ACTIVE_DESCRIPTION"
+cooldown_seconds = 8.0
+radius = 13.0
+max_targets = 1
+targeting = "lowest_health"
+damage = 6
+hit_effect = "execute"
+hit_effect_power = 5
+hit_effect_threshold = 0.45

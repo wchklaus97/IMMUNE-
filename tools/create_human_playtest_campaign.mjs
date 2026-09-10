@@ -77,8 +77,8 @@ async function exists(path) {
 }
 
 function assertOptions({ buildVersion, buildCommit, participantCount, sourceRun, sourceArtifact }) {
-  if (typeof buildVersion !== "string" || !/^\d+\.\d+\.\d+$/u.test(buildVersion)) {
-    throw new Error("build version: expected numeric SemVer");
+  if (typeof buildVersion !== "string" || !/^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/u.test(buildVersion)) {
+    throw new Error("build version: expected SemVer");
   }
   if (typeof buildCommit !== "string" || !/^[0-9a-f]{40}$/u.test(buildCommit)) {
     throw new Error("build commit: expected the exact full 40-character lowercase commit used by CI");
@@ -272,8 +272,8 @@ export async function verifyHumanPlaytestCampaign(campaignRoot) {
   if (![1, 2].includes(schemaVersion)) errors.push("schema_version: expected 1 or 2");
   if (manifest.kind !== "human-playtest-campaign-bundle") errors.push("kind: unexpected campaign kind");
   if (manifest.status !== "ready-for-human-distribution") errors.push("status: campaign is not ready for distribution");
-  if (typeof manifest.build?.version !== "string" || !/^\d+\.\d+\.\d+$/u.test(manifest.build.version)) {
-    errors.push("build.version: expected numeric SemVer");
+  if (typeof manifest.build?.version !== "string" || !/^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/u.test(manifest.build.version)) {
+    errors.push("build.version: expected SemVer");
   }
   if (typeof manifest.build?.commit !== "string" || !/^[0-9a-f]{40}$/u.test(manifest.build.commit)) {
     errors.push("build.commit: expected a full lowercase commit");

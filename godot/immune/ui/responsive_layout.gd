@@ -12,6 +12,11 @@ const TALL_ASPECT_MAX := 0.8
 const TALL_LAYOUT_SCALE := 2.25
 const NARROW_REFERENCE_WIDTH := 720.0
 const NARROW_MAX_SCALE := 4.5
+const COMPACT_LANDSCAPE_MIN_WIDTH := 1100
+const COMPACT_LANDSCAPE_MAX_WIDTH := 1600
+const COMPACT_LANDSCAPE_MIN_HEIGHT := 650
+const COMPACT_LANDSCAPE_MAX_HEIGHT := 900
+const COMPACT_LANDSCAPE_MAX_SCALE := 1.5
 const QA_SAFE_AREA_ENV := "IMMUNE_QA_SAFE_AREA_INSETS"
 
 
@@ -43,6 +48,17 @@ static func is_narrow_phone(_viewport: Viewport = null) -> bool:
 	return physical.x <= NARROW_PHONE_MAX_WIDTH and physical.y > physical.x
 
 
+static func is_compact_landscape(_viewport: Viewport = null) -> bool:
+	var physical := physical_window_size()
+	return (
+		physical.x > physical.y
+		and physical.x >= COMPACT_LANDSCAPE_MIN_WIDTH
+		and physical.x <= COMPACT_LANDSCAPE_MAX_WIDTH
+		and physical.y >= COMPACT_LANDSCAPE_MIN_HEIGHT
+		and physical.y <= COMPACT_LANDSCAPE_MAX_HEIGHT
+	)
+
+
 static func layout_scale(viewport: Viewport) -> float:
 	var physical := physical_window_size()
 	if is_narrow_phone(viewport):
@@ -50,6 +66,15 @@ static func layout_scale(viewport: Viewport) -> float:
 			TALL_LAYOUT_SCALE * NARROW_REFERENCE_WIDTH / physical.x,
 			TALL_LAYOUT_SCALE,
 			NARROW_MAX_SCALE
+		)
+	if is_compact_landscape(viewport):
+		# canvas_items + expand maps the 1920-wide design canvas into a
+		# 1280/1366/1600-wide window. Compensate only the UI metrics so a
+		# 16px label and 48px action remain approximately those physical sizes.
+		return clampf(
+			logical_per_physical(viewport).y,
+			1.0,
+			COMPACT_LANDSCAPE_MAX_SCALE
 		)
 	var logical := visible_size(viewport)
 	var aspect := logical.x / maxf(logical.y, 1.0)

@@ -105,7 +105,7 @@ export function validateWebQaReport(report, { expectedProfileIds = ["baseline", 
   expect(errors, report?.schema_version === 2, "schema_version: expected 2");
   expect(errors, report?.evidence_class === EVIDENCE_CLASS, `evidence_class: expected ${EVIDENCE_CLASS}`);
   expect(errors, GATE_MODES.has(report?.gate_mode), `gate_mode: expected one of ${[...GATE_MODES].join(", ")}`);
-  expect(errors, /^\d+\.\d+\.\d+$/u.test(report?.build?.version ?? ""), "build.version: expected numeric SemVer");
+  expect(errors, /^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/u.test(report?.build?.version ?? ""), "build.version: expected SemVer");
   expect(errors, Array.isArray(report?.profiles), "profiles: expected an array");
   const profiles = Array.isArray(report?.profiles) ? report.profiles : [];
   expect(errors, profiles.length === expectedProfileIds.length, `profiles: expected ${expectedProfileIds.length}`);

@@ -16,7 +16,6 @@ const SOAK_MAX_MEAN_PROCESS_MS: float = 0.0
 const SOAK_MAX_WALL_TO_GAME_RATIO: float = 1.25
 const SOAK_MIN_FPS: float = 30.0
 const MAX_TRIALS: int = 100
-const MAX_TIME_SCALE: float = 8.0
 const MAX_THRESHOLD_VALUE: float = 86400.0
 const REPORT_TEMP_ATTEMPTS: int = 32
 const FLAG_OPTIONS: PackedStringArray = ["soak", "stop-on-failure"]
@@ -211,6 +210,10 @@ func _validate_run(run: Dictionary) -> void:
 		_fail("%s did not exercise real projectile combat" % label)
 	if int(run.get("shots_hit", 0)) > int(run.get("shots_fired", 0)):
 		_fail("%s counted more hits than fired projectiles" % label)
+	if int(run.get("active_skills_used", 0)) <= 0:
+		_fail("%s did not exercise its active skill" % label)
+	if int(run.get("active_skill_hits", 0)) <= 0:
+		_fail("%s active skill did not hit a real target" % label)
 	var accuracy: float = float(run.get("accuracy", -1.0))
 	if accuracy < 0.0 or accuracy > 1.0:
 		_fail("%s produced invalid accuracy %.3f" % [label, accuracy])
@@ -382,11 +385,19 @@ func _parse_args() -> bool:
 		_trials = int(trials_result["value"])
 	if values.has("time-scale"):
 		var scale_result := _parse_finite_range(
-			"time-scale", String(values["time-scale"]), 1.0, MAX_TIME_SCALE
+			"time-scale", String(values["time-scale"]), 0.001, MAX_THRESHOLD_VALUE
 		)
 		if not bool(scale_result.get("ok", false)):
 			return false
 		_time_scale = float(scale_result["value"])
+		# Engine.time_scale changes physics integration and projectile collision
+		# outcomes. Accelerated runs are useful for neither tuning nor release
+		# evidence, so the canonical harness fails closed at real-time speed.
+		if not is_equal_approx(_time_scale, DEFAULT_TIME_SCALE):
+			return _arg_error(
+				"--time-scale must be 1 for deterministic balance evidence; "
+				+ "accelerated Godot physics is not gameplay-equivalent"
+			)
 
 	var mission_ids: Array[StringName] = _Content.mission_ids()
 	if values.has("missions"):
@@ -506,7 +517,7 @@ func _globalized_out_path() -> String:
 
 func _validate_out_path() -> bool:
 	var normalized := _out_path.strip_edges().replace("\\", "/")
-	if normalized.is_empty() or normalized.contains("\u0000"):
+	if normalized.is_empty() or normalized.to_utf8_buffer().has(0):
 		return _arg_error("--out must name a JSON file")
 	if normalized.ends_with("/") or normalized.get_extension().to_lower() != "json":
 		return _arg_error("--out must name a .json file")

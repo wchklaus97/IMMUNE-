@@ -13,8 +13,8 @@ function assertKitOptions({ participantCode, buildVersion, buildCommit }) {
   if (typeof participantCode !== "string" || !/^tester-[a-z0-9]{2,16}$/u.test(participantCode)) {
     throw new Error("participant: expected an anonymous tester- code");
   }
-  if (typeof buildVersion !== "string" || !/^\d+\.\d+\.\d+$/u.test(buildVersion)) {
-    throw new Error("build version: expected numeric SemVer");
+  if (typeof buildVersion !== "string" || !/^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/u.test(buildVersion)) {
+    throw new Error("build version: expected SemVer");
   }
   if (typeof buildCommit !== "string" || !/^[0-9a-f]{7,40}$/u.test(buildCommit)) {
     throw new Error("build commit: expected the exact 7..40 character lowercase Git commit used to build the artifact");

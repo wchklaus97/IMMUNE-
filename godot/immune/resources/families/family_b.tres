@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="FamilyCombatProfile" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="FamilyCombatProfile" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://resources/combat/family_combat_profile.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/skills/active_b_antibody_wave.tres" id="2"]
 
 [resource]
 script = ExtResource("1")
@@ -13,6 +14,7 @@ mobile_fire_cooldown = 1.18
 fire_range = 12.5
 move_speed = 5.8
 projectile_color = Color(0.78, 0.38, 1, 1)
+active_skill = ExtResource("2")
 signature_name = "抗體標記"
 signature_description = "連續命中同一目標會疊加標記，後續每層追加 1 點傷害，最多 2 層。"
 hit_effect = "antibody_mark"

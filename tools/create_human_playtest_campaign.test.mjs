@@ -29,6 +29,9 @@ async function createArtifactFixture(root) {
     if (["web/index.audio.worklet.js", "web/index.audio.position.worklet.js"].includes(relative)) {
       contents = Buffer.alloc(1_001, 3);
     }
+    if (["web/index.png", "web/index.icon.png", "web/index.apple-touch-icon.png"].includes(relative)) {
+      contents = Buffer.alloc(1_001, 4);
+    }
     if ([
       "IMMUNE-windows.exe",
       "IMMUNE-windows.pck",
@@ -56,7 +59,7 @@ function options(artifactRoot, outputRoot) {
   return {
     artifactRoot,
     outputRoot,
-    buildVersion: "0.4.0",
+    buildVersion: "0.5.0-rc.1",
     buildCommit: BUILD_COMMIT,
     participantCount: 6,
     sourceRun: 33257048004,

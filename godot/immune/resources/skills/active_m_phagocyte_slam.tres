@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="FamilyActiveSkillProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/combat/family_active_skill_profile.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"SKILL-M-PHAGOCYTE-SLAM"
+name_key = &"SKILL_M_ACTIVE_NAME"
+description_key = &"SKILL_M_ACTIVE_DESCRIPTION"
+cooldown_seconds = 11.0
+radius = 6.5
+max_targets = 6
+targeting = "nearest"
+damage = 7

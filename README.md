@@ -6,9 +6,10 @@ Godot + web UI for the IMMUNE permanent research network / six-mission tower-def
 
 | Path | What |
 |------|------|
-| `godot/immune/` | Godot 4.7 game project (v0.4.0) |
+| `godot/immune/` | Godot 4.7 game project (`v0.5.0-rc.1`) |
 | `ui/immune-research-network/` | Research network web UI + character assets |
 | `tools/meshy/` | Cost-gated Meshy generation, smoothing, validation, and hero intake |
+| `steam/` | Steam store copy, graphical assets, disclosure draft, and release checklist |
 | `build/gallery/` | 3D lock evidence gallery (`npm run serve` → `/build/gallery/`) |
 | `.agents/HANDOFF.md` | Codex handoff for CHAR-BASE-T 3D work |
 | `gauntlet-workbench.md` | Gauntlet iteration log |

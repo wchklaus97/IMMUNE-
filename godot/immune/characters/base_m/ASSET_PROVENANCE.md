@@ -9,4 +9,5 @@
 - Downloaded SHA-256: `8c2dd401fc8c8278f7e02fe90490f8cd0abedaf35edf5f5aaba89d679b58d417`
 - Installed SHA-256: `1eadda4a9c8dfccbd27c5471edf6e2079518d239832cc0dc64f3a46be95bcd4a`
 - Material strategy: shared Godot wet-gel shader; Meshy texture disabled.
-- Runtime slot: `characters/base_m/character.tscn` loads this GLB when present and keeps the procedural blockout as fallback.
+- Shipping status: retained only as development provenance and excluded from
+  all release presets. Runtime M loads the project-authored body.

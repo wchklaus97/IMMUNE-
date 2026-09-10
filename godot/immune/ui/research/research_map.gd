@@ -10,11 +10,13 @@ signal hovered(id: StringName)
 const _Tokens := preload("res://ui/research/research_tokens.gd")
 const _Layout := preload("res://ui/research/radial_layout.gd")
 const _Icons := preload("res://ui/research/icon_library.gd")
+const _Responsive := preload("res://ui/responsive_layout.gd")
 
 const WORLD_CENTER := Vector2(1500, 1500)
 const MIN_ZOOM := 0.18
 const MAX_ZOOM := 1.35
 const COVER_ZOOM := 0.42
+const NARROW_COVER_ZOOM := 0.58
 
 var zoom := COVER_ZOOM
 var pan := Vector2.ZERO
@@ -24,6 +26,7 @@ var _pan_from := Vector2.ZERO
 var _layout: Dictionary = {}
 var _hover_id: StringName = &""
 var _pulses: Array[Dictionary] = []
+var _cover_home_active := true
 
 
 func _ready() -> void:
@@ -33,6 +36,7 @@ func _ready() -> void:
 	if not Engine.is_editor_hint():
 		ResearchState.state_changed.connect(queue_redraw)
 		ResearchState.selection_changed.connect(func(_id: StringName) -> void: queue_redraw())
+	get_viewport().size_changed.connect(_on_viewport_size_changed)
 	cover_view()
 
 
@@ -52,6 +56,7 @@ func focus_id(id: StringName, next_zoom: float = 0.72) -> void:
 	var stored: Variant = entry.get("position", WORLD_CENTER)
 	if stored is Vector2:
 		world = stored
+	_cover_home_active = false
 	zoom = clampf(next_zoom, MIN_ZOOM, MAX_ZOOM)
 	pan = -(world - WORLD_CENTER) * zoom
 	queue_redraw()
@@ -66,9 +71,29 @@ func home_core() -> void:
 
 
 func cover_view() -> void:
-	zoom = COVER_ZOOM
-	pan = Vector2.ZERO
+	_cover_home_active = true
+	_apply_cover_transform()
+
+
+func _apply_cover_transform() -> void:
+	var narrow := _Responsive.is_narrow_phone(get_viewport())
+	zoom = NARROW_COVER_ZOOM if narrow else COVER_ZOOM
+	pan = _narrow_cover_pan() if narrow else Vector2.ZERO
 	queue_redraw()
+
+
+func _narrow_cover_pan() -> Vector2:
+	return Vector2(0.0, -92.0 * _Responsive.logical_per_physical(get_viewport()).y)
+
+
+func _on_viewport_size_changed() -> void:
+	if _cover_home_active:
+		call_deferred("_restore_cover_after_resize")
+
+
+func _restore_cover_after_resize() -> void:
+	if _cover_home_active:
+		_apply_cover_transform()
 
 
 func spawn_feedback(id: StringName, kind: String) -> void:
@@ -125,6 +150,7 @@ func _gui_input(event: InputEvent) -> void:
 				if hit != &"":
 					node_clicked.emit(hit)
 				else:
+					_cover_home_active = false
 					_dragging = true
 					_drag_from = mouse.position
 					_pan_from = pan
@@ -148,6 +174,7 @@ func _gui_input(event: InputEvent) -> void:
 
 func _zoom_at(local: Vector2, factor: float) -> void:
 	var world := local_to_world(local)
+	_cover_home_active = false
 	zoom = clampf(zoom * factor, MIN_ZOOM, MAX_ZOOM)
 	pan = local - size * 0.5 - (world - WORLD_CENTER) * zoom
 	queue_redraw()
@@ -182,6 +209,16 @@ func _hit_test(local: Vector2) -> StringName:
 
 
 func _lod() -> String:
+	# Narrow screens use a slightly larger cover zoom so the seven primary
+	# labels can breathe. Preserve overview information density at that exact
+	# home position instead of promoting the map to structure LOD by zoom alone.
+	if (
+		_cover_home_active
+		and _Responsive.is_narrow_phone(get_viewport())
+		and is_equal_approx(zoom, NARROW_COVER_ZOOM)
+		and pan.distance_squared_to(_narrow_cover_pan()) < 0.01
+	):
+		return "overview"
 	if zoom <= 0.55:
 		return "overview"
 	if zoom <= 1.0:
@@ -362,18 +399,38 @@ func _draw_hover_tip() -> void:
 	var status := _hover_status_text(runtime, node)
 	var pos := world_to_local_pos(_layout_pos(layout))
 	var font := ThemeDB.fallback_font
-	var width := 220.0
-	var box := Rect2(pos + Vector2(18, -36), Vector2(width, 44))
-	if box.position.x + box.size.x > size.x - 8.0:
-		box.position.x = pos.x - width - 18.0
-	if box.position.y < 8.0:
-		box.position.y = pos.y + 18.0
+	var ui_scale := _Responsive.layout_scale(get_viewport())
+	var width := 240.0 * ui_scale
+	var box := Rect2(
+		pos + Vector2(18.0, -44.0) * ui_scale,
+		Vector2(width, 60.0 * ui_scale)
+	)
+	if box.position.x + box.size.x > size.x - 8.0 * ui_scale:
+		box.position.x = pos.x - width - 18.0 * ui_scale
+	if box.position.y < 8.0 * ui_scale:
+		box.position.y = pos.y + 18.0 * ui_scale
 	draw_rect(box, Color(0.02, 0.07, 0.11, 0.92), true)
 	var border := _Tokens.CYAN
 	border.a = 0.45
-	draw_rect(box, border, false, 1.0)
-	draw_string(font, box.position + Vector2(10, 18), title, HORIZONTAL_ALIGNMENT_LEFT, width - 16, 14, _Tokens.TEXT)
-	draw_string(font, box.position + Vector2(10, 36), status, HORIZONTAL_ALIGNMENT_LEFT, width - 16, 12, _Tokens.GOLD)
+	draw_rect(box, border, false, maxf(1.0, ui_scale))
+	draw_string(
+		font,
+		box.position + Vector2(10.0, 22.0) * ui_scale,
+		title,
+		HORIZONTAL_ALIGNMENT_LEFT,
+		width - 20.0 * ui_scale,
+		roundi(18.0 * ui_scale),
+		_Tokens.TEXT
+	)
+	draw_string(
+		font,
+		box.position + Vector2(10.0, 49.0) * ui_scale,
+		status,
+		HORIZONTAL_ALIGNMENT_LEFT,
+		width - 20.0 * ui_scale,
+		roundi(17.0 * ui_scale),
+		_Tokens.GOLD
+	)
 
 
 func _hover_status_text(runtime: Dictionary, node: Dictionary) -> String:
@@ -399,14 +456,29 @@ func _draw_labels() -> void:
 		var pos := world_to_local_pos(_layout_pos(layout))
 		var title := Catalog.localized_node_name(node)
 		var font := ThemeDB.fallback_font
-		var size_px := 22 if kind == "core" else 16
+		var ui_scale := _Responsive.layout_scale(get_viewport())
+		var size_px := roundi(float(22 if kind == "core" else 17) * ui_scale)
 		var radius := _node_radius(node) * zoom
 		if kind == "character_anchor":
 			radius *= 1.15
 		if pos.x < -40.0 or pos.x > size.x + 40.0 or pos.y < -20.0 or pos.y > size.y + 20.0:
 			continue
-		var offset := Vector2(-90, radius + 18.0)
-		draw_string(font, pos + offset, title, HORIZONTAL_ALIGNMENT_CENTER, 180, size_px, _Tokens.TEXT)
+		var label_width := 180.0 * ui_scale
+		var offset := Vector2(-label_width * 0.5, radius + 18.0 * ui_scale)
+		draw_string(
+			font,
+			pos + offset,
+			title,
+			HORIZONTAL_ALIGNMENT_CENTER,
+			label_width,
+			size_px,
+			_Tokens.TEXT
+		)
+
+
+func minimum_label_size_physical() -> float:
+	var logical_size := float(roundi(17.0 * _Responsive.layout_scale(get_viewport())))
+	return _Responsive.logical_height_to_physical(get_viewport(), logical_size)
 
 
 func _scan_level_for(id: StringName, family: String, kind: String, runtime: Dictionary) -> int:

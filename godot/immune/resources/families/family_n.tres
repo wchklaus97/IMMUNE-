@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="FamilyCombatProfile" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="FamilyCombatProfile" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://resources/combat/family_combat_profile.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/skills/active_n_neutrophil_rush.tres" id="2"]
 
 [resource]
 script = ExtResource("1")
@@ -13,5 +14,6 @@ mobile_fire_cooldown = 0.52
 fire_range = 10.0
 move_speed = 7.5
 projectile_color = Color(0.62, 1, 0.28, 1)
+active_skill = ExtResource("2")
 signature_name = "天然連射"
 signature_description = "以最高基礎射速持續壓制病原。"
